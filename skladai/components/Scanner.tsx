@@ -1,102 +1,313 @@
 "use client";
 
-import { useRef, useState, useCallback } from "react";
+import { useRef, useState, useCallback, useEffect } from "react";
 import { compressImage } from "@/lib/compress";
+import type { ScanMode } from "@/lib/types";
 
 interface ScannerProps {
   onScan: (base64: string) => void;
   isLoading: boolean;
+  mode?: ScanMode;
+  loadingMessage?: string;
+  onFridgeScan?: (base64: string) => void;
+  autoOpenGallery?: boolean;
 }
 
-export default function Scanner({ onScan, isLoading }: ScannerProps) {
+export default function Scanner({ onScan, isLoading, mode = "food", loadingMessage, onFridgeScan, autoOpenGallery }: ScannerProps) {
   const cameraInputRef = useRef<HTMLInputElement>(null);
+  const fridgeInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
   const [preview, setPreview] = useState<string | null>(null);
+  const [secondPreview, setSecondPreview] = useState<string | null>(null);
+  const [awaitingSecond, setAwaitingSecond] = useState(false);
+  const secondCameraRef = useRef<HTMLInputElement>(null);
+  const secondGalleryRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (autoOpenGallery && galleryInputRef.current) {
+      const timer = setTimeout(() => { galleryInputRef.current?.click(); }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [autoOpenGallery]);
+
+  const isCosmetics = mode === "cosmetics";
+  const isForma = mode === "forma";
+  const showSecondPhotoOption = (mode === "food" || mode === "cosmetics") && !isLoading;
 
   const handleFile = useCallback(
     async (file: File) => {
       if (!file.type.startsWith("image/")) return;
       try {
-        const compressed = await compressImage(file);
-        setPreview(compressed);
-        onScan(compressed);
+        const maxDim = mode === "cosmetics" ? 1200 : 2000;
+        const compressed = await compressImage(file, maxDim);
+
+        if (awaitingSecond) {
+          // This is the second photo — store it
+          setSecondPreview(compressed);
+          setAwaitingSecond(false);
+          return; // Don't scan yet — user will click "Analizuj oba"
+        } else if (showSecondPhotoOption) {
+          // First photo — show preview and option to add second
+          setPreview(compressed);
+          setSecondPreview(null);
+        } else {
+          // Non-label modes — scan immediately
+          setPreview(compressed);
+          onScan(compressed);
+        }
       } catch (err) {
         console.error("Compression error:", err);
       }
     },
-    [onScan]
+    [onScan, mode, awaitingSecond, preview, showSecondPhotoOption]
   );
+
+  const handleScanSingle = () => {
+    if (preview) {
+      if (secondPreview) {
+        // Two images — send with separator
+        onScan(preview + "|||SECOND|||" + secondPreview);
+      } else {
+        onScan(preview);
+      }
+      setPreview(null);
+      setSecondPreview(null);
+    }
+  };
+
+  const handleAddSecond = () => {
+    setAwaitingSecond(true);
+  };
+
+  const handleCancelPreview = () => {
+    setPreview(null);
+    setSecondPreview(null);
+    setAwaitingSecond(false);
+  };
 
   const onInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) handleFile(file);
+    if (!file) return;
+    // Clone file reference before reset — Android may clear files array after native preview
+    const fileClone = new File([file], file.name, { type: file.type });
+    requestAnimationFrame(() => { e.target.value = ""; });
+    handleFile(fileClone);
+  };
+
+  const onFridgeInputChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !file.type.startsWith("image/") || !onFridgeScan) return;
+    try {
+      const compressed = await compressImage(file);
+      setPreview(compressed);
+      onFridgeScan(compressed);
+    } catch (err) {
+      console.error("Compression error:", err);
+    }
     e.target.value = "";
   };
 
+  const isMeal = mode === "meal";
+
+  const labels: Record<string, { main: string; gallery: string; loading: string }> = {
+    food: { main: "Zrób zdjęcie etykiety", gallery: "Wybierz z galerii", loading: "Analizuję skład..." },
+    cosmetics: { main: "Zrób zdjęcie składu", gallery: "Wybierz z galerii", loading: "Analizuję skład..." },
+    meal: { main: "Zrób zdjęcie dania", gallery: "Wybierz z galerii", loading: "Rozpoznaję danie..." },
+    forma: { main: "Zrób CheckForm", gallery: "Wybierz z galerii", loading: "Analizuję formę..." },
+    text_search: { main: "Zrób zdjęcie etykiety", gallery: "Wybierz z galerii", loading: "Analizuję..." },
+  };
+  const l = labels[mode] || labels.food;
+
   if (isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center py-16 gap-4">
-        <div className="relative w-20 h-20">
-          <div className="absolute inset-0 rounded-full border-4 border-green-100" />
-          <div className="absolute inset-0 rounded-full border-4 border-t-[#2E7D32] animate-spin" />
-          <span className="absolute inset-0 flex items-center justify-center text-3xl">
-            🔬
-          </span>
+      <div className={`rounded-[24px] p-8 anim-fade-scale ${isCosmetics || isForma ? "velvet-card" : "card-elevated"}`}>
+        <div className="flex flex-col items-center justify-center gap-6">
+          <div className="relative w-28 h-28">
+            <div className={`absolute inset-0 rounded-full border-[3px] ${isCosmetics || isForma ? "border-white/5" : "border-gray-100"}`} />
+            <div className={`absolute inset-0 rounded-full border-[3px] border-transparent ${isCosmetics ? "border-t-fuchsia-500" : isMeal ? "border-t-orange-500" : isForma ? "border-t-[#F97316]" : "border-t-[#2D5A16]"}`} style={{ animation: "spinSlow 1s linear infinite" }} />
+            <div className={`absolute inset-2 rounded-full border-[2px] border-transparent ${isCosmetics ? "border-b-purple-400" : isMeal ? "border-b-amber-400" : isForma ? "border-b-[#EF4444]" : "border-b-[#84CC16]"}`} style={{ animation: "spinSlow 1.5s linear infinite reverse" }} />
+            <span className="absolute inset-0 flex items-center justify-center text-5xl anim-float">
+              {isMeal ? "🍽️" : isForma ? "💪" : "🔬"}
+            </span>
+          </div>
+          <div className="text-center">
+            <p className={`text-lg font-bold ${isCosmetics || isForma ? "text-white" : "text-[#1A3A0A]"}`}>
+              {loadingMessage || l.loading}
+            </p>
+            <p className={`text-[13px] mt-1 font-medium ${isCosmetics || isForma ? "text-white/40" : "text-gray-400"}`}>To potrwa kilka sekund</p>
+          </div>
+          <div className={`w-full h-1.5 rounded-full overflow-hidden ${isCosmetics || isForma ? "bg-white/5" : "bg-gray-100"}`}>
+            <div className={`h-full rounded-full bg-gradient-to-r ${isCosmetics ? "from-fuchsia-500 via-purple-500 to-violet-500" : isMeal ? "from-orange-500 via-amber-500 to-orange-500" : isForma ? "from-[#F97316] via-[#EF4444] to-[#F97316]" : "from-[#2D5A16] via-[#84CC16] to-[#2D5A16]"}`} style={{ animation: "shimmer 1.5s infinite", backgroundSize: "200% 100%" }} />
+          </div>
         </div>
-        <p className="text-lg font-semibold text-gray-700 animate-pulse">
-          Analizuję skład...
-        </p>
-        <p className="text-sm text-gray-400">To może potrwać kilka sekund</p>
       </div>
     );
   }
 
   return (
     <div className="w-full space-y-3">
-      {preview && (
-        <img
-          src={preview}
-          alt="Podgląd"
-          className="mx-auto max-h-48 rounded-xl object-contain"
-        />
+      {/* Preview with second photo option (food/cosmetics only) */}
+      {preview && !isLoading && showSecondPhotoOption && (
+        <div className={`rounded-[20px] p-4 mb-1 anim-fade-scale ${isCosmetics ? "velvet-card" : "card-elevated"}`}>
+          <div className="flex gap-2 mb-3">
+            <div className="flex-1 relative">
+              <img src={preview} alt="Zdjęcie 1" className="w-full max-h-40 rounded-xl object-contain" />
+              <span className="absolute top-1 left-1 bg-black/60 text-white text-[10px] px-1.5 py-0.5 rounded-md font-semibold">Zdjęcie 1</span>
+            </div>
+            {secondPreview && (
+              <div className="flex-1 relative">
+                <img src={secondPreview} alt="Zdjęcie 2" className="w-full max-h-40 rounded-xl object-contain" />
+                <span className="absolute top-1 left-1 bg-black/60 text-white text-[10px] px-1.5 py-0.5 rounded-md font-semibold">Zdjęcie 2</span>
+              </div>
+            )}
+          </div>
+
+          <button
+            type="button"
+            onClick={handleScanSingle}
+            className={`w-full py-3.5 rounded-xl font-bold text-white text-[15px] mb-2 active:scale-[0.97] transition-all ${
+              isCosmetics ? "bg-gradient-to-r from-purple-600 to-fuchsia-500" : "bg-gradient-to-r from-[#1A3A0A] to-[#3D7A1F]"
+            }`}
+          >
+            {secondPreview ? "Analizuj oba zdjęcia →" : "Analizuj to zdjęcie →"}
+          </button>
+
+          {!secondPreview && !awaitingSecond && (
+            <>
+              <button
+                type="button"
+                onClick={handleAddSecond}
+                className={`w-full py-3 rounded-xl font-semibold text-[13px] mb-1.5 border-2 border-dashed active:scale-[0.97] transition-all ${
+                  isCosmetics
+                    ? "border-purple-400/30 text-purple-300 bg-purple-500/5"
+                    : "border-[#84CC16]/30 text-[#2D5A16] bg-[#84CC16]/5"
+                }`}
+              >
+                + Dodaj drugie zdjęcie (druga strona opakowania)
+              </button>
+              <p className={`text-[11px] text-center leading-relaxed ${isCosmetics ? "text-white/40" : "text-gray-400"}`}>
+                Skład i wartości odżywcze na osobnych stronach? Dodaj oba zdjęcia dla dokładniejszej analizy.
+              </p>
+            </>
+          )}
+
+          {awaitingSecond && (
+            <div className="space-y-2">
+              <p className={`text-[13px] text-center font-semibold ${isCosmetics ? "text-purple-300" : "text-[#2D5A16]"}`}>
+                Zrób zdjęcie drugiej strony opakowania:
+              </p>
+              <div className="flex gap-2">
+                <button type="button" onClick={() => secondCameraRef.current?.click()}
+                  className={`flex-1 py-3 rounded-xl font-semibold text-[13px] active:scale-[0.97] transition-all ${
+                    isCosmetics ? "bg-purple-500/10 text-purple-300" : "bg-[#84CC16]/10 text-[#2D5A16]"
+                  }`}>
+                  📸 Aparat
+                </button>
+                <button type="button" onClick={() => secondGalleryRef.current?.click()}
+                  className={`flex-1 py-3 rounded-xl font-semibold text-[13px] active:scale-[0.97] transition-all ${
+                    isCosmetics ? "bg-purple-500/10 text-purple-300" : "bg-[#84CC16]/10 text-[#2D5A16]"
+                  }`}>
+                  🖼️ Galeria
+                </button>
+              </div>
+              <input ref={secondCameraRef} type="file" accept="image/*" capture="environment" onChange={onInputChange} className="hidden" />
+              <input ref={secondGalleryRef} type="file" accept="image/*" onChange={onInputChange} className="hidden" />
+            </div>
+          )}
+
+          <button type="button" onClick={handleCancelPreview}
+            className={`w-full py-2 mt-1 text-[12px] font-medium ${isCosmetics ? "text-white/30" : "text-gray-400"}`}>
+            Anuluj
+          </button>
+        </div>
       )}
 
-      {/* Camera button */}
-      <button
-        type="button"
-        onClick={() => cameraInputRef.current?.click()}
-        className="w-full flex items-center justify-center gap-3 py-5 bg-[#2E7D32] text-white font-semibold rounded-2xl active:bg-[#256829] transition-colors text-lg"
-      >
-        <span className="text-2xl">📸</span>
-        Zrób zdjęcie etykiety
-      </button>
+      {/* Simple preview for non-label modes or during loading */}
+      {preview && (isLoading || !showSecondPhotoOption) && (
+        <div className={`rounded-[20px] p-3 mb-1 anim-fade-scale ${isCosmetics || isForma ? "velvet-card" : "card-elevated"}`}>
+          <img src={preview} alt="Podgląd" className="w-full max-h-52 rounded-2xl object-contain" />
+        </div>
+      )}
 
-      {/* Gallery button */}
-      <button
-        type="button"
-        onClick={() => galleryInputRef.current?.click()}
-        className="w-full flex items-center justify-center gap-3 py-4 bg-white text-gray-700 font-medium rounded-2xl border-2 border-gray-200 active:bg-gray-50 transition-colors"
-      >
-        <span className="text-xl">🖼️</span>
-        Wybierz z galerii
-      </button>
+      {/* Main camera button — unified premium design for ALL modes */}
+      {(() => {
+        const themes: Record<string, { gradient: string; iconBg: string; iconStroke1: string; iconStroke2: string; subColor: string; subText: string; emoji: string }> = {
+          food: { gradient: "linear-gradient(135deg, #1A3A0A 0%, #2D5A16 50%, #3D7A1F 100%)", iconBg: "rgba(132,204,22,0.12)", iconStroke1: "#BEF264", iconStroke2: "#84CC16", subColor: "rgba(132,204,22,0.9)", subText: "🔬 AI Vision przeanalizuje skład", emoji: "🔬" },
+          cosmetics: { gradient: "linear-gradient(135deg, #6B21A8 0%, #9333EA 50%, #A855F7 100%)", iconBg: "rgba(232,121,249,0.12)", iconStroke1: "#F0ABFC", iconStroke2: "#E879F9", subColor: "rgba(232,121,249,0.9)", subText: "🔬 AI Vision przeanalizuje skład kosmetyku", emoji: "✨" },
+          meal: { gradient: "linear-gradient(135deg, #C2410C 0%, #EA580C 50%, #F97316 100%)", iconBg: "rgba(251,191,36,0.12)", iconStroke1: "#FDE68A", iconStroke2: "#FBBF24", subColor: "rgba(251,191,36,0.9)", subText: "🔬 AI Vision rozpozna składniki i kalorie", emoji: "🍽️" },
+          forma: { gradient: "linear-gradient(135deg, #F97316 0%, #EF4444 100%)", iconBg: "rgba(249,115,22,0.12)", iconStroke1: "#FDBA74", iconStroke2: "#F97316", subColor: "rgba(255,255,255,0.9)", subText: "✦ POWERED BY AI VISION", emoji: "🔥" },
+        };
+        const t = themes[mode] || themes.food;
+        return (
+          <button
+            type="button"
+            onClick={() => cameraInputRef.current?.click()}
+            className="w-full group relative overflow-hidden flex items-center gap-4 px-5 py-[22px] text-white rounded-[20px] active:scale-[0.97] transition-all duration-200 shadow-xl"
+            style={{ background: t.gradient }}
+          >
+            <div className="absolute top-0 right-0 w-32 h-32 rounded-full" style={{ background: "radial-gradient(circle, rgba(255,255,255,0.06) 0%, transparent 70%)" }} />
+            <div className="absolute left-[20%] right-[20%] top-1/2 h-[1px]" style={{ background: `linear-gradient(90deg, transparent, ${t.iconStroke2}40, transparent)` }} />
+            <div className="relative flex-shrink-0 w-12 h-12 rounded-xl flex items-center justify-center" style={{ background: t.iconBg }}>
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+                <path d="M3 7V5a2 2 0 012-2h2M17 3h2a2 2 0 012 2v2M21 17v2a2 2 0 01-2 2h-2M7 21H5a2 2 0 01-2-2v-2" stroke={t.iconStroke1} strokeWidth="2.5" strokeLinecap="round"/>
+                <line x1="7" y1="12" x2="17" y2="12" stroke={t.iconStroke2} strokeWidth="1.5" strokeDasharray="2 2"/>
+              </svg>
+            </div>
+            <div className="relative">
+              <span className="text-[17px] font-[800] block">{l.main}</span>
+              <span className="text-[12px] font-semibold block mt-1.5" style={{
+                color: t.subColor,
+                ...(mode === "forma" ? { textTransform: "uppercase" as const, letterSpacing: "2px", fontWeight: 700, textShadow: "0 1px 4px rgba(0,0,0,0.3)" } : {}),
+              }}>{t.subText}</span>
+            </div>
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/8 to-transparent -translate-x-full group-active:translate-x-full transition-transform duration-700" />
+          </button>
+        );
+      })()}
+
+      {/* Secondary buttons — food: row with fridge + gallery, others: just gallery */}
+      {!isCosmetics && !isMeal && !isForma && onFridgeScan ? (
+        <div className="flex gap-2.5">
+          <button
+            type="button"
+            onClick={() => fridgeInputRef.current?.click()}
+            className="relative flex-[1.3] flex items-center justify-center gap-2 py-3.5 rounded-[16px] active:scale-[0.97] transition-all duration-200 font-bold text-[13px] text-[#2D5A16]"
+            style={{ background: "linear-gradient(135deg, rgba(132,204,22,0.08), rgba(132,204,22,0.04))", border: "1.5px solid rgba(132,204,22,0.15)" }}
+          >
+            <span>🧊</span>
+            <span>Skanuj lodówkę</span>
+            <span className="absolute -top-1.5 -right-1.5 px-1.5 py-0.5 text-[8px] font-bold text-white rounded-[4px]" style={{ background: "#84CC16" }}>NEW</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => galleryInputRef.current?.click()}
+            className="flex-[0.7] flex items-center justify-center gap-2 py-3.5 bg-white rounded-[16px] shadow-sm active:scale-[0.97] transition-all duration-200 font-semibold text-[13px] text-[#1A3A0A]"
+          >
+            <span>🖼️</span>
+            <span>Z galerii</span>
+          </button>
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={() => galleryInputRef.current?.click()}
+          className={`w-full flex items-center justify-center gap-2.5 py-4 rounded-[18px] active:scale-[0.97] transition-all duration-200 ${
+            isCosmetics
+              ? "velvet-card text-white/70 font-semibold text-[14px]"
+              : isForma
+              ? "velvet-card text-white/70 font-semibold text-[14px]"
+              : "card-elevated text-[#1A3A0A]/70 font-semibold text-[14px]"
+          }`}
+        >
+          <span className="text-lg">🖼️</span>
+          <span>{l.gallery}</span>
+        </button>
+      )}
 
       {/* Hidden inputs */}
-      <input
-        ref={cameraInputRef}
-        type="file"
-        accept="image/*"
-        capture="environment"
-        onChange={onInputChange}
-        style={{ position: "absolute", left: "-9999px", opacity: 0 }}
-      />
-      <input
-        ref={galleryInputRef}
-        type="file"
-        accept="image/*"
-        onChange={onInputChange}
-        style={{ position: "absolute", left: "-9999px", opacity: 0 }}
-      />
+      <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" onChange={onInputChange} className="hidden" />
+      {onFridgeScan && <input ref={fridgeInputRef} type="file" accept="image/*" capture="environment" onChange={onFridgeInputChange} className="hidden" />}
+      <input ref={galleryInputRef} type="file" accept="image/*" onChange={onInputChange} className="hidden" />
     </div>
   );
 }

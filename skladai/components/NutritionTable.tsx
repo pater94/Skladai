@@ -2,22 +2,22 @@ import { NutritionItem } from "@/lib/types";
 
 export default function NutritionTable({ items }: { items: NutritionItem[] }) {
   return (
-    <div className="space-y-2">
+    <div className="card-elevated rounded-[20px] overflow-hidden">
       {items.map((item, i) => (
         <div
           key={i}
-          className="flex items-center gap-3 bg-white rounded-xl p-3 shadow-sm border border-gray-100"
+          className={`flex items-center px-5 py-4 ${
+            i !== items.length - 1 ? "border-b border-gray-50" : ""
+          }`}
         >
-          <span className="text-2xl w-8 text-center">{item.icon}</span>
-          <div className="flex-1">
-            <div className="flex justify-between items-baseline">
-              <span className="text-sm font-medium text-gray-700">{item.label}</span>
-              <span className="text-sm font-semibold text-gray-900">{item.value}</span>
-            </div>
+          <span className="text-xl w-9 flex-shrink-0">{item.icon}</span>
+          <div className="flex-1 min-w-0">
+            <p className="text-[13px] font-bold text-gray-800">{item.label}</p>
             {item.sub && (
-              <p className="text-xs text-gray-400 mt-0.5">{item.sub}</p>
+              <p className="text-[11px] text-gray-400 mt-0.5 font-medium">{item.sub}</p>
             )}
           </div>
+          <span className="text-[14px] font-bold text-gray-700 tabular-nums">{item.value}</span>
         </div>
       ))}
     </div>

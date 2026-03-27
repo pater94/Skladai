@@ -1,17 +1,12 @@
 import type { Metadata, Viewport } from "next";
-import { Geist } from "next/font/google";
 import "./globals.css";
-import Script from "next/script";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
+import BottomNav from "@/components/BottomNav";
+import SWUpdateBanner from "@/components/SWUpdateBanner";
 
 export const metadata: Metadata = {
-  title: "SkładAI — Analizator składu produktów",
+  title: "SkładAI — Sprawdź co naprawdę jesz",
   description:
-    "Zeskanuj etykietę produktu spożywczego i poznaj szczegółową analizę składu, ocenę zdrowotności i praktyczne porady.",
+    "Zeskanuj etykietę produktu spożywczego, kosmetycznego lub zdjęcie dania. AI przeanalizuje skład, poda ocenę zdrowotności i praktyczne porady.",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
@@ -25,7 +20,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
-  themeColor: "#2E7D32",
+  themeColor: "#1A3A0A",
 };
 
 export default function RootLayout({
@@ -34,23 +29,18 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="pl" className={`${geistSans.variable} h-full antialiased`}>
+    <html lang="pl" className="h-full antialiased">
       <head>
         <link rel="apple-touch-icon" href="/icons/icon-192.svg" />
+        <link rel="icon" href="/icons/icon-192.svg" type="image/svg+xml" />
+        <meta name="theme-color" content="#84CC16" />
       </head>
-      <body className="min-h-full flex flex-col font-[family-name:var(--font-geist-sans)]">
-        {children}
-        <Script
-          id="sw-register"
-          strategy="afterInteractive"
-          dangerouslySetInnerHTML={{
-            __html: `
-              if ('serviceWorker' in navigator) {
-                navigator.serviceWorker.register('/sw.js').catch(() => {});
-              }
-            `,
-          }}
-        />
+      <body className="min-h-full flex flex-col" style={{ fontFamily: "-apple-system, 'SF Pro Display', 'Helvetica Neue', system-ui, sans-serif" }}>
+        <div className="pb-16">
+          {children}
+        </div>
+        <BottomNav />
+        <SWUpdateBanner />
       </body>
     </html>
   );

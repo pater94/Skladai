@@ -1,12 +1,13 @@
 {
-  "name": "SkładAI",
+  "name": "SkładAI — Sprawdź co naprawdę jesz",
   "short_name": "SkładAI",
-  "description": "Zeskanuj etykietę — poznaj skład produktu",
+  "description": "Zeskanuj etykietę produktu, kosmetyku lub dania. AI przeanalizuje skład i poda ocenę zdrowotności.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#F5F6F8",
-  "theme_color": "#2E7D32",
+  "background_color": "#1A3A0A",
+  "theme_color": "#84CC16",
   "orientation": "portrait",
+  "categories": ["health", "food", "lifestyle"],
   "icons": [
     {
       "src": "/icons/icon-192.svg",

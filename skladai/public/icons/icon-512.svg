@@ -1,4 +1,26 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
-  <rect width="512" height="512" rx="80" fill="#2E7D32"/>
-  <text x="256" y="300" text-anchor="middle" font-size="220" font-family="Arial, sans-serif" fill="white">🔬</text>
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#84CC16"/>
+      <stop offset="100%" style="stop-color:#65A30D"/>
+    </linearGradient>
+  </defs>
+  <!-- Background -->
+  <rect width="512" height="512" rx="108" fill="url(#bg)"/>
+  <!-- Shine overlay -->
+  <ellipse cx="380" cy="120" rx="180" ry="160" fill="rgba(255,255,255,0.08)"/>
+  <!-- Scanner corners - top left -->
+  <path d="M 130 180 L 130 150 Q 130 130 150 130 L 180 130" fill="none" stroke="white" stroke-width="8" stroke-linecap="round"/>
+  <!-- Scanner corners - top right -->
+  <path d="M 332 130 L 362 130 Q 382 130 382 150 L 382 180" fill="none" stroke="white" stroke-width="8" stroke-linecap="round"/>
+  <!-- Scanner corners - bottom left -->
+  <path d="M 130 332 L 130 362 Q 130 382 150 382 L 180 382" fill="none" stroke="white" stroke-width="8" stroke-linecap="round"/>
+  <!-- Scanner corners - bottom right -->
+  <path d="M 332 382 L 362 382 Q 382 382 382 362 L 382 332" fill="none" stroke="white" stroke-width="8" stroke-linecap="round"/>
+  <!-- Scan line -->
+  <line x1="150" y1="256" x2="362" y2="256" stroke="white" stroke-width="3" stroke-dasharray="12,8" opacity="0.4"/>
+  <!-- Text "Skład" -->
+  <text x="256" y="240" text-anchor="middle" font-family="-apple-system, 'Helvetica Neue', sans-serif" font-weight="900" font-size="72" fill="white" letter-spacing="-2">Skład</text>
+  <!-- Text "AI" -->
+  <text x="256" y="310" text-anchor="middle" font-family="-apple-system, 'Helvetica Neue', sans-serif" font-weight="900" font-size="72" fill="#1A3A0A" letter-spacing="-1">AI</text>
 </svg>
