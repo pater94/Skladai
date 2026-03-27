@@ -62,6 +62,21 @@ const MEAL_TIPS = [
   "Kebab o 3 w nocy? AI nie ocenia, ale kalorie policzy",
 ];
 
+const SUPLEMENT_TIPS = [
+  "Magnez w formie tlenku ma przyswajalność ~4%. Cytrynian lub bisglicynian — nawet 40%",
+  "Kreatyna monohydrat to jedyny suplement siłowy z naprawdę mocnymi dowodami naukowymi",
+  "Witaminę D3 bierz z tłuszczem — jest rozpuszczalna w tłuszczach i bez niego się nie wchłonie",
+  "BCAA przy diecie bogatej w białko to wyrzucone pieniądze — wszystko masz w jedzeniu",
+  "Omega-3: liczy się ilość EPA+DHA, nie objętość kapsułki. Sprawdź tył opakowania",
+  "Żelazo i wapń konkurują o wchłanianie — nie bierz ich razem. Odstęp min. 2 godziny",
+  "Kolagen w tabletkach rozkłada się na aminokwasy — nie trafia bezpośrednio do stawów",
+  "Witamina C poprawia wchłanianie żelaza — bierz je razem",
+  "Suplementy 'all-in-one' często mają dawki poniżej skutecznych — sprawdź każdy składnik",
+  "Probiotyki bierz na pusty żołądek — kwas żołądkowy po posiłku je niszczy",
+  "Kurkumina bez piperyny ma przyswajalność ~2%. Z piperyną — nawet 2000% więcej",
+  "Białko serwatkowe to nie 'chemia' — to wyizolowane białko z mleka, nic więcej",
+];
+
 /* ── accent config per mode ── */
 const ACCENT_MAP: Record<string, { hex: string; rgb: string }> = {
   food:      { hex: "#6efcb4", rgb: "110,252,180" },
@@ -247,7 +262,7 @@ export default function Home() {
   const isCosmetics = mode === "cosmetics";
   const isMeal = mode === "meal";
   const isSuplement = mode === "suplement";
-  const tips = isMeal ? MEAL_TIPS : isCosmetics ? COSMETIC_TIPS : FOOD_TIPS;
+  const tips = isSuplement ? SUPLEMENT_TIPS : isMeal ? MEAL_TIPS : isCosmetics ? COSMETIC_TIPS : FOOD_TIPS;
 
   /* ── helper: handle direct camera file for the custom viewfinder ── */
   const handleDirectFile = useCallback(
