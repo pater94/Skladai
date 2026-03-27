@@ -812,23 +812,14 @@ Język: jak kumpel w kuchni. Kroki KRÓTKIE (max 3 zdania). Po polsku.`;
       if (!text || text.trim().length < 3) {
         return NextResponse.json({ error: "Wpisz pytanie." }, { status: 400 });
       }
-      const supplementAcademyPrompt = `Jesteś ekspertem od suplementów diety i farmakologiem. Napisz rzetelny, oparty na nauce artykuł edukacyjny po polsku.
-
-Temat: ${text.trim()}
-
-Odpowiedz WYŁĄCZNIE JSON:
-{
-  "title": "Tytuł artykułu",
-  "content": "Treść artykułu (3-5 akapitów, oparta na dowodach naukowych, konkretna)",
-  "key_points": ["Punkt 1", "Punkt 2", "Punkt 3", "Punkt 4"],
-  "evidence_level": "mocne/umiarkowane/słabe",
-  "tip": "Praktyczna porada"
-}
-
-ZASADY: Tylko prawdziwe informacje, podawaj dawki i badania, bez pseudonauki.`;
+      const supplementAcademyPrompt = `Jesteś ekspertem od suplementów diety i farmakologiem. Piszesz rzetelne, oparte na nauce artykuły edukacyjne po polsku.
+Ton: jak trener/dietetyk sportowy — konkretny, oparty na badaniach, bez BS.
+ZASADY: Tylko prawdziwe informacje, podawaj konkretne dawki i odniesienia do badań, bez pseudonauki.
+Odpowiedz WYŁĄCZNIE poprawnym JSON (bez markdown, bez komentarzy):
+{"title": "Tytuł artykułu", "content": "Treść artykułu (3-5 akapitów, konkretna, oparta na dowodach)", "key_points": ["Punkt 1", "Punkt 2", "Punkt 3", "Punkt 4"], "evidence_level": "mocne", "tip": "Praktyczna porada do zapamiętania"}`;
       const res = await callClaude(apiKey, supplementAcademyPrompt, [
-        { type: "text", text: `Temat: "${text.trim()}"` },
-      ], 2048, 15000);
+        { type: "text", text: `Napisz artykuł na temat: "${text.trim()}". Odpowiedz WYŁĄCZNIE JSON.` },
+      ], 3072, 25000);
       if (res.error) return NextResponse.json({ error: `Błąd (${res.status}).` }, { status: res.status! });
       try {
         return NextResponse.json(parseJsonResponse(res.text));
