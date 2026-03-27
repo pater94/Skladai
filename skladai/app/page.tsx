@@ -556,30 +556,24 @@ export default function Home() {
 
         {/* (duplicate Scanner removed — already rendered above) */}
 
-        {/* ══ Quick links (suplement only) ══ */}
+        {/* ══ Quick link (suplement only) ══ */}
         {isSuplement && !isLoading && (
-          <div className="mt-5 space-y-3 anim-fade-up-3">
-            <div className="grid grid-cols-2 gap-2">
-              {[
-                { href: "/suplement-academy", emoji: "📚", label: "Suplement Academy" },
-                { href: "/promile", emoji: "🍺", label: "Alkomat" },
-                { href: "/forma", emoji: "💪", label: "Sprawdź formę" },
-                { href: "/dashboard", emoji: "📊", label: "Dziennik" },
-              ].map((link) => (
-                <a
-                  key={link.href}
-                  href={link.href}
-                  className="rounded-2xl p-3.5 text-center active:scale-[0.97] transition-transform"
-                  style={{
-                    background: "rgba(59,130,246,0.04)",
-                    border: "1px solid rgba(59,130,246,0.10)",
-                  }}
-                >
-                  <span className="text-[20px] block">{link.emoji}</span>
-                  <span className="text-[11px] font-bold text-white/50 mt-1 block">{link.label}</span>
-                </a>
-              ))}
-            </div>
+          <div className="mt-5 anim-fade-up-3">
+            <a
+              href="/suplement-academy"
+              className="flex items-center gap-3.5 rounded-2xl p-4 active:scale-[0.97] transition-transform"
+              style={{
+                background: "rgba(59,130,246,0.04)",
+                border: "1px solid rgba(59,130,246,0.10)",
+              }}
+            >
+              <div className="w-11 h-11 rounded-xl bg-blue-500/10 flex items-center justify-center text-xl shrink-0">💊</div>
+              <div>
+                <span className="text-[13px] font-bold text-white/80 block">Suplement Academy</span>
+                <span className="text-[10px] text-blue-400/50 block mt-0.5">Naucz się wybierać suplementy jak ekspert</span>
+              </div>
+              <span className="text-white/15 text-sm shrink-0 ml-auto">{"›"}</span>
+            </a>
           </div>
         )}
 
