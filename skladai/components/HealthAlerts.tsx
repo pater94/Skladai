@@ -41,6 +41,8 @@ export default function HealthAlerts({ result, profile }: Props) {
   // === PREGNANCY / BREASTFEEDING ===
   const isPregnant = health.pregnancy === "t1" || health.pregnancy === "t2" || health.pregnancy === "t3";
   const isBreastfeeding = health.pregnancy === "karmienie";
+  const isPlanning = health.pregnancy === "planuje";
+  const showPregnancyAlerts = isPregnant || isBreastfeeding || isPlanning;
   const pregAlerts = pregnancyInfo?.alerts || [];
   const safePregNutrients = pregnancyInfo?.safe_nutrients || [];
   const caffeineMg = pregnancyInfo?.caffeine_mg || 0;

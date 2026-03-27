@@ -137,6 +137,7 @@ export const TRIMESTERS = {
   t2: { label: "II trymestr", weeks: "13-26 tydzień", extraCalories: 340 },
   t3: { label: "III trymestr", weeks: "27-40 tydzień", extraCalories: 450 },
   karmienie: { label: "Karmienie", weeks: "po porodzie", extraCalories: 500 },
+  planuje: { label: "Planuję ciążę", weeks: "przed ciążą", extraCalories: 0 },
 } as const;
 
 export type Trimester = keyof typeof TRIMESTERS;

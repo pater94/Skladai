@@ -226,21 +226,31 @@ export default function ProfileSetup({ onComplete, onSkip, existingProfile }: Pr
                 </div>
               </div>
 
-              {/* Pregnancy (only for female) */}
+              {/* Pregnancy & Breastfeeding — dedicated section */}
               {gender === "female" && (
-                <div>
-                  <p className="text-[12px] font-semibold text-gray-600 mb-2">🤰 Ciąża</p>
-                  <div className="flex gap-2">
+                <div className="rounded-[16px] p-4" style={{ background: "#FFF0F5", border: "1px solid #FECDD3" }}>
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <span className="text-[18px]">🤰</span>
+                    <p className="text-[14px] font-bold text-[#1A3A0A]">Ciąża i karmienie</p>
+                  </div>
+                  <p className="text-[11px] text-gray-400 mb-3 leading-relaxed">
+                    Niektóre składniki w żywności i kosmetykach mogą być szkodliwe w ciąży lub przy karmieniu piersią. Dzięki tej informacji AI będzie Cię ostrzegać.
+                  </p>
+                  <div className="grid grid-cols-2 gap-2">
                     <button onClick={() => setPregnancy(null)}
-                      className={`flex-1 py-2.5 rounded-[12px] text-[11px] font-bold ${!pregnancy ? "bg-[#1A3A0A] text-white" : "bg-gray-100 text-gray-500"}`}>
-                      Brak
+                      className={`py-2.5 rounded-[12px] text-[11px] font-bold ${!pregnancy ? "bg-[#1A3A0A] text-white" : "bg-white text-gray-500 border border-gray-200"}`}>
+                      Nie dotyczy
                     </button>
                     {(Object.keys(TRIMESTERS) as Trimester[]).map((key) => (
                       <button key={key} onClick={() => setPregnancy(key)}
-                        className={`flex-1 py-2.5 rounded-[12px] text-[11px] font-bold ${pregnancy === key ? "bg-[#1A3A0A] text-white" : "bg-gray-100 text-gray-500"}`}>
+                        className={`py-2.5 rounded-[12px] text-[11px] font-bold ${pregnancy === key ? "bg-[#1A3A0A] text-white" : "bg-white text-gray-500 border border-gray-200"}`}>
                         {TRIMESTERS[key].label}
                       </button>
                     ))}
+                    <button onClick={() => setPregnancy("planuje" as Trimester)}
+                      className={`py-2.5 rounded-[12px] text-[11px] font-bold ${pregnancy === "planuje" ? "bg-[#1A3A0A] text-white" : "bg-white text-gray-500 border border-gray-200"}`}>
+                      Planuję ciążę
+                    </button>
                   </div>
                 </div>
               )}

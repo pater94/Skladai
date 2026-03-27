@@ -561,9 +561,9 @@ export default function Home() {
           <div className="mt-5 space-y-3 anim-fade-up-3">
             <div className="grid grid-cols-2 gap-2">
               {[
+                { href: "/suplement-academy", emoji: "📚", label: "Suplement Academy" },
                 { href: "/promile", emoji: "🍺", label: "Alkomat" },
                 { href: "/forma", emoji: "💪", label: "Sprawdź formę" },
-                { href: "/beauty-academy", emoji: "📚", label: "Academy" },
                 { href: "/dashboard", emoji: "📊", label: "Dziennik" },
               ].map((link) => (
                 <a

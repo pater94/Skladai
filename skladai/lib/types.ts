@@ -305,7 +305,7 @@ export interface UserProfile {
   // Health
   health: {
     diabetes: "type1" | "type2" | null;
-    pregnancy: "t1" | "t2" | "t3" | "karmienie" | null;
+    pregnancy: "t1" | "t2" | "t3" | "karmienie" | "planuje" | null;
     allergens: string[];
     diet: string;
   };

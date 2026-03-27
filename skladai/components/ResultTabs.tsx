@@ -20,8 +20,8 @@ const cosmeticsTabs = [
 
 const supplementTabs = [
   { id: "ingredients", icon: "💊", label: "Skład" },
+  { id: "alternatives", icon: "💰", label: "Alternatywy" },
   { id: "review", icon: "⚖️", label: "Ocena" },
-  { id: "interactions", icon: "⚠️", label: "Interakcje" },
 ] as const;
 
 type TabId = "ingredients" | "nutrition" | "alternatives" | "review" | "interactions";
@@ -421,6 +421,45 @@ export default function ResultTabs({ result, scanType = "food", isCosmetics: isC
           </div>
         )}
 
+        {/* ══ TAB: ALTERNATYWY (suplement) ══ */}
+        {active === "alternatives" && isSuplement && suppResult && (
+          <div className="space-y-3">
+            <div className="velvet-card rounded-[20px] p-4">
+              <p className="text-[11px] font-bold text-white/30 uppercase tracking-widest mb-2">Produkt</p>
+              <div className="space-y-1.5">
+                {suppResult.brand && (
+                  <div className="flex justify-between">
+                    <span className="text-[12px] text-white/40">Marka</span>
+                    <span className="text-[12px] font-semibold text-white/70">{suppResult.brand}</span>
+                  </div>
+                )}
+                {suppResult.form && (
+                  <div className="flex justify-between">
+                    <span className="text-[12px] text-white/40">Forma</span>
+                    <span className="text-[12px] font-semibold text-white/70">{suppResult.form}</span>
+                  </div>
+                )}
+                {suppResult.daily_dose && (
+                  <div className="flex justify-between">
+                    <span className="text-[12px] text-white/40">Dawka dzienna</span>
+                    <span className="text-[12px] font-semibold text-white/70">{suppResult.daily_dose}</span>
+                  </div>
+                )}
+                <div className="flex justify-between">
+                  <span className="text-[12px] text-white/40">Wegańskie</span>
+                  <span className="text-[12px] font-semibold text-white/70">{suppResult.is_vegan === true ? "✅ Tak" : suppResult.is_vegan === false ? "❌ Nie" : "❓ Nieznane"}</span>
+                </div>
+              </div>
+            </div>
+            {suppResult.tip && (
+              <div className="velvet-card rounded-[20px] p-5 border-l-4 border-l-blue-500">
+                <h3 className="font-bold mb-2 text-[13px] text-blue-400">💡 Rada eksperta</h3>
+                <p className="text-[13px] leading-relaxed text-white/60">{suppResult.tip}</p>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* ══ TAB: OCENA (suplement) ══ */}
         {active === "review" && isSuplement && suppResult && (
           <div className="space-y-3">
@@ -435,7 +474,7 @@ export default function ResultTabs({ result, scanType = "food", isCosmetics: isC
             )}
             {suppResult.who_for && suppResult.who_for.length > 0 && (
               <div className="velvet-card rounded-[20px] p-5 border-l-4 border-l-emerald-400">
-                <h3 className="font-bold mb-3 text-[13px] text-emerald-400">✓ Dla kogo</h3>
+                <h3 className="font-bold mb-3 text-[13px] text-emerald-400">✓ Dobre dla</h3>
                 <ul className="space-y-2">
                   {suppResult.who_for.map((item, i) => (
                     <li key={i} className="flex items-start gap-2 text-[12px] text-white/60">
@@ -447,12 +486,22 @@ export default function ResultTabs({ result, scanType = "food", isCosmetics: isC
             )}
             {suppResult.who_avoid && suppResult.who_avoid.length > 0 && (
               <div className="velvet-card rounded-[20px] p-5 border-l-4 border-l-red-400">
-                <h3 className="font-bold mb-3 text-[13px] text-red-400">✗ Kto powinien unikać</h3>
+                <h3 className="font-bold mb-3 text-[13px] text-red-400">✗ Unikaj przy</h3>
                 <ul className="space-y-2">
                   {suppResult.who_avoid.map((item, i) => (
                     <li key={i} className="flex items-start gap-2 text-[12px] text-white/60">
                       <span className="text-red-400 font-bold shrink-0">•</span>{item}
                     </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {suppResult.interactions && suppResult.interactions.length > 0 && (
+              <div className="velvet-card rounded-[20px] p-5 border-l-4 border-l-amber-400">
+                <h3 className="font-bold mb-3 text-[13px] text-amber-400">⚠️ Interakcje</h3>
+                <ul className="space-y-2">
+                  {suppResult.interactions.map((item, i) => (
+                    <li key={i} className="text-[12px] text-white/60 flex gap-2"><span className="text-amber-400 shrink-0">•</span>{item}</li>
                   ))}
                 </ul>
               </div>
@@ -471,62 +520,6 @@ export default function ResultTabs({ result, scanType = "food", isCosmetics: isC
                 <ul className="space-y-1.5">
                   {suppResult.cons.map((c, i) => <li key={i} className="text-[12px] text-white/60 flex gap-2"><span className="text-amber-400 shrink-0">−</span>{c}</li>)}
                 </ul>
-              </div>
-            )}
-            {suppResult.tip && (
-              <div className="velvet-card rounded-[20px] p-5 border-l-4 border-l-blue-500">
-                <h3 className="font-bold mb-2 text-[13px] text-blue-400">💡 Rada eksperta</h3>
-                <p className="text-[13px] leading-relaxed text-white/60">{suppResult.tip}</p>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* ══ TAB: INTERAKCJE (suplement) ══ */}
-        {active === "interactions" && isSuplement && suppResult && (
-          <div className="space-y-3">
-            <div className="velvet-card rounded-[20px] p-5">
-              <p className="text-[11px] font-bold text-white/30 uppercase tracking-widest mb-3">Informacje</p>
-              <div className="space-y-2">
-                <div className="flex justify-between">
-                  <span className="text-[12px] text-white/40">Forma</span>
-                  <span className="text-[12px] font-semibold text-white/70">{suppResult.form || "—"}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-[12px] text-white/40">Dawka dzienna</span>
-                  <span className="text-[12px] font-semibold text-white/70">{suppResult.daily_dose || "—"}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-[12px] text-white/40">Wegańskie</span>
-                  <span className="text-[12px] font-semibold text-white/70">{suppResult.is_vegan === true ? "✅ Tak" : suppResult.is_vegan === false ? "❌ Nie" : "❓ Nieznane"}</span>
-                </div>
-              </div>
-            </div>
-            {suppResult.interactions && suppResult.interactions.length > 0 && (
-              <div className="velvet-card rounded-[20px] p-5 border-l-4 border-l-amber-400">
-                <h3 className="font-bold mb-3 text-[13px] text-amber-400">⚠️ Interakcje z lekami</h3>
-                <ul className="space-y-2">
-                  {suppResult.interactions.map((item, i) => (
-                    <li key={i} className="text-[12px] text-white/60 flex gap-2"><span className="text-amber-400 shrink-0">•</span>{item}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
-            {(!suppResult.interactions || suppResult.interactions.length === 0) && (
-              <div className="velvet-card rounded-[20px] p-5 text-center">
-                <span className="text-2xl block mb-2">✅</span>
-                <p className="text-[13px] font-semibold text-white/60">Brak znanych interakcji</p>
-                <p className="text-[11px] text-white/30 mt-1">Zawsze konsultuj z lekarzem przy lekach na receptę</p>
-              </div>
-            )}
-            {suppResult.allergens && suppResult.allergens.length > 0 && (
-              <div className="velvet-card rounded-[20px] p-5 border-l-4 border-l-red-400">
-                <h3 className="font-bold mb-3 text-[13px] text-red-400">🚫 Alergeny</h3>
-                <div className="flex flex-wrap gap-2">
-                  {suppResult.allergens.map((a, i) => (
-                    <span key={i} className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-red-500/20 text-red-300">{a}</span>
-                  ))}
-                </div>
               </div>
             )}
             <p className="text-[10px] text-center text-white/20 mt-2">
