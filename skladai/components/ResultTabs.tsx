@@ -266,6 +266,31 @@ export default function ResultTabs({ result, scanType = "food", isCosmetics: isC
                 <p className="text-[13px] text-white/30">Brak danych o alternatywach</p>
               </div>
             )}
+
+            {/* Sticky CTA */}
+            {selectedAlt && (cheaper || better) && (
+              <div className="fixed bottom-20 left-0 right-0 z-50 px-4 max-w-md mx-auto">
+                <a
+                  href={`https://www.google.com/search?tbm=shop&q=${encodeURIComponent(selectedAlt === "cheaper" && cheaper ? cheaper.name : better?.name || "")}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block w-full py-4 rounded-2xl text-center font-bold text-white text-[15px] active:scale-[0.97] transition-all shadow-2xl"
+                  style={{
+                    background: selectedAlt === "cheaper"
+                      ? "linear-gradient(135deg, #16a34a, #22c55e)"
+                      : "linear-gradient(135deg, #7c3aed, #a855f7)",
+                    boxShadow: selectedAlt === "cheaper"
+                      ? "0 8px 32px rgba(34,197,94,0.4)"
+                      : "0 8px 32px rgba(139,92,246,0.4)",
+                  }}
+                >
+                  {selectedAlt === "cheaper" && cheaper
+                    ? `🛒 Kup zamiennik${cheaper.savings ? ` i zaoszczędź ${cheaper.savings} zł` : ""}`
+                    : `🛒 Kup lepszą opcję${better?.price ? ` za ${better.price} zł` : ""}`}
+                </a>
+                <p className="text-[10px] text-white/25 text-center mt-1.5">Przekierowanie do porównywarki cen</p>
+              </div>
+            )}
           </div>
           );
         })()}
@@ -564,6 +589,31 @@ export default function ResultTabs({ result, scanType = "food", isCosmetics: isC
             {!cheaper && !better && (
               <div className="velvet-card rounded-[20px] p-5 text-center">
                 <p className="text-[13px] text-white/30">Brak danych o alternatywach</p>
+              </div>
+            )}
+
+            {/* Sticky CTA */}
+            {selectedAlt && (cheaper || better) && (
+              <div className="fixed bottom-20 left-0 right-0 z-50 px-4 max-w-md mx-auto">
+                <a
+                  href={`https://www.google.com/search?tbm=shop&q=${encodeURIComponent(selectedAlt === "cheaper" && cheaper ? cheaper.name : better?.name || "")}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block w-full py-4 rounded-2xl text-center font-bold text-white text-[15px] active:scale-[0.97] transition-all shadow-2xl"
+                  style={{
+                    background: selectedAlt === "cheaper"
+                      ? "linear-gradient(135deg, #16a34a, #22c55e)"
+                      : "linear-gradient(135deg, #2563eb, #3b82f6)",
+                    boxShadow: selectedAlt === "cheaper"
+                      ? "0 8px 32px rgba(34,197,94,0.4)"
+                      : "0 8px 32px rgba(59,130,246,0.4)",
+                  }}
+                >
+                  {selectedAlt === "cheaper" && cheaper
+                    ? `🛒 Kup zamiennik${cheaper.savings ? ` i zaoszczędź ${cheaper.savings} zł` : ""}`
+                    : `🛒 Kup lepszą opcję${better?.price ? ` za ${better.price} zł` : ""}`}
+                </a>
+                <p className="text-[10px] text-white/25 text-center mt-1.5">Przekierowanie do porównywarki cen</p>
               </div>
             )}
           </div>
