@@ -153,9 +153,10 @@ export default function ResultTabs({ result, scanType = "food", isCosmetics: isC
         {active === "alternatives" && isCosmetics && cosResult && (() => {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const alt = (cosResult as any).alternatives || cosResult.price_comparison;
-          const cheaper = alt?.cheaper || (alt?.similar_products?.[0] ? { name: alt.similar_products[0].name, reason: alt.similar_products[0].why_similar, price: null, original_price: null, savings: null, score: null } : null);
-          const better = alt?.better || (alt?.better_option ? { name: alt.better_option.name, reason: alt.better_option.why_better, price: null, score: null, advantages: [] } : null);
+          const cheaper = alt?.cheaper || null;
+          const better = alt?.better || null;
           const comparison = alt?.comparison || [];
+          const altVerdict = alt?.verdict || "";
           const tip = alt?.tip || alt?.savings_tip || "";
           return (
           <div className="space-y-3">
@@ -166,20 +167,34 @@ export default function ResultTabs({ result, scanType = "food", isCosmetics: isC
                   <span className="text-xl">💰</span>
                   <h3 className="text-[15px] font-black text-white">Nie przepłacaj za logo.</h3>
                 </div>
-                <p className="text-[12px] text-white/50 leading-relaxed">Kosmetyki mają gigantyczne marże. AI znalazł lepsze opcje w ułamku ceny.</p>
+                <p className="text-[12px] text-white/50 leading-relaxed">AI znalazł produkty z tym samym składem. Sprawdź ile możesz zaoszczędzić.</p>
               </div>
               <div className="absolute top-0 right-0 w-32 h-32 rounded-full bg-purple-500/10 blur-[40px]" />
             </div>
 
+            {/* Good product card — when no alternatives needed */}
+            {!cheaper && !better && (
+              <div className="rounded-[20px] p-5" style={{ background: "rgba(34,197,94,0.06)", border: "1px solid rgba(34,197,94,0.15)" }}>
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-xl">✅</span>
+                  <h3 className="text-[14px] font-bold text-emerald-400">Dobry wybór!</h3>
+                </div>
+                <p className="text-[12px] text-white/50 leading-relaxed">{altVerdict || "Świetny wybór! Ten produkt ma dobry skład. Nie znaleźliśmy lepszej opcji."}</p>
+                {tip && (
+                  <div className="flex items-start gap-2 mt-3 pt-3" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+                    <span className="text-sm">💡</span>
+                    <p className="text-[11px] text-white/40 leading-relaxed">{tip}</p>
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Karta Tańsza opcja */}
             {cheaper && (
-              <button onClick={() => setSelectedAlt(selectedAlt === "cheaper" ? null : "cheaper")} className={`w-full text-left rounded-[20px] p-5 transition-all ${selectedAlt === "cheaper" ? "ring-2 ring-emerald-400/50" : ""}`} style={{ background: "rgba(34,197,94,0.06)", border: "1px solid rgba(34,197,94,0.15)" }}>
+              <div onClick={() => setSelectedAlt(selectedAlt === "cheaper" ? null : "cheaper")} className={`rounded-[20px] p-5 transition-all cursor-pointer ${selectedAlt === "cheaper" ? "ring-2 ring-emerald-400/50" : ""}`} style={{ background: "rgba(34,197,94,0.06)", border: "1px solid rgba(34,197,94,0.15)" }}>
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-[11px] font-bold text-emerald-400 uppercase tracking-widest">🟢 Tańsza opcja</span>
-                  <div className="flex items-center gap-1.5">
-                    {cheaper.savings && <span className="text-[12px] font-black text-emerald-400 px-2 py-0.5 rounded-full bg-emerald-400/10">-{cheaper.savings} zł</span>}
-                    {selectedAlt === "cheaper" && <span className="text-emerald-400">✅</span>}
-                  </div>
+                  {selectedAlt === "cheaper" && <span className="text-emerald-400">✅</span>}
                 </div>
                 <div className="flex items-center gap-3">
                   {cheaper.score && (
@@ -192,18 +207,15 @@ export default function ResultTabs({ result, scanType = "food", isCosmetics: isC
                     <p className="text-[11px] text-white/40 mt-0.5">{cheaper.reason}</p>
                   </div>
                 </div>
-                {cheaper.price && (
-                  <div className="flex items-center gap-3 mt-3 pt-3" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
-                    <span className="text-[18px] font-black text-emerald-400">{cheaper.price} zł</span>
-                    {cheaper.original_price && <span className="text-[13px] text-white/30 line-through">{cheaper.original_price} zł</span>}
-                  </div>
-                )}
-              </button>
+                <a href={`https://www.google.com/search?tbm=shop&q=${encodeURIComponent(cheaper.search_query || cheaper.name)}`} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="flex items-center justify-center gap-1.5 mt-3 pt-3 text-[12px] font-bold text-emerald-400 active:scale-95 transition-all" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+                  💰 Sprawdź cenę →
+                </a>
+              </div>
             )}
 
             {/* Karta Lepszy skład */}
             {better && (
-              <button onClick={() => setSelectedAlt(selectedAlt === "better" ? null : "better")} className={`w-full text-left rounded-[20px] p-5 transition-all ${selectedAlt === "better" ? "ring-2 ring-purple-400/50" : ""}`} style={{ background: "rgba(139,92,246,0.06)", border: "1px solid rgba(139,92,246,0.15)" }}>
+              <div onClick={() => setSelectedAlt(selectedAlt === "better" ? null : "better")} className={`rounded-[20px] p-5 transition-all cursor-pointer ${selectedAlt === "better" ? "ring-2 ring-purple-400/50" : ""}`} style={{ background: "rgba(139,92,246,0.06)", border: "1px solid rgba(139,92,246,0.15)" }}>
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-[11px] font-bold text-purple-400 uppercase tracking-widest">⭐ Lepszy skład</span>
                   <div className="flex items-center gap-1.5">
@@ -229,7 +241,10 @@ export default function ResultTabs({ result, scanType = "food", isCosmetics: isC
                     ))}
                   </div>
                 )}
-              </button>
+                <a href={`https://www.google.com/search?tbm=shop&q=${encodeURIComponent(better.search_query || better.name)}`} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="flex items-center justify-center gap-1.5 mt-3 pt-3 text-[12px] font-bold text-purple-400 active:scale-95 transition-all" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+                  💰 Sprawdź cenę →
+                </a>
+              </div>
             )}
 
             {/* Porównanie składników (akordeon) */}
@@ -255,16 +270,10 @@ export default function ResultTabs({ result, scanType = "food", isCosmetics: isC
             )}
 
             {/* Tip */}
-            {tip && (
+            {tip && (cheaper || better) && (
               <div className="flex items-start gap-3 px-4 py-3 rounded-[16px] bg-white/[0.02] border border-white/[0.06]">
                 <span className="text-base mt-0.5">💡</span>
                 <p className="text-[12px] text-white/50 leading-relaxed">{tip}</p>
-              </div>
-            )}
-
-            {!cheaper && !better && (
-              <div className="velvet-card rounded-[20px] p-5 text-center">
-                <p className="text-[13px] text-white/30">Brak danych o alternatywach</p>
               </div>
             )}
 
@@ -272,7 +281,7 @@ export default function ResultTabs({ result, scanType = "food", isCosmetics: isC
             {selectedAlt && (cheaper || better) && (
               <div className="fixed bottom-20 left-0 right-0 z-50 px-4 max-w-md mx-auto">
                 <a
-                  href={`https://www.google.com/search?tbm=shop&q=${encodeURIComponent(selectedAlt === "cheaper" && cheaper ? (cheaper.search_query || `${cheaper.brand || ""} ${cheaper.name} kup`) : (better?.search_query || `${better?.brand || ""} ${better?.name || ""} kup`))}`}
+                  href={`https://www.google.com/search?tbm=shop&q=${encodeURIComponent(selectedAlt === "cheaper" && cheaper ? (cheaper.search_query || cheaper.name) : (better?.search_query || better?.name || ""))}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="block w-full py-4 rounded-2xl text-center font-bold text-white text-[15px] active:scale-[0.97] transition-all shadow-2xl"
@@ -285,9 +294,7 @@ export default function ResultTabs({ result, scanType = "food", isCosmetics: isC
                       : "0 8px 32px rgba(139,92,246,0.4)",
                   }}
                 >
-                  {selectedAlt === "cheaper" && cheaper
-                    ? `🛒 Kup zamiennik${cheaper.savings ? ` i zaoszczędź ${cheaper.savings} zł` : ""}`
-                    : `🛒 Kup lepszą opcję${better?.price ? ` za ${better.price} zł` : ""}`}
+                  🛒 Sprawdź cenę w sklepie
                 </a>
                 <p className="text-[10px] text-white/25 text-center mt-1.5">Przekierowanie do porównywarki cen</p>
               </div>
@@ -481,6 +488,7 @@ export default function ResultTabs({ result, scanType = "food", isCosmetics: isC
           const cheaper = alt?.cheaper || null;
           const better = alt?.better || null;
           const comparison = alt?.comparison || [];
+          const altVerdict = alt?.verdict || "";
           const tip = alt?.tip || suppResult.tip || "";
           return (
           <div className="space-y-3">
@@ -491,20 +499,34 @@ export default function ResultTabs({ result, scanType = "food", isCosmetics: isC
                   <span className="text-xl">💸</span>
                   <h3 className="text-[15px] font-black text-white">Ten sam skład w lepszej cenie.</h3>
                 </div>
-                <p className="text-[12px] text-white/50 leading-relaxed">80% suplementów to marketing. AI znalazł te same formy i dawki w lepszej cenie.</p>
+                <p className="text-[12px] text-white/50 leading-relaxed">80% suplementów to marketing. Sprawdź tańsze alternatywy.</p>
               </div>
               <div className="absolute top-0 right-0 w-32 h-32 rounded-full bg-blue-500/10 blur-[40px]" />
             </div>
 
+            {/* Good product card — when no alternatives needed */}
+            {!cheaper && !better && (
+              <div className="rounded-[20px] p-5" style={{ background: "rgba(34,197,94,0.06)", border: "1px solid rgba(34,197,94,0.15)" }}>
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-xl">✅</span>
+                  <h3 className="text-[14px] font-bold text-emerald-400">Dobry wybór!</h3>
+                </div>
+                <p className="text-[12px] text-white/50 leading-relaxed">{altVerdict || "Świetny wybór! Ten suplement ma dobry skład w odpowiednich dawkach. Nie znaleźliśmy lepszej opcji."}</p>
+                {tip && (
+                  <div className="flex items-start gap-2 mt-3 pt-3" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+                    <span className="text-sm">💡</span>
+                    <p className="text-[11px] text-white/40 leading-relaxed">{tip}</p>
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Karta Tańsza opcja */}
             {cheaper && (
-              <button onClick={() => setSelectedAlt(selectedAlt === "cheaper" ? null : "cheaper")} className={`w-full text-left rounded-[20px] p-5 transition-all ${selectedAlt === "cheaper" ? "ring-2 ring-emerald-400/50" : ""}`} style={{ background: "rgba(34,197,94,0.06)", border: "1px solid rgba(34,197,94,0.15)" }}>
+              <div onClick={() => setSelectedAlt(selectedAlt === "cheaper" ? null : "cheaper")} className={`rounded-[20px] p-5 transition-all cursor-pointer ${selectedAlt === "cheaper" ? "ring-2 ring-emerald-400/50" : ""}`} style={{ background: "rgba(34,197,94,0.06)", border: "1px solid rgba(34,197,94,0.15)" }}>
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-[11px] font-bold text-emerald-400 uppercase tracking-widest">🟢 Tańsza opcja</span>
-                  <div className="flex items-center gap-1.5">
-                    {cheaper.savings && <span className="text-[12px] font-black text-emerald-400 px-2 py-0.5 rounded-full bg-emerald-400/10">-{cheaper.savings} zł</span>}
-                    {selectedAlt === "cheaper" && <span className="text-emerald-400">✅</span>}
-                  </div>
+                  {selectedAlt === "cheaper" && <span className="text-emerald-400">✅</span>}
                 </div>
                 <div className="flex items-center gap-3">
                   {cheaper.score && (
@@ -517,18 +539,15 @@ export default function ResultTabs({ result, scanType = "food", isCosmetics: isC
                     <p className="text-[11px] text-white/40 mt-0.5">{cheaper.reason}</p>
                   </div>
                 </div>
-                {cheaper.price && (
-                  <div className="flex items-center gap-3 mt-3 pt-3" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
-                    <span className="text-[18px] font-black text-emerald-400">{cheaper.price} zł</span>
-                    {cheaper.original_price && <span className="text-[13px] text-white/30 line-through">{cheaper.original_price} zł</span>}
-                  </div>
-                )}
-              </button>
+                <a href={`https://www.google.com/search?tbm=shop&q=${encodeURIComponent(cheaper.search_query || cheaper.name)}`} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="flex items-center justify-center gap-1.5 mt-3 pt-3 text-[12px] font-bold text-emerald-400 active:scale-95 transition-all" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+                  💰 Sprawdź cenę →
+                </a>
+              </div>
             )}
 
             {/* Karta Lepszy skład */}
             {better && (
-              <button onClick={() => setSelectedAlt(selectedAlt === "better" ? null : "better")} className={`w-full text-left rounded-[20px] p-5 transition-all ${selectedAlt === "better" ? "ring-2 ring-blue-400/50" : ""}`} style={{ background: "rgba(59,130,246,0.06)", border: "1px solid rgba(59,130,246,0.15)" }}>
+              <div onClick={() => setSelectedAlt(selectedAlt === "better" ? null : "better")} className={`rounded-[20px] p-5 transition-all cursor-pointer ${selectedAlt === "better" ? "ring-2 ring-blue-400/50" : ""}`} style={{ background: "rgba(59,130,246,0.06)", border: "1px solid rgba(59,130,246,0.15)" }}>
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-[11px] font-bold text-blue-400 uppercase tracking-widest">⭐ Lepszy skład</span>
                   <div className="flex items-center gap-1.5">
@@ -554,7 +573,10 @@ export default function ResultTabs({ result, scanType = "food", isCosmetics: isC
                     ))}
                   </div>
                 )}
-              </button>
+                <a href={`https://www.google.com/search?tbm=shop&q=${encodeURIComponent(better.search_query || better.name)}`} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="flex items-center justify-center gap-1.5 mt-3 pt-3 text-[12px] font-bold text-blue-400 active:scale-95 transition-all" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+                  💰 Sprawdź cenę →
+                </a>
+              </div>
             )}
 
             {/* Porównanie składników (akordeon) */}
@@ -580,16 +602,10 @@ export default function ResultTabs({ result, scanType = "food", isCosmetics: isC
             )}
 
             {/* Tip */}
-            {tip && (
+            {tip && (cheaper || better) && (
               <div className="flex items-start gap-3 px-4 py-3 rounded-[16px] bg-white/[0.02] border border-white/[0.06]">
                 <span className="text-base mt-0.5">💡</span>
                 <p className="text-[12px] text-white/50 leading-relaxed">{tip}</p>
-              </div>
-            )}
-
-            {!cheaper && !better && (
-              <div className="velvet-card rounded-[20px] p-5 text-center">
-                <p className="text-[13px] text-white/30">Brak danych o alternatywach</p>
               </div>
             )}
 
@@ -597,7 +613,7 @@ export default function ResultTabs({ result, scanType = "food", isCosmetics: isC
             {selectedAlt && (cheaper || better) && (
               <div className="fixed bottom-20 left-0 right-0 z-50 px-4 max-w-md mx-auto">
                 <a
-                  href={`https://www.google.com/search?tbm=shop&q=${encodeURIComponent(selectedAlt === "cheaper" && cheaper ? (cheaper.search_query || `${cheaper.brand || ""} ${cheaper.name} kup`) : (better?.search_query || `${better?.brand || ""} ${better?.name || ""} kup`))}`}
+                  href={`https://www.google.com/search?tbm=shop&q=${encodeURIComponent(selectedAlt === "cheaper" && cheaper ? (cheaper.search_query || cheaper.name) : (better?.search_query || better?.name || ""))}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="block w-full py-4 rounded-2xl text-center font-bold text-white text-[15px] active:scale-[0.97] transition-all shadow-2xl"
@@ -610,9 +626,7 @@ export default function ResultTabs({ result, scanType = "food", isCosmetics: isC
                       : "0 8px 32px rgba(59,130,246,0.4)",
                   }}
                 >
-                  {selectedAlt === "cheaper" && cheaper
-                    ? `🛒 Kup zamiennik${cheaper.savings ? ` i zaoszczędź ${cheaper.savings} zł` : ""}`
-                    : `🛒 Kup lepszą opcję${better?.price ? ` za ${better.price} zł` : ""}`}
+                  🛒 Sprawdź cenę w sklepie
                 </a>
                 <p className="text-[10px] text-white/25 text-center mt-1.5">Przekierowanie do porównywarki cen</p>
               </div>

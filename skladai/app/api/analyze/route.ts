@@ -273,30 +273,26 @@ Odpowiedz WYŁĄCZNIE JSON (bez markdown):
   "fun_comparisons": ["Ciekawostka o składzie"],
   "alternatives": {
     "cheaper": {
-      "name": "CeraVe Krem nawilżający",
+      "name": "CeraVe Krem nawilżający 50ml",
       "brand": "CeraVe",
       "score": 7,
-      "price": 39,
-      "original_price": 149,
-      "savings": 110,
-      "reason": "Ceramidy + kwas hialuronowy. Skład zbliżony, cena 4x niższa.",
+      "reason": "Ceramidy + kwas hialuronowy. Skład zbliżony.",
       "key_ingredients_match": ["Kwas hialuronowy", "Gliceryna"],
-      "search_query": "CeraVe Krem nawilżający 50ml kup"
+      "search_query": "CeraVe Krem nawilżający 50ml"
     },
     "better": {
-      "name": "The Ordinary Niacynamid 10%",
+      "name": "The Ordinary Niacynamid 10% + Zinc 1% 30ml",
       "brand": "The Ordinary",
       "score": 9,
-      "price": 45,
-      "price_note": "Podobna cena",
       "reason": "Wyższe stężenia składników aktywnych. Bez perfum.",
       "advantages": ["10% niacynamid vs śladowe", "Brak perfum"],
-      "search_query": "The Ordinary Niacynamid 10% + Zinc 1% kup"
+      "search_query": "The Ordinary Niacynamid 10% + Zinc 1% 30ml"
     },
     "comparison": [
       {"ingredient": "Kwas hialuronowy", "yours": "Nisko w składzie", "alternative": "2% ✅"},
       {"ingredient": "Perfumy", "yours": "Obecne ⚠️", "alternative": "Brak ✅"}
     ],
+    "verdict": "Znaleźliśmy tańszą i lepszą opcję z podobnym składem.",
     "tip": "Drogerie często mają promocje 2+1 na CeraVe i The Ordinary."
   },
   "compatibility": {
@@ -313,7 +309,16 @@ SCORING (1-10):
 
 PERSONALIZACJA: Jeśli jest profil skóry — oceniaj pod kątem TEGO profilu i w verdict odnoś się do niego.
 KOMPATYBILNOŚĆ: Retinol+AHA/BHA → nie łącz wieczorem, Wit.C+Niacynamid → można łączyć (mit obalony).
-PAO: null jeśli nie widzisz symbolu słoiczka z miesiącami na zdjęciu.`
+PAO: null jeśli nie widzisz symbolu słoiczka z miesiącami na zdjęciu.
+ALTERNATIVES — KRYTYCZNE ZASADY:
+- NIGDY nie podawaj cen (price, original_price, savings) — nie masz dostępu do aktualnych danych cenowych
+- Podawaj PEŁNĄ nazwę produktu z marką, wariantem i gramaturą (np. "CeraVe Krem nawilżający 50ml")
+- search_query: pełna nazwa produktu do wyszukania w sklepie
+- Jeśli produkt jest DOBRY (8+/10): cheaper=null, better=null, verdict="Świetny wybór! [dlaczego]"
+- Jeśli produkt PRZECIĘTNY (5-7): podaj alternatywy ALE TYLKO jeśli jesteś PEWIEN że istnieją. Możesz podać jedną (druga null)
+- Jeśli produkt SŁABY (1-4): podaj obie alternatywy
+- NIGDY nie wymyślaj produktów. Polecaj TYLKO znane, popularne marki (CeraVe, The Ordinary, La Roche-Posay, Bioderma, Cerave, Neutrogena)
+- Bądź życzliwym doradcą — dobry produkt POCHWAL, słaby POMÓŻ znaleźć lepszy`
 
 
 const MEAL_ANALYSIS = `Analizujesz ZDJĘCIE DANIA (nie etykiety!). Rozpoznaj co jest na talerzu i oszacuj wartości.
@@ -1020,9 +1025,10 @@ ODPOWIEDZ WYŁĄCZNIE JSON (bez markdown):
   "who_avoid": ["Osoby z chorobą X", "Kobiety w ciąży (powyżej dawki Y)"],
   "fun_comparisons": ["Ciekawostka 1", "Ciekawostka 2"],
   "alternatives": {
-    "cheaper": {"name": "Tańszy zamiennik", "brand": "Marka", "score": 7, "price": 25, "original_price": 60, "savings": 35, "reason": "Te same formy składników, niższa cena", "key_ingredients_match": ["Magnez (cytrynian)", "Witamina B6"], "search_query": "Marka Tańszy zamiennik kup"},
-    "better": {"name": "Lepsza opcja", "brand": "Marka", "score": 9, "price": 35, "price_note": "Podobna cena", "reason": "Lepsze formy składników, wyższe dawki", "advantages": ["Chelat zamiast tlenku", "Wyższa dawka"], "search_query": "Marka Lepsza opcja kup"},
+    "cheaper": {"name": "Now Foods Magnez Cytrynian 250mg 120 kapsułek", "brand": "Now Foods", "score": 7, "reason": "Te same formy składników, popularna marka.", "key_ingredients_match": ["Magnez (cytrynian)", "Witamina B6"], "search_query": "Now Foods Magnez Cytrynian 250mg 120 kapsułek"},
+    "better": {"name": "Naturell Magnez Chelat + B6 P5P 60 tabletek", "brand": "Naturell", "score": 9, "reason": "Chelat — najlepsza przyswajalność. B6 w formie P5P.", "advantages": ["Chelat magnezu", "400mg dawka", "P5P forma B6"], "search_query": "Naturell Magnez Chelat + B6 P5P 60 tabletek"},
     "comparison": [{"ingredient": "Magnez", "yours": "Tlenek (4% przyswajalność)", "alternative": "Cytrynian (40%) ✅"}],
+    "verdict": "Znaleźliśmy lepsze opcje z bardziej przyswajalnymi formami.",
     "tip": "Porada zakupowa"
   }
 }
@@ -1042,6 +1048,14 @@ ZASADY:
 - Bądź rzetelny — nie chwal jeśli produkt jest przesycony marketingiem
 - Odpowiadaj PO POLSKU
 - ALTERNATIVES: porównuj FORMY PRZYSWAJALNE i mg/dawkę (cytrynian > tlenek, chelat > siarczan). NIE polecaj tańszego z gorszymi formami.
+- NIGDY nie podawaj cen (price, original_price, savings) — nie masz dostępu do aktualnych danych cenowych
+- Podawaj PEŁNĄ nazwę produktu z marką, wariantem i gramaturą (np. "OstroVit 100% Creatine Monohydrate 500g")
+- search_query: pełna nazwa produktu do wyszukania w sklepie
+- Jeśli produkt DOBRY (8+/10): cheaper=null, better=null, verdict="Świetny wybór! [dlaczego]"
+- Jeśli produkt PRZECIĘTNY (5-7): podaj alternatywy ALE TYLKO jeśli jesteś PEWIEN że istnieją
+- Jeśli produkt SŁABY (1-4): podaj obie alternatywy
+- NIGDY nie wymyślaj produktów. Polecaj TYLKO znane marki (OstroVit, Now Foods, Naturell, Swanson, Doctor's Best, Olimp)
+- Bądź życzliwym doradcą — dobry produkt POCHWAL
 - ZASADA #0: NAZWA i MARKA muszą pochodzić z tekstu OCR/zdjęcia. NIGDY nie wymyślaj.`;
 
       // Run OCR for supplement label
