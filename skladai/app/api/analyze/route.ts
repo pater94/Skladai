@@ -1120,8 +1120,9 @@ ZASADY:
       });
     }
 
-    // Sonnet for labels (Google Vision does the OCR heavy lifting) — 5x cheaper, 2x faster
-    const result1 = await callClaude(apiKey, analysisPrompt, userContent, isCosmetics ? 7168 : 5120, 30000);
+    // Sonnet for labels (Google Vision does the OCR heavy lifting)
+    // Cosmetics needs more time — complex INCI analysis with many fields
+    const result1 = await callClaude(apiKey, analysisPrompt, userContent, isCosmetics ? 7168 : 5120, isCosmetics ? 45000 : 30000);
 
     if (result1.error) {
       if (result1.status === 429) return NextResponse.json({ error: "Zbyt wiele zapytań. Poczekaj chwilę." }, { status: 429 });
