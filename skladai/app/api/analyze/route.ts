@@ -874,12 +874,12 @@ Odpowiedz WYŁĄCZNIE poprawnym JSON (bez markdown, bez komentarzy):
       source: { type: "base64" as const, media_type: mediaType, data: base64Data },
     };
 
-    // === MEAL MODE: Single step ===
+    // === MEAL MODE: Single step (Opus — complex visual recognition) ===
     if (mode === "meal") {
       const res = await callClaude(apiKey, MEAL_ANALYSIS, [
         imageContent,
         { type: "text", text: "Rozpoznaj co jest na talerzu i oszacuj wartości odżywcze. Odpowiedz JSON." },
-      ], 4096, 35000);
+      ], 4096, 45000, "claude-opus-4-20250514");
 
       if (res.error) {
         return NextResponse.json({ error: `Błąd analizy (${res.status}).` }, { status: res.status! });
@@ -896,12 +896,12 @@ Odpowiedz WYŁĄCZNIE poprawnym JSON (bez markdown, bez komentarzy):
       }
     }
 
-    // === FRIDGE SCAN MODE ===
+    // === FRIDGE SCAN MODE (Opus — must recognize many products in one photo) ===
     if (mode === "fridge_scan") {
       const res = await callClaude(apiKey, FRIDGE_SCAN_PROMPT, [
         imageContent,
         { type: "text", text: "Przeanalizuj zawartość tej lodówki. Rozpoznaj produkty, oceń każdy 1-10, daj średnią. Odpowiedz JSON." },
-      ], 4096, 35000);
+      ], 4096, 45000, "claude-opus-4-20250514");
 
       if (res.error) return NextResponse.json({ error: `Błąd analizy (${res.status}).` }, { status: res.status! });
       try {
@@ -926,7 +926,7 @@ Odpowiedz WYŁĄCZNIE poprawnym JSON (bez markdown, bez komentarzy):
       const res = await callClaude(apiKey, CHECKFORM_PROMPT, [
         imageContent,
         { type: "text", text: `Przeanalizuj sylwetkę na zdjęciu.${profileHint}\nOdpowiedz JSON.` },
-      ], 4096, 35000);
+      ], 4096, 45000, "claude-opus-4-20250514");
 
       if (res.error) {
         return NextResponse.json({ error: `Błąd analizy (${res.status}).` }, { status: res.status! });
