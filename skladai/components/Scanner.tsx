@@ -32,6 +32,9 @@ export default function Scanner({ onScan, isLoading, mode = "food", loadingMessa
 
   const isCosmetics = mode === "cosmetics";
   const isForma = mode === "forma";
+  const isSuplement = mode === "suplement";
+  const isMealMode = mode === "meal";
+  const isDark = isCosmetics || isForma || isSuplement || isMealMode;
   const showSecondPhotoOption = (mode === "food" || mode === "cosmetics") && !isLoading;
 
   const handleFile = useCallback(
@@ -107,11 +110,10 @@ export default function Scanner({ onScan, isLoading, mode = "food", loadingMessa
     e.target.value = "";
   };
 
-  const isMeal = mode === "meal";
-
   const labels: Record<string, { main: string; gallery: string; loading: string }> = {
     food: { main: "Zrób zdjęcie etykiety", gallery: "Wybierz z galerii", loading: "Analizuję skład..." },
     cosmetics: { main: "Zrób zdjęcie składu", gallery: "Wybierz z galerii", loading: "Analizuję skład..." },
+    suplement: { main: "Zrób zdjęcie etykiety", gallery: "Wybierz z galerii", loading: "Analizuję suplement..." },
     meal: { main: "Zrób zdjęcie dania", gallery: "Wybierz z galerii", loading: "Rozpoznaję danie..." },
     forma: { main: "Zrób CheckForm", gallery: "Wybierz z galerii", loading: "Analizuję formę..." },
     text_search: { main: "Zrób zdjęcie etykiety", gallery: "Wybierz z galerii", loading: "Analizuję..." },
@@ -119,25 +121,29 @@ export default function Scanner({ onScan, isLoading, mode = "food", loadingMessa
   const l = labels[mode] || labels.food;
 
   if (isLoading) {
+    const spinnerOuter = isCosmetics ? "border-t-fuchsia-500" : isSuplement ? "border-t-blue-500" : isMealMode ? "border-t-orange-500" : isForma ? "border-t-[#F97316]" : "border-t-[#2D5A16]";
+    const spinnerInner = isCosmetics ? "border-b-purple-400" : isSuplement ? "border-b-blue-400" : isMealMode ? "border-b-amber-400" : isForma ? "border-b-[#EF4444]" : "border-b-[#84CC16]";
+    const progressBar = isCosmetics ? "from-fuchsia-500 via-purple-500 to-violet-500" : isSuplement ? "from-blue-500 via-blue-400 to-blue-500" : isMealMode ? "from-orange-500 via-amber-500 to-orange-500" : isForma ? "from-[#F97316] via-[#EF4444] to-[#F97316]" : "from-[#2D5A16] via-[#84CC16] to-[#2D5A16]";
+    const emoji = isSuplement ? "💊" : isMealMode ? "🍽️" : isForma ? "💪" : "🔬";
     return (
-      <div className={`rounded-[24px] p-8 anim-fade-scale ${isCosmetics || isForma ? "velvet-card" : "card-elevated"}`}>
+      <div className={`rounded-[24px] p-8 anim-fade-scale ${isDark ? "velvet-card" : "card-elevated"}`}>
         <div className="flex flex-col items-center justify-center gap-6">
           <div className="relative w-28 h-28">
-            <div className={`absolute inset-0 rounded-full border-[3px] ${isCosmetics || isForma ? "border-white/5" : "border-gray-100"}`} />
-            <div className={`absolute inset-0 rounded-full border-[3px] border-transparent ${isCosmetics ? "border-t-fuchsia-500" : isMeal ? "border-t-orange-500" : isForma ? "border-t-[#F97316]" : "border-t-[#2D5A16]"}`} style={{ animation: "spinSlow 1s linear infinite" }} />
-            <div className={`absolute inset-2 rounded-full border-[2px] border-transparent ${isCosmetics ? "border-b-purple-400" : isMeal ? "border-b-amber-400" : isForma ? "border-b-[#EF4444]" : "border-b-[#84CC16]"}`} style={{ animation: "spinSlow 1.5s linear infinite reverse" }} />
+            <div className={`absolute inset-0 rounded-full border-[3px] ${isDark ? "border-white/5" : "border-gray-100"}`} />
+            <div className={`absolute inset-0 rounded-full border-[3px] border-transparent ${spinnerOuter}`} style={{ animation: "spinSlow 1s linear infinite" }} />
+            <div className={`absolute inset-2 rounded-full border-[2px] border-transparent ${spinnerInner}`} style={{ animation: "spinSlow 1.5s linear infinite reverse" }} />
             <span className="absolute inset-0 flex items-center justify-center text-5xl anim-float">
-              {isMeal ? "🍽️" : isForma ? "💪" : "🔬"}
+              {emoji}
             </span>
           </div>
           <div className="text-center">
-            <p className={`text-lg font-bold ${isCosmetics || isForma ? "text-white" : "text-[#1A3A0A]"}`}>
+            <p className={`text-lg font-bold ${isDark ? "text-white" : "text-[#1A3A0A]"}`}>
               {loadingMessage || l.loading}
             </p>
-            <p className={`text-[13px] mt-1 font-medium ${isCosmetics || isForma ? "text-white/40" : "text-gray-400"}`}>To potrwa kilka sekund</p>
+            <p className={`text-[13px] mt-1 font-medium ${isDark ? "text-white/40" : "text-gray-400"}`}>To potrwa kilka sekund</p>
           </div>
-          <div className={`w-full h-1.5 rounded-full overflow-hidden ${isCosmetics || isForma ? "bg-white/5" : "bg-gray-100"}`}>
-            <div className={`h-full rounded-full bg-gradient-to-r ${isCosmetics ? "from-fuchsia-500 via-purple-500 to-violet-500" : isMeal ? "from-orange-500 via-amber-500 to-orange-500" : isForma ? "from-[#F97316] via-[#EF4444] to-[#F97316]" : "from-[#2D5A16] via-[#84CC16] to-[#2D5A16]"}`} style={{ animation: "shimmer 1.5s infinite", backgroundSize: "200% 100%" }} />
+          <div className={`w-full h-1.5 rounded-full overflow-hidden ${isDark ? "bg-white/5" : "bg-gray-100"}`}>
+            <div className={`h-full rounded-full bg-gradient-to-r ${progressBar}`} style={{ animation: "shimmer 1.5s infinite", backgroundSize: "200% 100%" }} />
           </div>
         </div>
       </div>
@@ -266,7 +272,7 @@ export default function Scanner({ onScan, isLoading, mode = "food", loadingMessa
       })()}
 
       {/* Secondary buttons — food: row with fridge + gallery, others: just gallery */}
-      {!isCosmetics && !isMeal && !isForma && onFridgeScan ? (
+      {!isCosmetics && !isMealMode && !isForma && onFridgeScan ? (
         <div className="flex gap-2.5">
           <button
             type="button"

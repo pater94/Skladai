@@ -319,15 +319,15 @@ export default function WynikiPage() {
     mainCalories = Math.round(textSearchResult.total?.calories || 0);
   }
 
-  const bgClass = isForma ? "bg-[#111111]" : isMeal ? "bg-[#1A1207]" : isCosmetics ? "bg-[#0D0B0E]" : "bg-[#F5F2EB]";
-  const heroClass = isForma ? "bg-gradient-to-b from-[#1a1a2e] to-[#111111]" : isMeal ? "meal-hero" : isCosmetics ? "velvet-hero" : "matcha-hero";
+  const bgClass = isForma ? "bg-[#111111]" : isMeal ? "bg-[#1A1207]" : isCosmetics ? "bg-[#0D0B0E]" : isSuplement ? "bg-[#0A0D14]" : "bg-[#F5F2EB]";
+  const heroClass = isForma ? "bg-gradient-to-b from-[#1a1a2e] to-[#111111]" : isMeal ? "meal-hero" : isCosmetics ? "velvet-hero" : isSuplement ? "bg-gradient-to-b from-[#0f1a2e] to-[#0A0D14]" : "matcha-hero";
 
   return (
     <div className={`min-h-[100dvh] ${bgClass}`}>
       {/* Header */}
       <div className={`relative overflow-hidden ${heroClass}`}>
         {isDark ? (
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[400px] h-[400px] rounded-full bg-purple-500/5 blur-[80px]" />
+          <div className={`absolute top-0 left-1/2 -translate-x-1/2 w-[400px] h-[400px] rounded-full blur-[80px] ${isSuplement ? "bg-blue-500/5" : isMeal ? "bg-amber-500/5" : "bg-purple-500/5"}`} />
         ) : (
           <>
             <div className="absolute -top-24 -right-24 w-72 h-72 rounded-full bg-white/10 blur-3xl" />

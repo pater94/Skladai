@@ -280,7 +280,8 @@ Odpowiedz WYŁĄCZNIE JSON (bez markdown):
       "original_price": 149,
       "savings": 110,
       "reason": "Ceramidy + kwas hialuronowy. Skład zbliżony, cena 4x niższa.",
-      "key_ingredients_match": ["Kwas hialuronowy", "Gliceryna"]
+      "key_ingredients_match": ["Kwas hialuronowy", "Gliceryna"],
+      "search_query": "CeraVe Krem nawilżający 50ml kup"
     },
     "better": {
       "name": "The Ordinary Niacynamid 10%",
@@ -289,7 +290,8 @@ Odpowiedz WYŁĄCZNIE JSON (bez markdown):
       "price": 45,
       "price_note": "Podobna cena",
       "reason": "Wyższe stężenia składników aktywnych. Bez perfum.",
-      "advantages": ["10% niacynamid vs śladowe", "Brak perfum"]
+      "advantages": ["10% niacynamid vs śladowe", "Brak perfum"],
+      "search_query": "The Ordinary Niacynamid 10% + Zinc 1% kup"
     },
     "comparison": [
       {"ingredient": "Kwas hialuronowy", "yours": "Nisko w składzie", "alternative": "2% ✅"},
@@ -1018,8 +1020,8 @@ ODPOWIEDZ WYŁĄCZNIE JSON (bez markdown):
   "who_avoid": ["Osoby z chorobą X", "Kobiety w ciąży (powyżej dawki Y)"],
   "fun_comparisons": ["Ciekawostka 1", "Ciekawostka 2"],
   "alternatives": {
-    "cheaper": {"name": "Tańszy zamiennik", "brand": "Marka", "score": 7, "price": 25, "original_price": 60, "savings": 35, "reason": "Te same formy składników, niższa cena", "key_ingredients_match": ["Magnez (cytrynian)", "Witamina B6"]},
-    "better": {"name": "Lepsza opcja", "brand": "Marka", "score": 9, "price": 35, "price_note": "Podobna cena", "reason": "Lepsze formy składników, wyższe dawki", "advantages": ["Chelat zamiast tlenku", "Wyższa dawka"]},
+    "cheaper": {"name": "Tańszy zamiennik", "brand": "Marka", "score": 7, "price": 25, "original_price": 60, "savings": 35, "reason": "Te same formy składników, niższa cena", "key_ingredients_match": ["Magnez (cytrynian)", "Witamina B6"], "search_query": "Marka Tańszy zamiennik kup"},
+    "better": {"name": "Lepsza opcja", "brand": "Marka", "score": 9, "price": 35, "price_note": "Podobna cena", "reason": "Lepsze formy składników, wyższe dawki", "advantages": ["Chelat zamiast tlenku", "Wyższa dawka"], "search_query": "Marka Lepsza opcja kup"},
     "comparison": [{"ingredient": "Magnez", "yours": "Tlenek (4% przyswajalność)", "alternative": "Cytrynian (40%) ✅"}],
     "tip": "Porada zakupowa"
   }

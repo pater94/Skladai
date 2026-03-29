@@ -272,7 +272,7 @@ export default function ResultTabs({ result, scanType = "food", isCosmetics: isC
             {selectedAlt && (cheaper || better) && (
               <div className="fixed bottom-20 left-0 right-0 z-50 px-4 max-w-md mx-auto">
                 <a
-                  href={`https://www.google.com/search?tbm=shop&q=${encodeURIComponent(selectedAlt === "cheaper" && cheaper ? cheaper.name : better?.name || "")}`}
+                  href={`https://www.google.com/search?tbm=shop&q=${encodeURIComponent(selectedAlt === "cheaper" && cheaper ? (cheaper.search_query || `${cheaper.brand || ""} ${cheaper.name} kup`) : (better?.search_query || `${better?.brand || ""} ${better?.name || ""} kup`))}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="block w-full py-4 rounded-2xl text-center font-bold text-white text-[15px] active:scale-[0.97] transition-all shadow-2xl"
@@ -597,7 +597,7 @@ export default function ResultTabs({ result, scanType = "food", isCosmetics: isC
             {selectedAlt && (cheaper || better) && (
               <div className="fixed bottom-20 left-0 right-0 z-50 px-4 max-w-md mx-auto">
                 <a
-                  href={`https://www.google.com/search?tbm=shop&q=${encodeURIComponent(selectedAlt === "cheaper" && cheaper ? cheaper.name : better?.name || "")}`}
+                  href={`https://www.google.com/search?tbm=shop&q=${encodeURIComponent(selectedAlt === "cheaper" && cheaper ? (cheaper.search_query || `${cheaper.brand || ""} ${cheaper.name} kup`) : (better?.search_query || `${better?.brand || ""} ${better?.name || ""} kup`))}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="block w-full py-4 rounded-2xl text-center font-bold text-white text-[15px] active:scale-[0.97] transition-all shadow-2xl"
