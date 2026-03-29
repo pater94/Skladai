@@ -503,7 +503,7 @@ export default function Home() {
                 e.target.value = "";
                 try {
                   const { compressImage } = await import("@/lib/compress");
-                  const maxDim = mode === "cosmetics" ? 1200 : 2000;
+                  const maxDim = (mode === "cosmetics" || mode === "suplement") ? 1200 : 2000;
                   const compressed = await compressImage(fileClone, maxDim);
                   // handleScan will check lock again internally and also reset it in finally
                   scanLockRef.current = false; // release so handleScan can re-acquire properly
@@ -520,7 +520,7 @@ export default function Home() {
                 e.target.value = "";
                 try {
                   const { compressImage } = await import("@/lib/compress");
-                  const maxDim = mode === "cosmetics" ? 1200 : 2000;
+                  const maxDim = (mode === "cosmetics" || mode === "suplement") ? 1200 : 2000;
                   const compressed = await compressImage(fileClone, maxDim);
                   scanLockRef.current = false;
                   handleScan(compressed);

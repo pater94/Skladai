@@ -41,7 +41,7 @@ export default function Scanner({ onScan, isLoading, mode = "food", loadingMessa
     async (file: File) => {
       if (!file.type.startsWith("image/")) return;
       try {
-        const maxDim = mode === "cosmetics" ? 1200 : 2000;
+        const maxDim = (mode === "cosmetics" || mode === "suplement") ? 1200 : 2000;
         const compressed = await compressImage(file, maxDim);
 
         if (awaitingSecond) {

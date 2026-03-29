@@ -1080,7 +1080,7 @@ ZASADY:
         });
       }
 
-      const res = await callClaude(apiKey, supplementAnalysisPrompt, supplUserContent, 5120, 30000);
+      const res = await callClaude(apiKey, supplementAnalysisPrompt, supplUserContent, 5120, 45000);
       if (res.error) return NextResponse.json({ error: `Błąd analizy (${res.status}).` }, { status: res.status! });
       try {
         const result = parseJsonResponse(res.text);
