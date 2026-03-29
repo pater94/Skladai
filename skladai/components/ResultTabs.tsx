@@ -41,6 +41,8 @@ function normalizeWarning(w: CosmeticWarning | string): CosmeticWarning {
 
 export default function ResultTabs({ result, scanType = "food", isCosmetics: isCosProp, onIngredientClick }: Props) {
   const [active, setActive] = useState<TabId>("ingredients");
+  const [selectedAlt, setSelectedAlt] = useState<"cheaper" | "better" | null>(null);
+  const [showComparison, setShowComparison] = useState(false);
   const isCosmetics = isCosProp ?? scanType === "cosmetics";
   const isSuplement = scanType === "suplement" || result.type === "suplement";
   const tabs = isSuplement ? supplementTabs : isCosmetics ? cosmeticsTabs : foodTabs;
@@ -146,102 +148,126 @@ export default function ResultTabs({ result, scanType = "food", isCosmetics: isC
         )}
 
         {/* ══ TAB: ALTERNATYWY (cosmetics) ══ */}
-        {active === "alternatives" && isCosmetics && cosResult && (
+        {active === "alternatives" && isCosmetics && cosResult && (() => {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const alt = (cosResult as any).alternatives || cosResult.price_comparison;
+          const cheaper = alt?.cheaper || (alt?.similar_products?.[0] ? { name: alt.similar_products[0].name, reason: alt.similar_products[0].why_similar, price: null, original_price: null, savings: null, score: null } : null);
+          const better = alt?.better || (alt?.better_option ? { name: alt.better_option.name, reason: alt.better_option.why_better, price: null, score: null, advantages: [] } : null);
+          const comparison = alt?.comparison || [];
+          const tip = alt?.tip || alt?.savings_tip || "";
+          return (
           <div className="space-y-3">
-            {/* Product info header */}
-            <div className="velvet-card rounded-[20px] p-4">
-              <p className="text-[11px] font-bold text-white/30 uppercase tracking-widest mb-2">Produkt</p>
-              <div className="space-y-1.5">
-                {cosResult.brand && (
-                  <div className="flex justify-between">
-                    <span className="text-[12px] text-white/40">Marka</span>
-                    <span className="text-[12px] font-semibold text-white/70">{cosResult.brand}</span>
+            {/* Hook emocjonalny */}
+            <div className="rounded-[20px] p-5 relative overflow-hidden" style={{ background: "linear-gradient(135deg, rgba(139,92,246,0.15), rgba(192,132,252,0.08))", border: "1px solid rgba(139,92,246,0.2)" }}>
+              <div className="relative z-10">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-xl">💰</span>
+                  <h3 className="text-[15px] font-black text-white">Nie przepłacaj za logo.</h3>
+                </div>
+                <p className="text-[12px] text-white/50 leading-relaxed">Kosmetyki mają gigantyczne marże. AI znalazł lepsze opcje w ułamku ceny.</p>
+              </div>
+              <div className="absolute top-0 right-0 w-32 h-32 rounded-full bg-purple-500/10 blur-[40px]" />
+            </div>
+
+            {/* Karta Tańsza opcja */}
+            {cheaper && (
+              <button onClick={() => setSelectedAlt(selectedAlt === "cheaper" ? null : "cheaper")} className={`w-full text-left rounded-[20px] p-5 transition-all ${selectedAlt === "cheaper" ? "ring-2 ring-emerald-400/50" : ""}`} style={{ background: "rgba(34,197,94,0.06)", border: "1px solid rgba(34,197,94,0.15)" }}>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-[11px] font-bold text-emerald-400 uppercase tracking-widest">🟢 Tańsza opcja</span>
+                  <div className="flex items-center gap-1.5">
+                    {cheaper.savings && <span className="text-[12px] font-black text-emerald-400 px-2 py-0.5 rounded-full bg-emerald-400/10">-{cheaper.savings} zł</span>}
+                    {selectedAlt === "cheaper" && <span className="text-emerald-400">✅</span>}
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  {cheaper.score && (
+                    <div className="w-10 h-10 rounded-full flex items-center justify-center text-[12px] font-bold text-white shrink-0" style={{ background: cheaper.score >= 7 ? "#22c55e" : cheaper.score >= 4 ? "#f59e0b" : "#ef4444" }}>
+                      {cheaper.score}
+                    </div>
+                  )}
+                  <div className="flex-1">
+                    <p className="text-[14px] font-bold text-white/90">{cheaper.name}</p>
+                    <p className="text-[11px] text-white/40 mt-0.5">{cheaper.reason}</p>
+                  </div>
+                </div>
+                {cheaper.price && (
+                  <div className="flex items-center gap-3 mt-3 pt-3" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+                    <span className="text-[18px] font-black text-emerald-400">{cheaper.price} zł</span>
+                    {cheaper.original_price && <span className="text-[13px] text-white/30 line-through">{cheaper.original_price} zł</span>}
                   </div>
                 )}
-                {cosResult.volume && (
-                  <div className="flex justify-between">
-                    <span className="text-[12px] text-white/40">Pojemność</span>
-                    <span className="text-[12px] font-semibold text-white/70">{cosResult.volume}</span>
+              </button>
+            )}
+
+            {/* Karta Lepszy skład */}
+            {better && (
+              <button onClick={() => setSelectedAlt(selectedAlt === "better" ? null : "better")} className={`w-full text-left rounded-[20px] p-5 transition-all ${selectedAlt === "better" ? "ring-2 ring-purple-400/50" : ""}`} style={{ background: "rgba(139,92,246,0.06)", border: "1px solid rgba(139,92,246,0.15)" }}>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-[11px] font-bold text-purple-400 uppercase tracking-widest">⭐ Lepszy skład</span>
+                  <div className="flex items-center gap-1.5">
+                    {better.score && <span className="text-[12px] font-bold text-purple-400">{better.score}/10</span>}
+                    {selectedAlt === "better" && <span className="text-purple-400">✅</span>}
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  {better.score && (
+                    <div className="w-10 h-10 rounded-full flex items-center justify-center text-[12px] font-bold text-white shrink-0" style={{ background: better.score >= 7 ? "#22c55e" : better.score >= 4 ? "#f59e0b" : "#ef4444" }}>
+                      {better.score}
+                    </div>
+                  )}
+                  <div className="flex-1">
+                    <p className="text-[14px] font-bold text-white/90">{better.name}</p>
+                    <p className="text-[11px] text-white/40 mt-0.5">{better.reason}</p>
+                  </div>
+                </div>
+                {better.advantages && better.advantages.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 mt-3 pt-3" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+                    {better.advantages.map((a: string, i: number) => (
+                      <span key={i} className="text-[10px] font-bold px-2 py-1 rounded-full bg-purple-500/10 text-purple-300">{a}</span>
+                    ))}
                   </div>
                 )}
-                {cosResult.category && (
-                  <div className="flex justify-between">
-                    <span className="text-[12px] text-white/40">Typ</span>
-                    <span className="text-[12px] font-semibold text-white/70">{cosResult.category}</span>
-                  </div>
-                )}
-                {cosResult.pao_months && (
-                  <div className="flex justify-between">
-                    <span className="text-[12px] text-white/40">Trwałość po otwarciu</span>
-                    <span className="text-[12px] font-semibold text-white/70">{cosResult.pao_months} miesięcy</span>
-                  </div>
-                )}
-                {cosResult.is_vegan !== null && cosResult.is_vegan !== undefined && (
-                  <div className="flex justify-between">
-                    <span className="text-[12px] text-white/40">Wegański</span>
-                    <span className="text-[14px]">{cosResult.is_vegan === true ? "🌱 Tak" : cosResult.is_vegan === false ? "🥩 Nie" : "❓ Brak danych"}</span>
+              </button>
+            )}
+
+            {/* Porównanie składników (akordeon) */}
+            {comparison.length > 0 && (
+              <div className="velvet-card rounded-[20px] overflow-hidden">
+                <button onClick={() => setShowComparison(!showComparison)} className="w-full flex items-center justify-between p-4 text-left">
+                  <span className="text-[12px] font-bold text-white/60">🔬 Porównanie składników</span>
+                  <span className="text-white/30 text-[12px]">{showComparison ? "▲" : "▼"}</span>
+                </button>
+                {showComparison && (
+                  <div className="px-4 pb-4 space-y-1.5">
+                    {comparison.map((c: { ingredient: string; yours: string; alternative: string }, i: number) => (
+                      <div key={i} className="flex items-center gap-2 text-[11px] py-1.5" style={{ borderTop: i > 0 ? "1px solid rgba(255,255,255,0.04)" : "none" }}>
+                        <span className="text-white/50 flex-1">{c.ingredient}</span>
+                        <span className="text-red-400/70 flex-1 text-right">{c.yours}</span>
+                        <span className="text-white/20">→</span>
+                        <span className="text-emerald-400/70 flex-1">{c.alternative}</span>
+                      </div>
+                    ))}
                   </div>
                 )}
               </div>
-            </div>
+            )}
 
-            {cosResult.price_comparison ? (
-              <>
-                {/* Verdict pill */}
-                {cosResult.price_comparison.verdict && (
-                  <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-amber-500/10 border border-amber-500/20 w-fit">
-                    <span className="text-[13px]">💰</span>
-                    <span className="text-[12px] font-bold text-amber-400">{cosResult.price_comparison.verdict}</span>
-                  </div>
-                )}
+            {/* Tip */}
+            {tip && (
+              <div className="flex items-start gap-3 px-4 py-3 rounded-[16px] bg-white/[0.02] border border-white/[0.06]">
+                <span className="text-base mt-0.5">💡</span>
+                <p className="text-[12px] text-white/50 leading-relaxed">{tip}</p>
+              </div>
+            )}
 
-                {/* Tańsza opcja */}
-                {cosResult.price_comparison.similar_products && cosResult.price_comparison.similar_products.length > 0 && (
-                  <div className="velvet-card rounded-[20px] p-5">
-                    <p className="text-[11px] font-bold text-emerald-400/70 uppercase tracking-widest mb-3">🟢 Tańsza opcja</p>
-                    <div className="space-y-2">
-                      {cosResult.price_comparison.similar_products.map((p, i) => (
-                        <div key={i} className="flex items-center justify-between bg-white/[0.03] rounded-[14px] p-3.5">
-                          <div className="flex-1 mr-3">
-                            <p className="text-[13px] font-semibold text-white/80">{p.name}</p>
-                            <p className="text-[11px] text-white/35 mt-0.5">{p.why_similar}</p>
-                          </div>
-                          <span className="text-[13px] font-bold text-emerald-400 shrink-0">{p.price_range}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Lepsza opcja */}
-                {cosResult.price_comparison.better_option && (
-                  <div className="velvet-card rounded-[20px] p-5 border border-purple-500/20">
-                    <p className="text-[11px] font-bold text-purple-400/70 uppercase tracking-widest mb-3">⭐ Lepsza opcja</p>
-                    <div className="flex items-center justify-between bg-white/[0.03] rounded-[14px] p-3.5">
-                      <div className="flex-1 mr-3">
-                        <p className="text-[13px] font-semibold text-white/80">{cosResult.price_comparison.better_option.name}</p>
-                        <p className="text-[11px] text-white/35 mt-0.5">{cosResult.price_comparison.better_option.why_better}</p>
-                      </div>
-                      <span className="text-[13px] font-bold text-purple-400 shrink-0">{cosResult.price_comparison.better_option.price_range}</span>
-                    </div>
-                  </div>
-                )}
-
-                {/* Savings tip */}
-                {cosResult.price_comparison.savings_tip && (
-                  <div className="flex items-start gap-3 px-4 py-3 rounded-[16px] bg-white/[0.02] border border-white/[0.06]">
-                    <span className="text-base mt-0.5">💡</span>
-                    <p className="text-[12px] text-white/50 leading-relaxed">{cosResult.price_comparison.savings_tip}</p>
-                  </div>
-                )}
-              </>
-            ) : (
+            {!cheaper && !better && (
               <div className="velvet-card rounded-[20px] p-5 text-center">
                 <p className="text-[13px] text-white/30">Brak danych o alternatywach</p>
               </div>
             )}
           </div>
-        )}
+          );
+        })()}
 
         {/* ══ TAB: OCENA (cosmetics) ══ */}
         {active === "review" && isCosmetics && cosResult && (

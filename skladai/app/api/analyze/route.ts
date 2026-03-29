@@ -251,17 +251,31 @@ Odpowiedz WYŁĄCZNIE JSON (bez markdown):
   "caution_count": 1,
   "harmful_count": 1,
   "fun_comparisons": ["Ciekawostka o składzie"],
-  "price_comparison": {
-    "verdict": "Przepłacasz / Dobra cena / Okazja",
-    "similar_products": [
-      {"name": "Tańsza opcja", "price_range": "15-25 zł", "why_similar": "Te same aktywne składniki"}
-    ],
-    "better_option": {
-      "name": "Lepsza opcja w podobnej cenie",
-      "price_range": "20-30 zł",
-      "why_better": "Czystszy skład, bez SLS, z ceramidami"
+  "alternatives": {
+    "cheaper": {
+      "name": "CeraVe Krem nawilżający",
+      "brand": "CeraVe",
+      "score": 7,
+      "price": 39,
+      "original_price": 149,
+      "savings": 110,
+      "reason": "Ceramidy + kwas hialuronowy. Skład zbliżony, cena 4x niższa.",
+      "key_ingredients_match": ["Kwas hialuronowy", "Gliceryna"]
     },
-    "savings_tip": "Krótka rada"
+    "better": {
+      "name": "The Ordinary Niacynamid 10%",
+      "brand": "The Ordinary",
+      "score": 9,
+      "price": 45,
+      "price_note": "Podobna cena",
+      "reason": "Wyższe stężenia składników aktywnych. Bez perfum.",
+      "advantages": ["10% niacynamid vs śladowe", "Brak perfum"]
+    },
+    "comparison": [
+      {"ingredient": "Kwas hialuronowy", "yours": "Nisko w składzie", "alternative": "2% ✅"},
+      {"ingredient": "Perfumy", "yours": "Obecne ⚠️", "alternative": "Brak ✅"}
+    ],
+    "tip": "Drogerie często mają promocje 2+1 na CeraVe i The Ordinary."
   },
   "compatibility": {
     "works_well_with": ["Kwas hialuronowy", "Ceramidy"],
@@ -281,6 +295,13 @@ PAO: null jeśli nie widzisz symbolu słoiczka z miesiącami na zdjęciu.`
 
 
 const MEAL_ANALYSIS = `Analizujesz ZDJĘCIE DANIA (nie etykiety!). Rozpoznaj co jest na talerzu i oszacuj wartości.
+
+ZASADA KRYTYCZNA — NAZWY DAŃ:
+- ZAWSZE używaj POLSKICH nazw potraw: kotlet schabowy, pierogi, naleśniki, bigos, żurek, gołąbki, placki ziemniaczane, kopytka
+- NIE nazywaj polskich dań egzotycznymi nazwami! Panierowany kurczak to "kotlet z piersi kurczaka", NIE "Kaiserschmarrn"
+- Jeśli danie wygląda jak typowe polskie — użyj polskiej nazwy
+- Egzotyczne nazwy TYLKO gdy danie jest EWIDENTNIE zagraniczne (sushi, pad thai, burrito)
+- W razie wątpliwości → polska nazwa
 
 Odpowiedz WYŁĄCZNIE JSON:
 {

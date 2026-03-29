@@ -576,6 +576,22 @@ export default function Home() {
 
         {/* (duplicate Scanner removed — already rendered above) */}
 
+        {/* ══ Value prop banner (kosmetyk/suplement only) ══ */}
+        {(isCosmetics || isSuplement) && !isLoading && (
+          <div className="mt-4 rounded-2xl p-4 anim-fade-up-2" style={{
+            background: isCosmetics ? "rgba(192,132,252,0.04)" : "rgba(59,130,246,0.04)",
+            border: `1px solid ${isCosmetics ? "rgba(192,132,252,0.10)" : "rgba(59,130,246,0.10)"}`,
+          }}>
+            <div className="flex items-start gap-3">
+              <span className="text-lg mt-0.5">💰</span>
+              <div>
+                <p className="text-[13px] font-bold text-white/80">{isCosmetics ? "Nie przepłacaj za logo." : "Ten sam skład, ułamek ceny."}</p>
+                <p className="text-[11px] text-white/40 mt-0.5 leading-relaxed">{isCosmetics ? "AI porówna skład i znajdzie tańsze produkty o tym samym działaniu." : "80% suplementów to marketing. AI znajdzie te same formy i dawki w lepszej cenie."}</p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* ══ Quick link (suplement only) ══ */}
         {isSuplement && !isLoading && (
           <div className="mt-5 anim-fade-up-3">

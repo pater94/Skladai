@@ -12,20 +12,20 @@ interface AcademyArticle {
 }
 
 const TOPICS = [
-  { id: 1,  emoji: "🧴", title: "Jaka kolejność nakładania kosmetyków?",     readMin: 3 },
-  { id: 2,  emoji: "⚗️", title: "Czym się różni AHA od BHA?",                readMin: 4 },
-  { id: 3,  emoji: "✨", title: "Czy retinol naprawdę działa?",               readMin: 5 },
-  { id: 4,  emoji: "🔍", title: "Jak czytać listę składników?",              readMin: 3 },
-  { id: 5,  emoji: "🫧", title: "Co znaczy 'non-comedogenic'?",              readMin: 2 },
-  { id: 6,  emoji: "☀️", title: "Jak dobrać SPF?",                           readMin: 3 },
-  { id: 7,  emoji: "🧪", title: "Czy parabeny są naprawdę szkodliwe?",       readMin: 4 },
-  { id: 8,  emoji: "💧", title: "Pielęgnacja skóry tłustej",                 readMin: 4 },
-  { id: 9,  emoji: "🌙", title: "Niacynamid — co potrafi ten składnik?",      readMin: 4 },
-  { id: 10, emoji: "🌿", title: "Naturalne vs syntetyczne — co jest lepsze?", readMin: 5 },
-  { id: 11, emoji: "💆", title: "Jak pielęgnować skórę wrażliwą?",            readMin: 4 },
-  { id: 12, emoji: "🚫", title: "Czego NIE łączyć w pielęgnacji?",           readMin: 4 },
-  { id: 13, emoji: "🤰", title: "Składniki zakazane w ciąży",                readMin: 5 },
-  { id: 14, emoji: "🧪", title: "PEGi, SLSy i silikony — unikać czy nie?",  readMin: 5 },
+  { id: 1,  emoji: "🧴", title: "Jaka kolejność nakładania kosmetyków?",     readMin: 3, lead: "Od najlżejszego do najcięższego" },
+  { id: 2,  emoji: "⚗️", title: "Czym się różni AHA od BHA?",                readMin: 4, lead: "Złuszczanie chemiczne — który wybrać?" },
+  { id: 3,  emoji: "✨", title: "Czy retinol naprawdę działa?",               readMin: 5, lead: "Złoty standard anti-aging pod lupą" },
+  { id: 4,  emoji: "🔍", title: "Jak czytać listę składników?",              readMin: 3, lead: "Kolejność na liście = ilość w produkcie" },
+  { id: 5,  emoji: "🫧", title: "Co znaczy 'non-comedogenic'?",              readMin: 2, lead: "Czy naprawdę nie zatyka porów?" },
+  { id: 6,  emoji: "☀️", title: "Jak dobrać SPF?",                           readMin: 3, lead: "SPF 30 vs 50 — czy różnica ma sens?" },
+  { id: 7,  emoji: "🧪", title: "Czy parabeny są naprawdę szkodliwe?",       readMin: 4, lead: "Mit vs nauka — co mówią badania?" },
+  { id: 8,  emoji: "💧", title: "Pielęgnacja skóry tłustej",                 readMin: 4, lead: "Nawilżanie to nie wróg — to sojusznik" },
+  { id: 9,  emoji: "🌙", title: "Niacynamid — co potrafi ten składnik?",      readMin: 4, lead: "Versatile hero w każdej rutynie" },
+  { id: 10, emoji: "🌿", title: "Naturalne vs syntetyczne — co jest lepsze?", readMin: 5, lead: "Naturalny ≠ bezpieczny, syntetyczny ≠ zły" },
+  { id: 11, emoji: "💆", title: "Jak pielęgnować skórę wrażliwą?",            readMin: 4, lead: "Mniej kroków, więcej spokoju" },
+  { id: 12, emoji: "🚫", title: "Czego NIE łączyć w pielęgnacji?",           readMin: 4, lead: "Retinol + AHA = przepis na podrażnienie" },
+  { id: 13, emoji: "🤰", title: "Składniki zakazane w ciąży",                readMin: 5, lead: "Co odstawić gdy planujesz dziecko?" },
+  { id: 14, emoji: "🧪", title: "PEGi, SLSy i silikony — unikać czy nie?",  readMin: 5, lead: "Straszaki z etykiet pod lupą nauki" },
 ];
 
 const DAILY_TIPS = [
@@ -144,7 +144,7 @@ export default function BeautyAcademyPage() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-white/90 text-sm font-semibold leading-snug">{topic.title}</p>
-                  <p className="text-purple-400/40 text-[10px] font-medium mt-0.5">~{topic.readMin} min czytania</p>
+                  <p className="text-purple-400/40 text-[10px] font-medium mt-0.5">{topic.lead} · ~{topic.readMin} min</p>
                 </div>
                 <span className="text-white/15 text-sm shrink-0">{"›"}</span>
               </button>

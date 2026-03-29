@@ -82,6 +82,30 @@ export interface PriceComparison {
   savings_tip?: string;
 }
 
+export interface Alternatives {
+  cheaper?: {
+    name: string;
+    brand: string;
+    score: number;
+    price: number;
+    original_price: number;
+    savings: number;
+    reason: string;
+    key_ingredients_match: string[];
+  };
+  better?: {
+    name: string;
+    brand: string;
+    score: number;
+    price: number;
+    price_note: string;
+    reason: string;
+    advantages: string[];
+  };
+  comparison: { ingredient: string; yours: string; alternative: string }[];
+  tip: string;
+}
+
 export interface Compatibility {
   works_well_with: string[];
   avoid_with: string[];
@@ -113,6 +137,7 @@ export interface CosmeticsAnalysisResult {
   harmful_count: number;
   fun_comparisons: string[];
   price_comparison?: PriceComparison;
+  alternatives?: Alternatives;
   compatibility?: Compatibility;
   pao_months?: number | null;
 }
