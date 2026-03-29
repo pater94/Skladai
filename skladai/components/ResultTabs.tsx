@@ -13,9 +13,9 @@ const foodTabs = [
 ] as const;
 
 const cosmeticsTabs = [
-  { id: "ingredients", icon: "🧪", label: "Skład" },
   { id: "alternatives", icon: "💰", label: "Alternatywy" },
   { id: "review", icon: "⚕️", label: "Ocena" },
+  { id: "ingredients", icon: "🧪", label: "Skład" },
 ] as const;
 
 const supplementTabs = [
@@ -40,7 +40,8 @@ function normalizeWarning(w: CosmeticWarning | string): CosmeticWarning {
 }
 
 export default function ResultTabs({ result, scanType = "food", isCosmetics: isCosProp, onIngredientClick }: Props) {
-  const [active, setActive] = useState<TabId>("ingredients");
+  const isInitCosmetics = isCosProp ?? scanType === "cosmetics";
+  const [active, setActive] = useState<TabId>(isInitCosmetics ? "alternatives" : "ingredients");
   const [selectedAlt, setSelectedAlt] = useState<"cheaper" | "better" | null>(null);
   const [showComparison, setShowComparison] = useState(false);
   const isCosmetics = isCosProp ?? scanType === "cosmetics";
