@@ -574,12 +574,25 @@ async function callClaude(
 }
 
 function parseJsonResponse(text: string) {
-  // Remove markdown code fences if present
+  // Step 1: Remove markdown code fences if present
   let cleaned = text.trim();
   if (cleaned.startsWith("```")) {
     cleaned = cleaned.replace(/^```(?:json)?\s*/g, "").replace(/\s*```$/g, "");
   }
-  return JSON.parse(cleaned);
+
+  // Step 2: Try direct parse first
+  try {
+    return JSON.parse(cleaned);
+  } catch {
+    // Step 3: Extract JSON between first { and last }
+    const firstBrace = cleaned.indexOf("{");
+    const lastBrace = cleaned.lastIndexOf("}");
+    if (firstBrace !== -1 && lastBrace > firstBrace) {
+      const jsonStr = cleaned.slice(firstBrace, lastBrace + 1);
+      return JSON.parse(jsonStr);
+    }
+    throw new Error("No valid JSON found in response");
+  }
 }
 
 // Validate nutrition values make sense
@@ -866,7 +879,7 @@ Odpowiedz WYŁĄCZNIE poprawnym JSON (bez markdown, bez komentarzy):
       const res = await callClaude(apiKey, MEAL_ANALYSIS, [
         imageContent,
         { type: "text", text: "Rozpoznaj co jest na talerzu i oszacuj wartości odżywcze. Odpowiedz JSON." },
-      ], 4096, 45000, "claude-opus-4-20250514");
+      ], 4096, 35000);
 
       if (res.error) {
         return NextResponse.json({ error: `Błąd analizy (${res.status}).` }, { status: res.status! });
@@ -888,7 +901,7 @@ Odpowiedz WYŁĄCZNIE poprawnym JSON (bez markdown, bez komentarzy):
       const res = await callClaude(apiKey, FRIDGE_SCAN_PROMPT, [
         imageContent,
         { type: "text", text: "Przeanalizuj zawartość tej lodówki. Rozpoznaj produkty, oceń każdy 1-10, daj średnią. Odpowiedz JSON." },
-      ], 4096, 45000, "claude-opus-4-20250514");
+      ], 4096, 35000);
 
       if (res.error) return NextResponse.json({ error: `Błąd analizy (${res.status}).` }, { status: res.status! });
       try {
@@ -913,7 +926,7 @@ Odpowiedz WYŁĄCZNIE poprawnym JSON (bez markdown, bez komentarzy):
       const res = await callClaude(apiKey, CHECKFORM_PROMPT, [
         imageContent,
         { type: "text", text: `Przeanalizuj sylwetkę na zdjęciu.${profileHint}\nOdpowiedz JSON.` },
-      ], 4096, 45000, "claude-opus-4-20250514");
+      ], 4096, 35000);
 
       if (res.error) {
         return NextResponse.json({ error: `Błąd analizy (${res.status}).` }, { status: res.status! });
@@ -1055,7 +1068,7 @@ ZASADY:
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-              requests: [{ image: { content: b64 }, features: [{ type: "TEXT_DETECTION", maxResults: 1 }, { type: "DOCUMENT_TEXT_DETECTION", maxResults: 1 }] }],
+              requests: [{ image: { content: b64 }, features: [{ type: "DOCUMENT_TEXT_DETECTION", maxResults: 1 }] }],
             }),
           }
         );

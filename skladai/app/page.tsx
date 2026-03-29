@@ -184,9 +184,14 @@ export default function Home() {
         } catch (err) {
           const msg = err instanceof Error ? err.message : "";
           if (msg.includes("504") || msg.includes("413") || msg.includes("server_504")) {
+            // Timeout/too large — retry with smaller image
             setLoadingMessage("Ponawianie z mniejszym zdjęciem...");
             const smallerImage = await compressImageSmall(base64);
             data = await doScan(smallerImage);
+          } else if (msg.includes("500") || msg.includes("422") || msg.includes("error_500") || msg.includes("error_422")) {
+            // Server/parsing error — silent retry once with same image
+            setLoadingMessage("Ponawianie analizy...");
+            data = await doScan(base64);
           } else {
             throw err;
           }
