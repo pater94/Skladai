@@ -334,7 +334,7 @@ export default function WynikiPage() {
             <div className="absolute top-10 -left-20 w-56 h-56 rounded-full bg-white/5 blur-2xl" />
           </>
         )}
-        <div className="max-w-md mx-auto px-5 pt-6 pb-28 relative z-10">
+        <div className="max-w-md mx-auto px-5 pt-6 pb-28 relative z-10 flex items-center justify-between">
           <button
             onClick={() => router.push("/")}
             className={`flex items-center gap-2 text-[13px] font-semibold px-4 py-2 rounded-full active:scale-95 transition-all ${
@@ -342,6 +342,18 @@ export default function WynikiPage() {
             }`}
           >
             ← Powrót
+          </button>
+          <button
+            onClick={() => router.push(isForma ? "/forma" : "/")}
+            className={`flex items-center gap-2 text-[13px] font-semibold px-4 py-2 rounded-full active:scale-95 transition-all ${
+              isForma ? "text-blue-300/80 bg-blue-500/10 border border-blue-500/20"
+                : isSuplement ? "text-blue-300/80 bg-blue-500/10 border border-blue-500/20"
+                : isCosmetics ? "text-purple-300/80 bg-purple-500/10 border border-purple-500/20"
+                : isMeal ? "text-amber-300/80 bg-amber-500/10 border border-amber-500/20"
+                : "text-white/80 bg-white/10 backdrop-blur-sm border border-white/20"
+            }`}
+          >
+            📷 Skanuj kolejny
           </button>
         </div>
       </div>
@@ -433,20 +445,7 @@ export default function WynikiPage() {
           </div>
         )}
 
-        {/* ─── 4. "SKANUJ KOLEJNY" BUTTON ─── */}
-        <button
-          onClick={() => router.push(isForma ? "/forma" : "/")}
-          className={`w-full mt-4 py-4.5 text-white font-bold rounded-[18px] active:scale-[0.97] transition-all duration-200 text-[15px] shadow-xl ${
-            isForma ? "bg-gradient-to-r from-blue-500 via-blue-600 to-blue-700 shadow-blue-500/25"
-              : isMeal ? "bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 shadow-orange-500/25"
-              : isCosmetics ? "bg-gradient-to-r from-fuchsia-500 via-purple-500 to-violet-600 shadow-purple-500/25"
-              : "bg-[#1A3A0A] shadow-green-900/15"
-          }`}
-        >
-          {isForma ? "💪 Nowy CheckForm" : "📸 Skanuj kolejny produkt"}
-        </button>
-
-        {/* ─── 5. TABS (food + cosmetics, not meal/forma) ─── */}
+        {/* ─── 4. TABS (food + cosmetics, not meal/forma) ─── */}
         {/* Link to recipes after fridge scan — prominent position */}
         {result.type === "fridge" && (
           <Link
@@ -458,7 +457,7 @@ export default function WynikiPage() {
         )}
 
         {!isMeal && !isForma && (
-          <div className="mt-5 anim-fade-up-2">
+          <div className={`${isCosmetics || isSuplement ? "mt-2" : "mt-5"} anim-fade-up-2`}>
             <ResultTabs result={result} scanType={scanType} isCosmetics={isCosmetics} onIngredientClick={setSelectedIngredient} />
           </div>
         )}
