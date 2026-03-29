@@ -488,8 +488,8 @@ export default function ResultTabs({ result, scanType = "food", isCosmetics: isC
             <div className="rounded-[20px] p-5 relative overflow-hidden" style={{ background: "linear-gradient(135deg, rgba(59,130,246,0.15), rgba(96,165,250,0.08))", border: "1px solid rgba(59,130,246,0.2)" }}>
               <div className="relative z-10">
                 <div className="flex items-center gap-2 mb-2">
-                  <span className="text-xl">💰</span>
-                  <h3 className="text-[15px] font-black text-white">Ten sam skład, ułamek ceny.</h3>
+                  <span className="text-xl">💸</span>
+                  <h3 className="text-[15px] font-black text-white">Ten sam skład w lepszej cenie.</h3>
                 </div>
                 <p className="text-[12px] text-white/50 leading-relaxed">80% suplementów to marketing. AI znalazł te same formy i dawki w lepszej cenie.</p>
               </div>
