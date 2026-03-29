@@ -73,8 +73,10 @@ PROCEDURA:
    - Jeśli NIE WIDZISZ nazwy — napisz "NAZWA: niewidoczna", NIE wymyślaj
 2. MARKA — logo/producent. Jeśli nie widać — "niewidoczna", NIE zgaduj.
 3. POJEMNOŚĆ — "200 ml", "50 g"
-4. TYP — rozróżniaj DOKŁADNIE: żel pod prysznic / sól do kąpieli / szampon / odżywka / krem / serum / tonik / peeling / masło do ciała / mleczko / olejek / balsam / pasta do zębów / deodorant / inne
-   WAŻNE: Jeśli pierwszy składnik to Sodium Chloride + produkt ma granulki/kryształki → TYP: sól do kąpieli (NIE żel pod prysznic)
+4. TYP — rozróżniaj DOKŁADNIE: pasta do zębów / żel pod prysznic / sól do kąpieli / szampon / odżywka / krem / serum / tonik / peeling / masło do ciała / mleczko / olejek / balsam / deodorant / antyperspirant / mydło / płyn do kąpieli / inne
+   WAŻNE: Jeśli widzisz "Sodium Fluoride" lub "ppm F" → TYP: pasta do zębów (NIE żel pod prysznic!)
+   WAŻNE: Jeśli pierwszy składnik to Sodium Chloride + granulki/kryształki → TYP: sól do kąpieli (NIE żel)
+   WAŻNE: Jeśli widzisz "Aluminum Chlorohydrate" lub "antiperspirant" → TYP: antyperspirant/dezodorant
 5. LISTA SKŁADNIKÓW — sekcja po "Ingredients:", "INCI:", "Skład:" — lista po łacinie oddzielona przecinkami
    - PRZEPISUJ DOKŁADNIE każdy składnik
    - NIGDY nie dodawaj składników których nie widzisz
@@ -170,22 +172,40 @@ Jeśli produkt nie ma żadnych ryzyk → alerts: [], safe_nutrients z listy powy
 
 const COSMETICS_ANALYSIS = `Jesteś PROFESJONALNYM DERMATOLOGIEM i kosmetologiem. Otrzymujesz ODCZYTANY TEKST ze składu INCI + ZDJĘCIE do weryfikacji.
 
-====== ZASADY KRYTYCZNE — CZYTAJ NAJPIERW ======
+!!! ABSOLUTNIE KRYTYCZNE — PRZECZYTAJ 3 RAZY ZANIM ODPOWIESZ !!!
+
+ZASADA #0 — NIGDY NIE WYMYŚLAJ:
+Twoja odpowiedź MUSI bazować WYŁĄCZNIE na tekście OCR i/lub zdjęciu.
+- Jeśli OCR mówi "Colgate" → marka = "Colgate", NIE "Cien", NIE "Nivea", NIE cokolwiek innego
+- Jeśli OCR mówi "Pasta do zębów" lub "Pasta za zube" → typ = "pasta do zębów", NIE "żel pod prysznic"
+- Jeśli OCR mówi "Sodium Fluoride 1450 ppm" → to jest PASTA DO ZĘBÓW, nie żel
+- NIGDY nie zastępuj odczytanej marki inną marką
+- NIGDY nie zmieniaj typu produktu na inny niż wynika z tekstu/zdjęcia
+- Jeśli NIE WIDZISZ marki → wpisz "Nieznana marka" (NIE zgaduj!)
+- Jeśli NIE WIDZISZ nazwy → wpisz "Nieznany produkt" (NIE wymyślaj!)
+
+PRZYKŁADY FATALNYCH BŁĘDÓW (nigdy tego nie rób!):
+- ❌ OCR: "Colgate...Pasta do znt...Sodium Fluoride" → AI: "Żel pod prysznic Cien" (NIEDOPUSZCZALNE!)
+- ❌ OCR: "Palmolive...żel pod prysznic" → AI: "Szampon Dove" (NIEDOPUSZCZALNE!)
+- ✅ OCR: "Colgate...Pasta do znt...Sodium Fluoride" → AI: "Pasta do zębów Colgate"
+- ✅ OCR: "Palmolive...żel pod prysznic" → AI: "Żel pod prysznic Palmolive"
 
 1. NAZWA PRODUKTU — ZAWSZE po polsku:
-   - Użyj nazwy z odczytanego tekstu (już przetłumaczonej przez OCR krok)
+   - Użyj nazwy i marki Z ODCZYTANEGO TEKSTU OCR
    - Jeśli OCR podał nazwę obcojęzyczną — PRZETŁUMACZ na polski
    - ZŁE: "Gel douche Palmolive", "Sprchový gel"  DOBRE: "Żel pod prysznic Palmolive"
-   - Jeśli brak nazwy: "Nieznany [typ produktu]"
+   - Jeśli brak nazwy w OCR: "Nieznany [typ produktu]"
 
 2. NIGDY NIE WYMYŚLAJ SKŁADNIKÓW:
-   - Komentuj TYLKO składniki które są w ODCZYTANYM TEKŚCIE
+   - Komentuj TYLKO składniki które są w ODCZYTANYM TEKŚCIE OCR
    - Nie dodawaj składników "których na pewno tam są" bo kojarzysz markę
-   - Jeśli składnik nie jest na liście → nie istnieje dla Ciebie
+   - Jeśli składnik nie jest na liście OCR → nie istnieje dla Ciebie
 
-3. KLASYFIKACJA — bądź precyzyjny:
+3. KLASYFIKACJA — bądź precyzyjny (bazuj na OCR + składnikach):
+   - Sodium Fluoride + "ppm F" → PASTA DO ZĘBÓW (nie żel pod prysznic!)
    - Sodium Chloride jako PIERWSZY składnik + granulki/kryształy → "sól do kąpieli" (NIE żel)
-   - Sprawdź typ: żel pod prysznic / sól do kąpieli / szampon / odżywka / krem / serum / tonik / peeling / masło do ciała / balsam / pasta do zębów / deodorant
+   - Aluminum Chlorohydrate / "antiperspirant" / "dezodorant" → dezodorant/antyperspirant
+   - Sprawdź typ: pasta do zębów / żel pod prysznic / sól do kąpieli / szampon / odżywka / krem / serum / tonik / peeling / masło do ciała / balsam / deodorant / antyperspirant / mydło / płyn do kąpieli
 
 4. SILNE ALERGENY — ZAWSZE FLAGUJ (obniż ocenę o 1-2 + dodaj do warnings z level "alarm"):
    - Methylchloroisothiazolinone (MCI) — jeden z najsilniejszych alergenów kontaktowych
@@ -1131,7 +1151,7 @@ ZASADY:
       // We have good OCR text — send it along with the image
       userContent.push({
         type: "text",
-        text: `Google Vision OCR odczytał z etykiety następujący tekst:\n\n---\n${ocrText}\n---\n\nUżyj tego tekstu jako GŁÓWNE źródło danych (nazwa produktu, składniki, wartości odżywcze, alergeny). Zweryfikuj z obrazem powyżej. Jeśli OCR tekst zawiera wartości odżywcze — użyj DOKŁADNIE tych liczb, nie zgaduj. Przeanalizuj produkt i odpowiedz WYŁĄCZNIE poprawnym JSON.${skinProfileHint}`,
+        text: `Google Vision OCR odczytał z etykiety następujący tekst:\n\n---\n${ocrText}\n---\n\n!!! KRYTYCZNE: Nazwa produktu i marka MUSZĄ pochodzić z tekstu OCR powyżej. NIE wymyślaj nazwy ani marki. Jeśli OCR zawiera "Colgate" to marka to Colgate. Jeśli OCR zawiera "Sodium Fluoride 1450 ppm" to jest pasta do zębów. Użyj OCR jako JEDYNE źródło danych. Zweryfikuj z obrazem. Odpowiedz WYŁĄCZNIE poprawnym JSON.${skinProfileHint}`,
       });
     } else {
       // OCR failed or returned too little — fall back to image-only analysis
