@@ -19,9 +19,9 @@ const cosmeticsTabs = [
 ] as const;
 
 const supplementTabs = [
-  { id: "ingredients", icon: "💊", label: "Skład" },
   { id: "alternatives", icon: "💰", label: "Alternatywy" },
   { id: "review", icon: "⚖️", label: "Ocena" },
+  { id: "ingredients", icon: "💊", label: "Skład" },
 ] as const;
 
 type TabId = "ingredients" | "nutrition" | "alternatives" | "review" | "interactions";
@@ -41,7 +41,8 @@ function normalizeWarning(w: CosmeticWarning | string): CosmeticWarning {
 
 export default function ResultTabs({ result, scanType = "food", isCosmetics: isCosProp, onIngredientClick }: Props) {
   const isInitCosmetics = isCosProp ?? scanType === "cosmetics";
-  const [active, setActive] = useState<TabId>(isInitCosmetics ? "alternatives" : "ingredients");
+  const isInitSuplement = scanType === "suplement";
+  const [active, setActive] = useState<TabId>(isInitCosmetics || isInitSuplement ? "alternatives" : "ingredients");
   const [selectedAlt, setSelectedAlt] = useState<"cheaper" | "better" | null>(null);
   const [showComparison, setShowComparison] = useState(false);
   const isCosmetics = isCosProp ?? scanType === "cosmetics";
@@ -54,25 +55,25 @@ export default function ResultTabs({ result, scanType = "food", isCosmetics: isC
   return (
     <div>
       {/* Tab bar */}
-      <div className={`rounded-[18px] p-1.5 mb-5 ${isCosmetics || isSuplement ? "velvet-card" : "glass-card"}`}>
-        <div className="flex gap-1">
+      <div className={`rounded-[14px] p-1 mb-3 ${isCosmetics || isSuplement ? "velvet-card" : "glass-card"}`}>
+        <div className="flex gap-0.5">
           {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActive(tab.id as TabId)}
-              className={`flex-1 flex flex-col items-center gap-0.5 py-2.5 rounded-[14px] transition-all duration-300 ${
+              className={`flex-1 flex items-center justify-center gap-1 py-2 rounded-[10px] transition-all duration-300 ${
                 active === tab.id
                   ? isSuplement
-                    ? "text-white shadow-lg"
+                    ? "text-white shadow-md"
                     : isCosmetics
-                    ? "bg-gradient-to-r from-fuchsia-500 to-violet-600 text-white shadow-lg shadow-purple-500/20"
-                    : "bg-[#1A3A0A] text-white shadow-lg"
+                    ? "bg-gradient-to-r from-fuchsia-500 to-violet-600 text-white shadow-md shadow-purple-500/20"
+                    : "bg-[#1A3A0A] text-white shadow-md"
                   : isCosmetics || isSuplement ? "text-white/40" : "text-gray-400"
               }`}
               style={active === tab.id && isSuplement ? { background: "linear-gradient(135deg, #3b82f6, #1d4ed8)" } : {}}
             >
-              <span className="text-[14px]">{tab.icon}</span>
-              <span className="text-[10px] font-bold">{tab.label}</span>
+              <span className="text-[12px]">{tab.icon}</span>
+              <span className="text-[11px] font-bold">{tab.label}</span>
             </button>
           ))}
         </div>

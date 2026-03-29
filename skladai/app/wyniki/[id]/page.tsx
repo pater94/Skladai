@@ -337,23 +337,19 @@ export default function WynikiPage() {
         <div className="max-w-md mx-auto px-5 pt-6 pb-28 relative z-10 flex items-center justify-between">
           <button
             onClick={() => router.push("/")}
-            className={`flex items-center gap-2 text-[13px] font-semibold px-4 py-2 rounded-full active:scale-95 transition-all ${
-              isDark ? "text-white/70 bg-white/5 border border-white/10" : "text-white/80 bg-white/10 backdrop-blur-sm border border-white/20"
+            className={`text-[12px] font-semibold px-3.5 py-1.5 rounded-full active:scale-95 transition-all ${
+              isDark ? "text-white/60 bg-white/5 border border-white/[0.08]" : "text-white/70 bg-white/10 backdrop-blur-sm border border-white/15"
             }`}
           >
             ← Powrót
           </button>
           <button
             onClick={() => router.push(isForma ? "/forma" : "/")}
-            className={`flex items-center gap-2 text-[13px] font-semibold px-4 py-2 rounded-full active:scale-95 transition-all ${
-              isForma ? "text-blue-300/80 bg-blue-500/10 border border-blue-500/20"
-                : isSuplement ? "text-blue-300/80 bg-blue-500/10 border border-blue-500/20"
-                : isCosmetics ? "text-purple-300/80 bg-purple-500/10 border border-purple-500/20"
-                : isMeal ? "text-amber-300/80 bg-amber-500/10 border border-amber-500/20"
-                : "text-white/80 bg-white/10 backdrop-blur-sm border border-white/20"
+            className={`text-[12px] font-semibold px-3.5 py-1.5 rounded-full active:scale-95 transition-all ${
+              isDark ? "text-white/60 bg-white/5 border border-white/[0.08]" : "text-white/70 bg-white/10 backdrop-blur-sm border border-white/15"
             }`}
           >
-            📷 Skanuj kolejny
+            Skanuj kolejny
           </button>
         </div>
       </div>
@@ -362,40 +358,35 @@ export default function WynikiPage() {
       <div className="max-w-md mx-auto px-5 -mt-24 pb-10 relative z-20">
 
         {/* ─── 1. SCORE CARD ─── */}
-        <div className={`rounded-[24px] p-7 anim-fade-up ${isDark ? "velvet-card" : "glass-card"}`}>
-          <div className="flex items-center gap-5">
-            <ScoreRing score={result.score} size={105} />
+        <div className={`rounded-[20px] p-4 anim-fade-up ${isDark ? "velvet-card" : "glass-card"}`}>
+          <div className="flex items-center gap-3.5">
+            <ScoreRing score={result.score} size={68} />
             <div className="flex-1 min-w-0">
-              <h1 className={`text-[18px] font-bold leading-snug ${isDark ? "text-white" : "text-[#1A3A0A]"}`}>
+              <h1 className={`text-[16px] font-bold leading-snug ${isDark ? "text-white" : "text-[#1A3A0A]"}`}>
                 {result.name}
               </h1>
-              <p className={`text-[13px] mt-1 font-medium ${isDark ? "text-white/35" : "text-gray-400"}`}>{subtitle}</p>
-              <div className="mt-3 flex items-center gap-2 flex-wrap">
-                <span className="text-[11px] font-bold px-3.5 py-1.5 rounded-full" style={{ backgroundColor: bg, color }}>
+              <p className={`text-[12px] mt-0.5 font-medium ${isDark ? "text-white/35" : "text-gray-400"}`}>{subtitle}</p>
+              <div className="mt-2 flex items-center gap-1.5 flex-wrap">
+                <span className="text-[10px] font-bold px-3 py-1 rounded-full" style={{ backgroundColor: bg, color }}>
                   {result.verdict_short || label}
                 </span>
-                <span className={`text-[11px] font-bold px-3.5 py-1.5 rounded-full ${isDark ? "bg-white/5 text-white/40" : "bg-gray-100 text-gray-500"}`}>
-                  {isForma ? "💪 Forma" : isMeal ? "🍽️ Danie" : isTextSearch ? "🔍 Szukaj" : isCosmetics ? "✨ Kosmetyk" : "🛒 Żywność"}
+                <span className={`text-[10px] font-bold px-3 py-1 rounded-full ${isDark ? "bg-white/5 text-white/40" : "bg-gray-100 text-gray-500"}`}>
+                  {isForma ? "💪 Forma" : isMeal ? "🍽️ Danie" : isTextSearch ? "🔍 Szukaj" : isCosmetics ? "✨ Kosmetyk" : isSuplement ? "💊 Suplement" : "🛒 Żywność"}
                 </span>
-                {!isTextSearch && (
-                  <span className={`text-[9px] font-bold px-2.5 py-1 rounded-[6px] ${isDark ? "bg-purple-500/10 text-purple-300/60" : "bg-[#84CC16]/10 text-[#4A8C26]/60"}`}>
-                    🔬 AI Vision
-                  </span>
-                )}
               </div>
             </div>
           </div>
 
-          {/* Verdict */}
-          <div className={`mt-5 p-4 rounded-2xl ${isDark ? "bg-white/[0.03] border border-white/[0.06]" : "bg-[#F5F2EB]/60"}`}>
-            <p className={`text-[13px] leading-relaxed ${isDark ? "text-white/60" : "text-[#1A3A0A]/70"}`}>
+          {/* Verdict — compact, max 2 lines with expand */}
+          <div className={`mt-3 p-3 rounded-xl ${isDark ? "bg-white/[0.03] border border-white/[0.06]" : "bg-[#F5F2EB]/60"}`}>
+            <p className={`text-[12px] leading-relaxed ${isDark ? "text-white/55" : "text-[#1A3A0A]/65"} line-clamp-2`}>
               {result.verdict}
             </p>
           </div>
 
           {/* Calories on main card */}
           {mainCalories !== null && mainCalories > 0 && (
-            <p className={`mt-3 text-center text-[15px] font-semibold ${isDark ? "text-white/35" : "text-[#1A3A0A]/40"}`}>
+            <p className={`mt-2 text-center text-[13px] font-semibold ${isDark ? "text-white/30" : "text-[#1A3A0A]/35"}`}>
               ⚡ {mainCalories} kcal
             </p>
           )}
