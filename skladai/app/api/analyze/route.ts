@@ -1016,7 +1016,13 @@ ODPOWIEDZ WYŁĄCZNIE JSON (bez markdown):
   "interactions": ["Z lekiem X może...", "Nie łączyć z..."],
   "who_for": ["Osoby z niedoborem X", "Sportowcy"],
   "who_avoid": ["Osoby z chorobą X", "Kobiety w ciąży (powyżej dawki Y)"],
-  "fun_comparisons": ["Ciekawostka 1", "Ciekawostka 2"]
+  "fun_comparisons": ["Ciekawostka 1", "Ciekawostka 2"],
+  "alternatives": {
+    "cheaper": {"name": "Tańszy zamiennik", "brand": "Marka", "score": 7, "price": 25, "original_price": 60, "savings": 35, "reason": "Te same formy składników, niższa cena", "key_ingredients_match": ["Magnez (cytrynian)", "Witamina B6"]},
+    "better": {"name": "Lepsza opcja", "brand": "Marka", "score": 9, "price": 35, "price_note": "Podobna cena", "reason": "Lepsze formy składników, wyższe dawki", "advantages": ["Chelat zamiast tlenku", "Wyższa dawka"]},
+    "comparison": [{"ingredient": "Magnez", "yours": "Tlenek (4% przyswajalność)", "alternative": "Cytrynian (40%) ✅"}],
+    "tip": "Porada zakupowa"
+  }
 }
 
 KATEGORIE składników:
@@ -1032,7 +1038,9 @@ ZASADY:
 - dose_warning: jeśli jakaś dawka jest niebezpiecznie wysoka lub ryzykowna (np. wit. A >10000 IU)
 - interactions: TYLKO jeśli są realne interakcje lekowe lub medyczne (nie wymyślaj)
 - Bądź rzetelny — nie chwal jeśli produkt jest przesycony marketingiem
-- Odpowiadaj PO POLSKU`;
+- Odpowiadaj PO POLSKU
+- ALTERNATIVES: porównuj FORMY PRZYSWAJALNE i mg/dawkę (cytrynian > tlenek, chelat > siarczan). NIE polecaj tańszego z gorszymi formami.
+- ZASADA #0: NAZWA i MARKA muszą pochodzić z tekstu OCR/zdjęcia. NIGDY nie wymyślaj.`;
 
       // Run OCR for supplement label
       let supplOcrText = "";
