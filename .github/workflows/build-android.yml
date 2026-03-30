@@ -24,8 +24,21 @@ jobs:
         working-directory: skladai
         run: npm ci
 
-      - name: Build Release AAB
+      - name: Decode keystore
         working-directory: skladai/android
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+        run: |
+          echo "$KEYSTORE_BASE64" | base64 -d > app/release-keystore.jks
+          echo "Keystore decoded successfully"
+
+      - name: Build signed Release AAB
+        working-directory: skladai/android
+        env:
+          KEYSTORE_FILE: release-keystore.jks
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: |
           chmod +x ./gradlew
           ./gradlew bundleRelease
@@ -37,8 +50,13 @@ jobs:
           path: skladai/android/app/build/outputs/bundle/release/*.aab
           retention-days: 30
 
-      - name: Build APK (for testing)
+      - name: Build signed APK (for testing)
         working-directory: skladai/android
+        env:
+          KEYSTORE_FILE: release-keystore.jks
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: ./gradlew assembleRelease
 
       - name: Upload APK artifact
