@@ -5,6 +5,7 @@ import Link from "next/link";
 import { getProfile } from "@/lib/storage";
 import { UserProfile } from "@/lib/types";
 import VoiceLog, { VoiceMicButton } from "@/components/VoiceLog";
+import { isNative, takePhotoForMode } from "@/lib/native-camera";
 import {
   DRINK_TYPES, DrinkType, ConsumedDrink, BACSession,
   calculateBAC, timeToSober, timeToDrive, formatMinutes, bacColor,
@@ -318,7 +319,23 @@ export default function PromilePage() {
               {alcoholLoading ? "..." : "Szukaj"}
             </button>
           </div>
-          <button onClick={() => alcoholScanRef.current?.click()}
+          <button onClick={async () => {
+              if (isNative()) {
+                const base64 = await takePhotoForMode("food", "camera");
+                if (base64) {
+                  // Create synthetic event-like object for handleAlcoholScan
+                  const res = await fetch(base64);
+                  const blob = await res.blob();
+                  const file = new File([blob], "alcohol.jpg", { type: "image/jpeg" });
+                  const dt = new DataTransfer();
+                  dt.items.add(file);
+                  if (alcoholScanRef.current) {
+                    alcoholScanRef.current.files = dt.files;
+                    alcoholScanRef.current.dispatchEvent(new Event("change", { bubbles: true }));
+                  }
+                }
+              } else { alcoholScanRef.current?.click(); }
+            }}
             className="w-full mt-2 flex items-center justify-center gap-2 py-2.5 bg-white/[0.05] border border-white/[0.08] rounded-[12px] text-[12px] font-semibold text-white/50 active:scale-[0.97] transition-transform">
             📸 Zeskanuj etykietę alkoholu
           </button>

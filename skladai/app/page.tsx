@@ -19,6 +19,7 @@ import {
   getHistory,
 } from "@/lib/storage";
 import { compressImageSmall } from "@/lib/compress";
+import { isNative, takePhotoForMode } from "@/lib/native-camera";
 import type { ScanMode, ScanHistoryItem } from "@/lib/types";
 import Link from "next/link";
 import { Apple, UtensilsCrossed, Sparkles, Pill, Bell } from "lucide-react";
@@ -445,10 +446,21 @@ export default function Home() {
             <div className="flex flex-col items-center mb-5">
               <button
                 disabled={isLoading || isScanning}
-                onClick={() => {
+                onClick={async () => {
                   if (isLoading || isScanning) return;
-                  const inp = document.getElementById("main-camera-input") as HTMLInputElement;
-                  inp?.click();
+                  if (isNative()) {
+                    if (scanLockRef.current) return;
+                    scanLockRef.current = true;
+                    setIsScanning(true);
+                    try {
+                      const base64 = await takePhotoForMode(mode, "camera");
+                      if (base64) { scanLockRef.current = false; handleScan(base64); }
+                      else { setIsScanning(false); scanLockRef.current = false; }
+                    } catch { setIsScanning(false); scanLockRef.current = false; }
+                  } else {
+                    const inp = document.getElementById("main-camera-input") as HTMLInputElement;
+                    inp?.click();
+                  }
                 }}
                 className="relative w-[220px] h-[220px] rounded-[36px] flex flex-col items-center justify-center active:scale-[0.96] transition-transform"
                 style={{
@@ -532,7 +544,13 @@ export default function Home() {
                 {mode === "food" && (
                   <button
                     disabled={isLoading || isScanning}
-                    onClick={() => { if (!isLoading && !isScanning) fridgeInputRef.current?.click(); }}
+                    onClick={async () => {
+                      if (isLoading || isScanning) return;
+                      if (isNative()) {
+                        const base64 = await takePhotoForMode("food", "camera");
+                        if (base64) handleFridgeScan(base64);
+                      } else { fridgeInputRef.current?.click(); }
+                    }}
                     className="flex-[1.3] relative rounded-2xl py-3 px-3 text-center active:scale-[0.96] transition-all disabled:opacity-50"
                     style={{ background: `rgba(${accent.rgb},0.06)`, border: `1px solid rgba(${accent.rgb},0.12)` }}
                   >
@@ -543,7 +561,19 @@ export default function Home() {
                 )}
                 <button
                   disabled={isLoading || isScanning}
-                  onClick={() => { if (!isLoading && !isScanning) (document.getElementById("gallery-input") as HTMLInputElement)?.click(); }}
+                  onClick={async () => {
+                    if (isLoading || isScanning) return;
+                    if (isNative()) {
+                      if (scanLockRef.current) return;
+                      scanLockRef.current = true;
+                      setIsScanning(true);
+                      try {
+                        const base64 = await takePhotoForMode(mode, "gallery");
+                        if (base64) { scanLockRef.current = false; handleScan(base64); }
+                        else { setIsScanning(false); scanLockRef.current = false; }
+                      } catch { setIsScanning(false); scanLockRef.current = false; }
+                    } else { (document.getElementById("gallery-input") as HTMLInputElement)?.click(); }
+                  }}
                   className={`${mode === "food" ? "flex-[0.7]" : "flex-1"} rounded-2xl py-3 px-3 text-center active:scale-[0.96] transition-all disabled:opacity-50`}
                   style={{ background: `rgba(${accent.rgb},0.04)`, border: `1px solid rgba(${accent.rgb},0.08)` }}
                 >

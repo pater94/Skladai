@@ -22,6 +22,7 @@ import dynamic from "next/dynamic";
 
 const ProgressChart = dynamic(() => import("@/components/ProgressChart"), { ssr: false });
 import { addToHistory, checkFreeTierLimit, incrementScanCount, updateStreak } from "@/lib/storage";
+import { isNative, takePhotoForMode } from "@/lib/native-camera";
 import type { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
 
 // ──────────────────────────────────────────
@@ -1534,14 +1535,32 @@ function PhotosView({ goBack }: { goBack: () => void }) {
 
       <div className="flex gap-2 mb-4">
         <button
-          onClick={() => cameraRef.current?.click()}
+          onClick={async () => {
+            if (isNative()) {
+              const base64 = await takePhotoForMode("forma", "camera");
+              if (base64) {
+                const res = await fetch(base64);
+                const blob = await res.blob();
+                handleFile(new File([blob], "photo.jpg", { type: "image/jpeg" }));
+              }
+            } else { cameraRef.current?.click(); }
+          }}
           className="flex-1 py-3 rounded-xl text-sm font-semibold flex items-center justify-center gap-2"
           style={{ background: "linear-gradient(135deg, #F97316, #EF4444)", color: "#fff" }}
         >
           <Camera size={18} /> Zrób zdjęcie
         </button>
         <button
-          onClick={() => fileRef.current?.click()}
+          onClick={async () => {
+            if (isNative()) {
+              const base64 = await takePhotoForMode("forma", "gallery");
+              if (base64) {
+                const res = await fetch(base64);
+                const blob = await res.blob();
+                handleFile(new File([blob], "photo.jpg", { type: "image/jpeg" }));
+              }
+            } else { fileRef.current?.click(); }
+          }}
           className="flex-1 py-3 rounded-xl text-sm font-semibold"
           style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.7)" }}
         >

@@ -42,3 +42,17 @@ next-env.d.ts
 
 certificates
 .vercel
+
+# Capacitor native builds (large binaries)
+android/app/build/
+android/.gradle/
+android/build/
+android/capacitor-cordova-android-plugins/build/
+ios/App/build/
+ios/App/Pods/
+ios/App/DerivedData/
+*.xcworkspace/xcuserdata/
+*.xcodeproj/xcuserdata/
+
+# www placeholder (generated)
+/www/

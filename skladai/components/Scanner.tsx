@@ -2,6 +2,7 @@
 
 import { useRef, useState, useCallback, useEffect } from "react";
 import { compressImage } from "@/lib/compress";
+import { isNative, takePhotoForMode } from "@/lib/native-camera";
 import type { ScanMode } from "@/lib/types";
 
 interface ScannerProps {
@@ -110,6 +111,65 @@ export default function Scanner({ onScan, isLoading, mode = "food", loadingMessa
     e.target.value = "";
   };
 
+  // ── Native camera handlers (Capacitor) ──
+  const handleNativeCamera = useCallback(async () => {
+    if (!isNative()) return;
+    const base64 = await takePhotoForMode(mode, "camera");
+    if (!base64) return;
+
+    if (awaitingSecond && showSecondPhotoOption) {
+      setSecondPreview(base64);
+      setAwaitingSecond(false);
+    } else if (showSecondPhotoOption) {
+      setPreview(base64);
+      setSecondPreview(null);
+    } else {
+      setPreview(base64);
+      onScan(base64);
+    }
+  }, [mode, awaitingSecond, showSecondPhotoOption, onScan]);
+
+  const handleNativeGallery = useCallback(async () => {
+    if (!isNative()) return;
+    const base64 = await takePhotoForMode(mode, "gallery");
+    if (!base64) return;
+
+    if (awaitingSecond && showSecondPhotoOption) {
+      setSecondPreview(base64);
+      setAwaitingSecond(false);
+    } else if (showSecondPhotoOption) {
+      setPreview(base64);
+      setSecondPreview(null);
+    } else {
+      setPreview(base64);
+      onScan(base64);
+    }
+  }, [mode, awaitingSecond, showSecondPhotoOption, onScan]);
+
+  const handleNativeFridge = useCallback(async () => {
+    if (!isNative() || !onFridgeScan) return;
+    const base64 = await takePhotoForMode("food", "camera");
+    if (!base64) return;
+    setPreview(base64);
+    onFridgeScan(base64);
+  }, [onFridgeScan]);
+
+  // Unified click handlers — use native if available, otherwise fall back to file input
+  const openCamera = useCallback(() => {
+    if (isNative()) { handleNativeCamera(); }
+    else { cameraInputRef.current?.click(); }
+  }, [handleNativeCamera]);
+
+  const openGallery = useCallback(() => {
+    if (isNative()) { handleNativeGallery(); }
+    else { galleryInputRef.current?.click(); }
+  }, [handleNativeGallery]);
+
+  const openFridge = useCallback(() => {
+    if (isNative()) { handleNativeFridge(); }
+    else { fridgeInputRef.current?.click(); }
+  }, [handleNativeFridge]);
+
   const labels: Record<string, { main: string; gallery: string; loading: string }> = {
     food: { main: "Zrób zdjęcie etykiety", gallery: "Wybierz z galerii", loading: "Analizuję skład..." },
     cosmetics: { main: "Zrób zdjęcie składu", gallery: "Wybierz z galerii", loading: "Analizuję skład..." },
@@ -203,13 +263,13 @@ export default function Scanner({ onScan, isLoading, mode = "food", loadingMessa
                 Zrób zdjęcie drugiej strony opakowania:
               </p>
               <div className="flex gap-2">
-                <button type="button" onClick={() => secondCameraRef.current?.click()}
+                <button type="button" onClick={() => { if (isNative()) { handleNativeCamera(); } else { secondCameraRef.current?.click(); } }}
                   className={`flex-1 py-3 rounded-xl font-semibold text-[13px] active:scale-[0.97] transition-all ${
                     isCosmetics ? "bg-purple-500/10 text-purple-300" : "bg-[#84CC16]/10 text-[#2D5A16]"
                   }`}>
                   📸 Aparat
                 </button>
-                <button type="button" onClick={() => secondGalleryRef.current?.click()}
+                <button type="button" onClick={() => { if (isNative()) { handleNativeGallery(); } else { secondGalleryRef.current?.click(); } }}
                   className={`flex-1 py-3 rounded-xl font-semibold text-[13px] active:scale-[0.97] transition-all ${
                     isCosmetics ? "bg-purple-500/10 text-purple-300" : "bg-[#84CC16]/10 text-[#2D5A16]"
                   }`}>
@@ -247,7 +307,7 @@ export default function Scanner({ onScan, isLoading, mode = "food", loadingMessa
         return (
           <button
             type="button"
-            onClick={() => cameraInputRef.current?.click()}
+            onClick={openCamera}
             className="w-full group relative overflow-hidden flex items-center gap-4 px-5 py-[22px] text-white rounded-[20px] active:scale-[0.97] transition-all duration-200 shadow-xl"
             style={{ background: t.gradient }}
           >
@@ -276,7 +336,7 @@ export default function Scanner({ onScan, isLoading, mode = "food", loadingMessa
         <div className="flex gap-2.5">
           <button
             type="button"
-            onClick={() => fridgeInputRef.current?.click()}
+            onClick={openFridge}
             className="relative flex-[1.3] flex items-center justify-center gap-2 py-3.5 rounded-[16px] active:scale-[0.97] transition-all duration-200 font-bold text-[13px] text-[#2D5A16]"
             style={{ background: "linear-gradient(135deg, rgba(132,204,22,0.08), rgba(132,204,22,0.04))", border: "1.5px solid rgba(132,204,22,0.15)" }}
           >
@@ -286,7 +346,7 @@ export default function Scanner({ onScan, isLoading, mode = "food", loadingMessa
           </button>
           <button
             type="button"
-            onClick={() => galleryInputRef.current?.click()}
+            onClick={openGallery}
             className="flex-[0.7] flex items-center justify-center gap-2 py-3.5 bg-white rounded-[16px] shadow-sm active:scale-[0.97] transition-all duration-200 font-semibold text-[13px] text-[#1A3A0A]"
           >
             <span>🖼️</span>
@@ -296,7 +356,7 @@ export default function Scanner({ onScan, isLoading, mode = "food", loadingMessa
       ) : (
         <button
           type="button"
-          onClick={() => galleryInputRef.current?.click()}
+          onClick={openGallery}
           className={`w-full flex items-center justify-center gap-2.5 py-4 rounded-[18px] active:scale-[0.97] transition-all duration-200 ${
             isCosmetics
               ? "velvet-card text-white/70 font-semibold text-[14px]"
