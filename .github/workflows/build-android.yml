@@ -6,11 +6,13 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: skladai/android
     steps:
       - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
 
       - name: Setup Java
         uses: actions/setup-java@v4
@@ -18,7 +20,12 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
+      - name: Install npm dependencies
+        working-directory: skladai
+        run: npm ci
+
       - name: Build Release AAB
+        working-directory: skladai/android
         run: |
           chmod +x ./gradlew
           ./gradlew bundleRelease
@@ -31,6 +38,7 @@ jobs:
           retention-days: 30
 
       - name: Build APK (for testing)
+        working-directory: skladai/android
         run: ./gradlew assembleRelease
 
       - name: Upload APK artifact
