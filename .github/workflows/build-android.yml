@@ -8,17 +8,9 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: skladai
+        working-directory: skladai/android
     steps:
       - uses: actions/checkout@v4
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22.x'
-
-      - name: Verify Node version
-        run: node -v
 
       - name: Setup Java
         uses: actions/setup-java@v4
@@ -26,35 +18,24 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Sync Capacitor Android
-        run: |
-          echo "Node version: $(node -v)"
-          npx cap sync android
-
       - name: Build Release AAB
         run: |
-          cd android
           chmod +x ./gradlew
           ./gradlew bundleRelease
 
       - name: Upload AAB artifact
         uses: actions/upload-artifact@v4
         with:
-          name: android-aab-${{ github.sha }}
+          name: android-aab
           path: skladai/android/app/build/outputs/bundle/release/*.aab
           retention-days: 30
 
       - name: Build APK (for testing)
-        run: |
-          cd android
-          ./gradlew assembleRelease
+        run: ./gradlew assembleRelease
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: android-apk-${{ github.sha }}
+          name: android-apk
           path: skladai/android/app/build/outputs/apk/release/*.apk
           retention-days: 14
