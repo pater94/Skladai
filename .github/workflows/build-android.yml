@@ -24,24 +24,20 @@ jobs:
         working-directory: skladai
         run: npm ci
 
-      - name: Generate signing keystore
+      - name: Decode upload keystore from secret
         working-directory: skladai/android
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
         run: |
-          keytool -genkey -v \
-            -keystore app/release-keystore.jks \
-            -keyalg RSA -keysize 2048 \
-            -validity 10000 \
-            -alias skladai \
-            -storepass skladai123 \
-            -keypass skladai123 \
-            -dname "CN=SkładAI, O=SkładAI, L=Tarnobrzeg, C=PL"
+          echo "$KEYSTORE_BASE64" | base64 -d > app/upload-keystore.jks
+          echo "Keystore decoded"
 
       - name: Build signed Release AAB
         working-directory: skladai/android
         env:
-          KEYSTORE_FILE: release-keystore.jks
+          KEYSTORE_FILE: upload-keystore.jks
           KEYSTORE_PASSWORD: skladai123
-          KEY_ALIAS: skladai
+          KEY_ALIAS: upload
           KEY_PASSWORD: skladai123
         run: |
           chmod +x ./gradlew
@@ -57,9 +53,9 @@ jobs:
       - name: Build signed APK (for testing)
         working-directory: skladai/android
         env:
-          KEYSTORE_FILE: release-keystore.jks
+          KEYSTORE_FILE: upload-keystore.jks
           KEYSTORE_PASSWORD: skladai123
-          KEY_ALIAS: skladai
+          KEY_ALIAS: upload
           KEY_PASSWORD: skladai123
         run: ./gradlew assembleRelease
 
@@ -69,10 +65,3 @@ jobs:
           name: android-apk
           path: skladai/android/app/build/outputs/apk/release/*.apk
           retention-days: 14
-
-      - name: Upload keystore (save it!)
-        uses: actions/upload-artifact@v4
-        with:
-          name: release-keystore
-          path: skladai/android/app/release-keystore.jks
-          retention-days: 90
