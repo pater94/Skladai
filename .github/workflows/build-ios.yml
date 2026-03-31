@@ -6,9 +6,6 @@ on:
 jobs:
   build:
     runs-on: macos-latest
-    defaults:
-      run:
-        working-directory: skladai
     steps:
       - uses: actions/checkout@v4
 
@@ -16,29 +13,28 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '22'
-          cache: 'npm'
-          cache-dependency-path: skladai/package-lock.json
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Sync Capacitor iOS
-        run: npx cap sync ios
 
       - name: Setup Xcode
         uses: maxim-lobanov/setup-xcode@v1
         with:
           xcode-version: latest-stable
 
-      - name: Install CocoaPods
+      - name: Install npm dependencies
+        working-directory: skladai
+        run: npm ci
+
+      - name: Resolve SPM packages
+        working-directory: skladai/ios/App
         run: |
-          cd ios/App
-          pod install || true
+          xcodebuild -resolvePackageDependencies \
+            -project App.xcodeproj \
+            -scheme App
 
       - name: Build iOS Archive (unsigned)
+        working-directory: skladai/ios/App
         run: |
-          cd ios/App
-          xcodebuild -workspace App.xcworkspace \
+          xcodebuild \
+            -project App.xcodeproj \
             -scheme App \
             -configuration Release \
             -archivePath build/App.xcarchive \
@@ -52,7 +48,3 @@ jobs:
           name: ios-archive-${{ github.sha }}
           path: skladai/ios/App/build/App.xcarchive
           retention-days: 30
-
-  # ─── Signed build (requires Apple certificates in GitHub Secrets) ───
-  # Uncomment after adding: APPLE_CERTIFICATE_BASE64, APPLE_CERTIFICATE_PASSWORD,
-  # APPLE_PROVISIONING_PROFILE, APPLE_TEAM_ID
