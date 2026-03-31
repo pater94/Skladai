@@ -228,6 +228,19 @@ input[type="range"]::-moz-range-thumb {
   100% { background-position: 0% 50%; }
 }
 
+@keyframes breathe {
+  0%, 100% { opacity: 0.4; transform: scale(0.95); }
+  50% { opacity: 0.7; transform: scale(1.05); }
+}
+@keyframes fadeSlide {
+  from { opacity: 0; transform: translateX(20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.15); }
+}
+
 /* === SCROLLBAR === */
 ::-webkit-scrollbar {
   width: 0;
