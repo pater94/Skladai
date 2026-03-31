@@ -26,31 +26,30 @@ export default function OnboardingSlides({ onComplete }: OnboardingSlidesProps) 
   };
 
   const slide = SLIDES[current];
-  const isLast = current === SLIDES.length - 1;
 
   return (
-    <div className="fixed inset-0 z-[9999] flex flex-col" style={{ background: "#0a0e0c" }}>
-      <div style={{ padding: "20px 22px 24px", position: "relative", overflow: "hidden", flex: 1, display: "flex", flexDirection: "column" }}>
-        {/* Ambient glow */}
+    <div className="fixed inset-0 z-[9999]" style={{ background: "#0a0e0c" }}>
+      <div style={{ padding: "20px 22px 24px", position: "relative", overflow: "hidden", height: "100%", display: "flex", flexDirection: "column" }}>
+        {/* Ambient glow — uses slide color */}
         <div style={{
           position: "absolute", top: 0, left: "50%", transform: "translateX(-50%)",
-          width: "300px", height: "250px",
+          width: 300, height: 250,
           background: `radial-gradient(ellipse, ${slide.color}15, transparent 70%)`,
           pointerEvents: "none",
         }} />
 
         {/* Slide content */}
-        <div key={current} style={{ animation: "fadeSlide 0.4s ease", flex: 1, display: "flex", flexDirection: "column", alignItems: "center" }}>
-          {/* Icon */}
+        <div key={current} style={{ animation: "fadeSlide 0.4s ease", flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+          {/* Icon box */}
           <div style={{
-            width: "140px", height: "140px", margin: "30px auto 28px",
-            borderRadius: "36px", background: slide.bg,
+            width: 140, height: 140, margin: "0 auto 28px",
+            borderRadius: 36, background: slide.bg,
             border: `1.5px solid ${slide.color}20`,
             display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: "56px", position: "relative",
+            fontSize: 56, position: "relative",
           }}>
             <div style={{
-              position: "absolute", inset: "-12px",
+              position: "absolute", inset: -12,
               background: `radial-gradient(circle, ${slide.color}15, transparent 70%)`,
               animation: "breathe 3s ease-in-out infinite",
             }} />
@@ -58,43 +57,39 @@ export default function OnboardingSlides({ onComplete }: OnboardingSlidesProps) 
           </div>
 
           {/* Text */}
-          <div style={{ textAlign: "center", marginBottom: "50px" }}>
-            <div style={{ fontSize: "22px", fontWeight: 900, color: "#fff", letterSpacing: "-0.03em", marginBottom: "10px" }}>{slide.title}</div>
-            <div style={{ fontSize: "14px", color: "rgba(255,255,255,0.4)", lineHeight: "21px", padding: "0 10px" }}>{slide.desc}</div>
+          <div style={{ textAlign: "center", marginBottom: 50 }}>
+            <div style={{ fontSize: 22, fontWeight: 900, color: "#fff", letterSpacing: "-0.03em", marginBottom: 10 }}>{slide.title}</div>
+            <div style={{ fontSize: 14, color: "rgba(255,255,255,0.4)", lineHeight: "21px", padding: "0 10px" }}>{slide.desc}</div>
           </div>
         </div>
 
-        {/* Bottom controls */}
-        <div>
-          {/* Dots */}
-          <div style={{ display: "flex", gap: "6px", justifyContent: "center", marginBottom: "24px" }}>
+        {/* Bottom controls — pinned to bottom */}
+        <div style={{ flexShrink: 0 }}>
+          {/* Dots — always green */}
+          <div style={{ display: "flex", gap: 6, justifyContent: "center", marginBottom: 24 }}>
             {SLIDES.map((_, i) => (
               <div key={i} onClick={() => setCurrent(i)} style={{
-                width: current === i ? "24px" : "6px", height: "6px", borderRadius: "3px",
-                background: current === i ? slide.color : "rgba(255,255,255,0.1)",
+                width: current === i ? 24 : 6, height: 6, borderRadius: 3,
+                background: current === i ? "#6efcb4" : "rgba(255,255,255,0.1)",
                 transition: "all 0.3s ease", cursor: "pointer",
               }} />
             ))}
           </div>
 
-          {/* Main CTA button */}
+          {/* CTA button — always green gradient */}
           <button type="button" onClick={handleNext} style={{
-            width: "100%", padding: "16px", borderRadius: "14px", border: "none",
-            background: `linear-gradient(135deg, ${slide.color}, ${slide.color}cc)`,
-            color: "#0a0f0d", fontWeight: 800, fontSize: "15px", cursor: "pointer",
-            boxShadow: `0 4px 20px ${slide.color}33`,
+            width: "100%", padding: 16, borderRadius: 14, border: "none",
+            background: "linear-gradient(135deg, #6efcb4, #3dd990)",
+            color: "#0a0f0d", fontWeight: 800, fontSize: 15, cursor: "pointer",
+            boxShadow: "0 4px 20px rgba(110,252,180,0.2)",
           }}>
-            {isLast ? "🔍 Zacznij skanować!" : "Dalej →"}
+            {current < SLIDES.length - 1 ? "Dalej →" : "🔍 Zacznij skanować!"}
           </button>
 
           {/* Skip */}
-          <button type="button" onClick={finish} style={{
-            display: "block", width: "100%", textAlign: "center",
-            marginTop: "12px", fontSize: "12px", color: "rgba(255,255,255,0.2)",
-            cursor: "pointer", background: "none", border: "none", padding: "8px",
-          }}>
+          <div style={{ textAlign: "center", marginTop: 12, fontSize: 12, color: "rgba(255,255,255,0.2)", cursor: "pointer", padding: 8 }} onClick={finish}>
             Pomiń
-          </button>
+          </div>
         </div>
       </div>
     </div>
