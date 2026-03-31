@@ -1,5 +1,5 @@
 {
-	"appId": "app.vercel.skladai",
+	"appId": "com.skladai.app",
 	"appName": "SkładAI",
 	"webDir": "www",
 	"server": {

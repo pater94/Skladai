@@ -1,7 +1,7 @@
 import type { CapacitorConfig } from "@capacitor/cli";
 
 const config: CapacitorConfig = {
-  appId: "app.vercel.skladai",
+  appId: "com.skladai.app",
   appName: "SkładAI",
   webDir: "www",
   server: {
