@@ -146,9 +146,15 @@ jobs:
           APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.APP_STORE_API_KEY_ID }}
           APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_API_ISSUER_ID }}
         run: |
-          # Write API key to file (required by xcrun)
+          # Write API key .p8 file — use printf to preserve exact content
           mkdir -p ~/.private_keys
-          echo "$APP_STORE_CONNECT_API_KEY" > ~/.private_keys/AuthKey_${APP_STORE_CONNECT_API_KEY_ID}.p8
+          KEY_FILE=~/.private_keys/AuthKey_${APP_STORE_CONNECT_API_KEY_ID}.p8
+          printf '%s\n' "$APP_STORE_CONNECT_API_KEY" > "$KEY_FILE"
+
+          # Verify the key file looks valid
+          echo "Key file size: $(wc -c < "$KEY_FILE") bytes"
+          head -1 "$KEY_FILE"
+          tail -1 "$KEY_FILE"
 
           # Upload IPA to App Store Connect
           xcrun altool --upload-app \
