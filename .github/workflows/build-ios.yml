@@ -6,6 +6,9 @@ on:
 jobs:
   build:
     runs-on: macos-latest
+    env:
+      KEYCHAIN_NAME: build.keychain
+      KEYCHAIN_PASSWORD: ${{ github.run_id }}
     steps:
       - uses: actions/checkout@v4
 
@@ -19,6 +22,54 @@ jobs:
         with:
           xcode-version: latest-stable
 
+      - name: Install Apple certificate and provisioning profile
+        env:
+          APPLE_CERTIFICATE_BASE64: ${{ secrets.APPLE_CERTIFICATE_BASE64 }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_PROVISIONING_PROFILE_BASE64: ${{ secrets.APPLE_PROVISIONING_PROFILE_BASE64 }}
+        run: |
+          # Decode certificate and provisioning profile
+          CERTIFICATE_PATH="$RUNNER_TEMP/certificate.p12"
+          PROFILE_PATH="$RUNNER_TEMP/profile.mobileprovision"
+
+          echo "$APPLE_CERTIFICATE_BASE64" | base64 --decode -o "$CERTIFICATE_PATH"
+          echo "$APPLE_PROVISIONING_PROFILE_BASE64" | base64 --decode -o "$PROFILE_PATH"
+
+          # Create and configure temporary keychain
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_NAME"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN_NAME"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_NAME"
+
+          # Import certificate into keychain
+          security import "$CERTIFICATE_PATH" \
+            -P "$APPLE_CERTIFICATE_PASSWORD" \
+            -A \
+            -t cert \
+            -f pkcs12 \
+            -k "$KEYCHAIN_NAME"
+
+          # Allow codesign to access the keychain without prompting
+          security set-key-partition-list \
+            -S apple-tool:,apple:,codesign: \
+            -s -k "$KEYCHAIN_PASSWORD" \
+            "$KEYCHAIN_NAME"
+
+          # Add temporary keychain to the search list
+          security list-keychains -d user -s "$KEYCHAIN_NAME" $(security list-keychains -d user | sed s/\"//g)
+          security default-keychain -s "$KEYCHAIN_NAME"
+
+          # Install provisioning profile
+          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
+          PROFILE_UUID=$(/usr/libexec/PlistBuddy -c "Print UUID" /dev/stdin <<< \
+            "$(/usr/bin/security cms -D -i "$PROFILE_PATH")")
+          cp "$PROFILE_PATH" ~/Library/MobileDevice/Provisioning\ Profiles/"$PROFILE_UUID".mobileprovision
+
+          # Export profile UUID for later steps
+          echo "PROVISIONING_PROFILE_UUID=$PROFILE_UUID" >> "$GITHUB_ENV"
+
+          # Clean up decoded files
+          rm -f "$CERTIFICATE_PATH" "$PROFILE_PATH"
+
       - name: Install npm dependencies
         working-directory: skladai
         run: npm ci
@@ -30,8 +81,10 @@ jobs:
             -project App.xcodeproj \
             -scheme App
 
-      - name: Build iOS Archive (unsigned)
+      - name: Build signed iOS archive
         working-directory: skladai/ios/App
+        env:
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
           xcodebuild \
             -project App.xcodeproj \
@@ -40,7 +93,47 @@ jobs:
             -archivePath build/App.xcarchive \
             -destination 'generic/platform=iOS' \
             archive \
-            CODE_SIGNING_ALLOWED=NO
+            CODE_SIGN_STYLE=Manual \
+            DEVELOPMENT_TEAM="$APPLE_TEAM_ID" \
+            PROVISIONING_PROFILE_SPECIFIER="$PROVISIONING_PROFILE_UUID" \
+            CODE_SIGN_IDENTITY="iPhone Distribution"
+
+      - name: Create ExportOptions.plist
+        env:
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          cat > "$RUNNER_TEMP/ExportOptions.plist" <<EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+            "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>method</key>
+            <string>app-store-connect</string>
+            <key>teamID</key>
+            <string>${APPLE_TEAM_ID}</string>
+            <key>signingStyle</key>
+            <string>manual</string>
+            <key>provisioningProfiles</key>
+            <dict>
+              <key>com.skladai.app</key>
+              <string>${PROVISIONING_PROFILE_UUID}</string>
+            </dict>
+            <key>uploadBitcode</key>
+            <false/>
+            <key>uploadSymbols</key>
+            <true/>
+          </dict>
+          </plist>
+          EOF
+
+      - name: Export IPA
+        working-directory: skladai/ios/App
+        run: |
+          xcodebuild -exportArchive \
+            -archivePath build/App.xcarchive \
+            -exportPath build/ipa \
+            -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist"
 
       - name: Upload xcarchive artifact
         uses: actions/upload-artifact@v4
@@ -48,3 +141,15 @@ jobs:
           name: ios-archive-${{ github.sha }}
           path: skladai/ios/App/build/App.xcarchive
           retention-days: 30
+
+      - name: Upload IPA artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-ipa-${{ github.sha }}
+          path: skladai/ios/App/build/ipa/*.ipa
+          retention-days: 30
+
+      - name: Clean up keychain
+        if: always()
+        run: |
+          security delete-keychain "$KEYCHAIN_NAME" 2>/dev/null || true

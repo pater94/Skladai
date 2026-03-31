@@ -33,6 +33,15 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths"></meta-data>
         </provider>
+
+        <!-- Health Connect privacy policy activity (required for Play Store) -->
+        <activity
+            android:name="androidx.health.connect.client.impl.PermissionRationaleActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="androidx.health.ACTION_SHOW_PERMISSIONS_RATIONALE" />
+            </intent-filter>
+        </activity>
     </application>
 
     <!-- Permissions -->
@@ -42,10 +51,17 @@
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
 
+    <!-- Health Connect permissions (step counting) -->
+    <uses-permission android:name="android.permission.health.READ_STEPS" />
+
     <!-- Speech recognition -->
     <queries>
         <intent>
             <action android:name="android.speech.RecognitionService" />
+        </intent>
+        <!-- Health Connect -->
+        <intent>
+            <action android:name="androidx.health.ACTION_SHOW_PERMISSIONS_RATIONALE" />
         </intent>
     </queries>
 </manifest>

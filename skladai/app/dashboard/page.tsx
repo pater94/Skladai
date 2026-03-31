@@ -6,6 +6,7 @@ import { UserProfile, DailyTotals } from "@/lib/types";
 import { getProfile, getDailyTotals, getWeekTotals, todayStr, removeDiaryEntry, getStreak, isPremium, getDiary } from "@/lib/storage";
 import PremiumGate from "@/components/PremiumGate";
 import WaterTracker from "@/components/WaterTracker";
+import StepCounter from "@/components/StepCounter";
 import dynamic from "next/dynamic";
 
 const WeeklyChart = dynamic(() => import("@/components/DashboardCharts"), { ssr: false });
@@ -318,6 +319,11 @@ export default function DashboardPage() {
           {/* Water Tracker */}
           <div className="dash-card-anim" style={{ animationDelay: "0.3s" }}>
             <WaterTracker />
+          </div>
+
+          {/* Step Counter (native only) */}
+          <div className="dash-card-anim" style={{ animationDelay: "0.35s" }}>
+            <StepCounter />
           </div>
 
           {/* Meals Today */}
