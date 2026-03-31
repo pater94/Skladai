@@ -4,6 +4,7 @@ import { useRef, useState, useCallback, useEffect } from "react";
 import { compressImage } from "@/lib/compress";
 import { isNative, takePhotoForMode } from "@/lib/native-camera";
 import type { ScanMode } from "@/lib/types";
+import PhotoPreview from "./PhotoPreview";
 
 interface ScannerProps {
   onScan: (base64: string) => void;
@@ -23,6 +24,7 @@ export default function Scanner({ onScan, isLoading, mode = "food", loadingMessa
   const [awaitingSecond, setAwaitingSecond] = useState(false);
   const secondCameraRef = useRef<HTMLInputElement>(null);
   const secondGalleryRef = useRef<HTMLInputElement>(null);
+  const [photoSource, setPhotoSource] = useState<"camera" | "gallery">("camera");
 
   useEffect(() => {
     if (autoOpenGallery && galleryInputRef.current) {
@@ -36,7 +38,7 @@ export default function Scanner({ onScan, isLoading, mode = "food", loadingMessa
   const isSuplement = mode === "suplement";
   const isMealMode = mode === "meal";
   const isDark = isCosmetics || isForma || isSuplement || isMealMode;
-  const showSecondPhotoOption = (mode === "food" || mode === "cosmetics") && !isLoading;
+  const showSecondPhotoOption = (mode === "food" || mode === "cosmetics" || mode === "suplement") && !isLoading;
 
   const handleFile = useCallback(
     async (file: File) => {
@@ -116,6 +118,7 @@ export default function Scanner({ onScan, isLoading, mode = "food", loadingMessa
     if (!isNative()) return;
     const base64 = await takePhotoForMode(mode, "camera");
     if (!base64) return;
+    setPhotoSource("camera");
 
     if (awaitingSecond && showSecondPhotoOption) {
       setSecondPreview(base64);
@@ -133,6 +136,7 @@ export default function Scanner({ onScan, isLoading, mode = "food", loadingMessa
     if (!isNative()) return;
     const base64 = await takePhotoForMode(mode, "gallery");
     if (!base64) return;
+    setPhotoSource("gallery");
 
     if (awaitingSecond && showSecondPhotoOption) {
       setSecondPreview(base64);
@@ -156,11 +160,13 @@ export default function Scanner({ onScan, isLoading, mode = "food", loadingMessa
 
   // Unified click handlers — use native if available, otherwise fall back to file input
   const openCamera = useCallback(() => {
+    setPhotoSource("camera");
     if (isNative()) { handleNativeCamera(); }
     else { cameraInputRef.current?.click(); }
   }, [handleNativeCamera]);
 
   const openGallery = useCallback(() => {
+    setPhotoSource("gallery");
     if (isNative()) { handleNativeGallery(); }
     else { galleryInputRef.current?.click(); }
   }, [handleNativeGallery]);
@@ -212,81 +218,52 @@ export default function Scanner({ onScan, isLoading, mode = "food", loadingMessa
 
   return (
     <div className="w-full space-y-3">
-      {/* Preview with second photo option (food/cosmetics only) */}
+      {/* Premium photo preview for food/cosmetics/suplement */}
       {preview && !isLoading && showSecondPhotoOption && (
-        <div className={`rounded-[20px] p-4 mb-1 anim-fade-scale ${isCosmetics ? "velvet-card" : "card-elevated"}`}>
-          <div className="flex gap-2 mb-3">
-            <div className="flex-1 relative">
-              <img src={preview} alt="Zdjęcie 1" className="w-full max-h-40 rounded-xl object-contain" />
-              <span className="absolute top-1 left-1 bg-black/60 text-white text-[10px] px-1.5 py-0.5 rounded-md font-semibold">Zdjęcie 1</span>
-            </div>
-            {secondPreview && (
-              <div className="flex-1 relative">
-                <img src={secondPreview} alt="Zdjęcie 2" className="w-full max-h-40 rounded-xl object-contain" />
-                <span className="absolute top-1 left-1 bg-black/60 text-white text-[10px] px-1.5 py-0.5 rounded-md font-semibold">Zdjęcie 2</span>
-              </div>
-            )}
-          </div>
-
-          <button
-            type="button"
-            onClick={handleScanSingle}
-            className={`w-full py-3.5 rounded-xl font-bold text-white text-[15px] mb-2 active:scale-[0.97] transition-all ${
-              isCosmetics ? "bg-gradient-to-r from-purple-600 to-fuchsia-500" : "bg-gradient-to-r from-[#1A3A0A] to-[#3D7A1F]"
-            }`}
-          >
-            {secondPreview ? "Analizuj oba zdjęcia →" : "Analizuj to zdjęcie →"}
-          </button>
-
-          {!secondPreview && !awaitingSecond && (
-            <>
-              <button
-                type="button"
-                onClick={handleAddSecond}
-                className={`w-full py-3 rounded-xl font-semibold text-[13px] mb-1.5 border-2 border-dashed active:scale-[0.97] transition-all ${
-                  isCosmetics
-                    ? "border-purple-400/30 text-purple-300 bg-purple-500/5"
-                    : "border-[#84CC16]/30 text-[#2D5A16] bg-[#84CC16]/5"
-                }`}
-              >
-                + Dodaj drugie zdjęcie (druga strona opakowania)
-              </button>
-              <p className={`text-[11px] text-center leading-relaxed ${isCosmetics ? "text-white/40" : "text-gray-400"}`}>
-                Skład i wartości odżywcze na osobnych stronach? Dodaj oba zdjęcia dla dokładniejszej analizy.
-              </p>
-            </>
-          )}
-
-          {awaitingSecond && (
-            <div className="space-y-2">
-              <p className={`text-[13px] text-center font-semibold ${isCosmetics ? "text-purple-300" : "text-[#2D5A16]"}`}>
-                Zrób zdjęcie drugiej strony opakowania:
-              </p>
-              <div className="flex gap-2">
-                <button type="button" onClick={() => { if (isNative()) { handleNativeCamera(); } else { secondCameraRef.current?.click(); } }}
-                  className={`flex-1 py-3 rounded-xl font-semibold text-[13px] active:scale-[0.97] transition-all ${
-                    isCosmetics ? "bg-purple-500/10 text-purple-300" : "bg-[#84CC16]/10 text-[#2D5A16]"
-                  }`}>
-                  📸 Aparat
-                </button>
-                <button type="button" onClick={() => { if (isNative()) { handleNativeGallery(); } else { secondGalleryRef.current?.click(); } }}
-                  className={`flex-1 py-3 rounded-xl font-semibold text-[13px] active:scale-[0.97] transition-all ${
-                    isCosmetics ? "bg-purple-500/10 text-purple-300" : "bg-[#84CC16]/10 text-[#2D5A16]"
-                  }`}>
-                  🖼️ Galeria
-                </button>
-              </div>
-              <input ref={secondCameraRef} type="file" accept="image/*" capture="environment" onChange={onInputChange} className="hidden" />
-              <input ref={secondGalleryRef} type="file" accept="image/*" onChange={onInputChange} className="hidden" />
-            </div>
-          )}
-
-          <button type="button" onClick={handleCancelPreview}
-            className={`w-full py-2 mt-1 text-[12px] font-medium ${isCosmetics ? "text-white/30" : "text-gray-400"}`}>
-            Anuluj
-          </button>
-        </div>
+        <PhotoPreview
+          mode={mode as "food" | "cosmetics" | "suplement"}
+          source={photoSource}
+          photo1={preview}
+          photo2={secondPreview}
+          onAddSecondPhoto={() => {
+            setAwaitingSecond(true);
+            if (photoSource === "camera") {
+              if (isNative()) { handleNativeCamera(); } else { secondCameraRef.current?.click(); }
+            } else {
+              if (isNative()) { handleNativeGallery(); } else { secondGalleryRef.current?.click(); }
+            }
+          }}
+          onAnalyzeSingle={() => {
+            if (preview) { onScan(preview); setPreview(null); setSecondPreview(null); }
+          }}
+          onAnalyzeBoth={() => {
+            if (preview && secondPreview) {
+              onScan(preview + "|||SECOND|||" + secondPreview);
+              setPreview(null);
+              setSecondPreview(null);
+            }
+          }}
+          onRetakePhoto1={() => {
+            setPreview(null);
+            setSecondPreview(null);
+            if (photoSource === "camera") { openCamera(); } else { openGallery(); }
+          }}
+          onRetakePhoto2={() => {
+            setSecondPreview(null);
+            setAwaitingSecond(true);
+            if (photoSource === "camera") {
+              if (isNative()) { handleNativeCamera(); } else { secondCameraRef.current?.click(); }
+            } else {
+              if (isNative()) { handleNativeGallery(); } else { secondGalleryRef.current?.click(); }
+            }
+          }}
+          onBack={handleCancelPreview}
+        />
       )}
+
+      {/* Hidden inputs for second photo */}
+      <input ref={secondCameraRef} type="file" accept="image/*" capture="environment" onChange={onInputChange} className="hidden" />
+      <input ref={secondGalleryRef} type="file" accept="image/*" onChange={onInputChange} className="hidden" />
 
       {/* Simple preview for non-label modes or during loading */}
       {preview && (isLoading || !showSecondPhotoOption) && (
@@ -295,8 +272,8 @@ export default function Scanner({ onScan, isLoading, mode = "food", loadingMessa
         </div>
       )}
 
-      {/* Main camera button — unified premium design for ALL modes */}
-      {(() => {
+      {/* Main camera button — unified premium design for ALL modes (hidden when PhotoPreview is showing) */}
+      {!(preview && !isLoading && showSecondPhotoOption) && (() => {
         const themes: Record<string, { gradient: string; iconBg: string; iconStroke1: string; iconStroke2: string; subColor: string; subText: string; emoji: string }> = {
           food: { gradient: "linear-gradient(135deg, #1A3A0A 0%, #2D5A16 50%, #3D7A1F 100%)", iconBg: "rgba(132,204,22,0.12)", iconStroke1: "#BEF264", iconStroke2: "#84CC16", subColor: "rgba(132,204,22,0.9)", subText: "🔬 AI Vision przeanalizuje skład", emoji: "🔬" },
           cosmetics: { gradient: "linear-gradient(135deg, #6B21A8 0%, #9333EA 50%, #A855F7 100%)", iconBg: "rgba(232,121,249,0.12)", iconStroke1: "#F0ABFC", iconStroke2: "#E879F9", subColor: "rgba(232,121,249,0.9)", subText: "🔬 AI Vision przeanalizuje skład kosmetyku", emoji: "✨" },
@@ -331,8 +308,8 @@ export default function Scanner({ onScan, isLoading, mode = "food", loadingMessa
         );
       })()}
 
-      {/* Secondary buttons — food: row with fridge + gallery, others: just gallery */}
-      {!isCosmetics && !isMealMode && !isForma && onFridgeScan ? (
+      {/* Secondary buttons — food: row with fridge + gallery, others: just gallery (hidden when PhotoPreview is showing) */}
+      {!(preview && !isLoading && showSecondPhotoOption) && (!isCosmetics && !isMealMode && !isForma && onFridgeScan ? (
         <div className="flex gap-2.5">
           <button
             type="button"
@@ -368,7 +345,7 @@ export default function Scanner({ onScan, isLoading, mode = "food", loadingMessa
           <span className="text-lg">🖼️</span>
           <span>{l.gallery}</span>
         </button>
-      )}
+      ))}
 
       {/* Hidden inputs */}
       <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" onChange={onInputChange} className="hidden" />

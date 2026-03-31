@@ -791,7 +791,8 @@ function validateNutrition(result: Record<string, unknown>): void {
 
 export async function POST(request: NextRequest) {
   const startTime = Date.now();
-  let body: { image?: string; image2?: string; mode?: string; text?: string } | undefined;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let body: any;
   try {
     const apiKey = process.env.ANTHROPIC_API_KEY;
     if (!apiKey) {
@@ -802,7 +803,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Nieprawidłowe dane." }, { status: 400 });
     }
 
-    const { image, image2, mode = "food", text } = body as { image?: string; image2?: string; mode?: string; text?: string };
+    const { image, image2, mode = "food", text } = body as { image?: string; image2?: string; mode?: string; text?: string; goal?: string };
 
     // === ALCOHOL SEARCH MODE ===
     if (mode === "alcohol_search") {
@@ -965,7 +966,7 @@ Po polsku. Styl: jak sommelier z humorem.`;
     // === FRIDGE RECIPES MODE ===
     if (mode === "fridge_recipes") {
       if (!text || text.trim().length < 2) return NextResponse.json({ error: "Brak listy produktów." }, { status: 400 });
-      const goal = body.goal || "maintenance";
+      const goal = (body as Record<string, unknown>)?.goal as string || "maintenance";
       const goalLabels: Record<string, string> = { reduction: "REDUKCJA (max 500kcal, min 25g białka, dużo warzyw)", mass: "MASA (min 600kcal, min 40g białka, duże porcje)", maintenance: "UTRZYMANIE (400-600kcal, zbalansowane)" };
       const fridgePrompt = `Produkty w lodówce: ${text.trim()}
 Cel użytkownika: ${goalLabels[goal] || goalLabels.maintenance}
@@ -982,7 +983,7 @@ Styl: APETYCZNY i MOTYWUJĄCY. Po polsku.`;
     if (mode === "recipe_detail") {
       if (!text || text.trim().length < 2) return NextResponse.json({ error: "Brak nazwy przepisu." }, { status: 400 });
       const ingredients = body.ingredients || "";
-      const goal = body.goal || "maintenance";
+      const goal = (body as Record<string, unknown>)?.goal as string || "maintenance";
       const recipePrompt = `Wygeneruj PEŁNY PRZEPIS PREMIUM QUALITY dla: "${text.trim()}"
 Dostępne składniki: ${ingredients}. Cel: ${goal}.
 Przepis na poziomie NAJLEPSZYCH stron kulinarnych: dokładne gramy, czasy, temperatury, pro tipy.
