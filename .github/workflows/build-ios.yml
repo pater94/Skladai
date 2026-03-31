@@ -146,10 +146,10 @@ jobs:
           APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.APP_STORE_API_KEY_ID }}
           APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_API_ISSUER_ID }}
         run: |
-          # Write API key .p8 file — use printf to preserve exact content
+          # Decode base64-encoded .p8 key
           mkdir -p ~/.private_keys
           KEY_FILE=~/.private_keys/AuthKey_${APP_STORE_CONNECT_API_KEY_ID}.p8
-          printf '%s\n' "$APP_STORE_CONNECT_API_KEY" > "$KEY_FILE"
+          echo "$APP_STORE_CONNECT_API_KEY" | base64 --decode > "$KEY_FILE"
 
           # Verify the key file looks valid
           echo "Key file size: $(wc -c < "$KEY_FILE") bytes"
