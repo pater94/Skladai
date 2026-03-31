@@ -1191,22 +1191,38 @@ ZASADY:
 - Bądź życzliwym doradcą — dobry produkt POCHWAL
 - ZASADA #0: NAZWA i MARKA muszą pochodzić z tekstu OCR/zdjęcia. NIGDY nie wymyślaj.`;
 
-      // Run OCR for supplement label
+      // Run OCR for supplement label (supports dual images)
       let supplOcrText = "";
       const gvKey = process.env.GOOGLE_VISION_API_KEY;
-      if (gvKey) {
+
+      async function callSupplVisionOCR(b64: string): Promise<string> {
+        if (!gvKey) return "";
         try {
           const gvRes = await fetch(`https://vision.googleapis.com/v1/images:annotate?key=${gvKey}`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ requests: [{ image: { content: base64Data }, features: [{ type: "DOCUMENT_TEXT_DETECTION", maxResults: 1 }] }] }),
+            body: JSON.stringify({ requests: [{ image: { content: b64 }, features: [{ type: "DOCUMENT_TEXT_DETECTION", maxResults: 1 }] }] }),
           });
           if (gvRes.ok) {
             const gvData = await gvRes.json();
             const ann = gvData.responses?.[0];
-            supplOcrText = ann?.fullTextAnnotation?.text || ann?.textAnnotations?.[0]?.description || "";
+            return ann?.fullTextAnnotation?.text || ann?.textAnnotations?.[0]?.description || "";
           }
         } catch { /* ignore OCR failure */ }
+        return "";
+      }
+
+      // OCR first image
+      const supplFirstOCR = await callSupplVisionOCR(base64Data);
+      supplOcrText = supplFirstOCR;
+
+      // OCR second image if present
+      if (secondBase64Data) {
+        const supplSecondOCR = await callSupplVisionOCR(secondBase64Data);
+        if (supplSecondOCR) {
+          supplOcrText = supplOcrText + "\n\n--- DRUGA STRONA OPAKOWANIA ---\n\n" + supplSecondOCR;
+          console.log(`Suplement OCR: ${supplFirstOCR.length} + ${supplSecondOCR.length} chars from 2 images`);
+        }
       }
 
       const supplImgContent = {
@@ -1215,6 +1231,13 @@ ZASADY:
       };
 
       const supplUserContent: unknown[] = [supplImgContent];
+      // Add second image to Claude if available
+      if (secondBase64Data) {
+        supplUserContent.push({
+          type: "image" as const,
+          source: { type: "base64" as const, media_type: mediaType, data: secondBase64Data },
+        });
+      }
       if (supplOcrText.length > 20) {
         supplUserContent.push({
           type: "text",
