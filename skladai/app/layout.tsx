@@ -2,7 +2,6 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import BottomNav from "@/components/BottomNav";
 import SWUpdateBanner from "@/components/SWUpdateBanner";
-import OnboardingWrapper from "@/components/OnboardingWrapper";
 
 export const metadata: Metadata = {
   title: "SkładAI — Sprawdź co naprawdę jesz",
@@ -42,7 +41,6 @@ export default function RootLayout({
         </div>
         <BottomNav />
         <SWUpdateBanner />
-        <OnboardingWrapper />
       </body>
     </html>
   );

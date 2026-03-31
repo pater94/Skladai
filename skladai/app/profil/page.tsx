@@ -8,7 +8,6 @@ import { getProfile, getStreak, getHistory } from "@/lib/storage";
 import { ACTIVITY_LEVELS, GOALS, COMMON_ALLERGENS, DIETS, DIABETES_TYPES, TRIMESTERS } from "@/lib/nutrition";
 import { getAllAchievements, getAchievementsByCategory, getEarnedCount, CATEGORY_LABELS, TIER_COLORS, Achievement, AchievementCategory } from "@/lib/badges";
 import ProfileSetup from "@/components/ProfileSetup";
-import LoginScreen from "@/components/LoginScreen";
 
 /* ── Recharts (client-only) ── */
 const AreaChart = dynamic(() => import("recharts").then(m => m.AreaChart), { ssr: false });
@@ -64,7 +63,6 @@ export default function ProfilPage() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [editing, setEditing] = useState(false);
   const [loaded, setLoaded] = useState(false);
-  const [showLogin, setShowLogin] = useState(false);
   const [showAchievements, setShowAchievements] = useState(false);
   const [normsOpen, setNormsOpen] = useState(false);
 
@@ -88,7 +86,7 @@ export default function ProfilPage() {
     setScanCount(getHistory().length);
     setWeightHistory(getWeightHistory());
     setLoaded(true);
-    if (!p) setShowLogin(true);
+    if (!p) setEditing(true);
   }, []);
 
   /* ── Save weight entry ── */
@@ -205,18 +203,6 @@ export default function ProfilPage() {
     );
   }
 
-  /* ── Login screen (no profile, not authenticated) ── */
-  if (showLogin && !profile) {
-    return (
-      <LoginScreen
-        onSkip={() => {
-          setShowLogin(false);
-          setEditing(true);
-        }}
-      />
-    );
-  }
-
   /* ── Profile editing / onboarding ── */
   if (editing || !profile) {
     return (
@@ -228,100 +214,50 @@ export default function ProfilPage() {
     );
   }
 
-  /* ── Full achievements screen (premium) ── */
+  /* ── Full achievements screen ── */
   if (showAchievements) {
-    const pct = earnedStats.total > 0 ? Math.round((earnedStats.earned / earnedStats.total) * 100) : 0;
-
-    const CAT_COLORS: Record<string, string> = {
-      scanner: "#6efcb4",
-      healthy: "#FBBF24",
-      streak: "#f97316",
-      forma: "#3b82f6",
-    };
-
-    const allItems = (Object.entries(achievements) as [AchievementCategory, Achievement[]][]).flatMap(
-      ([cat, items]) => items.map(a => ({ ...a, catColor: CAT_COLORS[cat] || "#6efcb4" }))
-    );
-
     return (
-      <div className="min-h-[100dvh]" style={{ background: "#0a0e0c" }}>
+      <div className="min-h-[100dvh] bg-[#f5f2ed]">
         <div className="max-w-md mx-auto px-5 pt-6 pb-32">
           <button
             onClick={() => setShowAchievements(false)}
-            className="flex items-center gap-1.5 text-[13px] font-semibold px-4 py-2 rounded-full active:scale-95 transition-all mb-5"
-            style={{ color: "rgba(255,255,255,0.6)", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)" }}
+            className="flex items-center gap-1.5 text-[13px] text-gray-600 font-semibold px-4 py-2 rounded-full bg-white border border-gray-200 active:scale-95 transition-all mb-5"
           >
             ← Wstecz
           </button>
-
-          <div style={{ fontSize: 20, fontWeight: 900, color: "#fff", marginBottom: 4 }}>🏆 Osiągnięcia</div>
-          <div style={{ fontSize: 12.5, color: "rgba(255,255,255,0.3)", marginBottom: 20 }}>
-            {earnedStats.earned} z {earnedStats.total} odblokowanych
-          </div>
-
-          {/* Progress bar */}
-          <div style={{ width: "100%", height: 4, background: "rgba(255,255,255,0.05)", borderRadius: 2, marginBottom: 24, overflow: "hidden" }}>
-            <div style={{ width: `${pct}%`, height: "100%", background: "linear-gradient(90deg, #6efcb4, #3dd990)", borderRadius: 2 }} />
-          </div>
-
-          {/* Row list */}
-          {allItems.map((a, i) => (
-            <div
-              key={a.id}
-              className="relative overflow-hidden"
-              style={{
-                background: a.earned ? "rgba(255,255,255,0.03)" : "rgba(255,255,255,0.015)",
-                backdropFilter: a.earned ? "blur(16px)" : "none",
-                WebkitBackdropFilter: a.earned ? "blur(16px)" : "none",
-                border: a.earned ? `1px solid ${a.catColor}22` : "1px solid rgba(255,255,255,0.04)",
-                borderRadius: 16, padding: "14px 16px", marginBottom: 10,
-                display: "flex", alignItems: "center", gap: 14,
-                animation: `fadeInUp 0.5s cubic-bezier(.4,0,.2,1) ${i * 0.1}s both`,
-              }}
-            >
-              {/* Shimmer for unlocked */}
-              {a.earned && (
-                <div
-                  className="absolute pointer-events-none"
-                  style={{
-                    top: 0, left: "-100%", width: "50%", height: "100%",
-                    background: `linear-gradient(90deg, transparent, ${a.catColor}08, transparent)`,
-                    animation: "shimmer 4s ease-in-out infinite",
-                    animationDelay: `${i * 0.5}s`,
-                  }}
-                />
-              )}
-              {/* Icon */}
-              <div style={{
-                width: 48, height: 48, borderRadius: 14, flexShrink: 0,
-                background: a.earned ? `linear-gradient(135deg, ${a.catColor}15, ${a.catColor}08)` : "rgba(255,255,255,0.03)",
-                border: a.earned ? `1px solid ${a.catColor}30` : "1px solid rgba(255,255,255,0.05)",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                fontSize: 22,
-                boxShadow: a.earned ? `0 4px 16px ${a.catColor}15` : "none",
-                filter: a.earned ? "none" : "grayscale(1) opacity(0.4)",
-              }}>
-                {a.icon}
+          <h1 className="text-[22px] font-black text-gray-800 mb-1">Osiągnięcia</h1>
+          <p className="text-[13px] text-gray-400 font-semibold mb-6">
+            {earnedStats.earned} z {earnedStats.total} zdobytych
+          </p>
+          {(Object.entries(achievements) as [AchievementCategory, Achievement[]][]).map(([cat, items]) => (
+            <div key={cat} className="mb-5 last:mb-0">
+              <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">
+                {CATEGORY_LABELS[cat]?.icon} {CATEGORY_LABELS[cat]?.name}
+              </p>
+              <div className="grid grid-cols-4 gap-1.5">
+                {items.map((a) => {
+                  const tierColor = TIER_COLORS[a.tier];
+                  const progress = a.target > 0 ? Math.min(100, Math.round((a.current / a.target) * 100)) : 0;
+                  return (
+                    <div key={a.id} className={`text-center py-2.5 px-1 rounded-[12px] border transition-all ${
+                      a.earned
+                        ? `${tierColor.bg} ${tierColor.border}`
+                        : "bg-gray-50 border-gray-100 opacity-50"
+                    }`}>
+                      <span className={`text-[20px] block ${a.earned ? "" : "grayscale"}`}>{a.icon}</span>
+                      <p className={`text-[8px] font-bold mt-0.5 leading-tight ${a.earned ? tierColor.text : "text-gray-400"}`}>
+                        {a.name}
+                      </p>
+                      {!a.earned && (
+                        <div className="w-10 h-1 rounded-full bg-gray-200 mx-auto mt-1 overflow-hidden">
+                          <div className="h-full bg-emerald-500 rounded-full transition-all" style={{ width: `${progress}%` }} />
+                        </div>
+                      )}
+                      {!a.earned && <p className="text-[7px] text-gray-400 mt-0.5">{a.current}/{a.target}</p>}
+                    </div>
+                  );
+                })}
               </div>
-              {/* Text */}
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 14, fontWeight: 800, color: a.earned ? "#fff" : "rgba(255,255,255,0.3)" }}>{a.name}</div>
-                <div style={{ fontSize: 11.5, color: a.earned ? "rgba(255,255,255,0.4)" : "rgba(255,255,255,0.15)", marginTop: 2 }}>{a.description}</div>
-                {!a.earned && (
-                  <div style={{ width: "100%", height: 3, background: "rgba(255,255,255,0.05)", borderRadius: 2, marginTop: 6, overflow: "hidden" }}>
-                    <div style={{
-                      width: `${a.target > 0 ? Math.min(100, Math.round((a.current / a.target) * 100)) : 0}%`,
-                      height: "100%", background: a.catColor, borderRadius: 2, opacity: 0.5,
-                    }} />
-                  </div>
-                )}
-              </div>
-              {/* Badge */}
-              {a.earned ? (
-                <div style={{ background: `${a.catColor}18`, color: a.catColor, fontSize: 10, fontWeight: 800, padding: "4px 8px", borderRadius: 8 }}>✓</div>
-              ) : (
-                <div style={{ color: "rgba(255,255,255,0.2)", fontSize: 11, fontWeight: 600 }}>{a.current}/{a.target}</div>
-              )}
             </div>
           ))}
         </div>

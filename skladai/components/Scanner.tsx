@@ -5,7 +5,6 @@ import { compressImage } from "@/lib/compress";
 import { isNative, takePhotoForMode } from "@/lib/native-camera";
 import type { ScanMode } from "@/lib/types";
 import PhotoPreview from "./PhotoPreview";
-import AnalyzingAnimation from "./AnalyzingAnimation";
 
 interface ScannerProps {
   onScan: (base64: string) => void;
@@ -188,12 +187,32 @@ export default function Scanner({ onScan, isLoading, mode = "food", loadingMessa
   const l = labels[mode] || labels.food;
 
   if (isLoading) {
+    const spinnerOuter = isCosmetics ? "border-t-fuchsia-500" : isSuplement ? "border-t-blue-500" : isMealMode ? "border-t-orange-500" : isForma ? "border-t-[#F97316]" : "border-t-[#2D5A16]";
+    const spinnerInner = isCosmetics ? "border-b-purple-400" : isSuplement ? "border-b-blue-400" : isMealMode ? "border-b-amber-400" : isForma ? "border-b-[#EF4444]" : "border-b-[#84CC16]";
+    const progressBar = isCosmetics ? "from-fuchsia-500 via-purple-500 to-violet-500" : isSuplement ? "from-blue-500 via-blue-400 to-blue-500" : isMealMode ? "from-orange-500 via-amber-500 to-orange-500" : isForma ? "from-[#F97316] via-[#EF4444] to-[#F97316]" : "from-[#2D5A16] via-[#84CC16] to-[#2D5A16]";
+    const emoji = isSuplement ? "💊" : isMealMode ? "🍽️" : isForma ? "💪" : "🔬";
     return (
-      <AnalyzingAnimation
-        mode={mode}
-        loadingMessage={loadingMessage || l.loading}
-        isDark={isDark}
-      />
+      <div className={`rounded-[24px] p-8 anim-fade-scale ${isDark ? "velvet-card" : "card-elevated"}`}>
+        <div className="flex flex-col items-center justify-center gap-6">
+          <div className="relative w-28 h-28">
+            <div className={`absolute inset-0 rounded-full border-[3px] ${isDark ? "border-white/5" : "border-gray-100"}`} />
+            <div className={`absolute inset-0 rounded-full border-[3px] border-transparent ${spinnerOuter}`} style={{ animation: "spinSlow 1s linear infinite" }} />
+            <div className={`absolute inset-2 rounded-full border-[2px] border-transparent ${spinnerInner}`} style={{ animation: "spinSlow 1.5s linear infinite reverse" }} />
+            <span className="absolute inset-0 flex items-center justify-center text-5xl anim-float">
+              {emoji}
+            </span>
+          </div>
+          <div className="text-center">
+            <p className={`text-lg font-bold ${isDark ? "text-white" : "text-[#1A3A0A]"}`}>
+              {loadingMessage || l.loading}
+            </p>
+            <p className={`text-[13px] mt-1 font-medium ${isDark ? "text-white/40" : "text-gray-400"}`}>To potrwa kilka sekund</p>
+          </div>
+          <div className={`w-full h-1.5 rounded-full overflow-hidden ${isDark ? "bg-white/5" : "bg-gray-100"}`}>
+            <div className={`h-full rounded-full bg-gradient-to-r ${progressBar}`} style={{ animation: "shimmer 1.5s infinite", backgroundSize: "200% 100%" }} />
+          </div>
+        </div>
+      </div>
     );
   }
 
