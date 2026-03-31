@@ -56,6 +56,12 @@ const ANALYZE_LABELS: Record<string, string> = {
   cosmetics: "\u{1F52C} Analizuj kosmetyk",
 };
 
+const PHOTO_LABEL_SINGLE: Record<string, string> = {
+  food: "Etykieta produktu",
+  suplement: "Prz\u00f3d opakowania",
+  cosmetics: "Prz\u00f3d opakowania",
+};
+
 function ScannerBrackets({ color, strokeWidth = 2.5, opacity = 0.7 }: { color: string; strokeWidth?: number; opacity?: number }) {
   return (
     <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 200 200" preserveAspectRatio="none">
@@ -136,35 +142,59 @@ export default function PhotoPreview({
 
         {/* Two photos side by side */}
         <div style={{ display: "flex", gap: 10, marginBottom: 12 }}>
-          {[photo1, photo2].map((photo, i) => (
-            <div key={i} style={{
-              flex: 1, height: 155, borderRadius: 16, overflow: "hidden", position: "relative",
-              border: i === 0 ? "1.5px solid rgba(255,255,255,0.06)" : `1.5px solid ${theme.accent}45`,
-            }}>
-              <img src={photo} alt={`Zdj\u0119cie ${i + 1}`} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-              <ScannerBrackets
-                color={i === 0 ? "rgba(255,255,255,0.1)" : theme.accent}
-                strokeWidth={1.5}
-                opacity={0.5}
-              />
-              <span style={{
-                position: "absolute", top: 6, right: 6,
-                background: "rgba(0,0,0,0.6)", color: "#fff",
-                fontSize: 9, padding: "2px 6px", borderRadius: 6,
+          {[photo1, photo2].map((photo, i) => {
+            const photoLabels = PHOTO_LABELS[mode];
+            return (
+              <div key={i} style={{
+                flex: 1, height: 155, borderRadius: 16, overflow: "hidden", position: "relative",
+                border: i === 0 ? "1.5px solid rgba(255,255,255,0.06)" : `1.5px solid ${theme.accent}45`,
+                background: i === 1 ? `linear-gradient(160deg, ${theme.accent}0F, #0d1210)` : undefined,
               }}>
-                {i + 1}/2
-              </span>
-              {i === 0 && (
-                <span style={{
-                  position: "absolute", top: 6, left: 6,
-                  fontSize: 12, background: "rgba(34,197,94,0.2)",
-                  borderRadius: 6, padding: "1px 4px",
+                <img src={photo!} alt={`Zdj\u0119cie ${i + 1}`} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                <ScannerBrackets
+                  color={i === 0 ? "rgba(255,255,255,0.1)" : theme.accent}
+                  strokeWidth={1.5}
+                  opacity={0.5}
+                />
+                {/* Center icon overlay */}
+                <div style={{
+                  position: "absolute", inset: 0,
+                  display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+                  pointerEvents: "none",
                 }}>
-                  \u2713
+                  <div style={{
+                    width: 40, height: 40, borderRadius: 12,
+                    background: "rgba(255,255,255,0.05)",
+                    backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)",
+                    border: "1px solid rgba(255,255,255,0.08)",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    fontSize: 18,
+                  }}>
+                    {i === 0 ? (source === "gallery" ? "\u{1F5BC}\uFE0F" : "\u{1F4F8}") : "\u{1F4CB}"}
+                  </div>
+                  <div style={{ fontSize: 10, color: "rgba(255,255,255,0.35)", marginTop: 4 }}>
+                    {photoLabels[i]}
+                  </div>
+                </div>
+                <span style={{
+                  position: "absolute", top: 6, right: 6,
+                  background: "rgba(0,0,0,0.6)", color: "#fff",
+                  fontSize: 9, padding: "2px 6px", borderRadius: 6,
+                }}>
+                  {i + 1}/2
                 </span>
-              )}
-            </div>
-          ))}
+                {i === 0 && (
+                  <span style={{
+                    position: "absolute", top: 6, left: 6,
+                    fontSize: 12, background: "rgba(34,197,94,0.2)",
+                    borderRadius: 6, padding: "1px 4px",
+                  }}>
+                    \u2713
+                  </span>
+                )}
+              </div>
+            );
+          })}
         </div>
 
         {/* Labels */}
@@ -290,6 +320,26 @@ export default function PhotoPreview({
           background: `linear-gradient(90deg, transparent, ${theme.accent}80, transparent)`,
           animation: "scanPulse 2.5s ease-in-out infinite",
         }} />
+        {/* Center icon overlay */}
+        <div style={{
+          position: "absolute", inset: 0,
+          display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+          pointerEvents: "none",
+        }}>
+          <div style={{
+            width: 52, height: 52, borderRadius: 14,
+            background: "rgba(255,255,255,0.05)",
+            backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)",
+            border: "1px solid rgba(255,255,255,0.08)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            fontSize: 24,
+          }}>
+            {source === "gallery" ? "\u{1F5BC}\uFE0F" : "\u{1F4F8}"}
+          </div>
+          <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", marginTop: 6 }}>
+            {PHOTO_LABEL_SINGLE[mode]}
+          </div>
+        </div>
       </div>
 
       {/* Info box */}
