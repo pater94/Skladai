@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import OnboardingSlides from "./OnboardingSlides";
+import LoginScreen from "./LoginScreen";
 
 export default function OnboardingWrapper() {
   const [show, setShow] = useState(false);
@@ -12,5 +12,13 @@ export default function OnboardingWrapper() {
   }, []);
 
   if (!show) return null;
-  return <OnboardingSlides onComplete={() => setShow(false)} />;
+
+  return (
+    <LoginScreen
+      onSkip={() => {
+        localStorage.setItem("onboardingCompleted", "true");
+        setShow(false);
+      }}
+    />
+  );
 }

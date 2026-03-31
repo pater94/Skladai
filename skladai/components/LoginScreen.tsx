@@ -21,7 +21,7 @@ export default function LoginScreen({ onSkip }: LoginScreenProps) {
   }, []);
 
   return (
-    <div style={{ minHeight: "100dvh", background: "#0a0e0c", position: "relative", overflow: "hidden" }}>
+    <div className="fixed inset-0 z-[9999]" style={{ background: "#0a0e0c", overflow: "auto" }}>
       <div style={{ padding: "12px 22px 28px", position: "relative", overflow: "hidden" }}>
         {/* Ambient */}
         <div style={{ position: "absolute", top: -30, left: "50%", transform: "translateX(-50%)", width: 350, height: 220, background: "radial-gradient(ellipse at 30% 40%, rgba(110,252,180,0.08) 0%, transparent 60%), radial-gradient(ellipse at 70% 60%, rgba(59,130,246,0.05) 0%, transparent 50%)", pointerEvents: "none" }} />

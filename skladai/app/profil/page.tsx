@@ -8,7 +8,7 @@ import { getProfile, getStreak, getHistory } from "@/lib/storage";
 import { ACTIVITY_LEVELS, GOALS, COMMON_ALLERGENS, DIETS, DIABETES_TYPES, TRIMESTERS } from "@/lib/nutrition";
 import { getAllAchievements, getAchievementsByCategory, getEarnedCount, CATEGORY_LABELS, TIER_COLORS, Achievement, AchievementCategory } from "@/lib/badges";
 import ProfileSetup from "@/components/ProfileSetup";
-import LoginScreen from "@/components/LoginScreen";
+// LoginScreen moved to OnboardingWrapper (first-launch screen)
 
 /* ── Recharts (client-only) ── */
 const AreaChart = dynamic(() => import("recharts").then(m => m.AreaChart), { ssr: false });
@@ -66,7 +66,7 @@ export default function ProfilPage() {
   const [loaded, setLoaded] = useState(false);
   const [showAchievements, setShowAchievements] = useState(false);
   const [normsOpen, setNormsOpen] = useState(false);
-  const [showLogin, setShowLogin] = useState(false);
+  // LoginScreen removed — now in OnboardingWrapper
 
   const [achievements, setAchievements] = useState<Record<AchievementCategory, Achievement[]>>({} as Record<AchievementCategory, Achievement[]>);
   const [earnedStats, setEarnedStats] = useState({ earned: 0, total: 0 });
@@ -88,7 +88,7 @@ export default function ProfilPage() {
     setScanCount(getHistory().length);
     setWeightHistory(getWeightHistory());
     setLoaded(true);
-    if (!p) setShowLogin(true);
+    if (!p) setEditing(true);
   }, []);
 
   /* ── Save weight entry ── */
@@ -206,8 +206,8 @@ export default function ProfilPage() {
   }
 
   /* ── Login screen (no profile yet) ── */
-  if (showLogin && !profile) {
-    return <LoginScreen onSkip={() => { setShowLogin(false); setEditing(true); }} />;
+  if (false) {
+    // LoginScreen removed — now shown as onboarding in OnboardingWrapper
   }
 
   /* ── Profile editing / onboarding ── */
