@@ -139,6 +139,24 @@ jobs:
           path: skladai/ios/App/build/ipa-output/*.ipa
           retention-days: 30
 
+      - name: Upload to App Store Connect
+        working-directory: skladai/ios/App
+        env:
+          APP_STORE_CONNECT_API_KEY: ${{ secrets.APP_STORE_API_KEY }}
+          APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.APP_STORE_API_KEY_ID }}
+          APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_API_ISSUER_ID }}
+        run: |
+          # Write API key to file (required by xcrun)
+          mkdir -p ~/.private_keys
+          echo "$APP_STORE_CONNECT_API_KEY" > ~/.private_keys/AuthKey_${APP_STORE_CONNECT_API_KEY_ID}.p8
+
+          # Upload IPA to App Store Connect
+          xcrun altool --upload-app \
+            --type ios \
+            --file build/ipa-output/*.ipa \
+            --apiKey "$APP_STORE_CONNECT_API_KEY_ID" \
+            --apiIssuer "$APP_STORE_CONNECT_ISSUER_ID"
+
       - name: Clean up keychain
         if: always()
         run: |
