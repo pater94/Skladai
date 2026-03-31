@@ -6,79 +6,77 @@ export const maxDuration = 60;
 
 // ==================== SCAN LOGGING (fire-and-forget) ====================
 
-function logScanToSupabase(opts: {
+async function logScanToSupabase(opts: {
   mode: string;
   base64Image?: string;
   image2Base64?: string;
   result: Record<string, unknown>;
   aiModel?: string;
   startTime: number;
-}) {
+}): Promise<void> {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!supabaseUrl || !supabaseServiceKey) return;
 
   const supaAdmin = createSupabaseClient(supabaseUrl, supabaseServiceKey);
 
-  (async () => {
-    try {
-      let imageUrl: string | null = null;
-      let image2Url: string | null = null;
+  try {
+    let imageUrl: string | null = null;
+    let image2Url: string | null = null;
 
-      // Upload primary image
-      if (opts.base64Image) {
-        const imageData = opts.base64Image.replace(/^data:image\/\w+;base64,/, "");
-        const imageBuffer = Buffer.from(imageData, "base64");
-        const imagePath = `scans/${Date.now()}_${opts.mode}.jpg`;
+    // Upload primary image
+    if (opts.base64Image) {
+      const imageData = opts.base64Image.replace(/^data:image\/\w+;base64,/, "");
+      const imageBuffer = Buffer.from(imageData, "base64");
+      const imagePath = `scans/${Date.now()}_${opts.mode}.jpg`;
 
-        const { error: uploadErr } = await supaAdmin.storage
-          .from("scans")
-          .upload(imagePath, imageBuffer, {
-            contentType: "image/jpeg",
-            upsert: false,
-          });
+      const { error: uploadErr } = await supaAdmin.storage
+        .from("scans")
+        .upload(imagePath, imageBuffer, {
+          contentType: "image/jpeg",
+          upsert: false,
+        });
 
-        if (!uploadErr) {
-          imageUrl = `${supabaseUrl}/storage/v1/object/public/scans/${imagePath}`;
-        }
+      if (!uploadErr) {
+        imageUrl = `${supabaseUrl}/storage/v1/object/public/scans/${imagePath}`;
       }
-
-      // Upload secondary image if present
-      if (opts.image2Base64) {
-        const img2Data = opts.image2Base64.replace(/^data:image\/\w+;base64,/, "");
-        const img2Buffer = Buffer.from(img2Data, "base64");
-        const img2Path = `scans/${Date.now()}_${opts.mode}_2.jpg`;
-
-        const { error: upload2Err } = await supaAdmin.storage
-          .from("scans")
-          .upload(img2Path, img2Buffer, {
-            contentType: "image/jpeg",
-            upsert: false,
-          });
-
-        if (!upload2Err) {
-          image2Url = `${supabaseUrl}/storage/v1/object/public/scans/${img2Path}`;
-        }
-      }
-
-      await supaAdmin.from("scan_logs").insert({
-        mode: opts.mode,
-        image_url: imageUrl,
-        image2_url: image2Url,
-        ai_result: opts.result,
-        ai_model: opts.aiModel || "claude-sonnet-4-20250514",
-        score: (opts.result as Record<string, unknown>).score || null,
-        product_name:
-          (opts.result as Record<string, unknown>).name ||
-          (opts.result as Record<string, unknown>).meal_name ||
-          null,
-        processing_time_ms: Date.now() - opts.startTime,
-        prompt_version: "v1",
-      });
-    } catch (e) {
-      console.error("[ScanLog] Failed to log scan:", e);
     }
-  })();
+
+    // Upload secondary image if present
+    if (opts.image2Base64) {
+      const img2Data = opts.image2Base64.replace(/^data:image\/\w+;base64,/, "");
+      const img2Buffer = Buffer.from(img2Data, "base64");
+      const img2Path = `scans/${Date.now()}_${opts.mode}_2.jpg`;
+
+      const { error: upload2Err } = await supaAdmin.storage
+        .from("scans")
+        .upload(img2Path, img2Buffer, {
+          contentType: "image/jpeg",
+          upsert: false,
+        });
+
+      if (!upload2Err) {
+        image2Url = `${supabaseUrl}/storage/v1/object/public/scans/${img2Path}`;
+      }
+    }
+
+    await supaAdmin.from("scan_logs").insert({
+      mode: opts.mode,
+      image_url: imageUrl,
+      image2_url: image2Url,
+      ai_result: opts.result,
+      ai_model: opts.aiModel || "claude-sonnet-4-20250514",
+      score: (opts.result as Record<string, unknown>).score || null,
+      product_name:
+        (opts.result as Record<string, unknown>).name ||
+        (opts.result as Record<string, unknown>).meal_name ||
+        null,
+      processing_time_ms: Date.now() - opts.startTime,
+      prompt_version: "v1",
+    });
+  } catch (e) {
+    console.error("[ScanLog] Failed to log scan:", e);
+  }
 }
 
 // ==================== STEP 1: READ LABEL (OCR) ====================
@@ -771,7 +769,7 @@ export async function POST(request: NextRequest) {
       try {
         const result = parseJsonResponse(res.text);
         result.mode = "alcohol_search";
-        logScanToSupabase({ mode: "alcohol_search", result, startTime });
+        await logScanToSupabase({ mode: "alcohol_search", result, startTime });
         return NextResponse.json(result);
       } catch {
         return NextResponse.json({ error: "Nie znaleziono tego alkoholu." }, { status: 422 });
@@ -793,7 +791,7 @@ export async function POST(request: NextRequest) {
       try {
         const result = parseJsonResponse(res.text);
         result.mode = "alcohol_scan";
-        logScanToSupabase({ mode: "alcohol_scan", base64Image: image, result, startTime });
+        await logScanToSupabase({ mode: "alcohol_scan", base64Image: image, result, startTime });
         return NextResponse.json(result);
       } catch {
         return NextResponse.json({ error: "Nie udało się rozpoznać alkoholu." }, { status: 422 });
@@ -1019,7 +1017,7 @@ Odpowiedz WYŁĄCZNIE poprawnym JSON (bez markdown, bez komentarzy):
         if (!result.name && result.meal_name) result.name = result.meal_name;
         if (!result.brand) result.brand = "";
         result.type = "meal";
-        logScanToSupabase({ mode: "meal", base64Image: image, result, aiModel: "claude-opus-4-20250514", startTime });
+        await logScanToSupabase({ mode: "meal", base64Image: image, result, aiModel: "claude-opus-4-20250514", startTime });
         return NextResponse.json(result);
       } catch {
         return NextResponse.json({ error: "Nie udało się rozpoznać dania. Spróbuj z lepszym zdjęciem." }, { status: 422 });
@@ -1040,7 +1038,7 @@ Odpowiedz WYŁĄCZNIE poprawnym JSON (bez markdown, bez komentarzy):
         if (!result.name) result.name = "Skan lodówki";
         if (!result.brand) result.brand = "";
         if (!result.score && result.fridge_score) result.score = Math.round(result.fridge_score);
-        logScanToSupabase({ mode: "fridge_scan", base64Image: image, result, aiModel: "claude-opus-4-20250514", startTime });
+        await logScanToSupabase({ mode: "fridge_scan", base64Image: image, result, aiModel: "claude-opus-4-20250514", startTime });
         return NextResponse.json(result);
       } catch {
         return NextResponse.json({ error: "Nie udało się przeanalizować lodówki." }, { status: 422 });
@@ -1068,7 +1066,7 @@ Odpowiedz WYŁĄCZNIE poprawnym JSON (bez markdown, bez komentarzy):
         result.name = "CheckForm";
         result.brand = "";
         if (!result.score && result.overall_score) result.score = result.overall_score;
-        logScanToSupabase({ mode: "forma", base64Image: image, image2Base64: image2 || undefined, result, aiModel: "claude-opus-4-20250514", startTime });
+        await logScanToSupabase({ mode: "forma", base64Image: image, image2Base64: image2 || undefined, result, aiModel: "claude-opus-4-20250514", startTime });
         return NextResponse.json(result);
       } catch {
         return NextResponse.json({ error: "Nie udało się przeanalizować zdjęcia. Spróbuj z lepszym oświetleniem." }, { status: 422 });
@@ -1192,7 +1190,7 @@ ZASADY:
         if (!result.interactions) result.interactions = [];
         if (!result.who_for) result.who_for = [];
         if (!result.who_avoid) result.who_avoid = [];
-        logScanToSupabase({ mode: "suplement", base64Image: image, image2Base64: image2 || undefined, result, startTime });
+        await logScanToSupabase({ mode: "suplement", base64Image: image, image2Base64: image2 || undefined, result, startTime });
         return NextResponse.json(result);
       } catch {
         return NextResponse.json({ error: "Nie udało się przeanalizować suplementu." }, { status: 422 });
@@ -1297,7 +1295,7 @@ ZASADY:
       // Validate nutrition
       if (!isCosmetics) validateNutrition(result);
 
-      logScanToSupabase({ mode: isCosmetics ? "cosmetics" : "food", base64Image: image, image2Base64: image2 || undefined, result, startTime });
+      await logScanToSupabase({ mode: isCosmetics ? "cosmetics" : "food", base64Image: image, image2Base64: image2 || undefined, result, startTime });
       return NextResponse.json(result);
     } catch {
       console.error("Failed to parse AI response:", step2.text?.substring(0, 500));
