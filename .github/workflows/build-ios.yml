@@ -64,9 +64,6 @@ jobs:
             "$(/usr/bin/security cms -D -i "$PROFILE_PATH")")
           cp "$PROFILE_PATH" ~/Library/MobileDevice/Provisioning\ Profiles/"$PROFILE_UUID".mobileprovision
 
-          # Export profile UUID for later steps
-          echo "PROVISIONING_PROFILE_UUID=$PROFILE_UUID" >> "$GITHUB_ENV"
-
           # Clean up decoded files
           rm -f "$CERTIFICATE_PATH" "$PROFILE_PATH"
 
@@ -83,8 +80,6 @@ jobs:
 
       - name: Build signed iOS archive
         working-directory: skladai/ios/App
-        env:
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
           xcodebuild \
             -project App.xcodeproj \
@@ -94,15 +89,14 @@ jobs:
             -destination 'generic/platform=iOS' \
             archive \
             CODE_SIGN_STYLE=Manual \
-            DEVELOPMENT_TEAM="$APPLE_TEAM_ID" \
-            PROVISIONING_PROFILE_SPECIFIER="$PROVISIONING_PROFILE_UUID" \
+            DEVELOPMENT_TEAM="AWRQPLPRL6" \
+            PROVISIONING_PROFILE_SPECIFIER="SkladAI Distribution" \
             CODE_SIGN_IDENTITY="iPhone Distribution"
 
       - name: Create ExportOptions.plist
-        env:
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        working-directory: skladai/ios/App
         run: |
-          cat > "$RUNNER_TEMP/ExportOptions.plist" <<EOF
+          cat > ExportOptions.plist <<'EOF'
           <?xml version="1.0" encoding="UTF-8"?>
           <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
             "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -111,18 +105,14 @@ jobs:
             <key>method</key>
             <string>app-store-connect</string>
             <key>teamID</key>
-            <string>${APPLE_TEAM_ID}</string>
+            <string>AWRQPLPRL6</string>
             <key>signingStyle</key>
             <string>manual</string>
             <key>provisioningProfiles</key>
             <dict>
               <key>com.skladai.app</key>
-              <string>${PROVISIONING_PROFILE_UUID}</string>
+              <string>SkladAI Distribution</string>
             </dict>
-            <key>uploadBitcode</key>
-            <false/>
-            <key>uploadSymbols</key>
-            <true/>
           </dict>
           </plist>
           EOF
@@ -132,8 +122,8 @@ jobs:
         run: |
           xcodebuild -exportArchive \
             -archivePath build/App.xcarchive \
-            -exportPath build/ipa \
-            -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist"
+            -exportPath build/ipa-output \
+            -exportOptionsPlist ExportOptions.plist
 
       - name: Upload xcarchive artifact
         uses: actions/upload-artifact@v4
@@ -145,8 +135,8 @@ jobs:
       - name: Upload IPA artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ios-ipa-${{ github.sha }}
-          path: skladai/ios/App/build/ipa/*.ipa
+          name: skladai-ipa
+          path: skladai/ios/App/build/ipa-output/*.ipa
           retention-days: 30
 
       - name: Clean up keychain
