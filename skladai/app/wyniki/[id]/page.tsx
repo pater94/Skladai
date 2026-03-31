@@ -359,7 +359,17 @@ export default function WynikiPage() {
       <div className="max-w-md mx-auto px-5 -mt-24 pb-10 relative z-20">
 
         {/* ─── 1. SCORE CARD ─── */}
-        <div className={`rounded-[20px] p-4 anim-fade-up ${isDark ? "velvet-card" : "glass-card"}`}>
+        <div
+          className="rounded-[20px] p-4 anim-fade-up relative overflow-hidden"
+          style={{
+            background: isDark ? "rgba(255,255,255,0.02)" : "rgba(255,255,255,0.85)",
+            backdropFilter: isDark ? undefined : "blur(20px)",
+            WebkitBackdropFilter: isDark ? undefined : "blur(20px)",
+            border: isDark ? "1px solid rgba(255,255,255,0.06)" : "1px solid rgba(255,255,255,0.6)",
+          }}
+        >
+          {/* Gradient stripe */}
+          <div className="absolute top-0 left-0 right-0" style={{ height: 3, background: `linear-gradient(90deg, transparent, ${color}, transparent)` }} />
           <div className="flex items-center gap-3.5">
             <ScoreRing score={result.score} size={68} />
             <div className="flex-1 min-w-0">
@@ -393,16 +403,13 @@ export default function WynikiPage() {
           )}
 
           {/* Feedback buttons */}
-          <div className="mt-3 flex items-center justify-center gap-3">
+          <div className="mt-3 flex items-center justify-center gap-2.5">
             {feedbackSent ? (
-              <p className={`text-[12px] font-medium ${isDark ? "text-white/30" : "text-gray-400"}`}>
-                {feedbackSent === "good" ? "👍 Dziękujemy!" : "👎 Dzięki, poprawimy się!"}
+              <p style={{ fontSize: 12, color: "rgba(255,255,255,0.3)" }}>
+                Dzięki za opinię! 🙏
               </p>
             ) : (
               <>
-                <span className={`text-[11px] font-medium ${isDark ? "text-white/25" : "text-gray-400"}`}>
-                  Trafna analiza?
-                </span>
                 <button
                   onClick={() => {
                     setFeedbackSent("good");
@@ -412,11 +419,17 @@ export default function WynikiPage() {
                       body: JSON.stringify({ product_name: result.name, feedback: "good" }),
                     });
                   }}
-                  className={`w-9 h-9 rounded-full flex items-center justify-center text-[16px] transition-all active:scale-90 ${
-                    isDark ? "bg-white/5 hover:bg-emerald-500/20" : "bg-gray-100 hover:bg-emerald-100"
-                  }`}
+                  className="active:scale-95 transition-transform"
+                  style={{
+                    padding: "8px 16px",
+                    borderRadius: 10,
+                    background: "rgba(255,255,255,0.03)",
+                    border: "1px solid rgba(255,255,255,0.06)",
+                    color: "rgba(255,255,255,0.3)",
+                    fontSize: 12,
+                  }}
                 >
-                  👍
+                  👍 Trafna analiza
                 </button>
                 <button
                   onClick={() => {
@@ -427,11 +440,17 @@ export default function WynikiPage() {
                       body: JSON.stringify({ product_name: result.name, feedback: "bad" }),
                     });
                   }}
-                  className={`w-9 h-9 rounded-full flex items-center justify-center text-[16px] transition-all active:scale-90 ${
-                    isDark ? "bg-white/5 hover:bg-red-500/20" : "bg-gray-100 hover:bg-red-100"
-                  }`}
+                  className="active:scale-95 transition-transform"
+                  style={{
+                    padding: "8px 16px",
+                    borderRadius: 10,
+                    background: "rgba(255,255,255,0.03)",
+                    border: "1px solid rgba(255,255,255,0.06)",
+                    color: "rgba(255,255,255,0.3)",
+                    fontSize: 12,
+                  }}
                 >
-                  👎
+                  👎 Błędna
                 </button>
               </>
             )}

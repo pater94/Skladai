@@ -7,7 +7,7 @@ export default function OnboardingWrapper() {
   const [show, setShow] = useState(false);
 
   useEffect(() => {
-    const done = localStorage.getItem("skladai_onboarding_done");
+    const done = localStorage.getItem("onboardingCompleted");
     if (!done) setShow(true);
   }, []);
 

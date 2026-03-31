@@ -231,110 +231,105 @@ export default function ProfilPage() {
   /* ── Full achievements screen (premium) ── */
   if (showAchievements) {
     const pct = earnedStats.total > 0 ? Math.round((earnedStats.earned / earnedStats.total) * 100) : 0;
+
+    const CAT_COLORS: Record<string, string> = {
+      scanner: "#6efcb4",
+      healthy: "#FBBF24",
+      streak: "#f97316",
+      forma: "#3b82f6",
+    };
+
     return (
-      <div className="min-h-[100dvh]" style={{ background: "#0a0f0d" }}>
+      <div className="min-h-[100dvh]" style={{ background: "#0a0e0c" }}>
         <div className="max-w-md mx-auto px-5 pt-6 pb-32">
           <button
             onClick={() => setShowAchievements(false)}
-            className="flex items-center gap-1.5 text-[13px] text-white/60 font-semibold px-4 py-2 rounded-full bg-white/5 border border-white/10 active:scale-95 transition-all mb-5"
+            className="flex items-center gap-1.5 text-[13px] font-semibold px-4 py-2 rounded-full active:scale-95 transition-all mb-5"
+            style={{ color: "rgba(255,255,255,0.6)", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)" }}
           >
             ← Wstecz
           </button>
 
-          {/* Header with progress ring */}
-          <div className="flex items-center gap-4 mb-6">
-            <div className="relative w-16 h-16 flex-shrink-0">
-              <svg width="64" height="64" className="transform -rotate-90">
-                <circle cx="32" cy="32" r="28" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="4" />
-                <circle
-                  cx="32" cy="32" r="28" fill="none"
-                  stroke="#10b981" strokeWidth="4" strokeLinecap="round"
-                  strokeDasharray={`${2 * Math.PI * 28}`}
-                  strokeDashoffset={`${2 * Math.PI * 28 * (1 - pct / 100)}`}
-                  style={{ transition: "stroke-dashoffset 1s ease" }}
-                />
-              </svg>
-              <span className="absolute inset-0 flex items-center justify-center text-[14px] font-bold text-emerald-400">
-                {pct}%
-              </span>
-            </div>
-            <div>
-              <h1 className="text-[22px] font-black text-white">Osiagnięcia</h1>
-              <p className="text-[13px] text-white/30 font-semibold">
-                {earnedStats.earned} z {earnedStats.total} zdobytych
-              </p>
-            </div>
+          {/* Header */}
+          <h1 style={{ fontSize: 20, fontWeight: 900, color: "#fff", letterSpacing: "-0.03em", marginBottom: 4 }}>
+            🏆 Osiągnięcia
+          </h1>
+          <p style={{ fontSize: 12, color: "rgba(255,255,255,0.3)", marginBottom: 12 }}>
+            {earnedStats.earned} / {earnedStats.total} zdobytych
+          </p>
+
+          {/* Progress bar */}
+          <div style={{ width: "100%", height: 4, background: "rgba(255,255,255,0.05)", borderRadius: 2, marginBottom: 24 }}>
+            <div style={{ width: `${pct}%`, height: "100%", borderRadius: 2, background: "linear-gradient(90deg, #6efcb4, #3dd990)", transition: "width 1s ease" }} />
           </div>
 
-          {(Object.entries(achievements) as [AchievementCategory, Achievement[]][]).map(([cat, items]) => (
-            <div key={cat} className="mb-5 last:mb-0">
-              <p className="text-[11px] font-bold text-white/25 uppercase tracking-wider mb-2.5">
-                {CATEGORY_LABELS[cat]?.icon} {CATEGORY_LABELS[cat]?.name}
-              </p>
-              <div className="grid grid-cols-2 gap-2">
-                {items.map((a, idx) => {
-                  const tierColor = TIER_COLORS[a.tier];
-                  const progress = a.target > 0 ? Math.min(100, Math.round((a.current / a.target) * 100)) : 0;
-                  return (
-                    <div
-                      key={a.id}
-                      className={`relative overflow-hidden rounded-[16px] p-3.5 border transition-all ${
-                        a.earned
-                          ? "bg-white/[0.04] border-white/[0.08]"
-                          : "bg-white/[0.02] border-white/[0.04] opacity-60"
-                      }`}
-                      style={{ animation: `fadeInUp 0.4s ease ${idx * 0.05}s both` }}
-                    >
-                      {/* Earned glow */}
-                      {a.earned && (
-                        <div
-                          className="absolute top-0 right-0 w-16 h-16 rounded-full blur-[30px] opacity-15"
-                          style={{
-                            background: a.tier === "diamond" ? "#06b6d4"
-                              : a.tier === "gold" ? "#eab308"
-                              : a.tier === "silver" ? "#9ca3af"
-                              : "#d97706",
-                          }}
-                        />
-                      )}
-                      <div className="flex items-start gap-3 relative z-10">
-                        <span className={`text-[28px] ${a.earned ? "" : "grayscale opacity-40"}`}>
+          {(Object.entries(achievements) as [AchievementCategory, Achievement[]][]).map(([cat, items]) => {
+            const catColor = CAT_COLORS[cat] || "#6efcb4";
+            return (
+              <div key={cat} className="mb-6 last:mb-0">
+                <p style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.25)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 10 }}>
+                  {CATEGORY_LABELS[cat]?.icon} {CATEGORY_LABELS[cat]?.name}
+                </p>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                  {items.map((a) => {
+                    const progress = a.target > 0 ? Math.min(100, Math.round((a.current / a.target) * 100)) : 0;
+                    return (
+                      <div
+                        key={a.id}
+                        className="relative overflow-hidden"
+                        style={{
+                          padding: "16px 12px",
+                          borderRadius: 16,
+                          textAlign: "center",
+                          background: a.earned
+                            ? `linear-gradient(160deg, ${catColor}14, rgba(255,255,255,0.02))`
+                            : "rgba(255,255,255,0.02)",
+                          border: a.earned
+                            ? `1.5px solid ${catColor}40`
+                            : "1.5px solid rgba(255,255,255,0.04)",
+                          opacity: a.earned ? 1 : 0.4,
+                        }}
+                      >
+                        {/* Glow for earned */}
+                        {a.earned && (
+                          <div
+                            className="absolute pointer-events-none"
+                            style={{
+                              top: -20,
+                              left: "50%",
+                              transform: "translateX(-50%)",
+                              width: 80,
+                              height: 40,
+                              background: `radial-gradient(ellipse, ${catColor}33, transparent 70%)`,
+                            }}
+                          />
+                        )}
+                        {/* Icon */}
+                        <span style={{ fontSize: 32, display: "block", marginBottom: 8, filter: a.earned ? "none" : "grayscale(1)" }}>
                           {a.icon}
                         </span>
-                        <div className="flex-1 min-w-0">
-                          <p className={`text-[12px] font-bold leading-tight ${a.earned ? "text-white" : "text-white/40"}`}>
-                            {a.name}
-                          </p>
-                          <p className={`text-[10px] mt-0.5 leading-snug ${a.earned ? "text-white/40" : "text-white/20"}`}>
-                            {a.description}
-                          </p>
-                          {!a.earned && (
-                            <div className="mt-2">
-                              <div className="w-full h-1.5 rounded-full bg-white/5 overflow-hidden">
-                                <div
-                                  className="h-full rounded-full transition-all duration-700"
-                                  style={{
-                                    width: `${progress}%`,
-                                    background: "linear-gradient(90deg, #10b981, #06b6d4)",
-                                  }}
-                                />
-                              </div>
-                              <p className="text-[9px] text-white/25 mt-1 font-medium">{a.current}/{a.target}</p>
-                            </div>
-                          )}
-                          {a.earned && (
-                            <span className={`inline-block mt-1.5 text-[9px] font-bold px-2 py-0.5 rounded-full ${tierColor.bg} ${tierColor.text} ${tierColor.border} border`}>
-                              {a.tier.toUpperCase()}
-                            </span>
-                          )}
-                        </div>
+                        {/* Name */}
+                        <p style={{ fontSize: 13, fontWeight: 800, color: a.earned ? "rgba(255,255,255,0.9)" : "rgba(255,255,255,0.4)", marginBottom: 2 }}>
+                          {a.name}
+                        </p>
+                        {/* Desc */}
+                        <p style={{ fontSize: 10, color: a.earned ? "rgba(255,255,255,0.35)" : "rgba(255,255,255,0.15)", lineHeight: "14px" }}>
+                          {a.description}
+                        </p>
+                        {/* Locked icon */}
+                        {!a.earned && (
+                          <div style={{ marginTop: 6 }}>
+                            <span style={{ fontSize: 12, color: "rgba(255,255,255,0.15)" }}>🔒</span>
+                            <p style={{ fontSize: 9, color: "rgba(255,255,255,0.15)", marginTop: 2 }}>{a.current}/{a.target}</p>
+                          </div>
+                        )}
                       </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     );
