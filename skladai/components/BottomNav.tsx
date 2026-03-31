@@ -33,8 +33,9 @@ function getThemeColors(pathname: string) {
 export default function BottomNav() {
   const pathname = usePathname();
 
-  // Hide on results pages
+  // Hide on results pages and admin
   if (pathname.startsWith("/wyniki")) return null;
+  if (pathname.startsWith("/admin")) return null;
 
   const theme = getThemeColors(pathname);
 

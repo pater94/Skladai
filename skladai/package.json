@@ -24,6 +24,8 @@
     "@capacitor/splash-screen": "^8.0.1",
     "@capacitor/status-bar": "^8.0.2",
     "@capgo/capacitor-health": "^8.4.2",
+    "@supabase/ssr": "^0.10.0",
+    "@supabase/supabase-js": "^2.101.0",
     "browser-image-compression": "^2.0.2",
     "html2canvas": "^1.4.1",
     "lucide-react": "^1.7.0",
@@ -39,6 +41,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.2.1",
+    "sharp": "^0.34.5",
     "tailwindcss": "^4",
     "typescript": "^5"
   }
