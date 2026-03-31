@@ -255,6 +255,7 @@ export default function WynikiPage() {
   const [item, setItem] = useState<ScanHistoryItem | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [selectedIngredient, setSelectedIngredient] = useState<string | null>(null);
+  const [feedbackSent, setFeedbackSent] = useState<"good" | "bad" | null>(null);
 
   useEffect(() => {
     const id = params.id as string;
@@ -390,6 +391,51 @@ export default function WynikiPage() {
               ⚡ {mainCalories} kcal
             </p>
           )}
+
+          {/* Feedback buttons */}
+          <div className="mt-3 flex items-center justify-center gap-3">
+            {feedbackSent ? (
+              <p className={`text-[12px] font-medium ${isDark ? "text-white/30" : "text-gray-400"}`}>
+                {feedbackSent === "good" ? "👍 Dziękujemy!" : "👎 Dzięki, poprawimy się!"}
+              </p>
+            ) : (
+              <>
+                <span className={`text-[11px] font-medium ${isDark ? "text-white/25" : "text-gray-400"}`}>
+                  Trafna analiza?
+                </span>
+                <button
+                  onClick={() => {
+                    setFeedbackSent("good");
+                    fetch("/api/feedback", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ product_name: result.name, feedback: "good" }),
+                    });
+                  }}
+                  className={`w-9 h-9 rounded-full flex items-center justify-center text-[16px] transition-all active:scale-90 ${
+                    isDark ? "bg-white/5 hover:bg-emerald-500/20" : "bg-gray-100 hover:bg-emerald-100"
+                  }`}
+                >
+                  👍
+                </button>
+                <button
+                  onClick={() => {
+                    setFeedbackSent("bad");
+                    fetch("/api/feedback", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ product_name: result.name, feedback: "bad" }),
+                    });
+                  }}
+                  className={`w-9 h-9 rounded-full flex items-center justify-center text-[16px] transition-all active:scale-90 ${
+                    isDark ? "bg-white/5 hover:bg-red-500/20" : "bg-gray-100 hover:bg-red-100"
+                  }`}
+                >
+                  👎
+                </button>
+              </>
+            )}
+          </div>
         </div>
 
         {/* ─── Meal items — interactive portion editor (meal mode) ─── */}

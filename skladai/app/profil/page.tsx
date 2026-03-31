@@ -8,6 +8,7 @@ import { getProfile, getStreak, getHistory } from "@/lib/storage";
 import { ACTIVITY_LEVELS, GOALS, COMMON_ALLERGENS, DIETS, DIABETES_TYPES, TRIMESTERS } from "@/lib/nutrition";
 import { getAllAchievements, getAchievementsByCategory, getEarnedCount, CATEGORY_LABELS, TIER_COLORS, Achievement, AchievementCategory } from "@/lib/badges";
 import ProfileSetup from "@/components/ProfileSetup";
+import LoginScreen from "@/components/LoginScreen";
 
 /* ── Recharts (client-only) ── */
 const AreaChart = dynamic(() => import("recharts").then(m => m.AreaChart), { ssr: false });
@@ -63,6 +64,7 @@ export default function ProfilPage() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [editing, setEditing] = useState(false);
   const [loaded, setLoaded] = useState(false);
+  const [showLogin, setShowLogin] = useState(false);
   const [showAchievements, setShowAchievements] = useState(false);
   const [normsOpen, setNormsOpen] = useState(false);
 
@@ -86,7 +88,7 @@ export default function ProfilPage() {
     setScanCount(getHistory().length);
     setWeightHistory(getWeightHistory());
     setLoaded(true);
-    if (!p) setEditing(true);
+    if (!p) setShowLogin(true);
   }, []);
 
   /* ── Save weight entry ── */
@@ -200,6 +202,18 @@ export default function ProfilPage() {
       <div className="min-h-[100dvh] flex items-center justify-center bg-[#f5f2ed]">
         <div className="w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full" style={{ animation: "spin 0.8s linear infinite" }} />
       </div>
+    );
+  }
+
+  /* ── Login screen (no profile, not authenticated) ── */
+  if (showLogin && !profile) {
+    return (
+      <LoginScreen
+        onSkip={() => {
+          setShowLogin(false);
+          setEditing(true);
+        }}
+      />
     );
   }
 
