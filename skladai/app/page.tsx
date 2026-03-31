@@ -3,6 +3,7 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Scanner from "@/components/Scanner";
+import PhotoPreview from "@/components/PhotoPreview";
 import HistoryList from "@/components/HistoryList";
 import MorningAfter from "@/components/MorningAfter";
 import FoodSearch from "@/components/FoodSearch";
@@ -97,9 +98,17 @@ export default function Home() {
   const [streak, setStreak] = useState(0);
   const [showSkinQuiz, setShowSkinQuiz] = useState(false);
   const [recentScans, setRecentScans] = useState<ScanHistoryItem[]>([]);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [secondPhotoPreview, setSecondPhotoPreview] = useState<string | null>(null);
+  const [photoSource, setPhotoSource] = useState<"camera" | "gallery">("camera");
+  const [awaitingSecondPhoto, setAwaitingSecondPhoto] = useState(false);
   const router = useRouter();
 
   const fridgeInputRef = useRef<HTMLInputElement>(null);
+  const secondCameraInputRef = useRef<HTMLInputElement>(null);
+  const secondGalleryInputRef = useRef<HTMLInputElement>(null);
+
+  const showPhotoPreview = (mode === "food" || mode === "cosmetics" || mode === "suplement");
 
   const accent = ACCENT_MAP[mode] || ACCENT_MAP.food;
 
@@ -439,8 +448,105 @@ export default function Home() {
           <Scanner onScan={handleScan} isLoading={isLoading} mode={mode} loadingMessage={loadingMessage} onFridgeScan={handleFridgeScan} />
         )}
 
+        {/* ══ Photo Preview (between photo and analysis) ══ */}
+        {!isLoading && photoPreview && showPhotoPreview && (
+          <div className="anim-fade-up-2" style={{ background: "#0a0e0c", borderRadius: 20, padding: "12px 8px", marginBottom: 12, border: "1px solid rgba(255,255,255,0.06)" }}>
+            <PhotoPreview
+              mode={mode as "food" | "cosmetics" | "suplement"}
+              source={photoSource}
+              photo1={photoPreview}
+              photo2={secondPhotoPreview}
+              onAddSecondPhoto={() => {
+                setAwaitingSecondPhoto(true);
+                if (photoSource === "camera") {
+                  if (isNative()) {
+                    takePhotoForMode(mode, "camera").then(base64 => {
+                      if (base64) { setSecondPhotoPreview(base64); setAwaitingSecondPhoto(false); }
+                      else { setAwaitingSecondPhoto(false); }
+                    });
+                  } else { secondCameraInputRef.current?.click(); }
+                } else {
+                  if (isNative()) {
+                    takePhotoForMode(mode, "gallery").then(base64 => {
+                      if (base64) { setSecondPhotoPreview(base64); setAwaitingSecondPhoto(false); }
+                      else { setAwaitingSecondPhoto(false); }
+                    });
+                  } else { secondGalleryInputRef.current?.click(); }
+                }
+              }}
+              onAnalyzeSingle={() => {
+                const img = photoPreview;
+                setPhotoPreview(null); setSecondPhotoPreview(null);
+                handleScan(img);
+              }}
+              onAnalyzeBoth={() => {
+                if (photoPreview && secondPhotoPreview) {
+                  const combined = photoPreview + "|||SECOND|||" + secondPhotoPreview;
+                  setPhotoPreview(null); setSecondPhotoPreview(null);
+                  handleScan(combined);
+                }
+              }}
+              onRetakePhoto1={() => {
+                setPhotoPreview(null); setSecondPhotoPreview(null);
+                if (photoSource === "camera") {
+                  (document.getElementById("main-camera-input") as HTMLInputElement)?.click();
+                } else {
+                  (document.getElementById("gallery-input") as HTMLInputElement)?.click();
+                }
+              }}
+              onRetakePhoto2={() => {
+                setSecondPhotoPreview(null);
+                setAwaitingSecondPhoto(true);
+                if (photoSource === "camera") {
+                  if (isNative()) {
+                    takePhotoForMode(mode, "camera").then(base64 => {
+                      if (base64) { setSecondPhotoPreview(base64); setAwaitingSecondPhoto(false); }
+                      else { setAwaitingSecondPhoto(false); }
+                    });
+                  } else { secondCameraInputRef.current?.click(); }
+                } else {
+                  if (isNative()) {
+                    takePhotoForMode(mode, "gallery").then(base64 => {
+                      if (base64) { setSecondPhotoPreview(base64); setAwaitingSecondPhoto(false); }
+                      else { setAwaitingSecondPhoto(false); }
+                    });
+                  } else { secondGalleryInputRef.current?.click(); }
+                }
+              }}
+              onBack={() => { setPhotoPreview(null); setSecondPhotoPreview(null); setAwaitingSecondPhoto(false); }}
+            />
+            {/* Hidden inputs for second photo */}
+            <input ref={secondCameraInputRef} type="file" accept="image/*" capture="environment" onChange={async (e) => {
+              const file = e.target.files?.[0];
+              if (!file || !file.type.startsWith("image/")) return;
+              const fileClone = new File([file], file.name, { type: file.type });
+              e.target.value = "";
+              try {
+                const { compressImage } = await import("@/lib/compress");
+                const maxDim = (mode === "cosmetics" || mode === "suplement") ? 1200 : 2000;
+                const compressed = await compressImage(fileClone, maxDim);
+                setSecondPhotoPreview(compressed);
+                setAwaitingSecondPhoto(false);
+              } catch { setAwaitingSecondPhoto(false); }
+            }} className="hidden" />
+            <input ref={secondGalleryInputRef} type="file" accept="image/*" onChange={async (e) => {
+              const file = e.target.files?.[0];
+              if (!file || !file.type.startsWith("image/")) return;
+              const fileClone = new File([file], file.name, { type: file.type });
+              e.target.value = "";
+              try {
+                const { compressImage } = await import("@/lib/compress");
+                const maxDim = (mode === "cosmetics" || mode === "suplement") ? 1200 : 2000;
+                const compressed = await compressImage(fileClone, maxDim);
+                setSecondPhotoPreview(compressed);
+                setAwaitingSecondPhoto(false);
+              } catch { setAwaitingSecondPhoto(false); }
+            }} className="hidden" />
+          </div>
+        )}
+
         {/* ══ 4. VIEWFINDER (main CTA) ══ */}
-        {!isLoading && (
+        {!isLoading && !photoPreview && (
           <div className="anim-fade-up-2">
             {/* Neon viewfinder */}
             <div className="flex flex-col items-center mb-5">
@@ -454,8 +560,17 @@ export default function Home() {
                     setIsScanning(true);
                     try {
                       const base64 = await takePhotoForMode(mode, "camera");
-                      if (base64) { scanLockRef.current = false; handleScan(base64); }
-                      else { setIsScanning(false); scanLockRef.current = false; }
+                      if (base64) {
+                        scanLockRef.current = false;
+                        setIsScanning(false);
+                        if (showPhotoPreview) {
+                          setPhotoSource("camera");
+                          setPhotoPreview(base64);
+                          setSecondPhotoPreview(null);
+                        } else {
+                          handleScan(base64);
+                        }
+                      } else { setIsScanning(false); scanLockRef.current = false; }
                     } catch { setIsScanning(false); scanLockRef.current = false; }
                   } else {
                     const inp = document.getElementById("main-camera-input") as HTMLInputElement;
@@ -506,20 +621,27 @@ export default function Home() {
               <input id="main-camera-input" type="file" accept="image/*" capture="environment" onChange={async (e) => {
                 const file = e.target.files?.[0];
                 if (!file || !file.type.startsWith("image/")) return;
-                // LOCK immediately — before any async op — prevents second onChange from slipping through
                 if (scanLockRef.current) return;
                 scanLockRef.current = true;
                 setIsScanning(true);
-                // Clone before reset — Android clears files[] after native preview
                 const fileClone = new File([file], file.name, { type: file.type });
                 e.target.value = "";
                 try {
                   const { compressImage } = await import("@/lib/compress");
                   const maxDim = (mode === "cosmetics" || mode === "suplement") ? 1200 : 2000;
                   const compressed = await compressImage(fileClone, maxDim);
-                  // handleScan will check lock again internally and also reset it in finally
-                  scanLockRef.current = false; // release so handleScan can re-acquire properly
-                  handleScan(compressed);
+                  scanLockRef.current = false;
+                  setIsScanning(false);
+                  if (awaitingSecondPhoto && showPhotoPreview) {
+                    setSecondPhotoPreview(compressed);
+                    setAwaitingSecondPhoto(false);
+                  } else if (showPhotoPreview) {
+                    setPhotoSource("camera");
+                    setPhotoPreview(compressed);
+                    setSecondPhotoPreview(null);
+                  } else {
+                    handleScan(compressed);
+                  }
                 } catch { setIsScanning(false); scanLockRef.current = false; }
               }} className="hidden" />
               <input id="gallery-input" type="file" accept="image/*" onChange={async (e) => {
@@ -535,7 +657,17 @@ export default function Home() {
                   const maxDim = (mode === "cosmetics" || mode === "suplement") ? 1200 : 2000;
                   const compressed = await compressImage(fileClone, maxDim);
                   scanLockRef.current = false;
-                  handleScan(compressed);
+                  setIsScanning(false);
+                  if (awaitingSecondPhoto && showPhotoPreview) {
+                    setSecondPhotoPreview(compressed);
+                    setAwaitingSecondPhoto(false);
+                  } else if (showPhotoPreview) {
+                    setPhotoSource("gallery");
+                    setPhotoPreview(compressed);
+                    setSecondPhotoPreview(null);
+                  } else {
+                    handleScan(compressed);
+                  }
                 } catch { setIsScanning(false); scanLockRef.current = false; }
               }} className="hidden" />
 
@@ -569,8 +701,17 @@ export default function Home() {
                       setIsScanning(true);
                       try {
                         const base64 = await takePhotoForMode(mode, "gallery");
-                        if (base64) { scanLockRef.current = false; handleScan(base64); }
-                        else { setIsScanning(false); scanLockRef.current = false; }
+                        if (base64) {
+                          scanLockRef.current = false;
+                          setIsScanning(false);
+                          if (showPhotoPreview) {
+                            setPhotoSource("gallery");
+                            setPhotoPreview(base64);
+                            setSecondPhotoPreview(null);
+                          } else {
+                            handleScan(base64);
+                          }
+                        } else { setIsScanning(false); scanLockRef.current = false; }
                       } catch { setIsScanning(false); scanLockRef.current = false; }
                     } else { (document.getElementById("gallery-input") as HTMLInputElement)?.click(); }
                   }}
