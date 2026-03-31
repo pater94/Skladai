@@ -79,6 +79,53 @@ async function logScanToSupabase(opts: {
   }
 }
 
+async function logFailedScan(opts: {
+  mode: string;
+  base64Image?: string;
+  error: string;
+  startTime: number;
+}): Promise<void> {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!supabaseUrl || !supabaseServiceKey) return;
+
+  const supaAdmin = createSupabaseClient(supabaseUrl, supabaseServiceKey);
+
+  try {
+    let imageUrl: string | null = null;
+
+    if (opts.base64Image) {
+      const imageData = opts.base64Image.replace(/^data:image\/\w+;base64,/, "");
+      const imageBuffer = Buffer.from(imageData, "base64");
+      const imagePath = `scans/${Date.now()}_${opts.mode}_FAIL.jpg`;
+
+      const { error: uploadErr } = await supaAdmin.storage
+        .from("scans")
+        .upload(imagePath, imageBuffer, {
+          contentType: "image/jpeg",
+          upsert: false,
+        });
+
+      if (!uploadErr) {
+        imageUrl = `${supabaseUrl}/storage/v1/object/public/scans/${imagePath}`;
+      }
+    }
+
+    await supaAdmin.from("scan_logs").insert({
+      mode: opts.mode,
+      image_url: imageUrl,
+      ai_result: { error: opts.error, failed: true },
+      ai_model: "error",
+      score: null,
+      product_name: null,
+      processing_time_ms: Date.now() - opts.startTime,
+      prompt_version: "v1",
+    });
+  } catch (e) {
+    console.error("[ScanLog] Failed to log error scan:", e);
+  }
+}
+
 // ==================== STEP 1: READ LABEL (OCR) ====================
 
 const READ_FOOD_LABEL = `Jesteś precyzyjnym czytnikiem tekstu. Twoim JEDYNYM zadaniem jest DOKŁADNE odczytanie KAŻDEGO tekstu widocznego na zdjęciu etykiety produktu spożywczego.
@@ -744,13 +791,13 @@ function validateNutrition(result: Record<string, unknown>): void {
 
 export async function POST(request: NextRequest) {
   const startTime = Date.now();
+  let body: { image?: string; image2?: string; mode?: string; text?: string } | undefined;
   try {
     const apiKey = process.env.ANTHROPIC_API_KEY;
     if (!apiKey) {
       return NextResponse.json({ error: "Brak klucza API." }, { status: 500 });
     }
 
-    let body;
     try { body = await request.json(); } catch {
       return NextResponse.json({ error: "Nieprawidłowe dane." }, { status: 400 });
     }
@@ -1020,6 +1067,7 @@ Odpowiedz WYŁĄCZNIE poprawnym JSON (bez markdown, bez komentarzy):
         await logScanToSupabase({ mode: "meal", base64Image: image, result, aiModel: "claude-opus-4-20250514", startTime });
         return NextResponse.json(result);
       } catch {
+        await logFailedScan({ mode: "meal", base64Image: image, error: "Meal parse failed", startTime });
         return NextResponse.json({ error: "Nie udało się rozpoznać dania. Spróbuj z lepszym zdjęciem." }, { status: 422 });
       }
     }
@@ -1041,6 +1089,7 @@ Odpowiedz WYŁĄCZNIE poprawnym JSON (bez markdown, bez komentarzy):
         await logScanToSupabase({ mode: "fridge_scan", base64Image: image, result, aiModel: "claude-opus-4-20250514", startTime });
         return NextResponse.json(result);
       } catch {
+        await logFailedScan({ mode: "fridge_scan", base64Image: image, error: "Fridge parse failed", startTime });
         return NextResponse.json({ error: "Nie udało się przeanalizować lodówki." }, { status: 422 });
       }
     }
@@ -1069,6 +1118,7 @@ Odpowiedz WYŁĄCZNIE poprawnym JSON (bez markdown, bez komentarzy):
         await logScanToSupabase({ mode: "forma", base64Image: image, image2Base64: image2 || undefined, result, aiModel: "claude-opus-4-20250514", startTime });
         return NextResponse.json(result);
       } catch {
+        await logFailedScan({ mode: "forma", base64Image: image, error: "Forma parse failed", startTime });
         return NextResponse.json({ error: "Nie udało się przeanalizować zdjęcia. Spróbuj z lepszym oświetleniem." }, { status: 422 });
       }
     }
@@ -1193,6 +1243,7 @@ ZASADY:
         await logScanToSupabase({ mode: "suplement", base64Image: image, image2Base64: image2 || undefined, result, startTime });
         return NextResponse.json(result);
       } catch {
+        await logFailedScan({ mode: "suplement", base64Image: image, error: "Suplement parse failed", startTime });
         return NextResponse.json({ error: "Nie udało się przeanalizować suplementu." }, { status: 422 });
       }
     }
@@ -1299,10 +1350,12 @@ ZASADY:
       return NextResponse.json(result);
     } catch {
       console.error("Failed to parse AI response:", step2.text?.substring(0, 500));
+      await logFailedScan({ mode: isCosmetics ? "cosmetics" : "food", base64Image: image, error: "Parse failed: " + (step2.text?.substring(0, 200) || "empty"), startTime });
       return NextResponse.json({ error: "Nie udało się przeanalizować. Spróbuj wyraźniejsze zdjęcie." }, { status: 422 });
     }
   } catch (error) {
     console.error("Analysis error:", error);
+    await logFailedScan({ mode: body?.mode || "unknown", base64Image: body?.image, error: String(error).substring(0, 300), startTime });
     return NextResponse.json({ error: "Wystąpił błąd. Spróbuj ponownie." }, { status: 500 });
   }
 }
