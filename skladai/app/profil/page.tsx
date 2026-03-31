@@ -228,46 +228,107 @@ export default function ProfilPage() {
     );
   }
 
-  /* ── Full achievements screen ── */
+  /* ── Full achievements screen (premium) ── */
   if (showAchievements) {
+    const pct = earnedStats.total > 0 ? Math.round((earnedStats.earned / earnedStats.total) * 100) : 0;
     return (
-      <div className="min-h-[100dvh] bg-[#f5f2ed]">
+      <div className="min-h-[100dvh]" style={{ background: "#0a0f0d" }}>
         <div className="max-w-md mx-auto px-5 pt-6 pb-32">
           <button
             onClick={() => setShowAchievements(false)}
-            className="flex items-center gap-1.5 text-[13px] text-gray-600 font-semibold px-4 py-2 rounded-full bg-white border border-gray-200 active:scale-95 transition-all mb-5"
+            className="flex items-center gap-1.5 text-[13px] text-white/60 font-semibold px-4 py-2 rounded-full bg-white/5 border border-white/10 active:scale-95 transition-all mb-5"
           >
             ← Wstecz
           </button>
-          <h1 className="text-[22px] font-black text-gray-800 mb-1">Osiągnięcia</h1>
-          <p className="text-[13px] text-gray-400 font-semibold mb-6">
-            {earnedStats.earned} z {earnedStats.total} zdobytych
-          </p>
+
+          {/* Header with progress ring */}
+          <div className="flex items-center gap-4 mb-6">
+            <div className="relative w-16 h-16 flex-shrink-0">
+              <svg width="64" height="64" className="transform -rotate-90">
+                <circle cx="32" cy="32" r="28" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="4" />
+                <circle
+                  cx="32" cy="32" r="28" fill="none"
+                  stroke="#10b981" strokeWidth="4" strokeLinecap="round"
+                  strokeDasharray={`${2 * Math.PI * 28}`}
+                  strokeDashoffset={`${2 * Math.PI * 28 * (1 - pct / 100)}`}
+                  style={{ transition: "stroke-dashoffset 1s ease" }}
+                />
+              </svg>
+              <span className="absolute inset-0 flex items-center justify-center text-[14px] font-bold text-emerald-400">
+                {pct}%
+              </span>
+            </div>
+            <div>
+              <h1 className="text-[22px] font-black text-white">Osiagnięcia</h1>
+              <p className="text-[13px] text-white/30 font-semibold">
+                {earnedStats.earned} z {earnedStats.total} zdobytych
+              </p>
+            </div>
+          </div>
+
           {(Object.entries(achievements) as [AchievementCategory, Achievement[]][]).map(([cat, items]) => (
             <div key={cat} className="mb-5 last:mb-0">
-              <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">
+              <p className="text-[11px] font-bold text-white/25 uppercase tracking-wider mb-2.5">
                 {CATEGORY_LABELS[cat]?.icon} {CATEGORY_LABELS[cat]?.name}
               </p>
-              <div className="grid grid-cols-4 gap-1.5">
-                {items.map((a) => {
+              <div className="grid grid-cols-2 gap-2">
+                {items.map((a, idx) => {
                   const tierColor = TIER_COLORS[a.tier];
                   const progress = a.target > 0 ? Math.min(100, Math.round((a.current / a.target) * 100)) : 0;
                   return (
-                    <div key={a.id} className={`text-center py-2.5 px-1 rounded-[12px] border transition-all ${
-                      a.earned
-                        ? `${tierColor.bg} ${tierColor.border}`
-                        : "bg-gray-50 border-gray-100 opacity-50"
-                    }`}>
-                      <span className={`text-[20px] block ${a.earned ? "" : "grayscale"}`}>{a.icon}</span>
-                      <p className={`text-[8px] font-bold mt-0.5 leading-tight ${a.earned ? tierColor.text : "text-gray-400"}`}>
-                        {a.name}
-                      </p>
-                      {!a.earned && (
-                        <div className="w-10 h-1 rounded-full bg-gray-200 mx-auto mt-1 overflow-hidden">
-                          <div className="h-full bg-emerald-500 rounded-full transition-all" style={{ width: `${progress}%` }} />
-                        </div>
+                    <div
+                      key={a.id}
+                      className={`relative overflow-hidden rounded-[16px] p-3.5 border transition-all ${
+                        a.earned
+                          ? "bg-white/[0.04] border-white/[0.08]"
+                          : "bg-white/[0.02] border-white/[0.04] opacity-60"
+                      }`}
+                      style={{ animation: `fadeInUp 0.4s ease ${idx * 0.05}s both` }}
+                    >
+                      {/* Earned glow */}
+                      {a.earned && (
+                        <div
+                          className="absolute top-0 right-0 w-16 h-16 rounded-full blur-[30px] opacity-15"
+                          style={{
+                            background: a.tier === "diamond" ? "#06b6d4"
+                              : a.tier === "gold" ? "#eab308"
+                              : a.tier === "silver" ? "#9ca3af"
+                              : "#d97706",
+                          }}
+                        />
                       )}
-                      {!a.earned && <p className="text-[7px] text-gray-400 mt-0.5">{a.current}/{a.target}</p>}
+                      <div className="flex items-start gap-3 relative z-10">
+                        <span className={`text-[28px] ${a.earned ? "" : "grayscale opacity-40"}`}>
+                          {a.icon}
+                        </span>
+                        <div className="flex-1 min-w-0">
+                          <p className={`text-[12px] font-bold leading-tight ${a.earned ? "text-white" : "text-white/40"}`}>
+                            {a.name}
+                          </p>
+                          <p className={`text-[10px] mt-0.5 leading-snug ${a.earned ? "text-white/40" : "text-white/20"}`}>
+                            {a.description}
+                          </p>
+                          {!a.earned && (
+                            <div className="mt-2">
+                              <div className="w-full h-1.5 rounded-full bg-white/5 overflow-hidden">
+                                <div
+                                  className="h-full rounded-full transition-all duration-700"
+                                  style={{
+                                    width: `${progress}%`,
+                                    background: "linear-gradient(90deg, #10b981, #06b6d4)",
+                                  }}
+                                />
+                              </div>
+                              <p className="text-[9px] text-white/25 mt-1 font-medium">{a.current}/{a.target}</p>
+                            </div>
+                          )}
+                          {a.earned && (
+                            <span className={`inline-block mt-1.5 text-[9px] font-bold px-2 py-0.5 rounded-full ${tierColor.bg} ${tierColor.text} ${tierColor.border} border`}>
+                              {a.tier.toUpperCase()}
+                            </span>
+                          )}
+                        </div>
+                      </div>
                     </div>
                   );
                 })}
