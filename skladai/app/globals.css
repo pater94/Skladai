@@ -11,11 +11,12 @@
 
 html {
   scroll-behavior: smooth;
+  background: #0a0e0c !important;
 }
 
 body {
-  background: #F5F2EB;
-  color: #1A3A0A;
+  background: #0a0e0c !important;
+  color: #e0e0e0;
   font-family: -apple-system, 'SF Pro Display', 'Helvetica Neue', system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
