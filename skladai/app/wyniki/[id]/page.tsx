@@ -255,7 +255,8 @@ export default function WynikiPage() {
   const [item, setItem] = useState<ScanHistoryItem | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [selectedIngredient, setSelectedIngredient] = useState<string | null>(null);
-  const [feedbackSent, setFeedbackSent] = useState<"good" | "bad" | null>(null);
+  const [feedbackSent, setFeedbackSent] = useState<"good" | "bad" | "sent" | null>(null);
+  const [feedbackNote, setFeedbackNote] = useState("");
 
   useEffect(() => {
     const id = params.id as string;
@@ -403,13 +404,77 @@ export default function WynikiPage() {
           )}
 
           {/* Feedback buttons */}
-          <div className="mt-3 flex items-center justify-center gap-2.5">
-            {feedbackSent ? (
-              <p style={{ fontSize: 12, color: "rgba(255,255,255,0.3)" }}>
+          <div className="mt-3">
+            {feedbackSent === "good" ? (
+              <p style={{ fontSize: 12, color: "rgba(110,252,180,0.5)", textAlign: "center" }}>
+                Dzięki za opinię! 🙏
+              </p>
+            ) : feedbackSent === "bad" ? (
+              <div style={{ overflow: "hidden", animation: "feedbackSlideIn 0.3s ease-out" }}>
+                <div style={{
+                  padding: 12, borderRadius: 14,
+                  background: "rgba(255,255,255,0.03)",
+                  border: "1px solid rgba(255,255,255,0.06)",
+                }}>
+                  <p style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginBottom: 8, fontWeight: 600 }}>
+                    Co było nie tak?
+                  </p>
+                  <textarea
+                    autoFocus
+                    rows={2}
+                    maxLength={300}
+                    placeholder="Np. źle odczytał kalorie, to nie ten produkt..."
+                    value={feedbackNote}
+                    onChange={(e) => setFeedbackNote(e.target.value)}
+                    style={{
+                      width: "100%", padding: "10px 12px", borderRadius: 10,
+                      background: "rgba(255,255,255,0.04)",
+                      border: "1px solid rgba(255,255,255,0.08)",
+                      color: "#fff", fontSize: 12, resize: "none",
+                      outline: "none", fontFamily: "inherit",
+                    }}
+                  />
+                  <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+                    <button
+                      onClick={() => {
+                        fetch("/api/feedback", {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ product_name: result.name, feedback: "bad", feedback_note: feedbackNote || null }),
+                        });
+                        setFeedbackSent("sent");
+                      }}
+                      style={{
+                        flex: 1, padding: 10, borderRadius: 10,
+                        background: "rgba(110,252,180,0.1)",
+                        border: "1px solid rgba(110,252,180,0.2)",
+                        color: "#6efcb4", fontSize: 12, fontWeight: 700,
+                        cursor: "pointer",
+                      }}
+                    >
+                      {feedbackNote.trim() ? "Wyślij" : "Wyślij bez komentarza"}
+                    </button>
+                    <button
+                      onClick={() => { setFeedbackSent(null); setFeedbackNote(""); }}
+                      style={{
+                        padding: "10px 14px", borderRadius: 10,
+                        background: "rgba(255,255,255,0.03)",
+                        border: "1px solid rgba(255,255,255,0.06)",
+                        color: "rgba(255,255,255,0.3)", fontSize: 12,
+                        cursor: "pointer",
+                      }}
+                    >
+                      ✕
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ) : feedbackSent === "sent" ? (
+              <p style={{ fontSize: 12, color: "rgba(110,252,180,0.5)", textAlign: "center" }}>
                 Dzięki za opinię! 🙏
               </p>
             ) : (
-              <>
+              <div className="flex items-center justify-center gap-2.5">
                 <button
                   onClick={() => {
                     setFeedbackSent("good");
@@ -421,40 +486,30 @@ export default function WynikiPage() {
                   }}
                   className="active:scale-95 transition-transform"
                   style={{
-                    padding: "8px 16px",
-                    borderRadius: 10,
+                    padding: "8px 16px", borderRadius: 10,
                     background: "rgba(255,255,255,0.03)",
                     border: "1px solid rgba(255,255,255,0.06)",
-                    color: "rgba(255,255,255,0.3)",
-                    fontSize: 12,
+                    color: "rgba(255,255,255,0.3)", fontSize: 12,
                   }}
                 >
                   👍 Trafna analiza
                 </button>
                 <button
-                  onClick={() => {
-                    setFeedbackSent("bad");
-                    fetch("/api/feedback", {
-                      method: "POST",
-                      headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({ product_name: result.name, feedback: "bad" }),
-                    });
-                  }}
+                  onClick={() => setFeedbackSent("bad")}
                   className="active:scale-95 transition-transform"
                   style={{
-                    padding: "8px 16px",
-                    borderRadius: 10,
+                    padding: "8px 16px", borderRadius: 10,
                     background: "rgba(255,255,255,0.03)",
                     border: "1px solid rgba(255,255,255,0.06)",
-                    color: "rgba(255,255,255,0.3)",
-                    fontSize: 12,
+                    color: "rgba(255,255,255,0.3)", fontSize: 12,
                   }}
                 >
                   👎 Błędna
                 </button>
-              </>
+              </div>
             )}
           </div>
+          <style>{`@keyframes feedbackSlideIn { from { opacity: 0; max-height: 0; } to { opacity: 1; max-height: 200px; } }`}</style>
         </div>
 
         {/* ─── Meal items — interactive portion editor (meal mode) ─── */}
