@@ -42,7 +42,7 @@ export default function DashboardPage() {
   }
 
   // ═══ EMPTY STATE (no profile) ═══
-  if (!profile || !profile.onboarding_complete) {
+  if (!profile) {
     return (
       <div style={{ minHeight: "100dvh", background: "#0a0e0c", paddingBottom: 100 }}>
         <div style={{ padding: "20px 22px 30px", position: "relative" }}>
