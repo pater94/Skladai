@@ -74,54 +74,57 @@ export default function ProfileSetup({ onComplete, onSkip, existingProfile }: Pr
   const steps = ["Dane", "Aktywność", "Cel", "Zdrowie"];
 
   return (
-    <div className="min-h-[100dvh] bg-[#F5F2EB]">
+    <div style={{ minHeight: "100dvh", background: "#0a0e0c" }}>
       {/* Header */}
-      <div className="matcha-hero relative overflow-hidden">
-        <div className="absolute -top-20 -right-20 w-60 h-60 rounded-full bg-white/10 blur-[60px]" />
-        <div className="max-w-md mx-auto px-5 pt-14 pb-20 relative z-10">
-          <div className="text-center">
-            <h1 className="text-[28px] font-black text-white tracking-tight">Twój profil</h1>
-            <p className="text-white/50 text-[13px] mt-1">Krok {step + 1} z 4</p>
-          </div>
-          {/* Progress dots */}
-          <div className="flex justify-center gap-2 mt-4">
-            {steps.map((_, i) => (
-              <div key={i} className={`h-1.5 rounded-full transition-all duration-300 ${i <= step ? "w-8 bg-lime-400" : "w-4 bg-white/20"}`} />
-            ))}
-          </div>
+      <div style={{ padding: "50px 20px 60px", background: "linear-gradient(180deg, rgba(110,252,180,0.12) 0%, rgba(110,252,180,0.02) 60%, transparent 100%)", textAlign: "center", position: "relative", overflow: "hidden" }}>
+        <div style={{ position: "absolute", top: -60, right: -60, width: 200, height: 200, borderRadius: "50%", background: "rgba(110,252,180,0.06)", filter: "blur(60px)" }} />
+        <h1 style={{ fontSize: 28, fontWeight: 900, color: "#fff", letterSpacing: "-0.03em" }}>Twój profil</h1>
+        <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 13, marginTop: 4 }}>Krok {step + 1} z 4</p>
+        {/* Progress dots */}
+        <div style={{ display: "flex", justifyContent: "center", gap: 8, marginTop: 16 }}>
+          {steps.map((_, i) => (
+            <div key={i} style={{
+              height: 6, borderRadius: 3, transition: "all 0.3s",
+              width: i <= step ? 32 : 16,
+              background: i <= step ? "#6efcb4" : "rgba(255,255,255,0.15)",
+            }} />
+          ))}
         </div>
       </div>
 
-      <div className="max-w-md mx-auto px-5 -mt-10 pb-10 relative z-20">
-        <div className="card-elevated rounded-[24px] p-6">
+      <div style={{ maxWidth: 448, margin: "0 auto", padding: "0 20px", marginTop: -40, paddingBottom: 40, position: "relative", zIndex: 20 }}>
+        <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 24, padding: 24 }}>
           {/* STEP 0: Basic data */}
           {step === 0 && (
-            <div className="space-y-5">
-              <h2 className="text-[18px] font-bold text-[#1A3A0A]">Podstawowe dane</h2>
+            <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+              <h2 style={{ fontSize: 18, fontWeight: 800, color: "#fff" }}>Podstawowe dane</h2>
 
               {/* Name */}
               <div>
-                <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Imię (opcjonalne)</label>
+                <label style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.35)", textTransform: "uppercase", letterSpacing: "0.05em" }}>Imię (opcjonalne)</label>
                 <input
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Twoje imię"
-                  className="w-full mt-2 px-4 py-3 rounded-[14px] bg-gray-50 text-[14px] text-gray-800 font-semibold outline-none focus:ring-2 focus:ring-[#1A3A0A]/20 transition-all"
+                  style={{ width: "100%", marginTop: 8, padding: "12px 16px", borderRadius: 14, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", fontSize: 14, color: "#fff", fontWeight: 600, outline: "none" }}
                 />
               </div>
 
               {/* Gender */}
               <div>
-                <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Płeć</label>
-                <div className="flex gap-2 mt-2">
+                <label style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.35)", textTransform: "uppercase", letterSpacing: "0.05em" }}>Płeć</label>
+                <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
                   {(["male", "female"] as const).map((g) => (
                     <button
                       key={g}
                       onClick={() => setGender(g)}
-                      className={`flex-1 py-3 rounded-[14px] text-[13px] font-bold transition-all ${
-                        gender === g ? "bg-[#1A3A0A] text-white" : "bg-gray-100 text-gray-500"
-                      }`}
+                      style={{
+                        flex: 1, padding: 12, borderRadius: 14, fontSize: 13, fontWeight: 700, cursor: "pointer", transition: "all 0.2s",
+                        background: gender === g ? "rgba(110,252,180,0.15)" : "rgba(255,255,255,0.04)",
+                        color: gender === g ? "#6efcb4" : "rgba(255,255,255,0.4)",
+                        border: gender === g ? "1px solid rgba(110,252,180,0.25)" : "1px solid rgba(255,255,255,0.06)",
+                      }}
                     >
                       {g === "male" ? "👨 Mężczyzna" : "👩 Kobieta"}
                     </button>
@@ -131,45 +134,48 @@ export default function ProfileSetup({ onComplete, onSkip, existingProfile }: Pr
 
               {/* Age */}
               <div>
-                <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Wiek: {age} lat</label>
+                <label style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.35)", textTransform: "uppercase", letterSpacing: "0.05em" }}>Wiek: <span style={{ color: "#6efcb4" }}>{age} lat</span></label>
                 <input type="range" min={14} max={90} value={age} onChange={(e) => setAge(+e.target.value)}
-                  className="w-full mt-2 accent-[#1A3A0A]" />
+                  style={{ width: "100%", marginTop: 8 }} />
               </div>
 
               {/* Weight */}
               <div>
-                <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Waga: {weight} kg</label>
+                <label style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.35)", textTransform: "uppercase", letterSpacing: "0.05em" }}>Waga: <span style={{ color: "#6efcb4" }}>{weight} kg</span></label>
                 <input type="range" min={30} max={200} value={weight} onChange={(e) => setWeight(+e.target.value)}
-                  className="w-full mt-2 accent-[#1A3A0A]" />
+                  style={{ width: "100%", marginTop: 8 }} />
               </div>
 
               {/* Height */}
               <div>
-                <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Wzrost: {height} cm</label>
+                <label style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.35)", textTransform: "uppercase", letterSpacing: "0.05em" }}>Wzrost: <span style={{ color: "#6efcb4" }}>{height} cm</span></label>
                 <input type="range" min={120} max={220} value={height} onChange={(e) => setHeight(+e.target.value)}
-                  className="w-full mt-2 accent-[#1A3A0A]" />
+                  style={{ width: "100%", marginTop: 8 }} />
               </div>
 
-              <p className="text-[10px] text-gray-400 text-center">🔒 Dane zapisane TYLKO lokalnie na Twoim telefonie. Nie wysyłamy na serwer.</p>
+              <p style={{ fontSize: 10, color: "rgba(255,255,255,0.25)", textAlign: "center" }}>🔒 Dane zapisane TYLKO lokalnie na Twoim telefonie. Nie wysyłamy na serwer.</p>
             </div>
           )}
 
           {/* STEP 1: Activity */}
           {step === 1 && (
-            <div className="space-y-3">
-              <h2 className="text-[18px] font-bold text-[#1A3A0A]">Poziom aktywności</h2>
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              <h2 style={{ fontSize: 18, fontWeight: 800, color: "#fff", marginBottom: 4 }}>Poziom aktywności</h2>
               {(Object.keys(ACTIVITY_LEVELS) as ActivityLevel[]).map((key) => {
                 const level = ACTIVITY_LEVELS[key];
+                const sel = activity === key;
                 return (
                   <button
                     key={key}
                     onClick={() => setActivity(key)}
-                    className={`w-full text-left p-4 rounded-[16px] transition-all ${
-                      activity === key ? "bg-[#1A3A0A] text-white" : "bg-gray-50 text-gray-700 hover:bg-gray-100"
-                    }`}
+                    style={{
+                      width: "100%", textAlign: "left", padding: 16, borderRadius: 16, cursor: "pointer", transition: "all 0.2s",
+                      background: sel ? "rgba(110,252,180,0.12)" : "rgba(255,255,255,0.03)",
+                      border: sel ? "1px solid rgba(110,252,180,0.2)" : "1px solid rgba(255,255,255,0.06)",
+                    }}
                   >
-                    <p className="font-bold text-[14px]">{level.label}</p>
-                    <p className={`text-[12px] mt-0.5 ${activity === key ? "text-white/60" : "text-gray-400"}`}>{level.description}</p>
+                    <p style={{ fontWeight: 700, fontSize: 14, color: sel ? "#6efcb4" : "rgba(255,255,255,0.7)", margin: 0 }}>{level.label}</p>
+                    <p style={{ fontSize: 12, marginTop: 2, color: sel ? "rgba(110,252,180,0.5)" : "rgba(255,255,255,0.3)", margin: 0 }}>{level.description}</p>
                   </button>
                 );
               })}
@@ -178,22 +184,25 @@ export default function ProfileSetup({ onComplete, onSkip, existingProfile }: Pr
 
           {/* STEP 2: Goal */}
           {step === 2 && (
-            <div className="space-y-3">
-              <h2 className="text-[18px] font-bold text-[#1A3A0A]">Twój cel</h2>
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              <h2 style={{ fontSize: 18, fontWeight: 800, color: "#fff", marginBottom: 4 }}>Twój cel</h2>
               {(Object.keys(GOALS) as Goal[]).map((key) => {
                 const g = GOALS[key];
-                const icons = { maintain: "⚖️", lose: "🔥", gain: "💪", healthy: "🥗" };
+                const icons: Record<string, string> = { maintain: "⚖️", lose: "🔥", gain: "💪", healthy: "🥗" };
+                const sel = goal === key;
                 return (
                   <button
                     key={key}
                     onClick={() => setGoal(key)}
-                    className={`w-full text-left p-4 rounded-[16px] transition-all ${
-                      goal === key ? "bg-[#1A3A0A] text-white" : "bg-gray-50 text-gray-700 hover:bg-gray-100"
-                    }`}
+                    style={{
+                      width: "100%", textAlign: "left", padding: 16, borderRadius: 16, cursor: "pointer", transition: "all 0.2s",
+                      background: sel ? "rgba(110,252,180,0.12)" : "rgba(255,255,255,0.03)",
+                      border: sel ? "1px solid rgba(110,252,180,0.2)" : "1px solid rgba(255,255,255,0.06)",
+                    }}
                   >
-                    <p className="font-bold text-[14px]">{icons[key]} {g.label}</p>
+                    <p style={{ fontWeight: 700, fontSize: 14, color: sel ? "#6efcb4" : "rgba(255,255,255,0.7)", margin: 0 }}>{icons[key]} {g.label}</p>
                     {g.modifier !== 0 && (
-                      <p className={`text-[12px] mt-0.5 ${goal === key ? "text-white/60" : "text-gray-400"}`}>
+                      <p style={{ fontSize: 12, marginTop: 2, color: sel ? "rgba(110,252,180,0.5)" : "rgba(255,255,255,0.3)", margin: 0 }}>
                         {g.modifier > 0 ? `+${g.modifier}` : g.modifier} kcal/dzień
                       </p>
                     )}
@@ -205,50 +214,83 @@ export default function ProfileSetup({ onComplete, onSkip, existingProfile }: Pr
 
           {/* STEP 3: Health */}
           {step === 3 && (
-            <div className="space-y-5">
-              <h2 className="text-[18px] font-bold text-[#1A3A0A]">Profil zdrowotny</h2>
-              <p className="text-[12px] text-gray-400 -mt-2">Opcjonalne — pomaga dopasować analizę</p>
+            <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+              <div>
+                <h2 style={{ fontSize: 18, fontWeight: 800, color: "#fff", margin: 0 }}>Profil zdrowotny</h2>
+                <p style={{ fontSize: 12, color: "rgba(255,255,255,0.3)", marginTop: 4 }}>Opcjonalne — pomaga dopasować analizę</p>
+              </div>
 
               {/* Diabetes */}
               <div>
-                <p className="text-[12px] font-semibold text-gray-600 mb-2">🩸 Cukrzyca</p>
-                <div className="flex gap-2">
+                <p style={{ fontSize: 12, fontWeight: 600, color: "rgba(255,255,255,0.5)", marginBottom: 8 }}>🩸 Cukrzyca</p>
+                <div style={{ display: "flex", gap: 8 }}>
                   <button onClick={() => setDiabetes(null)}
-                    className={`flex-1 py-2.5 rounded-[12px] text-[12px] font-bold ${!diabetes ? "bg-[#1A3A0A] text-white" : "bg-gray-100 text-gray-500"}`}>
+                    style={{
+                      flex: 1, padding: 10, borderRadius: 12, fontSize: 12, fontWeight: 700, cursor: "pointer",
+                      background: !diabetes ? "rgba(110,252,180,0.15)" : "rgba(255,255,255,0.04)",
+                      color: !diabetes ? "#6efcb4" : "rgba(255,255,255,0.4)",
+                      border: !diabetes ? "1px solid rgba(110,252,180,0.25)" : "1px solid rgba(255,255,255,0.06)",
+                    }}>
                     Brak
                   </button>
-                  {(Object.keys(DIABETES_TYPES) as DiabetesType[]).map((key) => (
-                    <button key={key} onClick={() => setDiabetes(key)}
-                      className={`flex-1 py-2.5 rounded-[12px] text-[12px] font-bold ${diabetes === key ? "bg-[#1A3A0A] text-white" : "bg-gray-100 text-gray-500"}`}>
-                      {DIABETES_TYPES[key].label}
-                    </button>
-                  ))}
+                  {(Object.keys(DIABETES_TYPES) as DiabetesType[]).map((key) => {
+                    const sel = diabetes === key;
+                    return (
+                      <button key={key} onClick={() => setDiabetes(key)}
+                        style={{
+                          flex: 1, padding: 10, borderRadius: 12, fontSize: 12, fontWeight: 700, cursor: "pointer",
+                          background: sel ? "rgba(110,252,180,0.15)" : "rgba(255,255,255,0.04)",
+                          color: sel ? "#6efcb4" : "rgba(255,255,255,0.4)",
+                          border: sel ? "1px solid rgba(110,252,180,0.25)" : "1px solid rgba(255,255,255,0.06)",
+                        }}>
+                        {DIABETES_TYPES[key].label}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
-              {/* Pregnancy & Breastfeeding — dedicated section */}
+              {/* Pregnancy & Breastfeeding */}
               {gender === "female" && (
-                <div className="rounded-[16px] p-4" style={{ background: "#FFF0F5", border: "1px solid #FECDD3" }}>
-                  <div className="flex items-center gap-2 mb-1.5">
-                    <span className="text-[18px]">🤰</span>
-                    <p className="text-[14px] font-bold text-[#1A3A0A]">Ciąża i karmienie</p>
+                <div style={{ borderRadius: 16, padding: 16, background: "rgba(244,114,182,0.06)", border: "1px solid rgba(244,114,182,0.12)" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+                    <span style={{ fontSize: 18 }}>🤰</span>
+                    <p style={{ fontSize: 14, fontWeight: 800, color: "rgba(244,114,182,0.8)", margin: 0 }}>Ciąża i karmienie</p>
                   </div>
-                  <p className="text-[11px] text-gray-400 mb-3 leading-relaxed">
+                  <p style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", marginBottom: 12, lineHeight: "16px" }}>
                     Niektóre składniki w żywności i kosmetykach mogą być szkodliwe w ciąży lub przy karmieniu piersią. Dzięki tej informacji AI będzie Cię ostrzegać.
                   </p>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
                     <button onClick={() => setPregnancy(null)}
-                      className={`py-2.5 rounded-[12px] text-[11px] font-bold ${!pregnancy ? "bg-[#1A3A0A] text-white" : "bg-white text-gray-500 border border-gray-200"}`}>
+                      style={{
+                        padding: 10, borderRadius: 12, fontSize: 11, fontWeight: 700, cursor: "pointer",
+                        background: !pregnancy ? "rgba(244,114,182,0.15)" : "rgba(255,255,255,0.04)",
+                        color: !pregnancy ? "rgba(244,114,182,0.8)" : "rgba(255,255,255,0.4)",
+                        border: !pregnancy ? "1px solid rgba(244,114,182,0.25)" : "1px solid rgba(255,255,255,0.06)",
+                      }}>
                       Nie dotyczy
                     </button>
-                    {(Object.keys(TRIMESTERS) as Trimester[]).map((key) => (
-                      <button key={key} onClick={() => setPregnancy(key)}
-                        className={`py-2.5 rounded-[12px] text-[11px] font-bold ${pregnancy === key ? "bg-[#1A3A0A] text-white" : "bg-white text-gray-500 border border-gray-200"}`}>
-                        {TRIMESTERS[key].label}
-                      </button>
-                    ))}
+                    {(Object.keys(TRIMESTERS) as Trimester[]).map((key) => {
+                      const sel = pregnancy === key;
+                      return (
+                        <button key={key} onClick={() => setPregnancy(key)}
+                          style={{
+                            padding: 10, borderRadius: 12, fontSize: 11, fontWeight: 700, cursor: "pointer",
+                            background: sel ? "rgba(244,114,182,0.15)" : "rgba(255,255,255,0.04)",
+                            color: sel ? "rgba(244,114,182,0.8)" : "rgba(255,255,255,0.4)",
+                            border: sel ? "1px solid rgba(244,114,182,0.25)" : "1px solid rgba(255,255,255,0.06)",
+                          }}>
+                          {TRIMESTERS[key].label}
+                        </button>
+                      );
+                    })}
                     <button onClick={() => setPregnancy("planuje" as Trimester)}
-                      className={`py-2.5 rounded-[12px] text-[11px] font-bold ${pregnancy === "planuje" ? "bg-[#1A3A0A] text-white" : "bg-white text-gray-500 border border-gray-200"}`}>
+                      style={{
+                        padding: 10, borderRadius: 12, fontSize: 11, fontWeight: 700, cursor: "pointer",
+                        background: pregnancy === "planuje" ? "rgba(244,114,182,0.15)" : "rgba(255,255,255,0.04)",
+                        color: pregnancy === "planuje" ? "rgba(244,114,182,0.8)" : "rgba(255,255,255,0.4)",
+                        border: pregnancy === "planuje" ? "1px solid rgba(244,114,182,0.25)" : "1px solid rgba(255,255,255,0.06)",
+                      }}>
                       Planuję ciążę
                     </button>
                   </div>
@@ -257,52 +299,64 @@ export default function ProfileSetup({ onComplete, onSkip, existingProfile }: Pr
 
               {/* Allergens */}
               <div>
-                <p className="text-[12px] font-semibold text-gray-600 mb-2">⚠️ Alergie</p>
-                <div className="flex flex-wrap gap-2">
-                  {COMMON_ALLERGENS.map((a) => (
-                    <button key={a.id} onClick={() => toggleAllergen(a.id)}
-                      className={`px-3 py-1.5 rounded-full text-[11px] font-bold transition-all ${
-                        allergens.includes(a.id) ? "bg-red-500 text-white" : "bg-gray-100 text-gray-500"
-                      }`}>
-                      {a.icon} {a.label}
-                    </button>
-                  ))}
+                <p style={{ fontSize: 12, fontWeight: 600, color: "rgba(255,255,255,0.5)", marginBottom: 8 }}>⚠️ Alergie</p>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                  {COMMON_ALLERGENS.map((a) => {
+                    const sel = allergens.includes(a.id);
+                    return (
+                      <button key={a.id} onClick={() => toggleAllergen(a.id)}
+                        style={{
+                          padding: "6px 12px", borderRadius: 20, fontSize: 11, fontWeight: 700, cursor: "pointer", transition: "all 0.2s",
+                          background: sel ? "rgba(239,68,68,0.2)" : "rgba(255,255,255,0.04)",
+                          color: sel ? "#ef4444" : "rgba(255,255,255,0.4)",
+                          border: sel ? "1px solid rgba(239,68,68,0.3)" : "1px solid rgba(255,255,255,0.06)",
+                        }}>
+                        {a.icon} {a.label}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
               {/* Diet */}
               <div>
-                <p className="text-[12px] font-semibold text-gray-600 mb-2">🥗 Dieta</p>
-                <div className="flex flex-wrap gap-2">
-                  {(Object.keys(DIETS) as Diet[]).map((key) => (
-                    <button key={key} onClick={() => setDiet(key)}
-                      className={`px-3 py-1.5 rounded-full text-[11px] font-bold transition-all ${
-                        diet === key ? "bg-[#1A3A0A] text-white" : "bg-gray-100 text-gray-500"
-                      }`}>
-                      {DIETS[key].label}
-                    </button>
-                  ))}
+                <p style={{ fontSize: 12, fontWeight: 600, color: "rgba(255,255,255,0.5)", marginBottom: 8 }}>🥗 Dieta</p>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                  {(Object.keys(DIETS) as Diet[]).map((key) => {
+                    const sel = diet === key;
+                    return (
+                      <button key={key} onClick={() => setDiet(key)}
+                        style={{
+                          padding: "6px 12px", borderRadius: 20, fontSize: 11, fontWeight: 700, cursor: "pointer", transition: "all 0.2s",
+                          background: sel ? "rgba(110,252,180,0.15)" : "rgba(255,255,255,0.04)",
+                          color: sel ? "#6efcb4" : "rgba(255,255,255,0.4)",
+                          border: sel ? "1px solid rgba(110,252,180,0.25)" : "1px solid rgba(255,255,255,0.06)",
+                        }}>
+                        {DIETS[key].label}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             </div>
           )}
 
           {/* Navigation */}
-          <div className="flex gap-3 mt-8">
+          <div style={{ display: "flex", gap: 12, marginTop: 32 }}>
             {step > 0 && (
               <button onClick={() => setStep(step - 1)}
-                className="flex-1 py-3.5 rounded-[14px] text-[14px] font-bold bg-gray-100 text-gray-600 active:scale-[0.97] transition-all">
+                style={{ flex: 1, padding: 14, borderRadius: 14, fontSize: 14, fontWeight: 700, cursor: "pointer", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.5)" }}>
                 ← Wstecz
               </button>
             )}
             {step < 3 ? (
               <button onClick={() => setStep(step + 1)}
-                className="flex-1 py-3.5 rounded-[14px] text-[14px] font-bold bg-[#1A3A0A] text-white active:scale-[0.97] transition-all shadow-lg">
+                style={{ flex: 1, padding: 14, borderRadius: 14, fontSize: 14, fontWeight: 700, cursor: "pointer", background: "linear-gradient(135deg, #6efcb4, #3dd990)", border: "none", color: "#0a0f0d", boxShadow: "0 4px 20px rgba(110,252,180,0.2)" }}>
                 Dalej →
               </button>
             ) : (
               <button onClick={handleComplete}
-                className="flex-1 py-3.5 rounded-[14px] text-[14px] font-bold bg-[#1A3A0A] text-white active:scale-[0.97] transition-all shadow-lg">
+                style={{ flex: 1, padding: 14, borderRadius: 14, fontSize: 14, fontWeight: 700, cursor: "pointer", background: "linear-gradient(135deg, #6efcb4, #3dd990)", border: "none", color: "#0a0f0d", boxShadow: "0 4px 20px rgba(110,252,180,0.2)" }}>
                 ✅ Zapisz profil
               </button>
             )}
@@ -311,7 +365,7 @@ export default function ProfileSetup({ onComplete, onSkip, existingProfile }: Pr
           {/* Skip */}
           {step === 0 && (
             <button onClick={onSkip}
-              className="w-full mt-3 py-2 text-[12px] text-gray-400 font-semibold">
+              style={{ width: "100%", marginTop: 12, padding: 8, fontSize: 12, color: "rgba(255,255,255,0.25)", fontWeight: 600, background: "none", border: "none", cursor: "pointer" }}>
               Pomiń na razie
             </button>
           )}
