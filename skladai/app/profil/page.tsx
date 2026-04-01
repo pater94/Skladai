@@ -8,7 +8,7 @@ import { getProfile, getStreak, getHistory } from "@/lib/storage";
 import { ACTIVITY_LEVELS, GOALS, COMMON_ALLERGENS, DIETS, DIABETES_TYPES, TRIMESTERS } from "@/lib/nutrition";
 import { getAllAchievements, getAchievementsByCategory, getEarnedCount, CATEGORY_LABELS, TIER_COLORS, Achievement, AchievementCategory } from "@/lib/badges";
 import ProfileSetup from "@/components/ProfileSetup";
-// LoginScreen moved to OnboardingWrapper (first-launch screen)
+import OnboardingLogin from "@/components/OnboardingLogin";
 
 /* ── Recharts (client-only) ── */
 const AreaChart = dynamic(() => import("recharts").then(m => m.AreaChart), { ssr: false });
@@ -66,7 +66,7 @@ export default function ProfilPage() {
   const [loaded, setLoaded] = useState(false);
   const [showAchievements, setShowAchievements] = useState(false);
   const [normsOpen, setNormsOpen] = useState(false);
-  // LoginScreen removed — now in OnboardingWrapper
+  // TODO: when Supabase Auth is added, show OnboardingLogin when not logged in
 
   const [achievements, setAchievements] = useState<Record<AchievementCategory, Achievement[]>>({} as Record<AchievementCategory, Achievement[]>);
   const [earnedStats, setEarnedStats] = useState({ earned: 0, total: 0 });
