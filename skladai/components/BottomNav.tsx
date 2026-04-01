@@ -24,7 +24,7 @@ function getThemeColors(pathname: string) {
   }
   // Home (Skanuj) — dark theme
   if (pathname === "/") {
-    return { bg: "", border: "border-white/5", active: "#6efcb4", inactive: "rgba(255,255,255,0.25)", isDark: true, customBg: "rgba(10,15,13,0.95)" };
+    return { bg: "", border: "border-white/5", active: "#6efcb4", inactive: "rgba(255,255,255,0.25)", isDark: true, customBg: "#0a0e0c" };
   }
   // Default: Matcha (light)
   return { bg: "bg-white", border: "border-gray-200/60", active: "#2E7D32", inactive: "#B0B0B0", isDark: false };

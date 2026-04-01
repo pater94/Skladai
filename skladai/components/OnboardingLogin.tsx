@@ -39,6 +39,7 @@ function ScannerLogo({ size = 72, filterId = "glow" }: { size?: number; filterId
 export default function OnboardingLogin({ onSkip }: OnboardingLoginProps) {
   const [slide, setSlide] = useState(0);
   const [activeCard, setActiveCard] = useState(0);
+  const [touchStart, setTouchStart] = useState(0);
 
   useEffect(() => {
     if (slide === 0) {
@@ -63,12 +64,20 @@ export default function OnboardingLogin({ onSkip }: OnboardingLoginProps) {
   });
 
   return (
-    <div style={{ position: "fixed", inset: 0, zIndex: 50, background: "#0a0e0c", fontFamily: "'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+    <div style={{ position: "fixed", inset: 0, zIndex: 150, background: "#0a0e0c", fontFamily: "'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif", display: "flex", flexDirection: "column", overflow: "hidden" }}>
       {/* Safe area top spacer */}
       <div style={{ height: 50, flexShrink: 0 }} />
 
       {/* Slides container */}
-      <div style={{ flex: 1, position: "relative", overflow: "hidden" }}>
+      <div
+        style={{ flex: 1, position: "relative", overflow: "hidden" }}
+        onTouchStart={(e) => setTouchStart(e.touches[0].clientX)}
+        onTouchEnd={(e) => {
+          const diff = touchStart - e.changedTouches[0].clientX;
+          if (diff > 50 && slide < 2) setSlide(slide + 1);
+          if (diff < -50 && slide > 0) setSlide(slide - 1);
+        }}
+      >
 
         {/* SLIDE A — Value Cards */}
         <div style={slideBase(0)}>

@@ -462,7 +462,7 @@ export default function Home() {
 
         {/* ══ Photo Preview (between photo and analysis) ══ */}
         {!isLoading && photoPreview && showPhotoPreview && (
-          <div className="anim-fade-up-2" style={{ position: "fixed", inset: 0, zIndex: 50, background: "#0a0e0c", overflowY: "auto", padding: "16px 14px" }}>
+          <div className="anim-fade-up-2" style={{ position: "fixed", inset: 0, zIndex: 150, background: "#0a0e0c", overflowY: "auto", padding: "16px 14px" }}>
             <PhotoPreview
               mode={mode as "food" | "cosmetics" | "suplement"}
               source={photoSource}
