@@ -40,10 +40,18 @@ export default function OnboardingLogin({ onSkip }: OnboardingLoginProps) {
   const [slide, setSlide] = useState(0);
   const [activeCard, setActiveCard] = useState(0);
   const [touchStart, setTouchStart] = useState(0);
+  const [activeQuote, setActiveQuote] = useState(0);
 
   useEffect(() => {
     if (slide === 0) {
       const interval = setInterval(() => setActiveCard(c => (c + 1) % 3), 3000);
+      return () => clearInterval(interval);
+    }
+  }, [slide]);
+
+  useEffect(() => {
+    if (slide === 1) {
+      const interval = setInterval(() => setActiveQuote(q => (q + 1) % 2), 4000);
       return () => clearInterval(interval);
     }
   }, [slide]);
@@ -144,14 +152,21 @@ export default function OnboardingLogin({ onSkip }: OnboardingLoginProps) {
             ))}
           </div>
 
-          <div style={{ padding: "16px 18px", borderRadius: 16, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", position: "relative" }}>
+          <div style={{ padding: "16px 18px", borderRadius: 16, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", position: "relative", minHeight: 110 }}>
             <div style={{ position: "absolute", top: -6, left: 16, fontSize: 28, color: "rgba(110,252,180,0.35)", fontWeight: 900 }}>&ldquo;</div>
-            <div style={{ fontSize: 13.5, color: "rgba(255,255,255,0.55)", lineHeight: "20px", fontStyle: "italic", padding: "4px 0" }}>
-              Dzięki SkładAI przestałam przepłacać za drogeryjne kremy. Znalazłam zamiennik za połowę ceny z lepszym składem.
-            </div>
-            <div style={{ fontSize: 11.5, color: "rgba(255,255,255,0.35)", marginTop: 8, fontStyle: "normal" }}>
-              — Kasia, użytkowniczka SkładAI
-            </div>
+            {[
+              { text: "Dzięki SkładAI wybieram suplementy mądrzej — znalazłem tańsze zamienniki i odstawiłem te, które nie działają.", author: "— Paweł, użytkownik SkładAI" },
+              { text: "Dzięki SkładAI przestałam przepłacać za kosmetyki. Znalazłam zamienniki z lepszym składem.", author: "— Kasia, użytkowniczka SkładAI" },
+            ].map((q, i) => (
+              <div key={i} style={{ position: i === 0 ? "relative" : "absolute", top: i === 0 ? undefined : 16, left: i === 0 ? undefined : 18, right: i === 0 ? undefined : 18, opacity: activeQuote === i ? 1 : 0, transition: "opacity 0.4s ease" }}>
+                <div style={{ fontSize: 13.5, color: "rgba(255,255,255,0.55)", lineHeight: "20px", fontStyle: "italic", padding: "4px 0" }}>
+                  {q.text}
+                </div>
+                <div style={{ fontSize: 11.5, color: "rgba(255,255,255,0.35)", marginTop: 8, fontStyle: "normal" }}>
+                  {q.author}
+                </div>
+              </div>
+            ))}
           </div>
         </div>
 
@@ -160,9 +175,8 @@ export default function OnboardingLogin({ onSkip }: OnboardingLoginProps) {
           <div style={{ position: "absolute", top: -20, left: "50%", transform: "translateX(-50%)", width: 300, height: 180, background: "radial-gradient(ellipse, rgba(110,252,180,0.1), transparent 70%)", animation: "breathe 3s ease-in-out infinite", pointerEvents: "none" }} />
 
           <div style={{ textAlign: "center", marginBottom: 20, position: "relative" }}>
-            <div style={{ width: 76, height: 76, borderRadius: 22, margin: "0 auto 16px", background: "rgba(110,252,180,0.06)", border: "1.5px solid rgba(110,252,180,0.15)", display: "flex", alignItems: "center", justifyContent: "center", position: "relative" }}>
-              <div style={{ position: "absolute", inset: -10, background: "radial-gradient(circle, rgba(110,252,180,0.2), transparent 70%)", animation: "breathe 3s ease-in-out infinite" }} />
-              <span style={{ fontSize: 36, fontWeight: 900, color: "#6efcb4", position: "relative" }}>S</span>
+            <div style={{ marginBottom: 16 }}>
+              <ScannerLogo size={76} filterId="glowC" />
             </div>
             <div style={{ fontSize: 26, fontWeight: 900, color: "#fff", letterSpacing: "-0.03em", lineHeight: "32px", marginBottom: 8 }}>
               Jedz mądrzej.{" "}
