@@ -66,7 +66,6 @@ export default function ProfilPage() {
     setScanCount(getHistory().length);
     setWeightHistory(getWeightHistory());
     setLoaded(true);
-    if (!p) setEditing(true);
   }, []);
 
   const handleSaveWeight = useCallback(() => {
@@ -148,14 +147,67 @@ export default function ProfilPage() {
     );
   }
 
-  // Profile editing / setup
-  if (editing || !profile) {
+  // Profile editing (user clicked edit or "Rozpocznij")
+  if (editing) {
     return (
       <ProfileSetup
         existingProfile={profile}
         onComplete={(p) => { setProfile(p); setEditing(false); }}
-        onSkip={() => router.push("/")}
+        onSkip={() => { setEditing(false); if (!profile) router.push("/"); }}
       />
+    );
+  }
+
+  // ═══ EMPTY STATE (no profile) ═══
+  if (!profile) {
+    return (
+      <div style={{ minHeight: "100dvh", background: "#0a0e0c", paddingBottom: 100 }}>
+        <div style={{ padding: "20px 22px 30px", position: "relative" }}>
+          <div style={{ position: "absolute", top: 0, left: "50%", transform: "translateX(-50%)", width: 300, height: 200, background: "radial-gradient(ellipse, rgba(110,252,180,0.08), transparent 70%)", pointerEvents: "none" }} />
+
+          <div style={{ textAlign: "center", paddingTop: 30 }}>
+            <div style={{ width: 80, height: 80, borderRadius: "50%", margin: "0 auto 16px", background: "rgba(255,255,255,0.04)", border: "2px solid rgba(255,255,255,0.08)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 32, color: "rgba(255,255,255,0.2)" }}>👤</div>
+
+            <div style={{ fontSize: 20, fontWeight: 900, color: "#fff", marginBottom: 6 }}>Cześć!</div>
+            <div style={{ fontSize: 13, color: "rgba(255,255,255,0.35)", marginBottom: 28 }}>Uzupełnij profil żeby AI lepiej Cię znał</div>
+
+            <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 16, padding: 16, marginBottom: 20, textAlign: "left" }}>
+              <div style={{ fontSize: 13, fontWeight: 800, color: "rgba(255,255,255,0.6)", marginBottom: 14 }}>Krok 1 z 4</div>
+              <div style={{ height: 4, background: "rgba(255,255,255,0.06)", borderRadius: 2, marginBottom: 16, overflow: "hidden" }}>
+                <div style={{ height: "100%", width: "25%", background: "#6efcb4", borderRadius: 2 }} />
+              </div>
+
+              {[
+                { icon: "👤", label: "Podstawowe dane", desc: "Imię, płeć, wiek", active: true },
+                { icon: "⚖️", label: "Wymiary", desc: "Waga, wzrost", active: false },
+                { icon: "🎯", label: "Twój cel", desc: "Odchudzanie, masa, zdrowie", active: false },
+                { icon: "⚠️", label: "Alergie", desc: "Czego unikasz", active: false },
+              ].map((s, i) => (
+                <div key={i} style={{
+                  display: "flex", alignItems: "center", gap: 12,
+                  padding: "10px 12px", marginBottom: 6, borderRadius: 12,
+                  background: s.active ? "rgba(110,252,180,0.06)" : "transparent",
+                  border: s.active ? "1px solid rgba(110,252,180,0.12)" : "1px solid rgba(255,255,255,0.04)",
+                }}>
+                  <div style={{ width: 32, height: 32, borderRadius: 10, background: s.active ? "rgba(110,252,180,0.1)" : "rgba(255,255,255,0.03)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14 }}>{s.icon}</div>
+                  <div>
+                    <div style={{ fontSize: 12.5, fontWeight: 700, color: s.active ? "#6efcb4" : "rgba(255,255,255,0.4)" }}>{s.label}</div>
+                    <div style={{ fontSize: 10.5, color: "rgba(255,255,255,0.25)", marginTop: 1 }}>{s.desc}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <button onClick={() => setEditing(true)} style={{ width: "100%", padding: 16, borderRadius: 14, border: "none", background: "linear-gradient(135deg, #6efcb4, #3dd990)", color: "#0a0f0d", fontWeight: 800, fontSize: 15, cursor: "pointer", boxShadow: "0 4px 20px rgba(110,252,180,0.2)" }}>
+              Rozpocznij →
+            </button>
+
+            <div style={{ marginTop: 12 }}>
+              <span onClick={() => router.push("/")} style={{ fontSize: 12, color: "rgba(255,255,255,0.2)", cursor: "pointer" }}>Pomiń na razie</span>
+            </div>
+          </div>
+        </div>
+      </div>
     );
   }
 
