@@ -46,8 +46,8 @@ export default function AnalyzingAnimation({ mode }: AnalyzingAnimationProps) {
             <circle cx="60" cy="60" r="54" fill="none" stroke={c.accent} strokeWidth="3" strokeDasharray="80 260" strokeLinecap="round" />
           </svg>
           <svg width="120" height="120" style={{ position: "absolute", animation: "spinSlow 3s linear infinite reverse" }}>
-            <circle cx="60" cy="60" r="46" fill="none" stroke="rgba(192,132,252,0.06)" strokeWidth="2" />
-            <circle cx="60" cy="60" r="46" fill="none" stroke="rgba(192,132,252,0.3)" strokeWidth="2" strokeDasharray="40 250" strokeLinecap="round" />
+            <circle cx="60" cy="60" r="46" fill="none" stroke={`rgba(${c.rgb},0.06)`} strokeWidth="2" />
+            <circle cx="60" cy="60" r="46" fill="none" stroke={`rgba(${c.rgb},0.3)`} strokeWidth="2" strokeDasharray="40 250" strokeLinecap="round" />
           </svg>
           <div style={{ position: "absolute", inset: 24, borderRadius: "50%", background: `rgba(${c.rgb},0.04)`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 36 }}>🔬</div>
         </div>
@@ -70,12 +70,13 @@ export default function AnalyzingAnimation({ mode }: AnalyzingAnimationProps) {
             }}>
               <div style={{
                 width: 28, height: 28, borderRadius: 8,
-                background: done ? "rgba(34,197,94,0.15)" : active ? `rgba(${c.rgb},0.1)` : "rgba(255,255,255,0.03)",
+                background: done ? `rgba(${c.rgb},0.15)` : active ? `rgba(${c.rgb},0.1)` : "rgba(255,255,255,0.03)",
                 display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13,
+                color: done ? c.accent : undefined,
               }}>{done ? "✓" : s.icon}</div>
               <span style={{
                 fontSize: 13, fontWeight: active ? 700 : 500,
-                color: done ? "rgba(34,197,94,0.6)" : active ? c.accent : "rgba(255,255,255,0.2)",
+                color: done ? `rgba(${c.rgb},0.6)` : active ? c.accent : "rgba(255,255,255,0.2)",
                 textDecoration: done ? "line-through" : "none",
               }}>{s.text}</span>
               {active && <div style={{ marginLeft: "auto", width: 16, height: 16, borderRadius: "50%", border: `2px solid rgba(${c.rgb},0.2)`, borderTopColor: c.accent, animation: "spinSlow 0.6s linear infinite" }} />}

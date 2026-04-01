@@ -169,22 +169,34 @@ export default function Home() {
           secondImg = parts[1];
         }
 
-        const res = await fetch("/api/analyze", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            image: primaryImg,
-            ...(secondImg ? { image2: secondImg } : {}),
-            mode,
-            ...(skinProfile ? { skinProfile } : {}),
-          }),
-        });
-        let data;
-        try { data = await res.json(); } catch {
-          throw new Error(`server_${res.status}`);
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 90000);
+        try {
+          const res = await fetch("/api/analyze", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            signal: controller.signal,
+            body: JSON.stringify({
+              image: primaryImg,
+              ...(secondImg ? { image2: secondImg } : {}),
+              mode,
+              ...(skinProfile ? { skinProfile } : {}),
+            }),
+          });
+          clearTimeout(timeout);
+          let data;
+          try { data = await res.json(); } catch {
+            throw new Error(`server_${res.status}`);
+          }
+          if (!res.ok) throw new Error(data.error || `error_${res.status}`);
+          return data;
+        } catch (err) {
+          clearTimeout(timeout);
+          if (err instanceof Error && err.name === "AbortError") {
+            throw new Error("timeout_504");
+          }
+          throw err;
         }
-        if (!res.ok) throw new Error(data.error || `error_${res.status}`);
-        return data;
       };
 
       try {
@@ -450,7 +462,7 @@ export default function Home() {
 
         {/* ══ Photo Preview (between photo and analysis) ══ */}
         {!isLoading && photoPreview && showPhotoPreview && (
-          <div className="anim-fade-up-2" style={{ background: "#0a0e0c", borderRadius: 20, padding: "12px 8px", marginBottom: 12, border: "1px solid rgba(255,255,255,0.06)" }}>
+          <div className="anim-fade-up-2" style={{ position: "fixed", inset: 0, zIndex: 50, background: "#0a0e0c", overflowY: "auto", padding: "16px 14px" }}>
             <PhotoPreview
               mode={mode as "food" | "cosmetics" | "suplement"}
               source={photoSource}

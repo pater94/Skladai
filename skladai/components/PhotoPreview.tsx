@@ -87,7 +87,7 @@ export default function PhotoPreview({
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
           <div onClick={onBack} style={{ width: 32, height: 32, borderRadius: 10, background: t.accentLight, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, cursor: "pointer" }}>←</div>
           <div style={{ color: "#fff", fontWeight: 800, fontSize: 15 }}>Oba zdjęcia</div>
-          <div style={{ marginLeft: "auto", background: "rgba(34,197,94,0.15)", color: "#22c55e", fontSize: 10, fontWeight: 800, padding: "4px 10px", borderRadius: 10 }}>✓ KOMPLET</div>
+          <div style={{ marginLeft: "auto", background: t.accentLight, color: t.accent, fontSize: 10, fontWeight: 800, padding: "4px 10px", borderRadius: 10 }}>✓ KOMPLET</div>
         </div>
 
         {/* Two photos */}
@@ -122,11 +122,11 @@ export default function PhotoPreview({
         </div>
 
         {/* Success card */}
-        <div style={{ background: "rgba(34,197,94,0.06)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)", border: "1px solid rgba(34,197,94,0.15)", borderRadius: 14, padding: "13px 14px", marginBottom: 18, display: "flex", gap: 10, alignItems: "center" }}>
-          <div style={{ width: 36, height: 36, borderRadius: 10, background: "rgba(34,197,94,0.12)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>✅</div>
+        <div style={{ background: `${t.accent}0F`, backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)", border: `1px solid ${t.accent}26`, borderRadius: 14, padding: "13px 14px", marginBottom: 18, display: "flex", gap: 10, alignItems: "center" }}>
+          <div style={{ width: 36, height: 36, borderRadius: 10, background: t.accentLight, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>✅</div>
           <div>
-            <div style={{ fontSize: 12.5, color: "#22c55e", fontWeight: 700 }}>Gotowe do analizy</div>
-            <div style={{ fontSize: 10.5, color: "rgba(34,197,94,0.6)", marginTop: 2 }}>AI połączy informacje z obu zdjęć</div>
+            <div style={{ fontSize: 12.5, color: t.accent, fontWeight: 700 }}>Gotowe do analizy</div>
+            <div style={{ fontSize: 10.5, color: `${t.accent}99`, marginTop: 2 }}>AI połączy informacje z obu zdjęć</div>
           </div>
         </div>
 

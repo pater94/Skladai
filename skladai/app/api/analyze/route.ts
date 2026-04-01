@@ -1212,17 +1212,19 @@ ZASADY:
         return "";
       }
 
-      // OCR first image
-      const supplFirstOCR = await callSupplVisionOCR(base64Data);
-      supplOcrText = supplFirstOCR;
-
-      // OCR second image if present
+      // OCR images (parallel when 2 images)
       if (secondBase64Data) {
-        const supplSecondOCR = await callSupplVisionOCR(secondBase64Data);
+        const [supplFirstOCR, supplSecondOCR] = await Promise.all([
+          callSupplVisionOCR(base64Data),
+          callSupplVisionOCR(secondBase64Data),
+        ]);
+        supplOcrText = supplFirstOCR;
         if (supplSecondOCR) {
           supplOcrText = supplOcrText + "\n\n--- DRUGA STRONA OPAKOWANIA ---\n\n" + supplSecondOCR;
           console.log(`Suplement OCR: ${supplFirstOCR.length} + ${supplSecondOCR.length} chars from 2 images`);
         }
+      } else {
+        supplOcrText = await callSupplVisionOCR(base64Data);
       }
 
       const supplImgContent = {
@@ -1304,18 +1306,20 @@ ZASADY:
       return "";
     }
 
-    // OCR first image
-    const firstOCR = await callVisionOCR(imageContent.source.data as string);
-    ocrText = firstOCR;
-
-    // OCR second image if present
+    // OCR images (parallel when 2 images)
     if (secondBase64Data) {
-      const secondOCR = await callVisionOCR(secondBase64Data);
+      const [firstOCR, secondOCR] = await Promise.all([
+        callVisionOCR(imageContent.source.data as string),
+        callVisionOCR(secondBase64Data),
+      ]);
+      ocrText = firstOCR;
       if (secondOCR) {
         ocrText = ocrText + "\n\n--- DRUGA STRONA OPAKOWANIA ---\n\n" + secondOCR;
         console.log(`Google Vision OCR: ${firstOCR.length} + ${secondOCR.length} chars from 2 images`);
       }
     } else {
+      const firstOCR = await callVisionOCR(imageContent.source.data as string);
+      ocrText = firstOCR;
       console.log(`Google Vision OCR: extracted ${ocrText.length} chars`);
     }
 
