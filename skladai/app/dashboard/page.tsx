@@ -1,152 +1,14 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { UserProfile, DailyTotals } from "@/lib/types";
-import { getProfile, getDailyTotals, getWeekTotals, todayStr, removeDiaryEntry, getStreak, isPremium, getDiary } from "@/lib/storage";
-import PremiumGate from "@/components/PremiumGate";
-import WaterTracker from "@/components/WaterTracker";
-import StepCounter from "@/components/StepCounter";
-import dynamic from "next/dynamic";
-
-const WeeklyChart = dynamic(() => import("@/components/DashboardCharts"), { ssr: false });
-const ProgressChart = dynamic(() => import("@/components/ProgressChart"), { ssr: false });
-
-/* ─── Animated Calorie Ring ─── */
-function CalorieRing({ consumed, target }: { consumed: number; target: number }) {
-  const [animPct, setAnimPct] = useState(0);
-  const pct = target > 0 ? Math.min((consumed / target) * 100, 120) : 0;
-  const remaining = Math.max(0, target - consumed);
-
-  useEffect(() => {
-    const timeout = setTimeout(() => setAnimPct(Math.min(pct, 100)), 80);
-    return () => clearTimeout(timeout);
-  }, [pct]);
-
-  const radius = 56;
-  const circumference = 2 * Math.PI * radius;
-  const offset = circumference - (animPct / 100) * circumference;
-
-  const gradientId = pct > 100 ? "ring-red" : pct > 80 ? "ring-orange" : "ring-green";
-
-  return (
-    <div className="flex flex-col items-center">
-      <div className="relative w-[130px] h-[130px]">
-        <svg width="130" height="130" className="-rotate-90">
-          <defs>
-            <linearGradient id="ring-green" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="#10b981" />
-              <stop offset="100%" stopColor="#34d399" />
-            </linearGradient>
-            <linearGradient id="ring-orange" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="#f59e0b" />
-              <stop offset="100%" stopColor="#f97316" />
-            </linearGradient>
-            <linearGradient id="ring-red" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="#ef4444" />
-              <stop offset="100%" stopColor="#dc2626" />
-            </linearGradient>
-          </defs>
-          <circle cx="65" cy="65" r={radius} fill="none" stroke="#f0f0f0" strokeWidth="8" />
-          <circle
-            cx="65" cy="65" r={radius} fill="none"
-            stroke={`url(#${gradientId})`}
-            strokeWidth="8" strokeLinecap="round"
-            strokeDasharray={circumference} strokeDashoffset={offset}
-            style={{ transition: "stroke-dashoffset 0.8s cubic-bezier(0.4,0,0.2,1)" }}
-          />
-        </svg>
-        <div className="absolute inset-0 flex flex-col items-center justify-center">
-          {consumed === 0 && target > 0 ? (
-            <p className="text-[11px] font-semibold text-emerald-500 text-center px-2">
-              Zeskanuj coś
-            </p>
-          ) : (
-            <>
-              <span className="text-[10px] text-gray-400 font-medium">Pozostało</span>
-              <span className="text-[22px] font-black text-gray-800 leading-none">
-                {remaining > 0 ? remaining : 0}
-              </span>
-              <span className="text-[10px] text-gray-400">
-                {consumed > target ? `+${consumed - target}` : `z ${target}`} kcal
-              </span>
-            </>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/* ─── Mini Macro Ring ─── */
-function MiniMacroRing({ value, max, label, color }: {
-  value: number; max: number; label: string; color: string;
-}) {
-  const [animPct, setAnimPct] = useState(0);
-  const pct = max > 0 ? Math.min((value / max) * 100, 100) : 0;
-
-  useEffect(() => {
-    const timeout = setTimeout(() => setAnimPct(pct), 150);
-    return () => clearTimeout(timeout);
-  }, [pct]);
-
-  const radius = 24;
-  const circumference = 2 * Math.PI * radius;
-  const offset = circumference - (animPct / 100) * circumference;
-  const isOver = value > max;
-
-  return (
-    <div className="flex flex-col items-center gap-1">
-      <div className="relative w-[60px] h-[60px]">
-        <svg width="60" height="60" className="-rotate-90">
-          <circle cx="30" cy="30" r={radius} fill="none" stroke={color + "26"} strokeWidth="5" />
-          <circle
-            cx="30" cy="30" r={radius} fill="none"
-            stroke={isOver ? "#ef4444" : color}
-            strokeWidth="5" strokeLinecap="round"
-            strokeDasharray={circumference} strokeDashoffset={offset}
-            style={{ transition: "stroke-dashoffset 0.8s cubic-bezier(0.4,0,0.2,1)" }}
-          />
-        </svg>
-        <div className="absolute inset-0 flex items-center justify-center">
-          <span className="text-[12px] font-bold text-gray-700">{Math.round(value)}</span>
-        </div>
-      </div>
-      <span className="text-[10px] font-semibold text-gray-500">{label}</span>
-      <span className="text-[9px] text-gray-400">/{max}g</span>
-    </div>
-  );
-}
-
-/* ─── Nutrient Mini Bar (inline) ─── */
-function NutrientMiniBar({ label, icon, value, max, unit = "g" }: {
-  label: string; icon: string; value: number; max: number; unit?: string;
-}) {
-  const pct = max > 0 ? Math.min((value / max) * 100, 100) : 0;
-  const isOver = value > max;
-  const isNear = value > max * 0.8;
-  const barColor = isOver ? "bg-red-500" : isNear ? "bg-amber-500" : "bg-emerald-500";
-
-  return (
-    <div className="flex-1 min-w-0">
-      <div className="flex items-center gap-1 mb-1">
-        <span className="text-[12px]">{icon}</span>
-        <span className="text-[10px] font-semibold text-gray-600 truncate">{label}</span>
-      </div>
-      <div className="w-full h-[6px] rounded-full bg-gray-100 overflow-hidden mb-1">
-        <div className={`h-full rounded-full ${barColor} transition-all duration-500`} style={{ width: `${pct}%` }} />
-      </div>
-      <p className={`text-[9px] font-bold ${isOver ? "text-red-500" : "text-gray-400"}`}>
-        {Math.round(value * 10) / 10}{unit} / {max}{unit}
-      </p>
-    </div>
-  );
-}
-
-const MEAL_ICONS: Record<string, string> = { breakfast: "\u{1F305}", lunch: "☀️", dinner: "\u{1F319}", snack: "\u{1F37F}" };
-const MEAL_LABELS: Record<string, string> = { breakfast: "Śniadanie", lunch: "Obiad", dinner: "Kolacja", snack: "Przekąska" };
+import { getProfile, getDailyTotals, getWeekTotals, todayStr, removeDiaryEntry, getStreak, getHistory } from "@/lib/storage";
 
 type DashView = "today" | "week";
+
+const MEAL_ICONS: Record<string, string> = { breakfast: "🥣", lunch: "🥗", dinner: "🍽️", snack: "🍿" };
+const DAY_LABELS = ["Pn", "Wt", "Śr", "Cz", "Pt", "Sb", "Nd"];
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -155,7 +17,6 @@ export default function DashboardPage() {
   const [weekTotals, setWeekTotals] = useState<DailyTotals[]>([]);
   const [streak, setStreak] = useState(0);
   const [loaded, setLoaded] = useState(false);
-  const [hasPremium, setHasPremium] = useState(false);
   const [view, setView] = useState<DashView>("today");
 
   const reload = () => {
@@ -164,349 +25,354 @@ export default function DashboardPage() {
     setTotals(getDailyTotals(todayStr()));
     setWeekTotals(getWeekTotals());
     setStreak(getStreak());
-    setHasPremium(isPremium());
     setLoaded(true);
   };
 
-  useEffect(() => { reload(); }, []);
-
-  if (loaded && !hasPremium) {
-    return <PremiumGate feature="Dashboard zdrowotny — śledź kalorie, makro i cukier" isPremium={false}><div /></PremiumGate>;
-  }
+  useEffect(() => {
+    window.scrollTo(0, 0);
+    reload();
+  }, []);
 
   if (!loaded) {
     return (
-      <div className="min-h-[100dvh] flex items-center justify-center bg-[#f5f2ed]">
-        <div className="w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+      <div style={{ minHeight: "100dvh", display: "flex", alignItems: "center", justifyContent: "center", background: "#0a0e0c" }}>
+        <div style={{ width: 48, height: 48, border: "4px solid rgba(110,252,180,0.3)", borderTopColor: "#6efcb4", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
       </div>
     );
   }
 
+  // ═══ EMPTY STATE (no profile) ═══
   if (!profile || !profile.onboarding_complete) {
     return (
-      <div className="min-h-[100dvh] bg-[#f5f2ed] flex items-center justify-center p-5">
-        <div className="bg-white rounded-[24px] p-8 text-center max-w-sm shadow-lg">
-          <span className="text-5xl block mb-4">{"\u{1F4CA}"}</span>
-          <h2 className="text-[20px] font-bold text-gray-800 mb-2">Dashboard wymaga profilu</h2>
-          <p className="text-[13px] text-gray-400 mb-6">Uzupełnij swoje dane żeby śledzić spożycie i porównywać z normami.</p>
-          <button onClick={() => router.push("/profil")}
-            className="w-full py-4 bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-bold rounded-[18px] active:scale-[0.97] transition-all">
-            {"\u{1F464}"} Ustaw profil
-          </button>
+      <div style={{ minHeight: "100dvh", background: "#0a0e0c", paddingBottom: 100 }}>
+        <div style={{ padding: "20px 22px 30px", position: "relative" }}>
+          <div style={{ position: "absolute", top: 0, left: "50%", transform: "translateX(-50%)", width: 300, height: 200, background: "radial-gradient(ellipse, rgba(110,252,180,0.08), transparent 70%)", pointerEvents: "none" }} />
+
+          <div style={{ textAlign: "center", paddingTop: 40, paddingBottom: 20 }}>
+            <div style={{ width: 80, height: 80, borderRadius: 24, margin: "0 auto 20px", background: "rgba(110,252,180,0.06)", border: "1.5px solid rgba(110,252,180,0.12)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 36, position: "relative" }}>
+              <div style={{ position: "absolute", inset: -8, background: "radial-gradient(circle, rgba(110,252,180,0.15), transparent 70%)", animation: "breathe 3s ease-in-out infinite" }} />
+              <span style={{ position: "relative" }}>📊</span>
+            </div>
+
+            <div style={{ fontSize: 20, fontWeight: 900, color: "#fff", letterSpacing: "-0.03em", marginBottom: 8 }}>Odblokuj Dashboard</div>
+            <div style={{ fontSize: 13, color: "rgba(255,255,255,0.4)", lineHeight: "19px", marginBottom: 28, padding: "0 10px" }}>
+              Uzupełnij profil żeby śledzić kalorie, makro i postępy. To zajmie minutę.
+            </div>
+
+            {[
+              { icon: "📈", text: "Śledź kalorie i makroskładniki" },
+              { icon: "🏃", text: "Monitoruj swoją aktywność" },
+              { icon: "🎯", text: "Porównuj spożycie z normami dziennymi" },
+            ].map((b, i) => (
+              <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", marginBottom: 6, borderRadius: 12, background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.04)" }}>
+                <span style={{ fontSize: 16 }}>{b.icon}</span>
+                <span style={{ fontSize: 13, color: "rgba(255,255,255,0.55)", fontWeight: 600 }}>{b.text}</span>
+              </div>
+            ))}
+
+            <button onClick={() => router.push("/profil")} style={{ width: "100%", padding: 16, borderRadius: 14, border: "none", background: "linear-gradient(135deg, #6efcb4, #3dd990)", color: "#0a0f0d", fontWeight: 800, fontSize: 15, cursor: "pointer", boxShadow: "0 4px 20px rgba(110,252,180,0.2)", marginTop: 20 }}>
+              🎯 Ustaw profil →
+            </button>
+          </div>
         </div>
+        <style>{`@keyframes breathe { 0%, 100% { opacity: 0.4; transform: scale(0.95); } 50% { opacity: 0.7; transform: scale(1.05); } } @keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </div>
     );
   }
 
+  // ═══ WITH DATA ═══
   const n = profile.daily_norms;
   const t = totals!;
-  const calPct = n.calories > 0 ? Math.round((t.calories / n.calories) * 100) : 0;
-  const sugarTeaspoons = Math.round(t.sugar / 4 * 10) / 10;
+  const calPct = n.calories > 0 ? Math.min((t.calories / n.calories), 1) : 0;
+  const calDash = Math.round(calPct * 264);
+  const dateStr = new Date().toLocaleDateString("pl-PL", { weekday: "long", day: "numeric", month: "long" });
 
-  const handleRemove = (id: string) => {
-    removeDiaryEntry(id);
-    reload();
-  };
+  const handleRemove = (id: string) => { removeDiaryEntry(id); reload(); };
+
+  // Week aggregates
+  const daysWithData = weekTotals.filter(d => d.calories > 0);
+  const avgCal = daysWithData.length > 0 ? Math.round(daysWithData.reduce((s, d) => s + d.calories, 0) / daysWithData.length) : 0;
+  const maxWeekCal = Math.max(n.calories, ...weekTotals.map(d => d.calories));
+  const totalWeekScans = daysWithData.reduce((s, d) => s + d.entries.length, 0);
+  const weekFoodScans = daysWithData.flatMap(d => d.entries).length;
+
+  // History breakdown for week
+  const weekHistory = getHistory().filter(h => {
+    const d = new Date(h.date);
+    const now = new Date();
+    const diff = (now.getTime() - d.getTime()) / 86400000;
+    return diff <= 7;
+  });
+  const weekFoodCount = weekHistory.filter(h => h.scanType === "food").length;
+  const weekCosmeticsCount = weekHistory.filter(h => h.scanType === "cosmetics").length;
+  const weekSupplementCount = weekHistory.filter(h => h.scanType === "suplement").length;
+
+  const GlassCard = ({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) => (
+    <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 16, padding: "14px 16px", marginBottom: 12, ...style }}>
+      {children}
+    </div>
+  );
+
+  const SectionTitle = ({ children }: { children: React.ReactNode }) => (
+    <div style={{ fontSize: 12, fontWeight: 800, color: "rgba(255,255,255,0.5)", marginBottom: 12, letterSpacing: "0.03em", textTransform: "uppercase" as const }}>{children}</div>
+  );
 
   return (
-    <div className="min-h-[100dvh] bg-[#f5f2ed]">
-      {/* ─── HEADER ─── */}
-      <div className="relative overflow-hidden" style={{ background: "#0a0f0d" }}>
-        {/* Animated blobs */}
-        <div className="dash-blob dash-blob-1" />
-        <div className="dash-blob dash-blob-2" />
-        <div className="dash-blob dash-blob-3" />
-
-        {/* Film grain overlay */}
-        <div className="absolute inset-0 opacity-[0.03] pointer-events-none"
-          style={{ background: "repeating-conic-gradient(rgba(255,255,255,0.1) 0% 25%, transparent 0% 50%) 0 0 / 3px 3px" }} />
-
-        <div className="max-w-md mx-auto px-5 pt-8 pb-20 relative z-10">
-          <div className="flex justify-between items-start mb-5">
-            <div>
-              <h1 className="text-[28px] font-black leading-tight"
-                style={{ background: "linear-gradient(135deg, #10b981, #06b6d4)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
-                Dashboard
-              </h1>
-              <p className="text-[13px] mt-1" style={{ color: "rgba(255,255,255,0.5)" }}>
-                {new Date().toLocaleDateString("pl-PL", { weekday: "long", day: "numeric", month: "long" })}
-              </p>
-            </div>
-            <div className="flex items-center gap-2">
-              {streak > 0 && (
-                <div className="px-3 py-1.5 rounded-full border"
-                  style={{ background: "rgba(255,255,255,0.06)", borderColor: "rgba(255,255,255,0.08)", backdropFilter: "blur(12px)" }}>
-                  <span className="text-[12px] font-bold text-white">{"\u{1F525}"} {streak} {streak === 1 ? "dzień" : "dni"}</span>
-                </div>
-              )}
-            </div>
+    <div style={{ minHeight: "100dvh", background: "#0a0e0c", paddingBottom: 100 }}>
+      {/* Header */}
+      <div style={{ padding: "16px 22px 24px", background: "linear-gradient(180deg, rgba(110,252,180,0.08) 0%, transparent 100%)", position: "relative" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+          <div>
+            <div style={{ fontSize: 22, fontWeight: 900, color: "#fff", letterSpacing: "-0.03em" }}>Dashboard</div>
+            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.35)", marginTop: 2 }}>{dateStr}</div>
           </div>
-
-          {/* Toggle Dziś / Tydzień */}
-          <div className="inline-flex rounded-full p-1"
-            style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)", backdropFilter: "blur(12px)" }}>
-            {(["today", "week"] as DashView[]).map((v) => (
-              <button key={v} onClick={() => setView(v)}
-                className="px-5 py-2 text-[12px] font-bold rounded-full transition-all"
-                style={{
-                  background: view === v ? "linear-gradient(135deg, #10b981, #06b6d4)" : "transparent",
-                  color: view === v ? "#fff" : "rgba(255,255,255,0.4)",
-                }}>
-                {v === "today" ? "Dziś" : "Tydzień"}
-              </button>
-            ))}
-          </div>
+          {streak > 0 && (
+            <div style={{ padding: "6px 14px", borderRadius: 20, background: "rgba(110,252,180,0.08)", border: "1px solid rgba(110,252,180,0.15)", display: "flex", alignItems: "center", gap: 4 }}>
+              <span style={{ fontSize: 12 }}>🔥</span>
+              <span style={{ fontSize: 12, fontWeight: 800, color: "#6efcb4" }}>{streak} {streak === 1 ? "dzień" : "dni"}</span>
+            </div>
+          )}
         </div>
 
-        {/* Curved bottom */}
-        <div className="absolute bottom-0 left-0 right-0">
-          <svg viewBox="0 0 1440 60" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full block">
-            <path d="M0 60V0C240 45 480 60 720 55C960 50 1200 35 1440 20V60H0Z" fill="#f5f2ed"/>
-          </svg>
+        {/* Toggle */}
+        <div style={{ display: "flex", gap: 4, marginTop: 12, background: "rgba(255,255,255,0.04)", borderRadius: 12, padding: 3 }}>
+          {(["today", "week"] as DashView[]).map((v) => (
+            <div key={v} onClick={() => setView(v)} style={{
+              flex: 1, textAlign: "center", padding: 8, borderRadius: 10, cursor: "pointer",
+              background: view === v ? "rgba(110,252,180,0.1)" : "transparent",
+              border: view === v ? "1px solid rgba(110,252,180,0.15)" : "1px solid transparent",
+              fontSize: 12, fontWeight: 700,
+              color: view === v ? "#6efcb4" : "rgba(255,255,255,0.3)",
+            }}>
+              {v === "today" ? "Dziś" : "Tydzień"}
+            </div>
+          ))}
         </div>
       </div>
 
-      {/* ─── BODY ─── */}
-      <div className="max-w-md mx-auto px-5 -mt-8 pb-10 relative z-20 space-y-4">
+      <div style={{ padding: "0 16px 24px" }}>
 
         {/* ═══ TODAY VIEW ═══ */}
         {view === "today" && (<>
 
-          {/* Hero Calorie Card */}
-          <div className="bg-white rounded-[24px] p-4 dash-card-anim"
-            style={{ boxShadow: "0 4px 24px rgba(0,0,0,0.08)", animationDelay: "0s", maxHeight: "280px" }}>
-            <p className="text-[13px] font-bold text-gray-700 mb-2">Bilans dnia</p>
-            <CalorieRing consumed={t.calories} target={n.calories} />
-            {/* Macro mini rings */}
-            <div className="flex justify-center gap-8 mt-3 pt-3 border-t border-gray-100">
-              <MiniMacroRing value={t.protein} max={n.protein_max} label="Białko" color="#3B82F6" />
-              <MiniMacroRing value={t.fat} max={n.fat_max} label="Tłuszcz" color="#EAB308" />
-              <MiniMacroRing value={t.carbs} max={n.carbs_max} label="Węgle" color="#F97316" />
-            </div>
-          </div>
+          {/* Calorie ring card */}
+          <GlassCard style={{ borderRadius: 20, padding: "20px 18px", position: "relative", overflow: "hidden" }}>
+            <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: "linear-gradient(90deg, transparent, rgba(110,252,180,0.3), transparent)" }} />
+            <SectionTitle>Bilans dnia</SectionTitle>
 
-          {/* Critical Nutrients — compact inline */}
-          <div className="bg-white rounded-[20px] p-5 dash-card-anim"
-            style={{ boxShadow: "0 2px 20px rgba(0,0,0,0.06)", animationDelay: "0.1s" }}>
-            <p className="text-[13px] font-bold text-gray-700 mb-3">Krytyczne składniki</p>
-            <div className="flex gap-4">
-              <NutrientMiniBar label="Cukier" icon={"\u{1F944}"} value={t.sugar} max={n.sugar_max} />
-              <NutrientMiniBar label="Sól" icon={"\u{1F9C2}"} value={t.salt} max={n.salt_max} />
-              <NutrientMiniBar label="Błonnik" icon={"\u{1F966}"} value={t.fiber} max={n.fiber_min} />
-            </div>
-            {sugarTeaspoons > 0 && (
-              <div className="mt-3 bg-amber-50 rounded-[12px] p-2.5">
-                <p className="text-[10px] font-semibold text-amber-700">
-                  {"\u{1F944}"} Dziś zjadłeś {sugarTeaspoons} łyżeczek cukru (norma: ~6)
-                </p>
+            <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
+              <div style={{ width: 100, height: 100, position: "relative", flexShrink: 0 }}>
+                <svg width="100" height="100">
+                  <circle cx="50" cy="50" r="42" fill="none" stroke="rgba(255,255,255,0.04)" strokeWidth="8" />
+                  <circle cx="50" cy="50" r="42" fill="none" stroke="#6efcb4" strokeWidth="8"
+                    strokeDasharray={`${calDash} ${264 - calDash}`} strokeLinecap="round" transform="rotate(-90 50 50)"
+                    style={{ transition: "stroke-dasharray 0.8s ease" }} />
+                </svg>
+                <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+                  <span style={{ fontSize: 22, fontWeight: 900, color: "#fff" }}>{t.calories}</span>
+                  <span style={{ fontSize: 9, color: "rgba(255,255,255,0.3)", fontWeight: 600 }}>/ {n.calories} kcal</span>
+                </div>
               </div>
-            )}
-          </div>
 
-          {/* Alerts */}
-          {t.sugar > n.sugar_max && (
-            <div className="bg-red-50 border border-red-100 rounded-[20px] p-4 dash-card-anim"
-              style={{ animationDelay: "0.2s" }}>
-              <p className="text-[13px] font-bold text-red-600">
-                {"\u{1F534}"} CUKIER {Math.round((t.sugar / n.sugar_max) * 100)}% normy!
-              </p>
-              <p className="text-[11px] text-red-500 mt-1">
-                Główne źródła: {t.entries.filter(e => e.sugar > 0).map(e => `${e.productName} (${e.sugar}g)`).join(", ") || "brak danych"}
-              </p>
-            </div>
-          )}
-
-          {/* Water Tracker */}
-          <div className="dash-card-anim" style={{ animationDelay: "0.3s" }}>
-            <WaterTracker />
-          </div>
-
-          {/* Step Counter (native only) */}
-          <div className="dash-card-anim" style={{ animationDelay: "0.35s" }}>
-            <StepCounter />
-          </div>
-
-          {/* Meals Today */}
-          <div className="bg-white rounded-[20px] p-5 dash-card-anim"
-            style={{ boxShadow: "0 2px 20px rgba(0,0,0,0.06)", animationDelay: "0.4s" }}>
-            <div className="flex justify-between items-center mb-4">
-              <p className="text-[13px] font-bold text-gray-700">{"\u{1F37D}️"} Posiłki dziś</p>
-              {t.entries.length > 0 && (
-                <span className="text-[11px] font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full">
-                  Śr. ocena: {t.avgScore}/10
-                </span>
-              )}
-            </div>
-
-            {t.entries.length === 0 ? (
-              <div className="text-center py-6">
-                <span className="text-3xl block mb-2">{"\u{1F37D}️"}</span>
-                <p className="text-[13px] text-gray-400 font-medium">Brak posiłków — zeskanuj pierwszy produkt</p>
-                <button onClick={() => router.push("/")}
-                  className="mt-3 px-6 py-2.5 text-white text-[13px] font-bold rounded-full active:scale-[0.97] transition-all"
-                  style={{ background: "linear-gradient(135deg, #10b981, #06b6d4)" }}>
-                  Zeskanuj teraz {"→"}
-                </button>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {t.entries.map((entry) => (
-                  <div key={entry.id} className="flex items-center gap-3 bg-gray-50 rounded-[14px] p-3">
-                    <span className="text-[18px]">{MEAL_ICONS[entry.mealType] || "\u{1F37D}️"}</span>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-[12px] font-bold text-gray-700 truncate">{entry.productName}</p>
-                      <p className="text-[10px] text-gray-400">
-                        {MEAL_LABELS[entry.mealType]} {"·"} {entry.portion_g > 1 ? `${entry.portion_g}g` : "cały"} {"·"} {entry.calories}kcal
-                      </p>
+              <div style={{ flex: 1 }}>
+                {[
+                  { label: "Białko", value: t.protein, max: n.protein_max, color: "#3b82f6" },
+                  { label: "Tłuszcz", value: t.fat, max: n.fat_max, color: "#FBBF24" },
+                  { label: "Węgle", value: t.carbs, max: n.carbs_max, color: "#6efcb4" },
+                ].map((m, i) => (
+                  <div key={i} style={{ marginBottom: i < 2 ? 10 : 0 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
+                      <span style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.6)" }}>{m.label}</span>
+                      <span style={{ fontSize: 11, color: "rgba(255,255,255,0.35)" }}>{Math.round(m.value)}g / {m.max}g</span>
                     </div>
-                    <div className={`w-8 h-8 rounded-[8px] flex items-center justify-center text-white text-[11px] font-bold ${
-                      entry.score >= 7 ? "bg-emerald-500" : entry.score >= 4 ? "bg-amber-500" : "bg-red-500"
-                    }`}>
-                      {entry.score}
+                    <div style={{ height: 4, background: "rgba(255,255,255,0.06)", borderRadius: 2 }}>
+                      <div style={{ height: "100%", width: `${Math.min((m.value / m.max) * 100, 100)}%`, background: m.color, borderRadius: 2, transition: "width 0.5s ease" }} />
                     </div>
-                    <button onClick={() => handleRemove(entry.id)} className="text-gray-300 hover:text-red-500 text-[14px] px-1">{"✕"}</button>
                   </div>
                 ))}
               </div>
-            )}
-          </div>
+            </div>
+          </GlassCard>
 
-        </>)}
-
-        {/* ═══ WEEKLY VIEW ═══ */}
-        {view === "week" && (<>
-          <div className="bg-white rounded-[24px] p-5 dash-card-anim"
-            style={{ boxShadow: "0 4px 24px rgba(0,0,0,0.08)", animationDelay: "0s" }}>
-            <WeeklyChart weekData={weekTotals} targetCalories={n.calories} view="week" />
-          </div>
-
-          {/* Average scan score chart */}
-          {(() => {
-            const scoreData = weekTotals
-              .filter((d) => d.avgScore > 0)
-              .map((d) => ({ date: d.date, value: d.avgScore }));
-            if (scoreData.length >= 2) {
-              return (
-                <div className="bg-white rounded-[24px] p-5 dash-card-anim"
-                  style={{ boxShadow: "0 2px 20px rgba(0,0,0,0.06)", animationDelay: "0.1s" }}>
-                  <p className="text-[13px] font-bold text-gray-700 mb-3">Średnia ocena skanów</p>
-                  <ProgressChart
-                    data={scoreData}
-                    label="/10"
-                    color="#2D5A16"
-                    targetValue={7}
-                    targetLabel="Cel: 7/10"
-                  />
+          {/* Critical nutrients */}
+          <GlassCard>
+            <SectionTitle>Krytyczne składniki</SectionTitle>
+            <div style={{ display: "flex", gap: 12 }}>
+              {[
+                { icon: "🍬", label: "Cukier", value: t.sugar, max: n.sugar_max, color: "#FBBF24" },
+                { icon: "🧂", label: "Sól", value: t.salt, max: n.salt_max, color: "#f97316" },
+                { icon: "🥦", label: "Błonnik", value: t.fiber, max: n.fiber_min, color: "#6efcb4" },
+              ].map((nu, i) => (
+                <div key={i} style={{ flex: 1, textAlign: "center" }}>
+                  <div style={{ fontSize: 14, marginBottom: 4 }}>{nu.icon}</div>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.7)" }}>{nu.label}</div>
+                  <div style={{ fontSize: 10, color: nu.color, fontWeight: 600, marginTop: 2 }}>{Math.round(nu.value * 10) / 10}g / {nu.max}g</div>
+                  <div style={{ height: 3, background: "rgba(255,255,255,0.06)", borderRadius: 2, marginTop: 6 }}>
+                    <div style={{ height: "100%", width: `${Math.min((nu.value / nu.max) * 100, 100)}%`, background: nu.color, borderRadius: 2 }} />
+                  </div>
                 </div>
-              );
-            }
-            return null;
-          })()}
+              ))}
+            </div>
+          </GlassCard>
 
-          {/* Weekly summary stats */}
-          {(() => {
-            const daysWithData = weekTotals.filter(d => d.calories > 0);
-            if (daysWithData.length === 0) return null;
-            const avgCal = Math.round(daysWithData.reduce((s, d) => s + d.calories, 0) / daysWithData.length);
-            const bestDay = daysWithData.reduce((best, d) => d.calories > 0 && d.calories <= n.calories && (!best || Math.abs(d.calories - n.calories) < Math.abs(best.calories - n.calories)) ? d : best, null as DailyTotals | null);
-            const totalProducts = daysWithData.reduce((s, d) => s + d.entries.length, 0);
-            const scoredEntries = daysWithData.flatMap(d => d.entries).filter(e => e.score > 0);
-            const avgScore = scoredEntries.length > 0 ? Math.round(scoredEntries.reduce((s, e) => s + e.score, 0) / scoredEntries.length * 10) / 10 : 0;
+          {/* Activity card — hardcoded */}
+          <GlassCard>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <span style={{ fontSize: 16 }}>🏃</span>
+                <span style={{ fontSize: 13, fontWeight: 800, color: "rgba(255,255,255,0.7)" }}>Aktywność dziś</span>
+              </div>
+            </div>
+            <div style={{ display: "flex", gap: 10 }}>
+              {[
+                { value: "6 842", label: "Kroki", icon: "👟", color: "#6efcb4" },
+                { value: "287", label: "kcal spalone", icon: "🔥", color: "#f97316" },
+                { value: "4.2 km", label: "Dystans", icon: "📍", color: "#3b82f6" },
+              ].map((a, i) => (
+                <div key={i} style={{ flex: 1, padding: "12px 8px", borderRadius: 14, textAlign: "center", background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)" }}>
+                  <div style={{ fontSize: 13, marginBottom: 4 }}>{a.icon}</div>
+                  <div style={{ fontSize: 16, fontWeight: 900, color: a.color, letterSpacing: "-0.02em" }}>{a.value}</div>
+                  <div style={{ fontSize: 9.5, color: "rgba(255,255,255,0.35)", marginTop: 2 }}>{a.label}</div>
+                </div>
+              ))}
+            </div>
+          </GlassCard>
 
-            const bestDayLabel = bestDay ? new Date(bestDay.date).toLocaleDateString("pl-PL", { weekday: "long" }) : null;
+          {/* Meals today */}
+          <GlassCard>
+            <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 12 }}>
+              <span style={{ fontSize: 16 }}>🍽️</span>
+              <span style={{ fontSize: 13, fontWeight: 800, color: "rgba(255,255,255,0.7)" }}>Posiłki dziś</span>
+            </div>
 
-            return (
-              <div className="bg-white rounded-[20px] p-5 dash-card-anim"
-                style={{ boxShadow: "0 2px 20px rgba(0,0,0,0.06)", animationDelay: "0.2s" }}>
-                <p className="text-[13px] font-bold text-gray-700 mb-3">Podsumowanie tygodnia</p>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="bg-gray-50 rounded-[14px] p-3">
-                    <p className="text-[10px] text-gray-400 font-medium">Średnia kcal/dzień</p>
-                    <p className="text-[18px] font-black text-gray-800">{avgCal}</p>
-                  </div>
-                  {bestDayLabel && (
-                    <div className="bg-emerald-50 rounded-[14px] p-3">
-                      <p className="text-[10px] text-gray-400 font-medium">Najlepszy dzień</p>
-                      <p className="text-[14px] font-bold text-emerald-600 capitalize">{bestDayLabel}</p>
-                    </div>
-                  )}
-                  <div className="bg-gray-50 rounded-[14px] p-3">
-                    <p className="text-[10px] text-gray-400 font-medium">Zeskanowane</p>
-                    <p className="text-[18px] font-black text-gray-800">{totalProducts} <span className="text-[11px] font-medium text-gray-400">prod.</span></p>
-                  </div>
-                  {avgScore > 0 && (
-                    <div className="bg-gray-50 rounded-[14px] p-3">
-                      <p className="text-[10px] text-gray-400 font-medium">Śr. ocena</p>
-                      <p className="text-[18px] font-black text-gray-800">{avgScore}<span className="text-[11px] font-medium text-gray-400">/10</span></p>
-                    </div>
-                  )}
+            {t.entries.length === 0 ? (
+              <div style={{ textAlign: "center", padding: "20px 0" }}>
+                <span style={{ fontSize: 28, display: "block", marginBottom: 8 }}>🍽️</span>
+                <div style={{ fontSize: 13, color: "rgba(255,255,255,0.35)", fontWeight: 500, marginBottom: 12 }}>
+                  Brak posiłków — zeskanuj pierwszy produkt
                 </div>
               </div>
-            );
-          })()}
+            ) : (
+              t.entries.map((meal, i) => (
+                <div key={meal.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 12px", marginBottom: 6, borderRadius: 12, background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.04)" }}>
+                  <div style={{ width: 36, height: 36, borderRadius: 10, background: "rgba(110,252,180,0.06)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>
+                    {MEAL_ICONS[meal.mealType] || "🍽️"}
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 12.5, fontWeight: 700, color: "rgba(255,255,255,0.8)" }}>{meal.productName}</div>
+                    <div style={{ fontSize: 10.5, color: "rgba(255,255,255,0.3)", marginTop: 1 }}>{meal.timestamp ? new Date(meal.timestamp).toLocaleTimeString("pl-PL", { hour: "2-digit", minute: "2-digit" }) : ""}</div>
+                  </div>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: "#6efcb4" }}>{meal.calories} kcal</span>
+                  <button onClick={() => handleRemove(meal.id)} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.2)", fontSize: 14, cursor: "pointer", padding: 4 }}>✕</button>
+                </div>
+              ))
+            )}
+
+            <button onClick={() => router.push("/")} style={{ width: "100%", padding: 12, borderRadius: 12, marginTop: 8, background: "rgba(110,252,180,0.06)", border: "1px solid rgba(110,252,180,0.12)", color: "#6efcb4", fontSize: 13, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+              Zeskanuj posiłek →
+            </button>
+          </GlassCard>
+        </>)}
+
+        {/* ═══ WEEK VIEW ═══ */}
+        {view === "week" && (<>
+
+          {/* Weekly calorie chart */}
+          <GlassCard style={{ borderRadius: 20, padding: "20px 18px" }}>
+            <SectionTitle>Kalorie w tym tygodniu</SectionTitle>
+            <div style={{ display: "flex", alignItems: "flex-end", gap: 6, height: 120, marginBottom: 12 }}>
+              {weekTotals.map((day, i) => {
+                const pct = maxWeekCal > 0 ? (day.calories / maxWeekCal) * 100 : 0;
+                const d = new Date(day.date);
+                const dayIdx = (d.getDay() + 6) % 7;
+                return (
+                  <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 4, height: "100%" }}>
+                    <div style={{ flex: 1, width: "100%", display: "flex", alignItems: "flex-end", position: "relative" }}>
+                      {/* Target line */}
+                      {n.calories > 0 && (
+                        <div style={{ position: "absolute", left: 0, right: 0, bottom: `${(n.calories / maxWeekCal) * 100}%`, height: 1, borderBottom: "1px dashed rgba(255,255,255,0.15)" }} />
+                      )}
+                      <div style={{
+                        width: "100%", borderRadius: "4px 4px 0 0",
+                        height: `${Math.max(pct, 2)}%`,
+                        background: day.calories > 0 ? (day.calories > n.calories ? "linear-gradient(180deg, #f97316, #FBBF24)" : "linear-gradient(180deg, #6efcb4, #3dd990)") : "rgba(255,255,255,0.04)",
+                        transition: "height 0.5s ease",
+                      }} />
+                    </div>
+                    <span style={{ fontSize: 9, color: "rgba(255,255,255,0.35)", fontWeight: 600 }}>{DAY_LABELS[dayIdx]}</span>
+                  </div>
+                );
+              })}
+            </div>
+            <div style={{ textAlign: "center", fontSize: 11, color: "rgba(255,255,255,0.35)" }}>
+              Średnio: <span style={{ color: "#6efcb4", fontWeight: 700 }}>{avgCal} kcal</span> / dzień
+            </div>
+          </GlassCard>
+
+          {/* Average macros */}
+          {daysWithData.length > 0 && (
+            <GlassCard>
+              <SectionTitle>Średnie dzienne makro</SectionTitle>
+              {[
+                { label: "Białko", value: Math.round(daysWithData.reduce((s, d) => s + d.protein, 0) / daysWithData.length), max: n.protein_max, color: "#3b82f6" },
+                { label: "Tłuszcz", value: Math.round(daysWithData.reduce((s, d) => s + d.fat, 0) / daysWithData.length), max: n.fat_max, color: "#FBBF24" },
+                { label: "Węgle", value: Math.round(daysWithData.reduce((s, d) => s + d.carbs, 0) / daysWithData.length), max: n.carbs_max, color: "#6efcb4" },
+              ].map((m, i) => (
+                <div key={i} style={{ marginBottom: i < 2 ? 10 : 0 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.6)" }}>{m.label}</span>
+                    <span style={{ fontSize: 11, color: "rgba(255,255,255,0.35)" }}>{m.value}g / {m.max}g</span>
+                  </div>
+                  <div style={{ height: 4, background: "rgba(255,255,255,0.06)", borderRadius: 2 }}>
+                    <div style={{ height: "100%", width: `${Math.min((m.value / m.max) * 100, 100)}%`, background: m.color, borderRadius: 2 }} />
+                  </div>
+                </div>
+              ))}
+            </GlassCard>
+          )}
+
+          {/* Weekly activity */}
+          <GlassCard>
+            <SectionTitle>Aktywność w tym tygodniu</SectionTitle>
+            <div style={{ display: "flex", gap: 10 }}>
+              {[
+                { value: "47 894", label: "Kroki", icon: "👟", color: "#6efcb4" },
+                { value: "2 009", label: "kcal spalone", icon: "🔥", color: "#f97316" },
+                { value: "29.4 km", label: "Dystans", icon: "📍", color: "#3b82f6" },
+              ].map((a, i) => (
+                <div key={i} style={{ flex: 1, padding: "12px 8px", borderRadius: 14, textAlign: "center", background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)" }}>
+                  <div style={{ fontSize: 13, marginBottom: 4 }}>{a.icon}</div>
+                  <div style={{ fontSize: 16, fontWeight: 900, color: a.color, letterSpacing: "-0.02em" }}>{a.value}</div>
+                  <div style={{ fontSize: 9.5, color: "rgba(255,255,255,0.35)", marginTop: 2 }}>{a.label}</div>
+                </div>
+              ))}
+            </div>
+          </GlassCard>
+
+          {/* Scan count */}
+          <GlassCard>
+            <div style={{ textAlign: "center" }}>
+              <div style={{ fontSize: 13, color: "rgba(255,255,255,0.55)", fontWeight: 600, marginBottom: 8 }}>
+                Zeskanowałeś <span style={{ color: "#6efcb4", fontWeight: 800 }}>{weekHistory.length}</span> produktów w tym tygodniu
+              </div>
+              <div style={{ display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap" }}>
+                {weekFoodCount > 0 && <span style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", padding: "4px 10px", borderRadius: 10, background: "rgba(255,255,255,0.03)" }}>{weekFoodCount} żywność</span>}
+                {weekCosmeticsCount > 0 && <span style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", padding: "4px 10px", borderRadius: 10, background: "rgba(255,255,255,0.03)" }}>{weekCosmeticsCount} kosmetyk</span>}
+                {weekSupplementCount > 0 && <span style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", padding: "4px 10px", borderRadius: 10, background: "rgba(255,255,255,0.03)" }}>{weekSupplementCount} suplement</span>}
+              </div>
+            </div>
+          </GlassCard>
         </>)}
 
         {/* Disclaimer */}
-        <p className="text-[9px] text-gray-300 text-center px-4 leading-relaxed pt-2">
-          SkładAI nie jest wyrobem medycznym. Wartości orientacyjne. Skonsultuj z dietetykiem.
-        </p>
+        <div style={{ textAlign: "center", marginTop: 8 }}>
+          <span style={{ fontSize: 10, color: "rgba(255,255,255,0.15)" }}>
+            SkładAI nie jest wyrobem medycznym. Skonsultuj z dietetykiem.
+          </span>
+        </div>
       </div>
 
-      {/* ─── INLINE STYLES for animations ─── */}
-      <style jsx>{`
-        .dash-blob {
-          position: absolute;
-          border-radius: 50%;
-          filter: blur(40px);
-          opacity: 0.4;
-          pointer-events: none;
-        }
-        .dash-blob-1 {
-          width: 180px;
-          height: 180px;
-          background: #10b981;
-          top: -40px;
-          right: -30px;
-          animation: dashFloat1 10s ease-in-out infinite;
-        }
-        .dash-blob-2 {
-          width: 120px;
-          height: 120px;
-          background: #06b6d4;
-          bottom: 30px;
-          left: -20px;
-          animation: dashFloat2 8s ease-in-out infinite;
-        }
-        .dash-blob-3 {
-          width: 100px;
-          height: 100px;
-          background: #34d399;
-          top: 40px;
-          left: 40%;
-          animation: dashFloat3 12s ease-in-out infinite;
-        }
-        @keyframes dashFloat1 {
-          0%, 100% { transform: translate(0, 0) scale(1); }
-          33% { transform: translate(-30px, 20px) scale(1.1); }
-          66% { transform: translate(15px, -15px) scale(0.95); }
-        }
-        @keyframes dashFloat2 {
-          0%, 100% { transform: translate(0, 0) scale(1); }
-          50% { transform: translate(25px, -20px) scale(1.15); }
-        }
-        @keyframes dashFloat3 {
-          0%, 100% { transform: translate(0, 0) scale(1); }
-          25% { transform: translate(-20px, 15px) scale(1.05); }
-          75% { transform: translate(20px, -10px) scale(0.9); }
-        }
-        .dash-card-anim {
-          animation: dashFadeUp 0.5s ease-out both;
-        }
-        @keyframes dashFadeUp {
-          from { opacity: 0; transform: translateY(16px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-      `}</style>
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } } @keyframes breathe { 0%, 100% { opacity: 0.4; transform: scale(0.95); } 50% { opacity: 0.7; transform: scale(1.05); } }`}</style>
     </div>
   );
 }
