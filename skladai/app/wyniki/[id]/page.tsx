@@ -173,7 +173,7 @@ function DiaryPanel({
       >
         <div className={`mt-3 rounded-[20px] p-5 ${isDark ? "bg-white/[0.04] border border-white/[0.08]" : "card-elevated"}`}>
           {/* Slider */}
-          <p className={`text-[12px] font-semibold mb-2 ${isDark ? "text-white/50" : "text-gray-500"}`}>
+          <p className={`text-[12px] font-semibold mb-2 ${isDark ? "text-white/55" : "text-gray-500"}`}>
             Ile zjadłeś?
           </p>
           <input
@@ -192,7 +192,7 @@ function DiaryPanel({
           </div>
 
           {/* Portion info */}
-          <p className={`text-[12px] mt-3 ${isDark ? "text-white/40" : "text-gray-400"}`}>
+          <p className={`text-[12px] mt-3 ${isDark ? "text-white/55" : "text-gray-400"}`}>
             {isMeal
               ? `Porcja: ${pct}% posiłku`
               : `Porcja: ${portionG}g z ${packageG}g (${pct}%)`}
@@ -203,7 +203,7 @@ function DiaryPanel({
             <span className={`text-[13px] font-bold ${isDark ? "text-white/80" : "text-[#2D5A16]"}`}>
               {portionCal} kcal
             </span>
-            <span className={`text-[12px] ml-3 ${isDark ? "text-white/40" : "text-[#2D5A16]/60"}`}>
+            <span className={`text-[12px] ml-3 ${isDark ? "text-white/55" : "text-[#2D5A16]/60"}`}>
               B: {portionProt}g | T: {portionFat}g | W: {portionCarb}g
             </span>
           </div>
@@ -377,12 +377,12 @@ export default function WynikiPage() {
               <h1 className={`text-[16px] font-bold leading-snug ${isDark ? "text-white" : "text-[#1A3A0A]"}`}>
                 {result.name}
               </h1>
-              <p className={`text-[12px] mt-0.5 font-medium ${isDark ? "text-white/35" : "text-gray-400"}`}>{subtitle}</p>
+              <p className={`text-[12px] mt-0.5 font-medium ${isDark ? "text-white/55" : "text-gray-400"}`}>{subtitle}</p>
               <div className="mt-2 flex items-center gap-1.5 flex-wrap">
                 <span className="text-[10px] font-bold px-3 py-1 rounded-full" style={{ backgroundColor: bg, color }}>
                   {result.verdict_short || label}
                 </span>
-                <span className={`text-[10px] font-bold px-3 py-1 rounded-full ${isDark ? "bg-white/5 text-white/40" : "bg-gray-100 text-gray-500"}`}>
+                <span className={`text-[10px] font-bold px-3 py-1 rounded-full ${isDark ? "bg-white/5 text-white/55" : "bg-gray-100 text-gray-500"}`}>
                   {isForma ? "💪 Forma" : isMeal ? "🍽️ Danie" : isTextSearch ? "🔍 Szukaj" : isCosmetics ? "✨ Kosmetyk" : isSuplement ? "💊 Suplement" : "🛒 Żywność"}
                 </span>
               </div>
@@ -578,7 +578,7 @@ export default function WynikiPage() {
           isMeal ? (
             <div className={`mt-3 flex items-center gap-2 px-4 py-2.5 rounded-full ${isDark ? "bg-white/[0.03]" : "bg-amber-50"}`}>
               <span className="text-[12px]">🥄</span>
-              <span className={`text-[11px] font-semibold ${isDark ? "text-white/50" : "text-amber-700"}`}>
+              <span className={`text-[11px] font-semibold ${isDark ? "text-white/55" : "text-amber-700"}`}>
                 {sugarTeaspoons} łyżeczek cukru
               </span>
             </div>
@@ -588,7 +588,7 @@ export default function WynikiPage() {
                 🥄 Łyżeczki cukru: {sugarTeaspoons}
               </p>
               <SugarSpoons count={sugarTeaspoons} />
-              <p className={`text-[11px] mt-2 ${isDark ? "text-white/35" : "text-gray-400"}`}>
+              <p className={`text-[11px] mt-2 ${isDark ? "text-white/55" : "text-gray-400"}`}>
                 1 łyżeczka = 4g cukru · WHO zaleca max 6 dziennie
               </p>
             </div>
@@ -615,14 +615,14 @@ export default function WynikiPage() {
                 return (
                   <div className="space-y-4">
                     <div className="flex items-center justify-between">
-                      <span className="text-[13px] text-white/50">🏋️ Tkanka tłuszczowa</span>
+                      <span className="text-[13px] text-white/55">🏋️ Tkanka tłuszczowa</span>
                       <div className="text-right">
                         <span className="text-[14px] font-bold text-white">{formaResult.body_fat_range}</span>
-                        {fatKg && <span className="text-[11px] text-white/40 ml-1">(~{fatKg} kg)</span>}
+                        {fatKg && <span className="text-[11px] text-white/55 ml-1">(~{fatKg} kg)</span>}
                       </div>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-[13px] text-white/50">Kategoria</span>
+                      <span className="text-[13px] text-white/55">Kategoria</span>
                       <span className={`text-[11px] font-bold px-3 py-1 rounded-full ${
                         formaResult.body_fat_category === "athletic" ? "bg-blue-500/15 text-blue-400"
                         : formaResult.body_fat_category === "fit" ? "bg-emerald-500/15 text-emerald-400"
@@ -633,22 +633,22 @@ export default function WynikiPage() {
                       </span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-[13px] text-white/50">💪 Masa mięśniowa</span>
+                      <span className="text-[13px] text-white/55">💪 Masa mięśniowa</span>
                       <div className="text-right">
                         <span className="text-[13px] font-semibold text-white">
                           {formaResult.muscle_mass === "above_average" ? "Powyżej średniej" : formaResult.muscle_mass === "average" ? "Średnia" : "Poniżej średniej"}
                         </span>
-                        {muscleKg && <span className="text-[11px] text-white/40 ml-1">(~{muscleKg} kg)</span>}
+                        {muscleKg && <span className="text-[11px] text-white/55 ml-1">(~{muscleKg} kg)</span>}
                       </div>
                     </div>
                     {leanMass && (
                       <div className="flex items-center justify-between">
-                        <span className="text-[13px] text-white/50">⚖️ Masa beztłuszczowa</span>
+                        <span className="text-[13px] text-white/55">⚖️ Masa beztłuszczowa</span>
                         <span className="text-[13px] font-semibold text-white">~{leanMass} kg</span>
                       </div>
                     )}
                     <div className="flex items-center justify-between">
-                      <span className="text-[13px] text-white/50">📏 BMI</span>
+                      <span className="text-[13px] text-white/55">📏 BMI</span>
                       <span className="text-[13px] font-semibold text-white">{formaResult.bmi} — {formaResult.bmi_category}</span>
                     </div>
                   </div>

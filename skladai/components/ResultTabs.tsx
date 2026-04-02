@@ -39,6 +39,29 @@ function normalizeWarning(w: CosmeticWarning | string): CosmeticWarning {
   return w;
 }
 
+// Helper: build Ceneo URL
+function ceneoUrl(name: string) {
+  return `https://www.ceneo.pl/szukaj-${encodeURIComponent(name).replace(/%20/g, "-")}`;
+}
+// Helper: build Allegro URL
+function allegroUrl(name: string) {
+  return `https://allegro.pl/listing?string=${encodeURIComponent(name)}`;
+}
+
+// Shopping links component
+function ShoppingLinks({ name, color }: { name: string; color: string }) {
+  return (
+    <div className="flex gap-2 mt-3">
+      <a href={ceneoUrl(name)} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-[12px] text-[12px] font-bold active:scale-95 transition-all" style={{ background: `${color}15`, color, border: `1px solid ${color}30` }}>
+        🛒 Ceneo
+      </a>
+      <a href={allegroUrl(name)} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-[12px] text-[12px] font-bold active:scale-95 transition-all" style={{ background: "rgba(255,255,255,0.04)", color: "rgba(255,255,255,0.6)", border: "1px solid rgba(255,255,255,0.08)" }}>
+        🛍️ Allegro
+      </a>
+    </div>
+  );
+}
+
 export default function ResultTabs({ result, scanType = "food", isCosmetics: isCosProp, onIngredientClick }: Props) {
   const isInitCosmetics = isCosProp ?? scanType === "cosmetics";
   const isInitSuplement = scanType === "suplement";
@@ -98,19 +121,19 @@ export default function ResultTabs({ result, scanType = "food", isCosmetics: isC
               <div className="flex justify-between text-center">
                 <div>
                   <p className="text-[22px] font-bold text-white">{cosResult.ingredient_count || cosResult.ingredients?.length || 0}</p>
-                  <p className="text-[10px] mt-0.5 font-semibold text-white/40">Składników</p>
+                  <p className="text-[10px] mt-0.5 font-semibold text-white/55">Składników</p>
                 </div>
                 <div>
                   <p className="text-[22px] font-bold text-emerald-400">{cosResult.safe_count ?? 0}</p>
-                  <p className="text-[10px] mt-0.5 font-semibold text-white/40">Bezpieczne</p>
+                  <p className="text-[10px] mt-0.5 font-semibold text-white/55">Bezpieczne</p>
                 </div>
                 <div>
                   <p className="text-[22px] font-bold text-amber-400">{cosResult.caution_count ?? 0}</p>
-                  <p className="text-[10px] mt-0.5 font-semibold text-white/40">Uwaga</p>
+                  <p className="text-[10px] mt-0.5 font-semibold text-white/55">Uwaga</p>
                 </div>
                 <div>
                   <p className="text-[22px] font-bold text-red-400">{cosResult.harmful_count ?? 0}</p>
-                  <p className="text-[10px] mt-0.5 font-semibold text-white/40">Ryzyko</p>
+                  <p className="text-[10px] mt-0.5 font-semibold text-white/55">Ryzyko</p>
                 </div>
               </div>
               {/* Safety bar */}
@@ -161,31 +184,37 @@ export default function ResultTabs({ result, scanType = "food", isCosmetics: isC
           return (
           <div className="space-y-3">
             {/* Hook emocjonalny */}
+            {(cheaper || better) && (
             <div className="rounded-[20px] p-5 relative overflow-hidden" style={{ background: "linear-gradient(135deg, rgba(139,92,246,0.15), rgba(192,132,252,0.08))", border: "1px solid rgba(139,92,246,0.2)" }}>
               <div className="relative z-10">
                 <div className="flex items-center gap-2 mb-2">
                   <span className="text-xl">💰</span>
-                  <h3 className="text-[15px] font-black text-white">Nie przepłacaj za logo.</h3>
+                  <h3 className="text-[15px] font-black text-white">{cheaper ? "Nie przepłacaj za logo." : "Znaleźliśmy lepszy skład."}</h3>
                 </div>
-                <p className="text-[12px] text-white/50 leading-relaxed">AI znalazł produkty z tym samym składem. Sprawdź ile możesz zaoszczędzić.</p>
+                <p className="text-[12px] text-white/55 leading-relaxed">{cheaper ? "AI znalazł produkty z tym samym składem. Sprawdź ile możesz zaoszczędzić." : "Produkt z lepszym składem w podobnej cenie."}</p>
               </div>
               <div className="absolute top-0 right-0 w-32 h-32 rounded-full bg-purple-500/10 blur-[40px]" />
             </div>
+            )}
 
-            {/* Good product card — when no alternatives needed */}
+            {/* Best choice card — when no alternatives needed */}
             {!cheaper && !better && (
-              <div className="rounded-[20px] p-5" style={{ background: "rgba(34,197,94,0.06)", border: "1px solid rgba(34,197,94,0.15)" }}>
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="text-xl">✅</span>
-                  <h3 className="text-[14px] font-bold text-emerald-400">Dobry wybór!</h3>
+              <div className="rounded-[20px] p-5" style={{ background: "rgba(34,197,94,0.08)", border: "1px solid rgba(34,197,94,0.2)" }}>
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-2xl">🏆</span>
+                  <h3 className="text-[18px] font-black" style={{ color: "#22c55e" }}>Najlepszy wybór!</h3>
                 </div>
-                <p className="text-[12px] text-white/50 leading-relaxed">{altVerdict || "Świetny wybór! Ten produkt ma dobry skład. Nie znaleźliśmy lepszej opcji."}</p>
+                <p className="text-[12px] text-white/55 leading-relaxed mt-2">{altVerdict || "Świetny wybór! Ten produkt ma dobry skład. Nie znaleźliśmy lepszej opcji."}</p>
                 {tip && (
                   <div className="flex items-start gap-2 mt-3 pt-3" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
                     <span className="text-sm">💡</span>
-                    <p className="text-[11px] text-white/40 leading-relaxed">{tip}</p>
+                    <p className="text-[11px] text-white/55 leading-relaxed">{tip}</p>
                   </div>
                 )}
+                <div className="mt-4 pt-4" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+                  <p className="text-[11px] font-bold text-white/55 uppercase tracking-widest mb-2">🛒 Gdzie kupić najtaniej</p>
+                  <ShoppingLinks name={cosResult.name || ""} color="#C084FC" />
+                </div>
               </div>
             )}
 
@@ -204,12 +233,10 @@ export default function ResultTabs({ result, scanType = "food", isCosmetics: isC
                   )}
                   <div className="flex-1">
                     <p className="text-[14px] font-bold text-white/90">{cheaper.name}</p>
-                    <p className="text-[11px] text-white/40 mt-0.5">{cheaper.reason}</p>
+                    <p className="text-[11px] text-white/55 mt-0.5">{cheaper.reason}</p>
                   </div>
                 </div>
-                <a href={`https://www.google.com/search?tbm=shop&q=${encodeURIComponent(cheaper.search_query || cheaper.name)}`} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="flex items-center justify-center gap-1.5 mt-3 pt-3 text-[12px] font-bold text-emerald-400 active:scale-95 transition-all" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
-                  💰 Sprawdź cenę →
-                </a>
+                <ShoppingLinks name={cheaper.search_query || cheaper.name} color="#22c55e" />
               </div>
             )}
 
@@ -231,7 +258,7 @@ export default function ResultTabs({ result, scanType = "food", isCosmetics: isC
                   )}
                   <div className="flex-1">
                     <p className="text-[14px] font-bold text-white/90">{better.name}</p>
-                    <p className="text-[11px] text-white/40 mt-0.5">{better.reason}</p>
+                    <p className="text-[11px] text-white/55 mt-0.5">{better.reason}</p>
                   </div>
                 </div>
                 {better.advantages && better.advantages.length > 0 && (
@@ -241,9 +268,7 @@ export default function ResultTabs({ result, scanType = "food", isCosmetics: isC
                     ))}
                   </div>
                 )}
-                <a href={`https://www.google.com/search?tbm=shop&q=${encodeURIComponent(better.search_query || better.name)}`} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="flex items-center justify-center gap-1.5 mt-3 pt-3 text-[12px] font-bold text-purple-400 active:scale-95 transition-all" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
-                  💰 Sprawdź cenę →
-                </a>
+                <ShoppingLinks name={better.search_query || better.name} color="#a855f7" />
               </div>
             )}
 
@@ -258,7 +283,7 @@ export default function ResultTabs({ result, scanType = "food", isCosmetics: isC
                   <div className="px-4 pb-4 space-y-1.5">
                     {comparison.map((c: { ingredient: string; yours: string; alternative: string }, i: number) => (
                       <div key={i} className="flex items-center gap-2 text-[11px] py-1.5" style={{ borderTop: i > 0 ? "1px solid rgba(255,255,255,0.04)" : "none" }}>
-                        <span className="text-white/50 flex-1">{c.ingredient}</span>
+                        <span className="text-white/55 flex-1">{c.ingredient}</span>
                         <span className="text-red-400/70 flex-1 text-right">{c.yours}</span>
                         <span className="text-white/20">→</span>
                         <span className="text-emerald-400/70 flex-1">{c.alternative}</span>
@@ -273,30 +298,7 @@ export default function ResultTabs({ result, scanType = "food", isCosmetics: isC
             {tip && (cheaper || better) && (
               <div className="flex items-start gap-3 px-4 py-3 rounded-[16px] bg-white/[0.02] border border-white/[0.06]">
                 <span className="text-base mt-0.5">💡</span>
-                <p className="text-[12px] text-white/50 leading-relaxed">{tip}</p>
-              </div>
-            )}
-
-            {/* Sticky CTA */}
-            {selectedAlt && (cheaper || better) && (
-              <div className="fixed bottom-20 left-0 right-0 z-50 px-4 max-w-md mx-auto">
-                <a
-                  href={`https://www.google.com/search?tbm=shop&q=${encodeURIComponent(selectedAlt === "cheaper" && cheaper ? (cheaper.search_query || cheaper.name) : (better?.search_query || better?.name || ""))}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="block w-full py-4 rounded-2xl text-center font-bold text-white text-[15px] active:scale-[0.97] transition-all shadow-2xl"
-                  style={{
-                    background: selectedAlt === "cheaper"
-                      ? "linear-gradient(135deg, #16a34a, #22c55e)"
-                      : "linear-gradient(135deg, #7c3aed, #a855f7)",
-                    boxShadow: selectedAlt === "cheaper"
-                      ? "0 8px 32px rgba(34,197,94,0.4)"
-                      : "0 8px 32px rgba(139,92,246,0.4)",
-                  }}
-                >
-                  🛒 Sprawdź cenę w sklepie
-                </a>
-                <p className="text-[10px] text-white/25 text-center mt-1.5">Przekierowanie do porównywarki cen</p>
+                <p className="text-[12px] text-white/55 leading-relaxed">{tip}</p>
               </div>
             )}
           </div>
@@ -370,7 +372,7 @@ export default function ResultTabs({ result, scanType = "food", isCosmetics: isC
                   {cosResult.compatibility.best_time && (
                     <div className="flex items-center gap-2">
                       <span className="text-[13px]">⏰</span>
-                      <span className="text-[12px] text-white/50">Najlepiej stosować: </span>
+                      <span className="text-[12px] text-white/55">Najlepiej stosować:</span>
                       <span className="text-[12px] font-bold text-white/70">
                         {cosResult.compatibility.best_time === "wieczór" ? "🌙 wieczorem"
                           : cosResult.compatibility.best_time === "rano" ? "☀️ rano"
@@ -461,10 +463,10 @@ export default function ResultTabs({ result, scanType = "food", isCosmetics: isC
                       <div className="flex-1 h-1.5 rounded-full bg-white/10 overflow-hidden">
                         <div className="h-full rounded-full" style={{ width: `${Math.min(ing.daily_value_percent, 100)}%`, background: ing.daily_value_percent > 300 ? "#ef4444" : ing.daily_value_percent > 100 ? "#f59e0b" : "#22c55e" }} />
                       </div>
-                      <span className="text-[10px] font-bold text-white/40">{ing.daily_value_percent}% NRV</span>
+                      <span className="text-[10px] font-bold text-white/55">{ing.daily_value_percent}% NRV</span>
                     </div>
                   )}
-                  <p className="text-[12px] text-white/50 leading-relaxed">{ing.explanation}</p>
+                  <p className="text-[12px] text-white/55 leading-relaxed">{ing.explanation}</p>
                 </div>
               );
             })}
@@ -493,31 +495,37 @@ export default function ResultTabs({ result, scanType = "food", isCosmetics: isC
           return (
           <div className="space-y-3">
             {/* Hook emocjonalny */}
+            {(cheaper || better) && (
             <div className="rounded-[20px] p-5 relative overflow-hidden" style={{ background: "linear-gradient(135deg, rgba(59,130,246,0.15), rgba(96,165,250,0.08))", border: "1px solid rgba(59,130,246,0.2)" }}>
               <div className="relative z-10">
                 <div className="flex items-center gap-2 mb-2">
                   <span className="text-xl">💸</span>
-                  <h3 className="text-[15px] font-black text-white">Ten sam skład w lepszej cenie.</h3>
+                  <h3 className="text-[15px] font-black text-white">{cheaper ? "Ten sam skład w lepszej cenie." : "Znaleźliśmy lepszy skład."}</h3>
                 </div>
-                <p className="text-[12px] text-white/50 leading-relaxed">80% suplementów to marketing. Sprawdź tańsze alternatywy.</p>
+                <p className="text-[12px] text-white/55 leading-relaxed">{cheaper ? "80% suplementów to marketing. Sprawdź tańsze alternatywy." : "Suplement z lepszym składem w podobnej cenie."}</p>
               </div>
               <div className="absolute top-0 right-0 w-32 h-32 rounded-full bg-blue-500/10 blur-[40px]" />
             </div>
+            )}
 
-            {/* Good product card — when no alternatives needed */}
+            {/* Best choice card — when no alternatives needed */}
             {!cheaper && !better && (
-              <div className="rounded-[20px] p-5" style={{ background: "rgba(34,197,94,0.06)", border: "1px solid rgba(34,197,94,0.15)" }}>
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="text-xl">✅</span>
-                  <h3 className="text-[14px] font-bold text-emerald-400">Dobry wybór!</h3>
+              <div className="rounded-[20px] p-5" style={{ background: "rgba(34,197,94,0.08)", border: "1px solid rgba(34,197,94,0.2)" }}>
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-2xl">🏆</span>
+                  <h3 className="text-[18px] font-black" style={{ color: "#22c55e" }}>Najlepszy wybór!</h3>
                 </div>
-                <p className="text-[12px] text-white/50 leading-relaxed">{altVerdict || "Świetny wybór! Ten suplement ma dobry skład w odpowiednich dawkach. Nie znaleźliśmy lepszej opcji."}</p>
+                <p className="text-[12px] text-white/55 leading-relaxed mt-2">{altVerdict || "Świetny wybór! Ten suplement ma dobry skład w odpowiednich dawkach. Nie znaleźliśmy lepszej opcji."}</p>
                 {tip && (
                   <div className="flex items-start gap-2 mt-3 pt-3" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
                     <span className="text-sm">💡</span>
-                    <p className="text-[11px] text-white/40 leading-relaxed">{tip}</p>
+                    <p className="text-[11px] text-white/55 leading-relaxed">{tip}</p>
                   </div>
                 )}
+                <div className="mt-4 pt-4" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+                  <p className="text-[11px] font-bold text-white/55 uppercase tracking-widest mb-2">🛒 Gdzie kupić najtaniej</p>
+                  <ShoppingLinks name={suppResult.name || ""} color="#3b82f6" />
+                </div>
               </div>
             )}
 
@@ -536,12 +544,10 @@ export default function ResultTabs({ result, scanType = "food", isCosmetics: isC
                   )}
                   <div className="flex-1">
                     <p className="text-[14px] font-bold text-white/90">{cheaper.name}</p>
-                    <p className="text-[11px] text-white/40 mt-0.5">{cheaper.reason}</p>
+                    <p className="text-[11px] text-white/55 mt-0.5">{cheaper.reason}</p>
                   </div>
                 </div>
-                <a href={`https://www.google.com/search?tbm=shop&q=${encodeURIComponent(cheaper.search_query || cheaper.name)}`} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="flex items-center justify-center gap-1.5 mt-3 pt-3 text-[12px] font-bold text-emerald-400 active:scale-95 transition-all" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
-                  💰 Sprawdź cenę →
-                </a>
+                <ShoppingLinks name={cheaper.search_query || cheaper.name} color="#22c55e" />
               </div>
             )}
 
@@ -563,7 +569,7 @@ export default function ResultTabs({ result, scanType = "food", isCosmetics: isC
                   )}
                   <div className="flex-1">
                     <p className="text-[14px] font-bold text-white/90">{better.name}</p>
-                    <p className="text-[11px] text-white/40 mt-0.5">{better.reason}</p>
+                    <p className="text-[11px] text-white/55 mt-0.5">{better.reason}</p>
                   </div>
                 </div>
                 {better.advantages && better.advantages.length > 0 && (
@@ -573,9 +579,7 @@ export default function ResultTabs({ result, scanType = "food", isCosmetics: isC
                     ))}
                   </div>
                 )}
-                <a href={`https://www.google.com/search?tbm=shop&q=${encodeURIComponent(better.search_query || better.name)}`} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="flex items-center justify-center gap-1.5 mt-3 pt-3 text-[12px] font-bold text-blue-400 active:scale-95 transition-all" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
-                  💰 Sprawdź cenę →
-                </a>
+                <ShoppingLinks name={better.search_query || better.name} color="#3b82f6" />
               </div>
             )}
 
@@ -590,7 +594,7 @@ export default function ResultTabs({ result, scanType = "food", isCosmetics: isC
                   <div className="px-4 pb-4 space-y-1.5">
                     {comparison.map((c: { ingredient: string; yours: string; alternative: string }, i: number) => (
                       <div key={i} className="flex items-center gap-2 text-[11px] py-1.5" style={{ borderTop: i > 0 ? "1px solid rgba(255,255,255,0.04)" : "none" }}>
-                        <span className="text-white/50 flex-1">{c.ingredient}</span>
+                        <span className="text-white/55 flex-1">{c.ingredient}</span>
                         <span className="text-red-400/70 flex-1 text-right">{c.yours}</span>
                         <span className="text-white/20">→</span>
                         <span className="text-emerald-400/70 flex-1">{c.alternative}</span>
@@ -605,30 +609,7 @@ export default function ResultTabs({ result, scanType = "food", isCosmetics: isC
             {tip && (cheaper || better) && (
               <div className="flex items-start gap-3 px-4 py-3 rounded-[16px] bg-white/[0.02] border border-white/[0.06]">
                 <span className="text-base mt-0.5">💡</span>
-                <p className="text-[12px] text-white/50 leading-relaxed">{tip}</p>
-              </div>
-            )}
-
-            {/* Sticky CTA */}
-            {selectedAlt && (cheaper || better) && (
-              <div className="fixed bottom-20 left-0 right-0 z-50 px-4 max-w-md mx-auto">
-                <a
-                  href={`https://www.google.com/search?tbm=shop&q=${encodeURIComponent(selectedAlt === "cheaper" && cheaper ? (cheaper.search_query || cheaper.name) : (better?.search_query || better?.name || ""))}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="block w-full py-4 rounded-2xl text-center font-bold text-white text-[15px] active:scale-[0.97] transition-all shadow-2xl"
-                  style={{
-                    background: selectedAlt === "cheaper"
-                      ? "linear-gradient(135deg, #16a34a, #22c55e)"
-                      : "linear-gradient(135deg, #2563eb, #3b82f6)",
-                    boxShadow: selectedAlt === "cheaper"
-                      ? "0 8px 32px rgba(34,197,94,0.4)"
-                      : "0 8px 32px rgba(59,130,246,0.4)",
-                  }}
-                >
-                  🛒 Sprawdź cenę w sklepie
-                </a>
-                <p className="text-[10px] text-white/25 text-center mt-1.5">Przekierowanie do porównywarki cen</p>
+                <p className="text-[12px] text-white/55 leading-relaxed">{tip}</p>
               </div>
             )}
           </div>
