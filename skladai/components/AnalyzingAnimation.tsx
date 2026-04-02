@@ -14,24 +14,37 @@ const MODE_COLORS: Record<string, { accent: string; dark: string; rgb: string; g
   forma: { accent: "#F97316", dark: "#ea580c", rgb: "249,115,22", glow: "rgba(249,115,22,0.12)" },
 };
 
-const STEPS = [
+const DEFAULT_STEPS = [
   { text: "Czytam etykietę...", icon: "📖" },
   { text: "Analizuję składniki...", icon: "🧪" },
   { text: "Porównuję z bazą...", icon: "📚" },
   { text: "Przygotowuję ocenę...", icon: "⭐" },
 ];
 
+const FORMA_STEPS = [
+  { text: "Skanuję Twoją sylwetkę...", icon: "📸" },
+  { text: "Szacuję masę mięśniową i tkankę tłuszczową...", icon: "🧬" },
+  { text: "Porównuję z Twoimi celami...", icon: "🎯" },
+  { text: "Przygotowuję wskazówki...", icon: "💡" },
+];
+
+// Step timings: 2.5s, 4.5s, 4.5s, then wait for API
+const STEP_DELAYS = [2500, 7000, 11500]; // cumulative ms for steps 1, 2, 3
+
 export default function AnalyzingAnimation({ mode }: AnalyzingAnimationProps) {
   const [step, setStep] = useState(0);
   const c = MODE_COLORS[mode] || MODE_COLORS.food;
+  const steps = mode === "forma" ? FORMA_STEPS : DEFAULT_STEPS;
 
   useEffect(() => {
     setStep(0);
-    const t1 = setTimeout(() => setStep(1), 800);
-    const t2 = setTimeout(() => setStep(2), 2000);
-    const t3 = setTimeout(() => setStep(3), 3200);
-    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
+    const timers = STEP_DELAYS.map((delay, i) =>
+      setTimeout(() => setStep(i + 1), delay)
+    );
+    return () => timers.forEach(clearTimeout);
   }, []);
+
+  const progressPct = ((step + 1) / 4) * 100;
 
   return (
     <div style={{ padding: "30px 22px 30px", position: "relative" }}>
@@ -55,7 +68,7 @@ export default function AnalyzingAnimation({ mode }: AnalyzingAnimationProps) {
 
       {/* Steps */}
       <div style={{ maxWidth: 280, margin: "0 auto 30px" }}>
-        {STEPS.map((s, i) => {
+        {steps.map((s, i) => {
           const done = i < step;
           const active = i === step;
           return (
@@ -87,7 +100,7 @@ export default function AnalyzingAnimation({ mode }: AnalyzingAnimationProps) {
 
       {/* Progress bar */}
       <div style={{ width: "80%", height: 3, margin: "0 auto", background: "rgba(255,255,255,0.05)", borderRadius: 2, overflow: "hidden" }}>
-        <div style={{ height: "100%", width: `${(step / 3) * 90 + 10}%`, background: `linear-gradient(90deg, ${c.dark}, ${c.accent}, ${c.dark})`, backgroundSize: "200% 100%", borderRadius: 2, transition: "width 0.8s ease", animation: "shimmer 1.5s linear infinite" }} />
+        <div style={{ height: "100%", width: `${progressPct}%`, background: `linear-gradient(90deg, ${c.dark}, ${c.accent}, ${c.dark})`, backgroundSize: "200% 100%", borderRadius: 2, transition: "width 0.5s ease", animation: "shimmer 1.5s linear infinite" }} />
       </div>
       <div style={{ textAlign: "center", marginTop: 16, fontSize: 11, color: "rgba(255,255,255,0.2)" }}>To potrwa kilka sekund</div>
     </div>
