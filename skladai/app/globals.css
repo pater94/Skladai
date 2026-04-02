@@ -242,6 +242,11 @@ input[type="range"]::-moz-range-thumb {
   50% { transform: scale(1.15); }
 }
 
+@keyframes feedbackSlideIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 /* === SCROLLBAR === */
 ::-webkit-scrollbar {
   width: 0;

@@ -7,6 +7,7 @@ import { UserProfile } from "@/lib/types";
 import { getProfile, getStreak, getHistory } from "@/lib/storage";
 import { ACTIVITY_LEVELS, GOALS, COMMON_ALLERGENS, DIETS, DIABETES_TYPES, TRIMESTERS } from "@/lib/nutrition";
 import ProfileSetup from "@/components/ProfileSetup";
+import { createClient } from "@/lib/supabase";
 
 const AreaChart = dynamic(() => import("recharts").then(m => m.AreaChart), { ssr: false });
 const Area = dynamic(() => import("recharts").then(m => m.Area), { ssr: false });
@@ -57,6 +58,7 @@ export default function ProfilPage() {
   const [showWeightForm, setShowWeightForm] = useState(false);
   const [newWeight, setNewWeight] = useState("");
   const [newWeightDate, setNewWeightDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [authEmail, setAuthEmail] = useState<string | null>(null);
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -66,6 +68,14 @@ export default function ProfilPage() {
     setScanCount(getHistory().length);
     setWeightHistory(getWeightHistory());
     setLoaded(true);
+
+    // Check Supabase auth
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user) {
+        setAuthEmail(user.email || null);
+      }
+    });
   }, []);
 
   const handleSaveWeight = useCallback(() => {
@@ -453,6 +463,36 @@ export default function ProfilPage() {
             </div>
           )}
         </GlassCard>
+
+        {/* Auth info & Logout */}
+        {authEmail && (
+          <GlassCard>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+              <span style={{ fontSize: 14 }}>🔑</span>
+              <span style={{ fontSize: 13, fontWeight: 800, color: "rgba(255,255,255,0.7)" }}>Konto</span>
+            </div>
+            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", marginBottom: 12, wordBreak: "break-all" }}>
+               {authEmail}
+            </div>
+            <button
+              onClick={async () => {
+                const supabase = createClient();
+                await supabase.auth.signOut();
+                localStorage.removeItem("onboardingCompleted");
+                router.push("/");
+              }}
+              style={{
+                width: "100%", padding: 12, borderRadius: 12,
+                background: "rgba(239,68,68,0.08)",
+                border: "1px solid rgba(239,68,68,0.15)",
+                color: "rgba(239,68,68,0.7)", fontSize: 13, fontWeight: 700,
+                cursor: "pointer",
+              }}
+            >
+              Wyloguj się
+            </button>
+          </GlassCard>
+        )}
 
         {/* Disclaimer */}
         <div style={{ textAlign: "center", marginTop: 8 }}>
