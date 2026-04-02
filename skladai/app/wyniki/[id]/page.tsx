@@ -1,7 +1,8 @@
 // @ts-nocheck
 "use client";
 
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useCallback } from "react";
+import html2canvas from "html2canvas";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { ScanHistoryItem, CosmeticsAnalysisResult, FoodAnalysisResult, MealAnalysisResult, TextSearchResult, CheckFormResult, UserProfile, MealType } from "@/lib/types";
@@ -249,6 +250,33 @@ function DiaryPanel({
   );
 }
 
+function ShareCard({ name, score, verdict, isForma }: { name: string; score: number; verdict: string; isForma: boolean }) {
+  const scoreColor = score >= 7 ? "#22c55e" : score >= 4 ? "#f59e0b" : "#ef4444";
+  return (
+    <div style={{ width: 400, padding: 32, background: "#0a0e0c", fontFamily: "system-ui, -apple-system, sans-serif" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 24 }}>
+        <img src="/icons/icon-192.png" alt="" width={32} height={32} style={{ borderRadius: 8 }} />
+        <span style={{ fontSize: 14, fontWeight: 800, color: "rgba(255,255,255,0.7)" }}>SkładAI</span>
+      </div>
+      <p style={{ fontSize: 20, fontWeight: 800, color: "#ffffff", marginBottom: 12, lineHeight: 1.3 }}>{name}</p>
+      <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
+        <div style={{ width: 52, height: 52, borderRadius: "50%", background: `conic-gradient(${scoreColor} ${score * 36}deg, rgba(255,255,255,0.08) 0deg)`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <div style={{ width: 40, height: 40, borderRadius: "50%", background: "#0a0e0c", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, fontWeight: 800, color: scoreColor }}>
+            {score}
+          </div>
+        </div>
+        <span style={{ fontSize: 14, fontWeight: 700, color: scoreColor }}>
+          {isForma ? "Ocena sylwetki" : `Ocena ${score}/10`}
+        </span>
+      </div>
+      {verdict && <p style={{ fontSize: 13, color: "rgba(255,255,255,0.55)", lineHeight: 1.6, marginBottom: 20 }}>{verdict.slice(0, 120)}{verdict.length > 120 ? "..." : ""}</p>}
+      <div style={{ borderTop: "1px solid rgba(255,255,255,0.08)", paddingTop: 16 }}>
+        <p style={{ fontSize: 11, color: "rgba(255,255,255,0.3)" }}>Sprawdź skład swoich produktów → skladai.vercel.app</p>
+      </div>
+    </div>
+  );
+}
+
 export default function WynikiPage() {
   const params = useParams();
   const router = useRouter();
@@ -257,6 +285,9 @@ export default function WynikiPage() {
   const [selectedIngredient, setSelectedIngredient] = useState<string | null>(null);
   const [feedbackSent, setFeedbackSent] = useState<"good" | "bad" | "sent" | null>(null);
   const [feedbackNote, setFeedbackNote] = useState("");
+  const [sharing, setSharing] = useState(false);
+  const [shareCopied, setShareCopied] = useState(false);
+  const shareRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const id = params.id as string;
@@ -323,6 +354,37 @@ export default function WynikiPage() {
 
   const bgClass = isForma ? "bg-[#111111]" : isMeal ? "bg-[#1A1207]" : isCosmetics ? "bg-[#0D0B0E]" : isSuplement ? "bg-[#0A0D14]" : "bg-[#F5F2EB]";
   const heroClass = isForma ? "bg-gradient-to-b from-[#1a1a2e] to-[#111111]" : isMeal ? "meal-hero" : isCosmetics ? "velvet-hero" : isSuplement ? "bg-gradient-to-b from-[#0f1a2e] to-[#0A0D14]" : "matcha-hero";
+
+  const handleShare = async () => {
+    if (!shareRef.current) return;
+    setSharing(true);
+    try {
+      const canvas = await html2canvas(shareRef.current, {
+        backgroundColor: "#0a0e0c",
+        scale: 2,
+        useCORS: true,
+      });
+      const blob = await new Promise<Blob>((resolve) =>
+        canvas.toBlob((b) => resolve(b!), "image/png")
+      );
+      if (navigator.share && navigator.canShare?.({ files: [new File([blob], "f.png", { type: "image/png" })] })) {
+        const file = new File([blob], "skladai-wynik.png", { type: "image/png" });
+        await navigator.share({
+          title: "Wynik skanu SkładAI",
+          text: `${result.name} — ocena ${result.score}/10`,
+          files: [file],
+        });
+      } else {
+        await navigator.clipboard.writeText(`${result.name} — ocena ${result.score}/10\nSprawdź: skladai.vercel.app`);
+        setShareCopied(true);
+        setTimeout(() => setShareCopied(false), 2000);
+      }
+    } catch {
+      // user cancelled share or error
+    } finally {
+      setSharing(false);
+    }
+  };
 
   return (
     <div className={`min-h-[100dvh] ${bgClass}`}>
@@ -745,6 +807,39 @@ export default function WynikiPage() {
             )}
           </div>
         )}
+
+        {/* ─── SHARE BUTTON ─── */}
+        <button
+          onClick={handleShare}
+          disabled={sharing}
+          style={{
+            width: "100%",
+            padding: 14,
+            borderRadius: 14,
+            background: "rgba(255,255,255,0.04)",
+            border: "1px solid rgba(255,255,255,0.08)",
+            color: shareCopied ? "#22c55e" : "rgba(255,255,255,0.6)",
+            fontWeight: 700,
+            fontSize: 13,
+            marginTop: 8,
+            cursor: "pointer",
+            transition: "all 0.2s",
+          }}
+        >
+          {sharing ? "Generuję..." : shareCopied ? "✅ Link skopiowany!" : "📤 Udostępnij wynik"}
+        </button>
+
+        {/* Hidden share card for html2canvas */}
+        <div style={{ position: "absolute", left: -9999, top: 0 }}>
+          <div ref={shareRef}>
+            <ShareCard
+              name={result.name}
+              score={result.score}
+              verdict={result.verdict || result.tip || ""}
+              isForma={isForma}
+            />
+          </div>
+        </div>
 
         {/* bottom spacing */}
         <div className="h-6" />
