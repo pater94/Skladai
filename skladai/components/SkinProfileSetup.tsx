@@ -183,28 +183,22 @@ export default function SkinProfileSetup({ onComplete, onSkip }: Props) {
     return (
       <button
         onClick={() => onSelect(value)}
-        className={`w-full text-left p-3.5 rounded-[16px] transition-all duration-200 border ${
-          active
-            ? "bg-gradient-to-r from-purple-600/20 to-fuchsia-600/20 border-purple-500/50"
-            : "bg-white/[0.04] border-white/[0.06] hover:bg-white/[0.07]"
-        }`}
+        style={{
+          width: "100%", textAlign: "left", padding: "14px 16px", borderRadius: 16, cursor: "pointer", transition: "all 0.2s",
+          background: active ? "rgba(192,132,252,0.1)" : "rgba(255,255,255,0.04)",
+          border: active ? "1.5px solid #C084FC" : "1px solid rgba(255,255,255,0.06)",
+        }}
       >
-        <div className="flex items-center justify-between">
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div>
-            <p className={`font-semibold text-[14px] ${active ? "text-white" : "text-white/70"}`}>
-              {label}
-            </p>
-            {desc && (
-              <p className={`text-[11px] mt-0.5 ${active ? "text-purple-300/70" : "text-white/30"}`}>
-                {desc}
-              </p>
-            )}
+            <p style={{ fontWeight: 600, fontSize: 14, color: active ? "#fff" : "rgba(255,255,255,0.7)", margin: 0 }}>{label}</p>
+            {desc && <p style={{ fontSize: 11, marginTop: 2, color: active ? "rgba(192,132,252,0.7)" : "rgba(255,255,255,0.3)", margin: 0 }}>{desc}</p>}
           </div>
-          <div
-            className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
-              active ? "border-purple-400 bg-purple-500" : "border-white/20 bg-transparent"
-            }`}
-          >
+          <div style={{
+            width: 20, height: 20, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.2s",
+            border: active ? "2px solid #C084FC" : "2px solid rgba(255,255,255,0.15)",
+            background: active ? "#9333EA" : "transparent",
+          }}>
             {active && (
               <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
                 <path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
@@ -228,21 +222,19 @@ export default function SkinProfileSetup({ onComplete, onSkip }: Props) {
     return (
       <button
         onClick={onToggle}
-        className={`w-full text-left p-3.5 rounded-[16px] transition-all duration-200 border ${
-          checked
-            ? "bg-gradient-to-r from-purple-600/20 to-fuchsia-600/20 border-purple-500/50"
-            : "bg-white/[0.04] border-white/[0.06] hover:bg-white/[0.07]"
-        }`}
+        style={{
+          width: "100%", textAlign: "left", padding: "14px 16px", borderRadius: 16, cursor: "pointer", transition: "all 0.2s",
+          background: checked ? "rgba(192,132,252,0.1)" : "rgba(255,255,255,0.04)",
+          border: checked ? "1.5px solid #C084FC" : "1px solid rgba(255,255,255,0.06)",
+        }}
       >
-        <div className="flex items-center justify-between">
-          <p className={`font-semibold text-[13px] ${checked ? "text-white" : "text-white/70"}`}>
-            {label}
-          </p>
-          <div
-            className={`w-5 h-5 rounded-[6px] border-2 flex items-center justify-center transition-all ${
-              checked ? "border-purple-400 bg-purple-500" : "border-white/20 bg-transparent"
-            }`}
-          >
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <p style={{ fontWeight: 600, fontSize: 13, color: checked ? "#fff" : "rgba(255,255,255,0.7)", margin: 0 }}>{label}</p>
+          <div style={{
+            width: 20, height: 20, borderRadius: 6, display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.2s",
+            border: checked ? "2px solid #C084FC" : "2px solid rgba(255,255,255,0.15)",
+            background: checked ? "#9333EA" : "transparent",
+          }}>
             {checked && (
               <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
                 <path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
@@ -258,214 +250,171 @@ export default function SkinProfileSetup({ onComplete, onSkip }: Props) {
 
   return (
     <div
-      className={`fixed inset-0 z-[100] flex items-end justify-center transition-all duration-300 ${
-        visible ? "bg-black/60 backdrop-blur-sm" : "bg-transparent"
-      }`}
-      onClick={(e) => {
-        if (e.target === e.currentTarget) onSkip();
+      style={{
+        position: "fixed", inset: 0, zIndex: 150,
+        background: "#0a0e0c",
+        display: "flex", flexDirection: "column",
+        opacity: visible ? 1 : 0,
+        transition: "opacity 0.3s ease",
       }}
     >
-      <div
-        className={`w-full max-w-md rounded-t-[28px] overflow-hidden transition-transform duration-400 ease-out ${
-          visible ? "translate-y-0" : "translate-y-full"
-        }`}
-        style={{ background: "#0D0B0E", maxHeight: "88dvh", display: "flex", flexDirection: "column" }}
-      >
-        {/* Header */}
-        <div className="px-5 pt-5 pb-3 flex-shrink-0">
-          {/* Drag handle */}
-          <div className="flex justify-center mb-4">
-            <div className="w-10 h-1 rounded-full bg-white/20" />
-          </div>
-
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-[22px] font-black text-white tracking-tight">
-                {STEP_TITLES[step]}
-              </h2>
-              <p className="text-white/35 text-[12px] mt-0.5">
-                Krok {step + 1} z 3{step === 2 && " (opcjonalne)"}
-              </p>
-            </div>
-            <button
-              onClick={onSkip}
-              className="text-white/40 text-[13px] font-semibold hover:text-white/60 transition-colors px-3 py-1.5"
-            >
-              Pomiń
-            </button>
-          </div>
-
-          {/* Progress bar */}
-          <div className="flex gap-2 mt-4">
-            {[0, 1, 2].map((i) => (
-              <div
-                key={i}
-                className={`h-1 rounded-full transition-all duration-500 ${
-                  i < step
-                    ? "flex-1 bg-purple-500"
-                    : i === step
-                    ? "flex-[2] bg-gradient-to-r from-purple-500 to-fuchsia-500"
-                    : "flex-1 bg-white/10"
-                }`}
-              />
-            ))}
-          </div>
+      {/* Progress bar — full width */}
+      <div style={{ padding: "0 20px", paddingTop: "max(16px, env(safe-area-inset-top, 16px))", flexShrink: 0 }}>
+        <div style={{ display: "flex", gap: 6 }}>
+          {[0, 1, 2].map((i) => (
+            <div
+              key={i}
+              style={{
+                flex: i === step ? 2 : 1,
+                height: 4, borderRadius: 2,
+                transition: "all 0.5s ease",
+                background: i < step
+                  ? "#C084FC"
+                  : i === step
+                  ? "linear-gradient(90deg, #C084FC, #DB2777)"
+                  : "rgba(255,255,255,0.08)",
+              }}
+            />
+          ))}
         </div>
+      </div>
 
-        {/* Content — scrollable, takes remaining space */}
-        <div className="px-5 pb-5 overflow-y-auto flex-1 min-h-0">
-          {/* STEP 0: Skin type */}
-          {step === 0 && (
-            <div className="space-y-5 pt-2">
-              {/* Skin type */}
-              <div>
-                <label className="text-[11px] font-semibold text-white/30 uppercase tracking-wider">
-                  Typ skóry
-                </label>
-                <div className="space-y-2 mt-2">
-                  {SKIN_TYPES.map((t) => (
-                    <RadioCard
-                      key={t.value}
-                      value={t.value}
-                      selected={skinType}
-                      onSelect={setSkinType}
-                      label={t.label}
-                    />
-                  ))}
-                </div>
-              </div>
+      {/* Header */}
+      <div style={{ padding: "16px 22px 8px", flexShrink: 0 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div>
+            <h2 style={{ fontSize: 24, fontWeight: 900, color: "#fff", letterSpacing: "-0.03em" }}>
+              {STEP_TITLES[step]}
+            </h2>
+            <p style={{ color: "rgba(255,255,255,0.35)", fontSize: 12, marginTop: 2 }}>
+              Krok {step + 1} z 3{step === 2 && " (opcjonalne)"}
+            </p>
+          </div>
+          <button
+            onClick={onSkip}
+            style={{ padding: "6px 14px", borderRadius: 12, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.4)", fontSize: 13, fontWeight: 600, cursor: "pointer" }}
+          >
+            Pomiń
+          </button>
+        </div>
+      </div>
 
-              {/* Sensitivity */}
-              <div>
-                <label className="text-[11px] font-semibold text-white/30 uppercase tracking-wider">
-                  Wrażliwość
-                </label>
-                <div className="space-y-2 mt-2">
-                  {SENSITIVITY.map((s) => (
-                    <RadioCard
-                      key={s.value}
-                      value={s.value}
-                      selected={sensitivity}
-                      onSelect={setSensitivity}
-                      label={s.label}
-                    />
-                  ))}
-                </div>
-              </div>
-
-              {/* Skin age */}
-              <div>
-                <label className="text-[11px] font-semibold text-white/30 uppercase tracking-wider">
-                  Wiek skóry
-                </label>
-                <div className="space-y-2 mt-2">
-                  {SKIN_AGE.map((a) => (
-                    <RadioCard
-                      key={a.value}
-                      value={a.value}
-                      selected={skinAge}
-                      onSelect={setSkinAge}
-                      label={a.label}
-                      desc={a.desc}
-                    />
-                  ))}
-                </div>
+      {/* Content — scrollable */}
+      <div style={{ flex: 1, overflowY: "auto", padding: "8px 22px 16px", minHeight: 0 }}>
+        {/* STEP 0: Skin type */}
+        {step === 0 && (
+          <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+            <div>
+              <label style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.3)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                Typ skóry
+              </label>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 8 }}>
+                {SKIN_TYPES.map((t) => (
+                  <RadioCard key={t.value} value={t.value} selected={skinType} onSelect={setSkinType} label={t.label} />
+                ))}
               </div>
             </div>
-          )}
 
-          {/* STEP 1: Skin problems */}
-          {step === 1 && (
-            <div className="space-y-2 pt-2">
-              <p className="text-[12px] text-white/30 mb-3">
-                Wybierz wszystkie, które Cię dotyczą
-              </p>
+            <div>
+              <label style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.3)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                Wrażliwość
+              </label>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 8 }}>
+                {SENSITIVITY.map((s) => (
+                  <RadioCard key={s.value} value={s.value} selected={sensitivity} onSelect={setSensitivity} label={s.label} />
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <label style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.3)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                Wiek skóry
+              </label>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 8 }}>
+                {SKIN_AGE.map((a) => (
+                  <RadioCard key={a.value} value={a.value} selected={skinAge} onSelect={setSkinAge} label={a.label} desc={a.desc} />
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* STEP 1: Skin problems */}
+        {step === 1 && (
+          <div>
+            <p style={{ fontSize: 12, color: "rgba(255,255,255,0.3)", marginBottom: 12 }}>
+              Wybierz wszystkie, które Cię dotyczą
+            </p>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               {SKIN_PROBLEMS.map((p) => (
-                <CheckCard
-                  key={p}
-                  label={p}
-                  checked={skinProblems.includes(p)}
-                  onToggle={() => toggleSkinProblem(p)}
-                />
+                <CheckCard key={p} label={p} checked={skinProblems.includes(p)} onToggle={() => toggleSkinProblem(p)} />
               ))}
             </div>
-          )}
+          </div>
+        )}
 
-          {/* STEP 2: Hair */}
-          {step === 2 && (
-            <div className="space-y-5 pt-2">
-              <p className="text-[12px] text-white/30 -mt-1">
-                Możesz pominąć ten krok
-              </p>
+        {/* STEP 2: Hair */}
+        {step === 2 && (
+          <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+            <p style={{ fontSize: 12, color: "rgba(255,255,255,0.3)" }}>
+              Możesz pominąć ten krok
+            </p>
 
-              {/* Hair type */}
-              <div>
-                <label className="text-[11px] font-semibold text-white/30 uppercase tracking-wider">
-                  Typ włosów
-                </label>
-                <div className="space-y-2 mt-2">
-                  {HAIR_TYPES.map((t) => (
-                    <RadioCard
-                      key={t.value}
-                      value={t.value}
-                      selected={hairType}
-                      onSelect={setHairType}
-                      label={t.label}
-                    />
-                  ))}
-                </div>
-              </div>
-
-              {/* Hair problems */}
-              <div>
-                <label className="text-[11px] font-semibold text-white/30 uppercase tracking-wider">
-                  Problemy z włosami
-                </label>
-                <div className="space-y-2 mt-2">
-                  {HAIR_PROBLEMS.map((p) => (
-                    <CheckCard
-                      key={p}
-                      label={p}
-                      checked={hairProblems.includes(p)}
-                      onToggle={() => toggleHairProblem(p)}
-                    />
-                  ))}
-                </div>
+            <div>
+              <label style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.3)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                Typ włosów
+              </label>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 8 }}>
+                {HAIR_TYPES.map((t) => (
+                  <RadioCard key={t.value} value={t.value} selected={hairType} onSelect={setHairType} label={t.label} />
+                ))}
               </div>
             </div>
-          )}
-        </div>
 
-        {/* Footer buttons — always visible, safe area padding */}
-        <div className="px-5 pt-3 flex-shrink-0" style={{ background: "#0D0B0E", paddingBottom: "max(24px, env(safe-area-inset-bottom, 24px))" }}>
-          <div className="flex gap-3">
-            {step > 0 && (
-              <button
-                onClick={() => setStep(step - 1)}
-                className="flex-shrink-0 w-12 h-12 rounded-[14px] bg-white/[0.06] border border-white/[0.08] flex items-center justify-center text-white/50 hover:bg-white/[0.1] transition-colors"
-              >
-                <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                  <path d="M11 4L6 9L11 14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </button>
-            )}
-            <button
-              onClick={handleNext}
-              disabled={!canProceed && step < 2}
-              className={`flex-1 h-12 rounded-[14px] font-bold text-[15px] text-white transition-all ${canProceed || step === 2 ? "active:scale-[0.98]" : "opacity-40"}`}
-              style={{
-                background: canProceed || step === 2
-                  ? "linear-gradient(135deg, #9333EA 0%, #C026D3 50%, #DB2777 100%)"
-                  : "#333",
-              }}
-            >
-              {step < 2 ? "Dalej" : "Zapisz"}
-            </button>
+            <div>
+              <label style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.3)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                Problemy z włosami
+              </label>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 8 }}>
+                {HAIR_PROBLEMS.map((p) => (
+                  <CheckCard key={p} label={p} checked={hairProblems.includes(p)} onToggle={() => toggleHairProblem(p)} />
+                ))}
+              </div>
+            </div>
           </div>
-          <p className="text-[10px] text-white/20 text-center mt-3">
-            Dane zapisane lokalnie na Twoim urządzeniu
-          </p>
+        )}
+      </div>
+
+      {/* Footer — fixed at bottom, always visible */}
+      <div style={{ padding: "12px 22px", paddingBottom: "max(32px, env(safe-area-inset-bottom, 32px))", flexShrink: 0, background: "#0a0e0c" }}>
+        <div style={{ display: "flex", gap: 12 }}>
+          {step > 0 && (
+            <button
+              onClick={() => setStep(step - 1)}
+              style={{ width: 48, height: 48, borderRadius: 14, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", display: "flex", alignItems: "center", justifyContent: "center", color: "rgba(255,255,255,0.5)", cursor: "pointer", flexShrink: 0 }}
+            >
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                <path d="M11 4L6 9L11 14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
+          )}
+          <button
+            onClick={handleNext}
+            disabled={!canProceed && step < 2}
+            style={{
+              flex: 1, height: 48, borderRadius: 14, fontWeight: 700, fontSize: 15, color: "#fff", cursor: "pointer", border: "none", transition: "all 0.2s",
+              background: canProceed || step === 2
+                ? "linear-gradient(135deg, #9333EA 0%, #C026D3 50%, #DB2777 100%)"
+                : "#333",
+              opacity: canProceed || step === 2 ? 1 : 0.4,
+            }}
+          >
+            {step < 2 ? "Dalej" : "Zapisz"}
+          </button>
         </div>
+        <p style={{ fontSize: 10, color: "rgba(255,255,255,0.2)", textAlign: "center", marginTop: 10 }}>
+          Dane zapisane lokalnie na Twoim urządzeniu
+        </p>
       </div>
     </div>
   );
