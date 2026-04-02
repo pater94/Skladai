@@ -85,7 +85,8 @@ export default function OnboardingLogin({ onSkip }: OnboardingLoginProps) {
     pointerEvents: slide === index ? "auto" : "none",
     display: "flex",
     flexDirection: "column",
-    overflow: "hidden",
+    overflowX: "hidden",
+    overflowY: "auto",
   });
 
   return (

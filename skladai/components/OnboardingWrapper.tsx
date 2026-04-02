@@ -31,6 +31,7 @@ export default function OnboardingWrapper() {
       onSkip={() => {
         localStorage.setItem("onboardingCompleted", "true");
         setShow(false);
+        window.scrollTo(0, 0);
       }}
     />
   );
