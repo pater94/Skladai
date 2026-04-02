@@ -115,10 +115,14 @@ export default function Home() {
   useEffect(() => {
     setMode(getSavedMode());
     setStreak(getStreak());
-    // Load 3 most recent scans
-    const all = getHistory();
-    setRecentScans(all.slice(0, 3));
   }, []);
+
+  // Filter recent scans by current mode
+  useEffect(() => {
+    const all = getHistory();
+    const filtered = all.filter((item) => (item.scanType || "food") === mode);
+    setRecentScans(filtered.slice(0, 3));
+  }, [mode]);
 
   useEffect(() => {
     const tips = mode === "cosmetics" ? COSMETIC_TIPS : mode === "meal" ? MEAL_TIPS : FOOD_TIPS;
