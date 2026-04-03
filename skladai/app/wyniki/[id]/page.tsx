@@ -16,14 +16,22 @@ import IngredientPopup from "@/components/IngredientPopup";
 function FunComparisons({ items, isDark }: { items: string[]; isDark: boolean }): React.JSX.Element {
   if (!items || items.length === 0) return <></>;
   return (
-    <div className={`mt-3 rounded-[20px] p-5 anim-fade-up-1 ${isDark ? "velvet-card" : "card-elevated"}`}>
-      <p className={`text-[13px] font-bold mb-3 ${isDark ? "text-white" : "text-[#1A3A0A]"}`}>
-        Ciekawostki
+    <div
+      className="mt-3 anim-fade-up-1"
+      style={{
+        padding: 18, borderRadius: 16,
+        background: "rgba(255,255,255,0.025)",
+        border: "1px solid rgba(255,255,255,0.06)",
+      }}
+    >
+      <p style={{ fontSize: 14, fontWeight: 700, color: "rgba(255,255,255,0.8)", marginBottom: 12 }}>
+        💡 Ciekawostki
       </p>
       <ul className="space-y-2">
         {items.map((c: string, i: number) => (
-          <li key={i} className={`text-[12px] leading-relaxed ${isDark ? "text-white/55" : "text-gray-600"}`}>
-            {String(c)}
+          <li key={i} style={{ fontSize: 13, color: "rgba(255,255,255,0.55)", lineHeight: 1.6, display: "flex", alignItems: "flex-start", gap: 8 }}>
+            <span style={{ color: "#6efcb4", fontSize: 8, marginTop: 6 }}>●</span>
+            <span>{String(c)}</span>
           </li>
         ))}
       </ul>
@@ -288,6 +296,9 @@ export default function WynikiPage() {
   const [sharing, setSharing] = useState(false);
   const [shareCopied, setShareCopied] = useState(false);
   const shareRef = useRef<HTMLDivElement>(null);
+  const [scoreAnim, setScoreAnim] = useState(false);
+  const [portion, setPortion] = useState(100);
+  const [quantity, setQuantity] = useState(1);
 
   useEffect(() => {
     const id = params.id as string;
@@ -295,12 +306,13 @@ export default function WynikiPage() {
     if (!found) { router.push("/"); return; }
     setItem(found);
     setProfile(getProfile());
+    setTimeout(() => setScoreAnim(true), 400);
   }, [params.id, router]);
 
   if (!item) {
     return (
-      <div className="min-h-[100dvh] flex items-center justify-center bg-[#F5F2EB]">
-        <div className="w-12 h-12 border-4 border-[#2D5A16] border-t-transparent rounded-full" style={{ animation: "spinSlow 0.8s linear infinite" }} />
+      <div className="min-h-[100dvh] flex items-center justify-center bg-[#0a0e0c]">
+        <div style={{ width: 48, height: 48, border: "4px solid rgba(110,252,180,0.3)", borderTopColor: "#6efcb4", borderRadius: "50%", animation: "spinSlow 0.8s linear infinite" }} />
       </div>
     );
   }
@@ -330,7 +342,7 @@ export default function WynikiPage() {
     ? "Analiza dania"
     : [result.brand, (result as FoodAnalysisResult).weight].filter(Boolean).join(" · ");
 
-  const isDark = isCosmetics || isMeal || isForma || isSuplement;
+  const isDark = true; // all modes are now dark
 
   const sugarTeaspoons = foodResult?.sugar_teaspoons || textSearchResult?.sugar_teaspoons || mealResult?.sugar_teaspoons || 0;
   const funComparisons: string[] = (() => {
@@ -352,8 +364,11 @@ export default function WynikiPage() {
     mainCalories = Math.round(textSearchResult.total?.calories || 0);
   }
 
-  const bgClass = isForma ? "bg-[#111111]" : isMeal ? "bg-[#1A1207]" : isCosmetics ? "bg-[#0D0B0E]" : isSuplement ? "bg-[#0A0D14]" : "bg-[#F5F2EB]";
-  const heroClass = isForma ? "bg-gradient-to-b from-[#1a1a2e] to-[#111111]" : isMeal ? "meal-hero" : isCosmetics ? "velvet-hero" : isSuplement ? "bg-gradient-to-b from-[#0f1a2e] to-[#0A0D14]" : "matcha-hero";
+  const bgClass = isForma ? "bg-[#111111]" : "bg-[#0a0e0c]";
+  const heroClass = isForma ? "bg-gradient-to-b from-[#1a1a2e] to-[#111111]" : isMeal ? "meal-hero" : "bg-gradient-to-b from-[#0a1a10] to-[#0a0e0c]";
+
+  const accentColor = isCosmetics ? "#C084FC" : isSuplement ? "#3b82f6" : "#6efcb4";
+  const accentRgb = isCosmetics ? "192,132,252" : isSuplement ? "59,130,246" : "110,252,180";
 
   const handleShare = async () => {
     if (!shareRef.current) return;
@@ -387,192 +402,230 @@ export default function WynikiPage() {
   };
 
   return (
-    <div className={`min-h-[100dvh] ${bgClass}`}>
+    <div className={`min-h-[100dvh] ${bgClass}`} style={{ position: "relative", overflow: "hidden" }}>
+      {/* Ambient blobs + film grain */}
+      {!isMeal && !isForma && (
+        <>
+          <div style={{
+            position: "absolute", top: -40, right: -60, width: 200, height: 200,
+            borderRadius: "50%", background: `radial-gradient(circle, ${accentColor}10 0%, transparent 70%)`,
+            filter: "blur(50px)", animation: "float1 8s ease-in-out infinite",
+          }} />
+          <div style={{
+            position: "absolute", top: 350, left: -40, width: 160, height: 160,
+            borderRadius: "50%", background: `radial-gradient(circle, ${accentColor}06 0%, transparent 70%)`,
+            filter: "blur(40px)", animation: "float2 10s ease-in-out infinite",
+          }} />
+          <svg style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", pointerEvents: "none", opacity: 0.4, zIndex: 1 }}>
+            <filter id="grain"><feTurbulence type="fractalNoise" baseFrequency="0.65" numOctaves="3" stitchTiles="stitch" /></filter>
+            <rect width="100%" height="100%" filter="url(#grain)" opacity="0.08" />
+          </svg>
+          <style>{`
+            @keyframes float1 { 0%,100% { transform: translateY(0); } 50% { transform: translateY(20px); } }
+            @keyframes float2 { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-15px); } }
+          `}</style>
+        </>
+      )}
+
       {/* Header */}
-      <div className={`relative overflow-hidden ${heroClass}`}>
-        {isDark ? (
-          <div className={`absolute top-0 left-1/2 -translate-x-1/2 w-[400px] h-[400px] rounded-full blur-[80px] ${isSuplement ? "bg-blue-500/5" : isMeal ? "bg-amber-500/5" : "bg-purple-500/5"}`} />
-        ) : (
-          <>
-            <div className="absolute -top-24 -right-24 w-72 h-72 rounded-full bg-white/10 blur-3xl" />
-            <div className="absolute top-10 -left-20 w-56 h-56 rounded-full bg-white/5 blur-2xl" />
-          </>
-        )}
-        <div className="max-w-md mx-auto px-5 pt-6 pb-28 relative z-10 flex items-center justify-between">
-          <button
-            onClick={() => router.push(isForma ? "/forma" : "/")}
-            className={`text-[12px] font-semibold px-3.5 py-1.5 rounded-full active:scale-95 transition-all ${
-              isDark ? "text-white/60 bg-white/5 border border-white/[0.08]" : "text-white/70 bg-white/10 backdrop-blur-sm border border-white/15"
-            }`}
-          >
-            ← Powrót
-          </button>
-          <button
-            onClick={() => router.push(isForma ? "/forma" : "/")}
-            className={`text-[12px] font-semibold px-3.5 py-1.5 rounded-full active:scale-95 transition-all ${
-              isDark ? "text-white/60 bg-white/5 border border-white/[0.08]" : "text-white/70 bg-white/10 backdrop-blur-sm border border-white/15"
-            }`}
-          >
-            Skanuj kolejny
-          </button>
+      {isMeal || isForma ? (
+        <div className={`relative overflow-hidden ${heroClass}`}>
+          <div className={`absolute top-0 left-1/2 -translate-x-1/2 w-[400px] h-[400px] rounded-full blur-[80px] ${isMeal ? "bg-amber-500/5" : "bg-purple-500/5"}`} />
+          <div className="max-w-md mx-auto px-5 pt-6 pb-28 relative z-10 flex items-center justify-between">
+            <button
+              onClick={() => router.push(isForma ? "/forma" : "/")}
+              className="text-[12px] font-semibold px-3.5 py-1.5 rounded-full active:scale-95 transition-all text-white/60 bg-white/5 border border-white/[0.08]"
+            >
+              ← Powrót
+            </button>
+            <button
+              onClick={() => router.push(isForma ? "/forma" : "/")}
+              className="text-[12px] font-semibold px-3.5 py-1.5 rounded-full active:scale-95 transition-all text-white/60 bg-white/5 border border-white/[0.08]"
+            >
+              Skanuj kolejny
+            </button>
+          </div>
         </div>
-      </div>
+      ) : (
+        <div style={{ position: "relative", zIndex: 2 }}>
+          <div className="max-w-md mx-auto" style={{ padding: "16px 16px 12px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <button
+              onClick={() => router.push("/")}
+              className="active:scale-95 transition-all"
+              style={{
+                padding: "8px 16px", borderRadius: 12,
+                background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)",
+                backdropFilter: "blur(12px)", color: "rgba(255,255,255,0.6)",
+                fontSize: 13, fontWeight: 600, cursor: "pointer",
+              }}
+            >
+              ← Powrót
+            </button>
+            <button
+              onClick={() => router.push("/")}
+              className="active:scale-95 transition-all"
+              style={{
+                padding: "8px 16px", borderRadius: 12,
+                background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)",
+                backdropFilter: "blur(12px)", color: "rgba(255,255,255,0.45)",
+                fontSize: 12, fontWeight: 600, cursor: "pointer",
+              }}
+            >
+              Skanuj kolejny
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Content */}
-      <div className="max-w-md mx-auto px-5 -mt-24 pb-10 relative z-20">
+      <div className={`max-w-md mx-auto pb-10 relative z-20 ${isMeal || isForma ? "px-5 -mt-24" : "px-0 mt-0"}`}>
 
         {/* ─── 1. SCORE CARD ─── */}
-        <div
-          className="rounded-[20px] p-4 anim-fade-up relative overflow-hidden"
-          style={{
-            background: isDark ? "rgba(255,255,255,0.02)" : "rgba(255,255,255,0.85)",
-            backdropFilter: isDark ? undefined : "blur(20px)",
-            WebkitBackdropFilter: isDark ? undefined : "blur(20px)",
-            border: isDark ? "1px solid rgba(255,255,255,0.06)" : "1px solid rgba(255,255,255,0.6)",
-          }}
-        >
-          {/* Gradient stripe */}
-          <div className="absolute top-0 left-0 right-0" style={{ height: 3, background: `linear-gradient(90deg, transparent, ${color}, transparent)` }} />
-          <div className="flex items-center gap-3.5">
-            <ScoreRing score={result.score} size={68} />
-            <div className="flex-1 min-w-0">
-              <h1 className={`text-[16px] font-bold leading-snug ${isDark ? "text-white" : "text-[#1A3A0A]"}`}>
-                {result.name}
-              </h1>
-              <p className={`text-[12px] mt-0.5 font-medium ${isDark ? "text-white/55" : "text-gray-400"}`}>{subtitle}</p>
-              <div className="mt-2 flex items-center gap-1.5 flex-wrap">
-                <span className="text-[10px] font-bold px-3 py-1 rounded-full" style={{ backgroundColor: bg, color }}>
-                  {result.verdict_short || label}
-                </span>
-                <span className={`text-[10px] font-bold px-3 py-1 rounded-full ${isDark ? "bg-white/5 text-white/55" : "bg-gray-100 text-gray-500"}`}>
-                  {isForma ? "💪 Forma" : isMeal ? "🍽️ Danie" : isTextSearch ? "🔍 Szukaj" : isCosmetics ? "✨ Kosmetyk" : isSuplement ? "💊 Suplement" : "🛒 Żywność"}
-                </span>
+        {isMeal || isForma ? (
+          /* --- Original score card for meal/forma --- */
+          <div
+            className="rounded-[20px] p-4 anim-fade-up relative overflow-hidden"
+            style={{
+              background: "rgba(255,255,255,0.02)",
+              border: "1px solid rgba(255,255,255,0.06)",
+            }}
+          >
+            <div className="absolute top-0 left-0 right-0" style={{ height: 3, background: `linear-gradient(90deg, transparent, ${color}, transparent)` }} />
+            <div className="flex items-center gap-3.5">
+              <ScoreRing score={result.score} size={68} />
+              <div className="flex-1 min-w-0">
+                <h1 className="text-[16px] font-bold leading-snug text-white">{result.name}</h1>
+                <p className="text-[12px] mt-0.5 font-medium text-white/55">{subtitle}</p>
+                <div className="mt-2 flex items-center gap-1.5 flex-wrap">
+                  <span className="text-[10px] font-bold px-3 py-1 rounded-full" style={{ backgroundColor: bg, color }}>{result.verdict_short || label}</span>
+                  <span className="text-[10px] font-bold px-3 py-1 rounded-full bg-white/5 text-white/55">
+                    {isForma ? "💪 Forma" : "🍽️ Danie"}
+                  </span>
+                </div>
               </div>
             </div>
+            <div className="mt-3 p-3 rounded-xl bg-white/[0.03] border border-white/[0.06]">
+              <p className="text-[12px] leading-relaxed text-white/55 line-clamp-2">{result.verdict}</p>
+            </div>
+            {mainCalories !== null && mainCalories > 0 && (
+              <p className="mt-2 text-center text-[13px] font-semibold text-white/30">⚡ {mainCalories} kcal</p>
+            )}
+            {/* Feedback buttons - meal/forma */}
+            <div className="mt-3">
+              {feedbackSent === "good" ? (
+                <p style={{ fontSize: 12, color: "rgba(110,252,180,0.5)", textAlign: "center" }}>Dzięki za opinię! 🙏</p>
+              ) : feedbackSent === "bad" ? (
+                <div style={{ overflow: "hidden", animation: "feedbackSlideIn 0.3s ease-out" }}>
+                  <div style={{ padding: 12, borderRadius: 14, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
+                    <p style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginBottom: 8, fontWeight: 600 }}>Co było nie tak?</p>
+                    <textarea autoFocus rows={2} maxLength={300} placeholder="Np. źle odczytał kalorie, to nie ten produkt..." value={feedbackNote} onChange={(e) => setFeedbackNote(e.target.value)} style={{ width: "100%", padding: "10px 12px", borderRadius: 10, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "#fff", fontSize: 12, resize: "none", outline: "none", fontFamily: "inherit" }} />
+                    <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+                      <button onClick={() => { fetch("/api/feedback", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ product_name: result.name, feedback: "bad", feedback_note: feedbackNote || null }) }); setFeedbackSent("sent"); }} style={{ flex: 1, padding: 10, borderRadius: 10, background: "rgba(110,252,180,0.1)", border: "1px solid rgba(110,252,180,0.2)", color: "#6efcb4", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>{feedbackNote.trim() ? "Wyślij" : "Wyślij bez komentarza"}</button>
+                      <button onClick={() => { setFeedbackSent(null); setFeedbackNote(""); }} style={{ padding: "10px 14px", borderRadius: 10, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.55)", fontSize: 12, cursor: "pointer" }}>✕</button>
+                    </div>
+                  </div>
+                </div>
+              ) : feedbackSent === "sent" ? (
+                <p style={{ fontSize: 12, color: "rgba(110,252,180,0.5)", textAlign: "center" }}>Dzięki za opinię! 🙏</p>
+              ) : (
+                <div className="flex items-center justify-center gap-2.5">
+                  <button onClick={() => { setFeedbackSent("good"); fetch("/api/feedback", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ product_name: result.name, feedback: "good" }) }); }} className="active:scale-95 transition-transform" style={{ padding: "8px 16px", borderRadius: 10, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.55)", fontSize: 12 }}>👍 Trafna analiza</button>
+                  <button onClick={() => setFeedbackSent("bad")} className="active:scale-95 transition-transform" style={{ padding: "8px 16px", borderRadius: 10, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.55)", fontSize: 12 }}>👎 Błędna</button>
+                </div>
+              )}
+            </div>
+            <style>{`@keyframes feedbackSlideIn { from { opacity: 0; max-height: 0; } to { opacity: 1; max-height: 200px; } }`}</style>
           </div>
+        ) : (
+          /* --- Premium score card for food/cosmetics/suplement --- */
+          <div
+            className="anim-fade-up"
+            style={{
+              margin: "0 16px 16px", padding: 24, borderRadius: 22,
+              background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.06)",
+              backdropFilter: "blur(20px)", position: "relative", overflow: "hidden",
+            }}
+          >
+            {/* Gradient stripe top */}
+            <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: `linear-gradient(90deg, transparent, ${accentColor}, transparent)` }} />
+            {/* Glow behind ring */}
+            <div style={{ position: "absolute", top: 10, left: "50%", transform: "translateX(-50%)", width: 120, height: 120, borderRadius: "50%", background: `radial-gradient(circle, ${color}15 0%, transparent 70%)`, filter: "blur(20px)" }} />
 
-          {/* Verdict — compact, max 2 lines with expand */}
-          <div className={`mt-3 p-3 rounded-xl ${isDark ? "bg-white/[0.03] border border-white/[0.06]" : "bg-[#F5F2EB]/60"}`}>
-            <p className={`text-[12px] leading-relaxed ${isDark ? "text-white/55" : "text-[#1A3A0A]/65"} line-clamp-2`}>
-              {result.verdict}
-            </p>
-          </div>
-
-          {/* Calories on main card */}
-          {mainCalories !== null && mainCalories > 0 && (
-            <p className={`mt-2 text-center text-[13px] font-semibold ${isDark ? "text-white/30" : "text-[#1A3A0A]/35"}`}>
-              ⚡ {mainCalories} kcal
-            </p>
-          )}
-
-          {/* Feedback buttons */}
-          <div className="mt-3">
-            {feedbackSent === "good" ? (
-              <p style={{ fontSize: 12, color: "rgba(110,252,180,0.5)", textAlign: "center" }}>
-                Dzięki za opinię! 🙏
-              </p>
-            ) : feedbackSent === "bad" ? (
-              <div style={{ overflow: "hidden", animation: "feedbackSlideIn 0.3s ease-out" }}>
-                <div style={{
-                  padding: 12, borderRadius: 14,
-                  background: "rgba(255,255,255,0.03)",
-                  border: "1px solid rgba(255,255,255,0.06)",
-                }}>
-                  <p style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginBottom: 8, fontWeight: 600 }}>
-                    Co było nie tak?
-                  </p>
-                  <textarea
-                    autoFocus
-                    rows={2}
-                    maxLength={300}
-                    placeholder="Np. źle odczytał kalorie, to nie ten produkt..."
-                    value={feedbackNote}
-                    onChange={(e) => setFeedbackNote(e.target.value)}
-                    style={{
-                      width: "100%", padding: "10px 12px", borderRadius: 10,
-                      background: "rgba(255,255,255,0.04)",
-                      border: "1px solid rgba(255,255,255,0.08)",
-                      color: "#fff", fontSize: 12, resize: "none",
-                      outline: "none", fontFamily: "inherit",
-                    }}
+            {/* Score ring + product info */}
+            <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+              {/* Animated SVG ring */}
+              <div style={{ position: "relative", width: 100, height: 100, flexShrink: 0 }}>
+                <svg width="100" height="100" viewBox="0 0 100 100">
+                  <circle cx="50" cy="50" r="42" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="6" />
+                  <circle
+                    cx="50" cy="50" r="42" fill="none"
+                    stroke={color} strokeWidth="6" strokeLinecap="round"
+                    strokeDasharray={`${2 * Math.PI * 42}`}
+                    strokeDashoffset={scoreAnim ? `${2 * Math.PI * 42 * (1 - result.score / 10)}` : `${2 * Math.PI * 42}`}
+                    style={{ transition: "stroke-dashoffset 1s ease-out", transform: "rotate(-90deg)", transformOrigin: "50% 50%" }}
                   />
+                </svg>
+                <div style={{
+                  position: "absolute", top: "50%", left: "50%", transform: `translate(-50%, -50%) scale(${scoreAnim ? 1 : 0.5})`,
+                  transition: "transform 0.5s ease-out", textAlign: "center",
+                }}>
+                  <span style={{ fontSize: 32, fontWeight: 900, color, lineHeight: 1 }}>{result.score}</span>
+                  <span style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", display: "block" }}>/10</span>
+                </div>
+              </div>
+
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <h1 style={{ fontSize: 20, fontWeight: 800, color: "#ffffff", lineHeight: 1.3, marginBottom: 4 }}>{result.name}</h1>
+                <p style={{ fontSize: 12, color: "rgba(255,255,255,0.5)" }}>{subtitle}</p>
+                <div style={{ marginTop: 8, display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                  <span style={{ fontSize: 10, fontWeight: 700, padding: "4px 12px", borderRadius: 999, backgroundColor: bg, color }}>{result.verdict_short || label}</span>
+                  <span style={{ fontSize: 10, fontWeight: 700, padding: "4px 12px", borderRadius: 999, background: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.55)" }}>
+                    {isTextSearch ? "🔍 Szukaj" : isCosmetics ? "✨ Kosmetyk" : isSuplement ? "💊 Suplement" : "🛒 Żywność"}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* AI comment */}
+            <div style={{ marginTop: 14, padding: 14, borderRadius: 14, background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.05)" }}>
+              <p style={{ fontSize: 13, color: "rgba(255,255,255,0.65)", lineHeight: 1.6 }}>{result.verdict}</p>
+            </div>
+
+            {/* Feedback row: kcal on left, feedback on right */}
+            <div style={{ marginTop: 12, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <div>
+                {mainCalories !== null && mainCalories > 0 && (
+                  <span style={{ fontSize: 14, fontWeight: 700, color: accentColor }}>⚡ {mainCalories} kcal</span>
+                )}
+              </div>
+              <div>
+                {feedbackSent === "good" || feedbackSent === "sent" ? (
+                  <p style={{ fontSize: 12, color: "rgba(110,252,180,0.5)" }}>Dzięki! 🙏</p>
+                ) : feedbackSent === "bad" ? null : (
+                  <div style={{ display: "flex", gap: 6 }}>
+                    <button onClick={() => { setFeedbackSent("good"); fetch("/api/feedback", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ product_name: result.name, feedback: "good" }) }); }} className="active:scale-95 transition-transform" style={{ padding: "6px 12px", borderRadius: 8, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.55)", fontSize: 11, cursor: "pointer" }}>👍</button>
+                    <button onClick={() => setFeedbackSent("bad")} className="active:scale-95 transition-transform" style={{ padding: "6px 12px", borderRadius: 8, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.55)", fontSize: 11, cursor: "pointer" }}>👎</button>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Expanded bad feedback */}
+            {feedbackSent === "bad" && (
+              <div style={{ marginTop: 10, overflow: "hidden", animation: "feedbackSlideIn 0.3s ease-out" }}>
+                <div style={{ padding: 12, borderRadius: 14, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
+                  <p style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginBottom: 8, fontWeight: 600 }}>Co było nie tak?</p>
+                  <textarea autoFocus rows={2} maxLength={300} placeholder="Np. źle odczytał kalorie, to nie ten produkt..." value={feedbackNote} onChange={(e) => setFeedbackNote(e.target.value)} style={{ width: "100%", padding: "10px 12px", borderRadius: 10, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "#fff", fontSize: 12, resize: "none", outline: "none", fontFamily: "inherit" }} />
                   <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
-                    <button
-                      onClick={() => {
-                        fetch("/api/feedback", {
-                          method: "POST",
-                          headers: { "Content-Type": "application/json" },
-                          body: JSON.stringify({ product_name: result.name, feedback: "bad", feedback_note: feedbackNote || null }),
-                        });
-                        setFeedbackSent("sent");
-                      }}
-                      style={{
-                        flex: 1, padding: 10, borderRadius: 10,
-                        background: "rgba(110,252,180,0.1)",
-                        border: "1px solid rgba(110,252,180,0.2)",
-                        color: "#6efcb4", fontSize: 12, fontWeight: 700,
-                        cursor: "pointer",
-                      }}
-                    >
-                      {feedbackNote.trim() ? "Wyślij" : "Wyślij bez komentarza"}
-                    </button>
-                    <button
-                      onClick={() => { setFeedbackSent(null); setFeedbackNote(""); }}
-                      style={{
-                        padding: "10px 14px", borderRadius: 10,
-                        background: "rgba(255,255,255,0.03)",
-                        border: "1px solid rgba(255,255,255,0.06)",
-                        color: "rgba(255,255,255,0.55)", fontSize: 12,
-                        cursor: "pointer",
-                      }}
-                    >
-                      ✕
-                    </button>
+                    <button onClick={() => { fetch("/api/feedback", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ product_name: result.name, feedback: "bad", feedback_note: feedbackNote || null }) }); setFeedbackSent("sent"); }} style={{ flex: 1, padding: 10, borderRadius: 10, background: `rgba(${accentRgb},0.1)`, border: `1px solid rgba(${accentRgb},0.2)`, color: accentColor, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>{feedbackNote.trim() ? "Wyślij" : "Wyślij bez komentarza"}</button>
+                    <button onClick={() => { setFeedbackSent(null); setFeedbackNote(""); }} style={{ padding: "10px 14px", borderRadius: 10, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.55)", fontSize: 12, cursor: "pointer" }}>✕</button>
                   </div>
                 </div>
               </div>
-            ) : feedbackSent === "sent" ? (
-              <p style={{ fontSize: 12, color: "rgba(110,252,180,0.5)", textAlign: "center" }}>
-                Dzięki za opinię! 🙏
-              </p>
-            ) : (
-              <div className="flex items-center justify-center gap-2.5">
-                <button
-                  onClick={() => {
-                    setFeedbackSent("good");
-                    fetch("/api/feedback", {
-                      method: "POST",
-                      headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({ product_name: result.name, feedback: "good" }),
-                    });
-                  }}
-                  className="active:scale-95 transition-transform"
-                  style={{
-                    padding: "8px 16px", borderRadius: 10,
-                    background: "rgba(255,255,255,0.03)",
-                    border: "1px solid rgba(255,255,255,0.06)",
-                    color: "rgba(255,255,255,0.55)", fontSize: 12,
-                  }}
-                >
-                  👍 Trafna analiza
-                </button>
-                <button
-                  onClick={() => setFeedbackSent("bad")}
-                  className="active:scale-95 transition-transform"
-                  style={{
-                    padding: "8px 16px", borderRadius: 10,
-                    background: "rgba(255,255,255,0.03)",
-                    border: "1px solid rgba(255,255,255,0.06)",
-                    color: "rgba(255,255,255,0.55)", fontSize: 12,
-                  }}
-                >
-                  👎 Błędna
-                </button>
-              </div>
             )}
+            <style>{`@keyframes feedbackSlideIn { from { opacity: 0; max-height: 0; } to { opacity: 1; max-height: 200px; } }`}</style>
           </div>
-          <style>{`@keyframes feedbackSlideIn { from { opacity: 0; max-height: 0; } to { opacity: 1; max-height: 200px; } }`}</style>
-        </div>
+        )}
 
         {/* ─── Meal items — interactive portion editor (meal mode) ─── */}
         {mealResult && mealResult.items && mealResult.items.length > 0 && (
@@ -584,14 +637,103 @@ export default function WynikiPage() {
           </div>
         )}
 
+        {/* ─── PORTION & QUANTITY (food and suplement only, NOT cosmetics/meal/forma) ─── */}
+        {(scanType === "food" || isSuplement) && !isTextSearch && !isMeal && !isForma && (
+          <div className="anim-fade-up-1" style={{ margin: "0 16px 12px" }}>
+            <div style={{ padding: 18, borderRadius: 16, background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.06)" }}>
+              {/* Quantity row */}
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+                <span style={{ fontSize: 13, fontWeight: 700, color: "rgba(255,255,255,0.7)" }}>📦 Ilość</span>
+                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                  <button
+                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                    style={{ width: 32, height: 32, borderRadius: 10, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.6)", fontSize: 16, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+                  >−</button>
+                  <span style={{ fontSize: 18, fontWeight: 800, color: "#fff", minWidth: 24, textAlign: "center" }}>{quantity}</span>
+                  <button
+                    onClick={() => setQuantity(quantity + 1)}
+                    style={{ width: 32, height: 32, borderRadius: 10, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.6)", fontSize: 16, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+                  >+</button>
+                </div>
+              </div>
+              {/* Separator */}
+              <div style={{ height: 1, background: "rgba(255,255,255,0.06)", marginBottom: 14 }} />
+              {/* Portion slider */}
+              <div>
+                <span style={{ fontSize: 13, fontWeight: 700, color: "rgba(255,255,255,0.7)" }}>🍽️ Ile zjadłeś?</span>
+                <input
+                  type="range" min={0} max={100} step={1} value={portion}
+                  onChange={(e) => setPortion(+e.target.value)}
+                  style={{ width: "100%", marginTop: 10, accentColor: accentColor }}
+                />
+                <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4 }}>
+                  <span style={{ fontSize: 10, color: "rgba(255,255,255,0.3)" }}>0%</span>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: "rgba(255,255,255,0.7)" }}>{portion}%</span>
+                  <span style={{ fontSize: 10, color: "rgba(255,255,255,0.3)" }}>100%</span>
+                </div>
+                {/* Quick buttons */}
+                <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+                  {[25, 50, 75, 100].map((v) => (
+                    <button
+                      key={v}
+                      onClick={() => setPortion(v)}
+                      style={{
+                        flex: 1, padding: "6px 0", borderRadius: 10, fontSize: 12, fontWeight: 700, cursor: "pointer",
+                        background: portion === v ? `rgba(${accentRgb},0.15)` : "rgba(255,255,255,0.03)",
+                        border: portion === v ? `1px solid rgba(${accentRgb},0.3)` : "1px solid rgba(255,255,255,0.06)",
+                        color: portion === v ? accentColor : "rgba(255,255,255,0.4)",
+                      }}
+                    >{v}%</button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ─── MACRO TABLE (food and suplement only, NOT cosmetics) ─── */}
+        {(scanType === "food" || isSuplement) && !isTextSearch && !isMeal && !isForma && (() => {
+          const n = foodResult ? extractFoodNutrition(foodResult) : { cal100: 0, prot100: 0, fat100: 0, carb100: 0 };
+          const multiplier = quantity * portion / 100;
+          const kcal = Math.round(n.cal100 * multiplier);
+          const prot = Math.round(n.prot100 * multiplier * 10) / 10;
+          const fat = Math.round(n.fat100 * multiplier * 10) / 10;
+          const carb = Math.round(n.carb100 * multiplier * 10) / 10;
+          return (
+            <div className="anim-fade-up-1" style={{ margin: "0 16px 12px" }}>
+              <div style={{ padding: 18, borderRadius: 16, background: `rgba(${accentRgb},0.04)`, border: `1px solid rgba(${accentRgb},0.1)` }}>
+                <p style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.35)", letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 14 }}>WARTOŚCI ODŻYWCZE</p>
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                  {[
+                    { icon: "🔥", label: "Kalorie", value: `${kcal} kcal` },
+                    { icon: "🥩", label: "Białko", value: `${prot} g` },
+                    { icon: "🧈", label: "Tłuszcz", value: `${fat} g` },
+                    { icon: "🍞", label: "Węglowodany", value: `${carb} g` },
+                  ].map((row) => (
+                    <div key={row.label} style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                      <span style={{ fontSize: 13, color: "rgba(255,255,255,0.55)" }}>{row.icon} {row.label}</span>
+                      <span style={{ fontSize: 14, fontWeight: 700, color: "#fff" }}>{row.value}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          );
+        })()}
+
         {/* ─── 2. ALLERGEN BANNER ─── */}
         {!isCosmetics && !isMeal && !isForma && !isTextSearch && result.allergens && result.allergens.length > 0 && (
-          <div className="mt-4 anim-fade-up-1">
-            <div className={`rounded-[20px] p-5 ${isDark ? "bg-amber-500/10 border border-amber-500/20" : "bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-100"}`}>
-              <p className={`text-[13px] font-bold mb-3 ${isDark ? "text-amber-400" : "text-amber-700"}`}>⚠️ Alergeny</p>
+          <div className="anim-fade-up-1" style={{ margin: "0 16px 12px" }}>
+            <div style={{ padding: 16, borderRadius: 16, background: "rgba(234,179,8,0.04)", border: "1px solid rgba(234,179,8,0.12)" }}>
+              <p style={{ fontSize: 13, fontWeight: 700, color: "#FBBF24", marginBottom: 10 }}>⚠️ Alergeny</p>
               <div className="flex flex-wrap gap-2">
                 {result.allergens.map((a, i) => (
-                  <button key={i} onClick={() => setSelectedIngredient(a)} className={`text-[11px] font-bold px-3 py-1.5 rounded-full active:scale-95 transition-transform ${isDark ? "bg-amber-500/15 text-amber-400" : "bg-white/80 text-amber-700 shadow-sm border border-amber-200"}`}>
+                  <button
+                    key={i}
+                    onClick={() => setSelectedIngredient(a)}
+                    className="active:scale-95 transition-transform"
+                    style={{ fontSize: 11, fontWeight: 700, padding: "6px 12px", borderRadius: 999, background: "rgba(234,179,8,0.08)", color: "rgba(234,179,8,0.85)", border: "1px solid rgba(234,179,8,0.15)", cursor: "pointer" }}
+                  >
                     {a} →
                   </button>
                 ))}
@@ -602,14 +744,14 @@ export default function WynikiPage() {
 
         {/* Health alerts (food only, when profile exists) */}
         {foodResult && !isTextSearch && !isForma && profile && profile.onboarding_complete && (
-          <div className="mt-4 anim-fade-up-1">
+          <div className="anim-fade-up-1" style={{ margin: isMeal ? "16px 0 0" : "12px 16px 0" }}>
             <HealthAlerts result={foodResult} profile={profile} />
           </div>
         )}
 
         {/* ─── 3. DIARY PANEL (food + meal) ─── */}
         {(foodResult || mealResult) && !isForma && !isTextSearch && (
-          <div className="mt-4">
+          <div style={{ margin: isMeal ? "16px 0 0" : "12px 16px 0" }}>
             <DiaryPanel
               result={(foodResult || mealResult)!}
               scanId={item.id}
@@ -630,7 +772,7 @@ export default function WynikiPage() {
         )}
 
         {!isMeal && !isForma && (
-          <div className={`${isCosmetics || isSuplement ? "mt-2" : "mt-5"} anim-fade-up-2`}>
+          <div className="anim-fade-up-2" style={{ margin: "8px 16px 0" }}>
             <ResultTabs result={result} scanType={scanType} isCosmetics={isCosmetics} onIngredientClick={setSelectedIngredient} />
           </div>
         )}
@@ -645,12 +787,12 @@ export default function WynikiPage() {
               </span>
             </div>
           ) : (
-            <div className={`mt-4 rounded-[20px] p-5 anim-fade-up-1 ${isDark ? "velvet-card" : "card-elevated"}`}>
-              <p className={`text-[13px] font-bold mb-2 ${isDark ? "text-white" : "text-[#1A3A0A]"}`}>
+            <div className="anim-fade-up-1" style={{ margin: "12px 16px 0", padding: 18, borderRadius: 16, background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.06)" }}>
+              <p style={{ fontSize: 13, fontWeight: 700, color: "rgba(255,255,255,0.8)", marginBottom: 8 }}>
                 🥄 Łyżeczki cukru: {sugarTeaspoons}
               </p>
               <SugarSpoons count={sugarTeaspoons} />
-              <p className={`text-[11px] mt-2 ${isDark ? "text-white/55" : "text-gray-400"}`}>
+              <p style={{ fontSize: 11, marginTop: 8, color: "rgba(255,255,255,0.4)" }}>
                 1 łyżeczka = 4g cukru · WHO zaleca max 6 dziennie
               </p>
             </div>
@@ -658,7 +800,11 @@ export default function WynikiPage() {
         ) : null}
 
         {/* FunComparisons — food/meal only (cosmetics data is now in tabs) */}
-        {!isCosmetics && <FunComparisons items={funComparisons} isDark={isDark} />}
+        {!isCosmetics && (
+          <div style={{ margin: isMeal || isForma ? "0" : "0 16px" }}>
+            <FunComparisons items={funComparisons} isDark={isDark} />
+          </div>
+        )}
 
         {/* CheckForm body analysis */}
         {formaResult && (
@@ -837,25 +983,27 @@ export default function WynikiPage() {
         )}
 
         {/* ─── SHARE BUTTON ─── */}
-        <button
-          onClick={handleShare}
-          disabled={sharing}
-          style={{
-            width: "100%",
-            padding: 14,
-            borderRadius: 14,
-            background: "rgba(255,255,255,0.04)",
-            border: "1px solid rgba(255,255,255,0.08)",
-            color: shareCopied ? "#22c55e" : "rgba(255,255,255,0.6)",
-            fontWeight: 700,
-            fontSize: 13,
-            marginTop: 8,
-            cursor: "pointer",
-            transition: "all 0.2s",
-          }}
-        >
-          {sharing ? "Generuję..." : shareCopied ? "✅ Link skopiowany!" : "📤 Udostępnij wynik"}
-        </button>
+        <div style={{ margin: isMeal || isForma ? "0" : "0 16px" }}>
+          <button
+            onClick={handleShare}
+            disabled={sharing}
+            style={{
+              width: "100%",
+              padding: 14,
+              borderRadius: 14,
+              background: "rgba(255,255,255,0.04)",
+              border: "1px solid rgba(255,255,255,0.08)",
+              color: shareCopied ? "#22c55e" : "rgba(255,255,255,0.55)",
+              fontWeight: 700,
+              fontSize: 13,
+              marginTop: 8,
+              cursor: "pointer",
+              transition: "all 0.2s",
+            }}
+          >
+            {sharing ? "Generuję..." : shareCopied ? "✅ Link skopiowany!" : "📤 Udostępnij wynik"}
+          </button>
+        </div>
 
         {/* Hidden share card for html2canvas */}
         <div style={{ position: "absolute", left: -9999, top: 0 }}>
