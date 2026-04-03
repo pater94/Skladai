@@ -847,7 +847,8 @@ export default function Home() {
           </div>
         )}
 
-        {/* ══ 7. TIP BANNER ══ */}
+        {/* ══ 7. TIP BANNER (only cosmetics & suplement) ══ */}
+        {(isCosmetics || isSuplement) && (
         <div
           className="mt-5 p-4 rounded-2xl anim-fade-up-3 transition-all duration-500"
           style={{
@@ -857,7 +858,7 @@ export default function Home() {
           }}
         >
           <div className="flex items-start gap-3">
-            <span className="text-base mt-0.5">{isMeal ? "🍽️" : isCosmetics ? "✨" : isSuplement ? "💊" : "🌿"}</span>
+            <span className="text-base mt-0.5">{isCosmetics ? "✨" : "💊"}</span>
             <div>
               <p
                 className="text-[9px] tracking-[1.5px] uppercase font-semibold mb-1.5 transition-colors duration-300"
@@ -871,6 +872,7 @@ export default function Home() {
             </div>
           </div>
         </div>
+        )}
 
         {/* ══ Full History ══ */}
         <HistoryList isCosmetics={true} mode={mode} />
