@@ -79,7 +79,7 @@ export default function ProfilPage() {
   }, []);
 
   const handleSaveWeight = useCallback(() => {
-    const w = parseFloat(newWeight);
+    const w = parseFloat(newWeight.replace(",", "."));
     if (isNaN(w) || w < 20 || w > 400) return;
     const entry: WeightEntry = { date: newWeightDate, weight: w, source: "manual" };
     const updated = [...weightHistory, entry].sort((a, b) => a.date.localeCompare(b.date));
@@ -401,7 +401,7 @@ export default function ProfilPage() {
                 <input type="date" value={newWeightDate} onChange={(e) => setNewWeightDate(e.target.value)}
                   style={{ width: "100%", padding: "8px 10px", borderRadius: 10, border: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.04)", color: "#fff", fontSize: 13, colorScheme: "dark" }} />
               </div>
-              <button onClick={handleSaveWeight} style={{ padding: "8px 16px", borderRadius: 10, background: "#6efcb4", color: "#0a0f0d", fontSize: 13, fontWeight: 700, border: "none", cursor: "pointer", flexShrink: 0 }}>
+              <button type="button" onClick={handleSaveWeight} style={{ padding: "8px 16px", borderRadius: 10, background: "#6efcb4", color: "#0a0f0d", fontSize: 13, fontWeight: 700, border: "none", cursor: "pointer", flexShrink: 0, WebkitAppearance: "none" }}>
                 Zapisz
               </button>
             </div>
