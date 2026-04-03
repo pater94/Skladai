@@ -14,7 +14,7 @@ const TABS = [
 // Detect theme from pathname
 function getThemeColors(pathname: string) {
   if (pathname === "/forma" || pathname === "/biegacz") {
-    return { bg: "bg-[#111111]", border: "border-white/5", active: "#3B82F6", inactive: "rgba(255,255,255,0.25)", isDark: true };
+    return { bg: "", border: "border-white/5", active: "#f97316", inactive: "rgba(255,255,255,0.25)", isDark: true, customBg: "#0a0e0c" };
   }
   if (pathname === "/promile") {
     return { bg: "bg-[#0A0A12]", border: "border-white/5", active: "#818CF8", inactive: "rgba(255,255,255,0.2)", isDark: true };
