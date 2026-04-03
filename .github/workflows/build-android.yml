@@ -36,9 +36,9 @@ jobs:
         working-directory: skladai/android
         env:
           KEYSTORE_FILE: upload-keystore.jks
-          KEYSTORE_PASSWORD: skladai123
+          KEYSTORE_PASSWORD: skladai2026
           KEY_ALIAS: upload
-          KEY_PASSWORD: skladai123
+          KEY_PASSWORD: skladai2026
         run: |
           chmod +x ./gradlew
           ./gradlew bundleRelease
@@ -54,9 +54,9 @@ jobs:
         working-directory: skladai/android
         env:
           KEYSTORE_FILE: upload-keystore.jks
-          KEYSTORE_PASSWORD: skladai123
+          KEYSTORE_PASSWORD: skladai2026
           KEY_ALIAS: upload
-          KEY_PASSWORD: skladai123
+          KEY_PASSWORD: skladai2026
         run: ./gradlew assembleRelease
 
       - name: Upload APK artifact
