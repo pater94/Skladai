@@ -82,7 +82,7 @@ export default function PhotoPreview({
   // ── DUAL PHOTO VIEW ──
   if (isDual) {
     return (
-      <div style={{ padding: "0 2px" }} className="anim-fade-scale">
+      <div style={{ padding: "0 2px 120px" }} className="anim-fade-scale">
         {/* Header */}
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
           <div onClick={onBack} style={{ width: 32, height: 32, borderRadius: 10, background: t.accentLight, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, cursor: "pointer" }}>←</div>
@@ -150,7 +150,7 @@ export default function PhotoPreview({
 
   // ── SINGLE PHOTO VIEW ──
   return (
-    <div style={{ padding: "0 2px", position: "relative" }} className="anim-fade-scale">
+    <div style={{ padding: "0 2px 120px", position: "relative" }} className="anim-fade-scale">
       {/* Ambient glow */}
       <div style={{
         position: "absolute", top: -60, left: "50%", transform: "translateX(-50%)",
