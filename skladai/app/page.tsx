@@ -840,7 +840,7 @@ export default function Home() {
                   <span className="text-white/50 text-[14px]">🔍</span>
                   <input
                     type="text"
-                    placeholder="Wpisz lub powiedz co jesz..."
+                    placeholder="np. 2 jajka, kanapka z serem, kawa..."
                     className="flex-1 bg-transparent text-white/80 text-[13px] outline-none placeholder:text-white/40"
                     onFocus={() => {
                       // Navigate to a search-focused view or expand inline

@@ -377,7 +377,7 @@ export default function FoodSearch({ mode, onAddToDiary }: FoodSearchProps) {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Wpisz lub powiedz co jesz..."
+            placeholder="np. 2 jajka, kanapka z serem, kawa..."
             className="w-full pl-9 pr-16 py-[10px] rounded-[11px] text-[#1A3A0A] text-[14px] placeholder:opacity-30 placeholder:text-[13px] focus:outline-none focus:ring-2 focus:ring-[#84CC16]/30 transition-all"
             style={{ background: "rgba(26,58,10,0.04)" }}
           />

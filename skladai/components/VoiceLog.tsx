@@ -493,21 +493,25 @@ export default function VoiceLog({ mode, onComplete, onClose, initialOpen = fals
   const totalAlcG = mode === "alcohol" ? totalAlcoholGrams(items) : 0;
   const estBAC = mode === "alcohol" ? estimateBAC(totalAlcG, 80, "male") : 0;
 
-  // Theme colors
+  // Theme colors — dark mode for all
   const isFood = mode === "food";
-  const accent = isFood ? "green" : "indigo";
-  const bgOverlay = isFood ? "bg-white" : "bg-gray-900";
-  const textMain = isFood ? "text-gray-900" : "text-gray-100";
-  const textSub = isFood ? "text-gray-500" : "text-gray-400";
-  const btnPrimary = isFood
-    ? "bg-green-500 hover:bg-green-600 text-white"
-    : "bg-indigo-500 hover:bg-indigo-600 text-white";
-  const btnSecondary = isFood
-    ? "bg-green-50 text-green-700 hover:bg-green-100"
-    : "bg-indigo-900/50 text-indigo-300 hover:bg-indigo-900";
-  const cardBg = isFood ? "bg-gray-50" : "bg-gray-800";
-  const borderColor = isFood ? "border-gray-200" : "border-gray-700";
-  const sliderAccent = isFood ? "accent-green-500" : "accent-indigo-500";
+  const bgOverlay = "bg-[#0a0e0c]";
+  const textMain = "text-gray-100";
+  const textSub = "text-gray-400";
+  const btnPrimary = "bg-gradient-to-r from-amber-500 to-yellow-500 text-black font-bold";
+  const btnSecondary = "bg-white/[0.04] text-white/60 border border-white/[0.06]";
+  const cardBg = "bg-white/[0.03]";
+  const borderColor = "border-white/[0.06]";
+  const sliderAccent = "accent-amber-400";
+
+  const voiceHints = [
+    "2 banany",
+    "200g piersi z kurczaka",
+    "Talerz rosołu",
+    "Kanapka z serem",
+    "3 jajka na twardo",
+    "Kawa z mlekiem 2%",
+  ];
 
   return (
     <>
@@ -532,7 +536,7 @@ export default function VoiceLog({ mode, onComplete, onClose, initialOpen = fals
         <div className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center">
           {/* Backdrop */}
           <div
-            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
             onClick={handleClose}
           />
 
@@ -543,86 +547,149 @@ export default function VoiceLog({ mode, onComplete, onClose, initialOpen = fals
               rounded-t-2xl sm:rounded-2xl shadow-2xl p-5
               ${bgOverlay} ${textMain}
             `}
+            style={{ border: "1px solid rgba(255,255,255,0.06)" }}
           >
             {/* Close */}
             <button
               onClick={handleClose}
-              className={`absolute top-3 right-3 w-8 h-8 rounded-full flex items-center justify-center ${isFood ? "hover:bg-gray-100" : "hover:bg-gray-800"} ${textSub}`}
+              style={{
+                position: "absolute", top: 12, right: 12, width: 32, height: 32,
+                borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center",
+                background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)",
+                color: "rgba(255,255,255,0.5)", fontSize: 14, cursor: "pointer",
+              }}
               aria-label="Zamknij"
             >
               ✕
             </button>
 
-            <h2 className="text-lg font-bold mb-4">
+            <h2 style={{ fontSize: 16, fontWeight: 700, color: "white", marginBottom: 16 }}>
               {isFood ? "🎙️ Nagraj posiłek" : "🎙️ Nagraj alkohol"}
             </h2>
 
             {/* ===== IDLE ===== */}
             {phase === "idle" && (
-              <div className="flex flex-col items-center gap-4 py-6">
+              <div className="flex flex-col items-center gap-4 py-4">
+                {/* Pulsing mic circle */}
                 <button
                   onClick={startRecording}
-                  className={`
-                    w-20 h-20 rounded-full flex items-center justify-center text-3xl
-                    shadow-lg active:scale-95 transition-all
-                    ${btnPrimary}
-                  `}
+                  style={{
+                    width: 80, height: 80, borderRadius: "50%",
+                    background: "rgba(110,252,180,0.15)", border: "2px solid rgba(110,252,180,0.3)",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    cursor: "pointer", transition: "all 0.2s",
+                    animation: "voicePulse 1.5s ease-in-out infinite",
+                  }}
+                  className="active:scale-95"
                 >
-                  🎙️
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#6efcb4" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="9" y="1" width="6" height="12" rx="3" />
+                    <path d="M5 10a7 7 0 0 0 14 0" />
+                    <line x1="12" y1="17" x2="12" y2="21" />
+                    <line x1="8" y1="21" x2="16" y2="21" />
+                  </svg>
                 </button>
-                <p className={`text-sm ${textSub}`}>
-                  {isFood ? "Powiedz co zjadłeś..." : "Powiedz co piłeś..."}
+                <p style={{ fontSize: 16, fontWeight: 600, color: "#6efcb4" }}>
+                  Kliknij i mów
                 </p>
                 {error && (
                   <p className="text-sm text-red-500 text-center px-4">{error}</p>
                 )}
+
+                {/* Hints grid */}
+                <div style={{ width: "100%", marginTop: 8 }}>
+                  <p style={{ fontSize: 14, fontWeight: 600, color: "rgba(255,255,255,0.7)", marginBottom: 10, textAlign: "center" }}>
+                    Powiedz co zjadłeś:
+                  </p>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                    {voiceHints.map((hint, i) => (
+                      <div key={i} style={{
+                        padding: "8px 14px", borderRadius: 10,
+                        background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)",
+                        fontSize: 12, color: "rgba(255,255,255,0.5)", textAlign: "center",
+                      }}>{hint}</div>
+                    ))}
+                  </div>
+                </div>
               </div>
             )}
 
             {/* ===== RECORDING ===== */}
             {phase === "recording" && (
-              <div className="flex flex-col items-center gap-4 py-4">
-                {/* Pulsing red circle */}
-                <div className="relative w-20 h-20 flex items-center justify-center">
-                  <span className="absolute inset-0 rounded-full bg-red-500/30 animate-ping" />
-                  <span className="relative w-16 h-16 rounded-full bg-red-500 flex items-center justify-center shadow-lg">
-                    <span className="text-2xl">🎙️</span>
-                  </span>
+              <div className="flex flex-col items-center gap-3 py-3">
+                {/* Pulsing green circle */}
+                <div style={{
+                  width: 80, height: 80, borderRadius: "50%",
+                  background: "rgba(110,252,180,0.15)", border: "2px solid rgba(110,252,180,0.3)",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  animation: "voicePulse 1.5s ease-in-out infinite",
+                }}>
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#6efcb4" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="9" y="1" width="6" height="12" rx="3" />
+                    <path d="M5 10a7 7 0 0 0 14 0" />
+                    <line x1="12" y1="17" x2="12" y2="21" />
+                    <line x1="8" y1="21" x2="16" y2="21" />
+                  </svg>
+                </div>
+
+                {/* Live text or "Słucham..." */}
+                <div style={{ minHeight: 28, textAlign: "center", padding: "0 16px" }}>
+                  {transcript && <span style={{ fontSize: 14, fontWeight: 600, color: "#6efcb4" }}>{transcript} </span>}
+                  {interimText && <span style={{ fontSize: 14, color: "rgba(110,252,180,0.6)", fontStyle: "italic" }}>{interimText}</span>}
+                  {!transcript && !interimText && (
+                    <span style={{ fontSize: 16, fontWeight: 600, color: "#6efcb4" }}>Słucham...</span>
+                  )}
                 </div>
 
                 {/* Sine wave */}
                 <SineWave active={phase === "recording"} />
 
-                <p className={`text-sm font-medium ${textSub}`}>
-                  {isFood ? "Mów co zjadłeś..." : "Mów co piłeś..."}
-                </p>
-
-                {/* Live interim text */}
-                <div className={`min-h-[2rem] text-center text-sm px-4 ${textSub}`}>
-                  {transcript && <span className="font-medium">{transcript} </span>}
-                  {interimText && <span className="opacity-60 italic">{interimText}</span>}
-                  {!transcript && !interimText && (
-                    <span className="opacity-40">Słucham...</span>
-                  )}
-                </div>
-
                 {/* Stop button */}
                 <button
                   onClick={stopRecording}
-                  className="px-6 py-2 rounded-full bg-red-500 hover:bg-red-600 text-white text-sm font-semibold shadow"
+                  style={{
+                    padding: "10px 28px", borderRadius: 999,
+                    background: "rgba(239,68,68,0.15)", border: "1px solid rgba(239,68,68,0.3)",
+                    color: "#ef4444", fontSize: 13, fontWeight: 700, cursor: "pointer",
+                  }}
+                  className="active:scale-95 transition-transform"
                 >
                   ⏹ STOP
                 </button>
+
+                {/* Hints — smaller during recording but VISIBLE */}
+                <div style={{ width: "100%", marginTop: 4 }}>
+                  <p style={{ fontSize: 12, fontWeight: 600, color: "rgba(255,255,255,0.5)", marginBottom: 8, textAlign: "center" }}>
+                    Powiedz co zjadłeś:
+                  </p>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
+                    {voiceHints.map((hint, i) => (
+                      <div key={i} style={{
+                        padding: "5px 10px", borderRadius: 8,
+                        background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.05)",
+                        fontSize: 10, color: "rgba(255,255,255,0.35)", textAlign: "center",
+                      }}>{hint}</div>
+                    ))}
+                  </div>
+                </div>
               </div>
             )}
 
             {/* ===== PROCESSING ===== */}
             {phase === "processing" && (
               <div className="flex flex-col items-center gap-4 py-8">
-                <div className={`w-10 h-10 border-4 border-${accent}-500 border-t-transparent rounded-full animate-spin`} />
-                <p className={`text-sm ${textSub}`}>Analizuję: &ldquo;{transcript}&rdquo;</p>
+                <div style={{ width: 40, height: 40, border: "4px solid rgba(251,191,36,0.3)", borderTopColor: "#FBBF24", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
+                <p style={{ fontSize: 13, color: "rgba(255,255,255,0.55)" }}>Analizuję: &ldquo;{transcript}&rdquo;</p>
               </div>
             )}
+
+            <style>{`
+              @keyframes voicePulse {
+                0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(110,252,180,0); }
+                50% { transform: scale(1.15); box-shadow: 0 0 24px rgba(110,252,180,0.2); }
+              }
+              @keyframes spin { to { transform: rotate(360deg); } }
+            `}</style>
 
             {/* ===== RESULTS ===== */}
             {phase === "results" && (
@@ -647,7 +714,7 @@ export default function VoiceLog({ mode, onComplete, onClose, initialOpen = fals
                           onChange={e => updateItem(item.id, { name: e.target.value })}
                           className={`
                             text-sm font-semibold bg-transparent border-b
-                            ${borderColor} focus:outline-none focus:border-${accent}-500
+                            ${borderColor} focus:outline-none focus:border-amber-500
                             w-full min-w-0
                           `}
                         />
@@ -736,11 +803,11 @@ export default function VoiceLog({ mode, onComplete, onClose, initialOpen = fals
                 </button>
 
                 {/* SUMA */}
-                <div className={`${cardBg} rounded-xl p-3 border-2 border-${accent}-500/30`}>
+                <div className={`${cardBg} rounded-xl p-3 border-2 border-amber-500/30`}>
                   <div className="text-xs font-bold mb-2 uppercase tracking-wider">SUMA</div>
                   <div className="grid grid-cols-4 gap-1 text-center text-sm">
                     <div>
-                      <div className={`font-bold text-base text-${accent}-500`}>{totalCal}</div>
+                      <div className="font-bold text-base text-amber-500">{totalCal}</div>
                       <div className={`text-[10px] ${textSub}`}>kcal</div>
                     </div>
                     <div>

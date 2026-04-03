@@ -300,6 +300,7 @@ export default function WynikiPage() {
   const [portion, setPortion] = useState(100);
   const [quantity, setQuantity] = useState(1);
   const [mealWeights, setMealWeights] = useState<Record<number, number>>({});
+  const [textWeights, setTextWeights] = useState<Record<number, number>>({});
 
   useEffect(() => {
     const id = params.id as string;
@@ -810,6 +811,262 @@ export default function WynikiPage() {
                     ⚠️ Wartości szacunkowe na podstawie zdjęcia ±20%
                   </p>
                 </div>
+              </>
+            );
+          })()
+        ) : isTextSearch && textSearchResult ? (
+          /* --- Premium card for voice/text input --- */
+          (() => {
+            const mealColor = "#FBBF24";
+            const tsItems = textSearchResult.items || [];
+            const tsScoreColor = result.score >= 7 ? "#22c55e" : result.score >= 4 ? "#f59e0b" : "#ef4444";
+
+            // Initialize weights
+            if (tsItems.length > 0 && Object.keys(textWeights).length === 0) {
+              const init: Record<number, number> = {};
+              tsItems.forEach((it, i) => { init[i] = it.default_portion_g || 100; });
+              setTimeout(() => setTextWeights(init), 0);
+            }
+
+            const getWeight = (i: number) => textWeights[i] ?? tsItems[i]?.default_portion_g ?? 100;
+            const getScaled = (i: number, field: "calories" | "protein" | "fat" | "carbs") => {
+              const it = tsItems[i];
+              if (!it) return 0;
+              const w = getWeight(i);
+              const per100 = field === "calories" ? it.calories_per_100g : field === "protein" ? it.protein_per_100g : field === "fat" ? it.fat_per_100g : it.carbs_per_100g;
+              return Math.round(per100 * w / 100 * 10) / 10;
+            };
+            const totalKcal = tsItems.reduce((s, _, i) => s + Math.round(getScaled(i, "calories")), 0);
+            const totalProtein = tsItems.reduce((s, _, i) => s + getScaled(i, "protein"), 0).toFixed(1);
+            const totalFat = tsItems.reduce((s, _, i) => s + getScaled(i, "fat"), 0).toFixed(1);
+            const totalCarbs = tsItems.reduce((s, _, i) => s + getScaled(i, "carbs"), 0).toFixed(1);
+
+            const ingredientColors = ["#f97316", "#a855f7", "#FBBF24", "#22c55e", "#3b82f6", "#ef4444"];
+            const isMultiItem = tsItems.length > 1;
+
+            return (
+              <>
+                {/* Header Card — compact score */}
+                <div
+                  className="anim-fade-up"
+                  style={{
+                    margin: "0 16px 16px", padding: "20px 20px 18px", borderRadius: 20,
+                    background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.06)",
+                    backdropFilter: "blur(20px)", position: "relative", overflow: "hidden",
+                  }}
+                >
+                  {/* Gradient stripe */}
+                  <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: `linear-gradient(90deg, transparent, ${mealColor}, transparent)`, zIndex: 3 }} />
+                  {/* Ambient glow */}
+                  <div style={{ position: "absolute", top: -20, right: -20, width: 120, height: 120, borderRadius: "50%", background: `radial-gradient(circle, ${tsScoreColor}15 0%, transparent 70%)`, filter: "blur(20px)", animation: "breathe 3s ease-in-out infinite" }} />
+
+                  {/* Name + compact score */}
+                  <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 19, fontWeight: 800, color: "white", lineHeight: 1.3, marginBottom: 4 }}>
+                        {result.name}
+                      </div>
+                      <div style={{ fontSize: 11, color: "rgba(255,255,255,0.45)" }}>
+                        🎙️ Wpisane ręcznie
+                      </div>
+                    </div>
+                    {/* Compact score badge */}
+                    <div style={{
+                      width: 56, height: 56, borderRadius: 16, marginLeft: 12, flexShrink: 0,
+                      background: `${tsScoreColor}10`, border: `1.5px solid ${tsScoreColor}25`,
+                      backdropFilter: "blur(8px)", boxShadow: `0 0 20px ${tsScoreColor}10`,
+                      display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+                    }}>
+                      <div style={{ fontSize: 24, fontWeight: 900, color: tsScoreColor, lineHeight: 1 }}>{result.score}</div>
+                      <div style={{ fontSize: 8, color: "rgba(255,255,255,0.4)" }}>/10</div>
+                    </div>
+                  </div>
+
+                  {/* Tags */}
+                  <div style={{ marginTop: 10, display: "flex", gap: 6, flexWrap: "wrap" }}>
+                    <span style={{
+                      padding: "3px 10px", borderRadius: 7, fontSize: 11, fontWeight: 600,
+                      background: `${tsScoreColor}18`, color: tsScoreColor, border: `1px solid ${tsScoreColor}30`,
+                    }}>{result.verdict_short || label}</span>
+                    <span style={{
+                      padding: "3px 10px", borderRadius: 7, fontSize: 11, fontWeight: 500,
+                      background: isMultiItem ? "rgba(251,191,36,0.08)" : "rgba(110,252,180,0.08)",
+                      color: isMultiItem ? "rgba(251,191,36,0.8)" : "rgba(110,252,180,0.8)",
+                      border: isMultiItem ? "1px solid rgba(251,191,36,0.15)" : "1px solid rgba(110,252,180,0.15)",
+                    }}>{isMultiItem ? "🍽️ Posiłek" : "🍎 Produkt"}</span>
+                  </div>
+
+                  {/* AI comment */}
+                  <div style={{ marginTop: 14, padding: 13, borderRadius: 13, background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.05)" }}>
+                    <p style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", lineHeight: 1.5, margin: 0 }}>
+                      {result.verdict}
+                    </p>
+                  </div>
+
+                  {/* Feedback row */}
+                  <div style={{ marginTop: 14, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <span style={{ fontSize: 14, fontWeight: 700, color: mealColor }}>⚡ {totalKcal} kcal</span>
+                    <div style={{ display: "flex", gap: 8 }}>
+                      {feedbackSent === null ? (
+                        <>
+                          <button onClick={() => { setFeedbackSent("good"); fetch("/api/feedback", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ product_name: result.name, feedback: "good" }) }); }} className="active:scale-95 transition-transform" style={{ padding: "6px 14px", borderRadius: 10, border: "1px solid rgba(255,255,255,0.06)", background: "rgba(255,255,255,0.03)", color: "rgba(255,255,255,0.5)", fontSize: 12, cursor: "pointer" }}>👍 Trafne</button>
+                          <button onClick={() => setFeedbackSent("bad")} className="active:scale-95 transition-transform" style={{ padding: "6px 14px", borderRadius: 10, border: "1px solid rgba(255,255,255,0.06)", background: "rgba(255,255,255,0.03)", color: "rgba(255,255,255,0.5)", fontSize: 12, cursor: "pointer" }}>👎 Błędne</button>
+                        </>
+                      ) : feedbackSent === "bad" ? null : (
+                        <span style={{ fontSize: 12, color: "rgba(255,255,255,0.4)" }}>Dzięki! 🙏</span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Expanded bad feedback */}
+                  {feedbackSent === "bad" && (
+                    <div style={{ marginTop: 10, overflow: "hidden", animation: "feedbackSlideIn 0.3s ease-out" }}>
+                      <div style={{ padding: 12, borderRadius: 14, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
+                        <p style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginBottom: 8, fontWeight: 600 }}>Co było nie tak?</p>
+                        <textarea autoFocus rows={2} maxLength={300} placeholder="Np. źle odczytał kalorie, to nie ten produkt..." value={feedbackNote} onChange={(e) => setFeedbackNote(e.target.value)} style={{ width: "100%", padding: "10px 12px", borderRadius: 10, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "#fff", fontSize: 12, resize: "none", outline: "none", fontFamily: "inherit" }} />
+                        <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+                          <button onClick={() => { fetch("/api/feedback", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ product_name: result.name, feedback: "bad", feedback_note: feedbackNote || null }) }); setFeedbackSent("sent"); }} style={{ flex: 1, padding: 10, borderRadius: 10, background: "rgba(251,191,36,0.1)", border: "1px solid rgba(251,191,36,0.2)", color: mealColor, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>{feedbackNote.trim() ? "Wyślij" : "Wyślij bez komentarza"}</button>
+                          <button onClick={() => { setFeedbackSent(null); setFeedbackNote(""); }} style={{ padding: "10px 14px", borderRadius: 10, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.55)", fontSize: 12, cursor: "pointer" }}>✕</button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  <style>{`@keyframes feedbackSlideIn { from { opacity: 0; max-height: 0; } to { opacity: 1; max-height: 200px; } }`}</style>
+                </div>
+
+                {/* Macro table */}
+                <div className="anim-fade-up-1" style={{
+                  margin: "0 16px 16px", padding: 18, borderRadius: 16,
+                  background: "rgba(251,191,36,0.05)", border: "1px solid rgba(251,191,36,0.12)",
+                }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.6)", marginBottom: 14, textTransform: "uppercase", letterSpacing: 1.5 }}>
+                    Podsumowanie posiłku
+                  </div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+                    {[
+                      { label: "Kalorie", value: totalKcal, unit: "kcal", mColor: mealColor, icon: "⚡" },
+                      { label: "Białko", value: totalProtein, unit: "g", mColor: "#60a5fa", icon: "🥩" },
+                      { label: "Tłuszcz", value: totalFat, unit: "g", mColor: "#fb923c", icon: "🫒" },
+                      { label: "Węglowodany", value: totalCarbs, unit: "g", mColor: "#4ade80", icon: "🌾" },
+                    ].map((m, i) => (
+                      <div key={i} style={{
+                        display: "flex", alignItems: "center", justifyContent: "space-between",
+                        padding: "10px 0",
+                        borderBottom: i < 3 ? "1px solid rgba(255,255,255,0.05)" : "none",
+                      }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                          <span style={{ fontSize: 14 }}>{m.icon}</span>
+                          <span style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", fontWeight: 500 }}>{m.label}</span>
+                        </div>
+                        <div style={{ display: "flex", alignItems: "baseline", gap: 4 }}>
+                          <span style={{ fontSize: 18, fontWeight: 800, color: m.mColor }}>{m.value}</span>
+                          <span style={{ fontSize: 11, color: "rgba(255,255,255,0.45)" }}>{m.unit}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Per-ingredient sliders */}
+                {tsItems.length > 0 && (
+                  <div className="anim-fade-up-2" style={{ margin: "0 16px 16px" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                      <span style={{ fontSize: 14, fontWeight: 700, color: "rgba(255,255,255,0.85)" }}>🍽️ Dopasuj porcje</span>
+                      <span style={{ fontSize: 11, color: "rgba(255,255,255,0.5)" }}>Przesuń suwaki</span>
+                    </div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                      {tsItems.map((comp, idx) => {
+                        const w = getWeight(idx);
+                        const minG = comp.min_portion_g || 10;
+                        const maxG = comp.max_portion_g || Math.round((comp.default_portion_g || 100) * 3);
+                        const scaledKcal = Math.round(comp.calories_per_100g * w / 100);
+                        const scaledP = (comp.protein_per_100g * w / 100).toFixed(1);
+                        const scaledF = (comp.fat_per_100g * w / 100).toFixed(1);
+                        const scaledC = (comp.carbs_per_100g * w / 100).toFixed(1);
+                        const compColor = ingredientColors[idx % ingredientColors.length];
+
+                        return (
+                          <div key={idx} style={{
+                            padding: "14px 16px", borderRadius: 14,
+                            background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.06)",
+                            backdropFilter: "blur(8px)",
+                            animation: `fadeInUp 0.4s ease ${0.3 + idx * 0.06}s both`,
+                          }}>
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                                <div style={{ width: 5, height: 20, borderRadius: 3, background: compColor, boxShadow: `0 0 8px ${compColor}40` }} />
+                                <span style={{ fontSize: 13, fontWeight: 700, color: "rgba(255,255,255,0.9)" }}>{comp.name}</span>
+                              </div>
+                              <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
+                                <span style={{ fontSize: 13, fontWeight: 800, color: compColor }}>{w}g</span>
+                                <span style={{ fontSize: 12, color: "rgba(255,255,255,0.45)" }}>{scaledKcal} kcal</span>
+                              </div>
+                            </div>
+
+                            <div style={{ position: "relative", height: 28, display: "flex", alignItems: "center", marginBottom: 2 }}>
+                              <input type="range" min={minG} max={maxG} step={5} value={w}
+                                onChange={e => setTextWeights(prev => ({ ...prev, [idx]: Number(e.target.value) }))}
+                                style={{ width: "100%", height: 6, appearance: "none", background: "transparent", outline: "none", position: "relative", zIndex: 2, cursor: "pointer" }}
+                              />
+                              <div style={{
+                                position: "absolute", top: "50%", left: 0, right: 0, height: 6,
+                                transform: "translateY(-50%)", borderRadius: 3, overflow: "hidden",
+                                background: "rgba(255,255,255,0.08)",
+                              }}>
+                                <div style={{
+                                  width: `${Math.max(0, Math.min(100, (w - minG) / (maxG - minG) * 100))}%`,
+                                  height: "100%", background: `linear-gradient(90deg, ${compColor}80, ${compColor})`, borderRadius: 3,
+                                }} />
+                              </div>
+                            </div>
+
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                              <span style={{ fontSize: 10, color: "rgba(255,255,255,0.5)" }}>{minG}g</span>
+                              <div style={{ display: "flex", gap: 10 }}>
+                                <span style={{ fontSize: 11, fontWeight: 600, color: "#60a5fa" }}>B:{scaledP}g</span>
+                                <span style={{ fontSize: 11, fontWeight: 600, color: "#fb923c" }}>T:{scaledF}g</span>
+                                <span style={{ fontSize: 11, fontWeight: 600, color: "#4ade80" }}>W:{scaledC}g</span>
+                              </div>
+                              <span style={{ fontSize: 10, color: "rgba(255,255,255,0.5)" }}>{maxG}g</span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Diary panel */}
+                <div style={{ margin: "0 16px 0" }}>
+                  <DiaryPanel
+                    result={textSearchResult}
+                    scanId={item.id}
+                    isDark={true}
+                  />
+                </div>
+
+                {/* Tips */}
+                {(() => {
+                  const tips: string[] = [];
+                  if (result.pros) tips.push(...result.pros);
+                  if (result.cons) tips.push(...result.cons);
+                  if (result.tip) tips.push(result.tip);
+                  if (tips.length === 0) return null;
+                  return (
+                    <div className="anim-fade-up-3" style={{ margin: "12px 16px 16px", padding: 16, borderRadius: 16, background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.06)" }}>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: "rgba(255,255,255,0.75)", marginBottom: 10 }}>💡 Wskazówki</div>
+                      {tips.map((tip, i) => (
+                        <div key={i} style={{
+                          padding: "8px 0", fontSize: 12, color: "rgba(255,255,255,0.55)",
+                          borderBottom: i < tips.length - 1 ? "1px solid rgba(255,255,255,0.04)" : "none",
+                          display: "flex", alignItems: "flex-start", gap: 8, lineHeight: 1.4,
+                        }}>
+                          <span style={{ color: "#FBBF24", fontSize: 10, marginTop: 3 }}>●</span> {tip}
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })()}
               </>
             );
           })()
