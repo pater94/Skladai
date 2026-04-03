@@ -644,7 +644,7 @@ function MainView({
               <span>{"🔥"}</span>
               <span style={{ color: "#f97316" }}>Forma</span>
             </h1>
-            <p style={{ color: "rgba(255,255,255,0.35)", fontSize: "13px", marginTop: "2px" }}>
+            <p style={{ color: "rgba(255,255,255,0.55)", fontSize: "13px", marginTop: "2px" }}>
               Śledź siłę, pomiary i progres
             </p>
           </div>
@@ -882,7 +882,7 @@ function MainView({
         <div className="flex-1 h-px" style={{ background: "linear-gradient(to right, transparent, rgba(255,255,255,0.08), transparent)" }} />
         <span style={{
           fontSize: "9px",
-          color: "rgba(255,255,255,0.25)",
+          color: "rgba(255,255,255,0.55)",
           textTransform: "uppercase",
           letterSpacing: "2.5px",
           fontWeight: 600,
@@ -1058,7 +1058,7 @@ function TimerModal({
         )}
 
         {timerLeft === 0 && !timerRunning && (
-          <p className="text-center text-xs mt-4" style={{ color: "rgba(255,255,255,0.35)" }}>
+          <p className="text-center text-xs mt-4" style={{ color: "rgba(255,255,255,0.55)" }}>
             Ostatnio: {getTimerPref()}s
           </p>
         )}
@@ -1285,7 +1285,7 @@ function RecordsView({
 
       {records.length === 0 && (
         <div className="text-center py-8 mb-4" style={{ color: "rgba(255,255,255,0.4)" }}>
-          <Trophy size={48} className="mx-auto mb-3" style={{ color: "rgba(255,255,255,0.15)" }} />
+          <Trophy size={48} className="mx-auto mb-3" style={{ color: "rgba(255,255,255,0.55)" }} />
           <p className="text-sm">Brak rekordów — oblicz pierwszy w kalkulatorze 1RM</p>
         </div>
       )}
@@ -1878,7 +1878,7 @@ function PhotosView({ goBack }: { goBack: () => void }) {
         </div>
       )}
 
-      <p className="text-[10px] text-center mt-4" style={{ color: "rgba(255,255,255,0.25)" }}>
+      <p className="text-[10px] text-center mt-4" style={{ color: "rgba(255,255,255,0.55)" }}>
         {photos.length}/20 zdjęć
       </p>
     </>
@@ -1948,7 +1948,7 @@ function StrengthCardView({
 
       {records.length === 0 ? (
         <div className="text-center py-12" style={{ color: "rgba(255,255,255,0.4)" }}>
-          <Dumbbell size={48} className="mx-auto mb-3" style={{ color: "rgba(255,255,255,0.15)" }} />
+          <Dumbbell size={48} className="mx-auto mb-3" style={{ color: "rgba(255,255,255,0.55)" }} />
           <p className="text-sm">Dodaj rekordy w kalkulatorze 1RM</p>
           <p className="text-xs mt-1">żeby wygenerować kartę</p>
         </div>
@@ -2009,7 +2009,7 @@ function StrengthCardView({
             </div>
 
             {/* Date */}
-            <div className="text-center mt-4 text-[10px]" style={{ color: "rgba(255,255,255,0.25)" }}>
+            <div className="text-center mt-4 text-[10px]" style={{ color: "rgba(255,255,255,0.55)" }}>
               {new Date().toLocaleDateString("pl-PL")}
             </div>
           </div>

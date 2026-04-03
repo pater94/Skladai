@@ -55,7 +55,7 @@ export default function DashboardPage() {
             </div>
 
             <div style={{ fontSize: 20, fontWeight: 900, color: "#fff", letterSpacing: "-0.03em", marginBottom: 8 }}>Odblokuj Dashboard</div>
-            <div style={{ fontSize: 13, color: "rgba(255,255,255,0.4)", lineHeight: "19px", marginBottom: 28, padding: "0 10px" }}>
+            <div style={{ fontSize: 13, color: "rgba(255,255,255,0.55)", lineHeight: "19px", marginBottom: 28, padding: "0 10px" }}>
               Uzupełnij profil żeby śledzić kalorie, makro i postępy. To zajmie minutę.
             </div>
 
@@ -114,7 +114,7 @@ export default function DashboardPage() {
   );
 
   const SectionTitle = ({ children }: { children: React.ReactNode }) => (
-    <div style={{ fontSize: 12, fontWeight: 800, color: "rgba(255,255,255,0.5)", marginBottom: 12, letterSpacing: "0.03em", textTransform: "uppercase" as const }}>{children}</div>
+    <div style={{ fontSize: 12, fontWeight: 800, color: "rgba(255,255,255,0.6)", marginBottom: 12, letterSpacing: "0.03em", textTransform: "uppercase" as const }}>{children}</div>
   );
 
   return (
@@ -124,7 +124,7 @@ export default function DashboardPage() {
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
           <div>
             <div style={{ fontSize: 22, fontWeight: 900, color: "#fff", letterSpacing: "-0.03em" }}>Dashboard</div>
-            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.35)", marginTop: 2 }}>{dateStr}</div>
+            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", marginTop: 2 }}>{dateStr}</div>
           </div>
           {streak > 0 && (
             <div style={{ padding: "6px 14px", borderRadius: 20, background: "rgba(110,252,180,0.08)", border: "1px solid rgba(110,252,180,0.15)", display: "flex", alignItems: "center", gap: 4 }}>
@@ -142,7 +142,7 @@ export default function DashboardPage() {
               background: view === v ? "rgba(110,252,180,0.1)" : "transparent",
               border: view === v ? "1px solid rgba(110,252,180,0.15)" : "1px solid transparent",
               fontSize: 12, fontWeight: 700,
-              color: view === v ? "#6efcb4" : "rgba(255,255,255,0.3)",
+              color: view === v ? "#6efcb4" : "rgba(255,255,255,0.55)",
             }}>
               {v === "today" ? "Dziś" : "Tydzień"}
             </div>
@@ -170,7 +170,7 @@ export default function DashboardPage() {
                 </svg>
                 <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
                   <span style={{ fontSize: 22, fontWeight: 900, color: "#fff" }}>{t.calories}</span>
-                  <span style={{ fontSize: 9, color: "rgba(255,255,255,0.3)", fontWeight: 600 }}>/ {n.calories} kcal</span>
+                  <span style={{ fontSize: 9, color: "rgba(255,255,255,0.55)", fontWeight: 600 }}>/ {n.calories} kcal</span>
                 </div>
               </div>
 
@@ -182,8 +182,8 @@ export default function DashboardPage() {
                 ].map((m, i) => (
                   <div key={i} style={{ marginBottom: i < 2 ? 10 : 0 }}>
                     <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
-                      <span style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.6)" }}>{m.label}</span>
-                      <span style={{ fontSize: 11, color: "rgba(255,255,255,0.35)" }}>{Math.round(m.value)}g / {m.max}g</span>
+                      <span style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.7)" }}>{m.label}</span>
+                      <span style={{ fontSize: 11, color: "rgba(255,255,255,0.8)" }}>{Math.round(m.value)}g / {m.max}g</span>
                     </div>
                     <div style={{ height: 4, background: "rgba(255,255,255,0.06)", borderRadius: 2 }}>
                       <div style={{ height: "100%", width: `${Math.min((m.value / m.max) * 100, 100)}%`, background: m.color, borderRadius: 2, transition: "width 0.5s ease" }} />
@@ -220,7 +220,7 @@ export default function DashboardPage() {
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                 <span style={{ fontSize: 16 }}>🏃</span>
-                <span style={{ fontSize: 13, fontWeight: 800, color: "rgba(255,255,255,0.7)" }}>Aktywność dziś</span>
+                <span style={{ fontSize: 13, fontWeight: 800, color: "rgba(255,255,255,0.8)" }}>Aktywność dziś</span>
               </div>
             </div>
             <div style={{ display: "flex", gap: 10 }}>
@@ -232,7 +232,7 @@ export default function DashboardPage() {
                 <div key={i} style={{ flex: 1, padding: "12px 8px", borderRadius: 14, textAlign: "center", background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)" }}>
                   <div style={{ fontSize: 13, marginBottom: 4 }}>{a.icon}</div>
                   <div style={{ fontSize: 16, fontWeight: 900, color: a.color, letterSpacing: "-0.02em" }}>{a.value}</div>
-                  <div style={{ fontSize: 9.5, color: "rgba(255,255,255,0.35)", marginTop: 2 }}>{a.label}</div>
+                  <div style={{ fontSize: 9.5, color: "rgba(255,255,255,0.7)", marginTop: 2 }}>{a.label}</div>
                 </div>
               ))}
             </div>
@@ -242,13 +242,13 @@ export default function DashboardPage() {
           <GlassCard>
             <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 12 }}>
               <span style={{ fontSize: 16 }}>🍽️</span>
-              <span style={{ fontSize: 13, fontWeight: 800, color: "rgba(255,255,255,0.7)" }}>Posiłki dziś</span>
+              <span style={{ fontSize: 13, fontWeight: 800, color: "rgba(255,255,255,0.8)" }}>Posiłki dziś</span>
             </div>
 
             {t.entries.length === 0 ? (
               <div style={{ textAlign: "center", padding: "20px 0" }}>
                 <span style={{ fontSize: 28, display: "block", marginBottom: 8 }}>🍽️</span>
-                <div style={{ fontSize: 13, color: "rgba(255,255,255,0.35)", fontWeight: 500, marginBottom: 12 }}>
+                <div style={{ fontSize: 13, color: "rgba(255,255,255,0.55)", fontWeight: 500, marginBottom: 12 }}>
                   Brak posiłków — zeskanuj pierwszy produkt
                 </div>
               </div>
@@ -260,10 +260,10 @@ export default function DashboardPage() {
                   </div>
                   <div style={{ flex: 1 }}>
                     <div style={{ fontSize: 12.5, fontWeight: 700, color: "rgba(255,255,255,0.8)" }}>{meal.productName}</div>
-                    <div style={{ fontSize: 10.5, color: "rgba(255,255,255,0.3)", marginTop: 1 }}>{meal.timestamp ? new Date(meal.timestamp).toLocaleTimeString("pl-PL", { hour: "2-digit", minute: "2-digit" }) : ""}</div>
+                    <div style={{ fontSize: 10.5, color: "rgba(255,255,255,0.5)", marginTop: 1 }}>{meal.timestamp ? new Date(meal.timestamp).toLocaleTimeString("pl-PL", { hour: "2-digit", minute: "2-digit" }) : ""}</div>
                   </div>
                   <span style={{ fontSize: 12, fontWeight: 700, color: "#6efcb4" }}>{meal.calories} kcal</span>
-                  <button onClick={() => handleRemove(meal.id)} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.2)", fontSize: 14, cursor: "pointer", padding: 4 }}>✕</button>
+                  <button onClick={() => handleRemove(meal.id)} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.55)", fontSize: 14, cursor: "pointer", padding: 4 }}>✕</button>
                 </div>
               ))
             )}
@@ -299,12 +299,12 @@ export default function DashboardPage() {
                         transition: "height 0.5s ease",
                       }} />
                     </div>
-                    <span style={{ fontSize: 9, color: "rgba(255,255,255,0.35)", fontWeight: 600 }}>{DAY_LABELS[dayIdx]}</span>
+                    <span style={{ fontSize: 9, color: "rgba(255,255,255,0.5)", fontWeight: 600 }}>{DAY_LABELS[dayIdx]}</span>
                   </div>
                 );
               })}
             </div>
-            <div style={{ textAlign: "center", fontSize: 11, color: "rgba(255,255,255,0.35)" }}>
+            <div style={{ textAlign: "center", fontSize: 11, color: "rgba(255,255,255,0.55)" }}>
               Średnio: <span style={{ color: "#6efcb4", fontWeight: 700 }}>{avgCal} kcal</span> / dzień
             </div>
           </GlassCard>
@@ -320,7 +320,7 @@ export default function DashboardPage() {
               ].map((m, i) => (
                 <div key={i} style={{ marginBottom: i < 2 ? 10 : 0 }}>
                   <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
-                    <span style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.6)" }}>{m.label}</span>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.7)" }}>{m.label}</span>
                     <span style={{ fontSize: 11, color: "rgba(255,255,255,0.35)" }}>{m.value}g / {m.max}g</span>
                   </div>
                   <div style={{ height: 4, background: "rgba(255,255,255,0.06)", borderRadius: 2 }}>
@@ -343,7 +343,7 @@ export default function DashboardPage() {
                 <div key={i} style={{ flex: 1, padding: "12px 8px", borderRadius: 14, textAlign: "center", background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)" }}>
                   <div style={{ fontSize: 13, marginBottom: 4 }}>{a.icon}</div>
                   <div style={{ fontSize: 16, fontWeight: 900, color: a.color, letterSpacing: "-0.02em" }}>{a.value}</div>
-                  <div style={{ fontSize: 9.5, color: "rgba(255,255,255,0.35)", marginTop: 2 }}>{a.label}</div>
+                  <div style={{ fontSize: 9.5, color: "rgba(255,255,255,0.7)", marginTop: 2 }}>{a.label}</div>
                 </div>
               ))}
             </div>
@@ -356,9 +356,9 @@ export default function DashboardPage() {
                 Zeskanowałeś <span style={{ color: "#6efcb4", fontWeight: 800 }}>{weekHistory.length}</span> produktów w tym tygodniu
               </div>
               <div style={{ display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap" }}>
-                {weekFoodCount > 0 && <span style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", padding: "4px 10px", borderRadius: 10, background: "rgba(255,255,255,0.03)" }}>{weekFoodCount} żywność</span>}
-                {weekCosmeticsCount > 0 && <span style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", padding: "4px 10px", borderRadius: 10, background: "rgba(255,255,255,0.03)" }}>{weekCosmeticsCount} kosmetyk</span>}
-                {weekSupplementCount > 0 && <span style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", padding: "4px 10px", borderRadius: 10, background: "rgba(255,255,255,0.03)" }}>{weekSupplementCount} suplement</span>}
+                {weekFoodCount > 0 && <span style={{ fontSize: 11, color: "rgba(255,255,255,0.55)", padding: "4px 10px", borderRadius: 10, background: "rgba(255,255,255,0.03)" }}>{weekFoodCount} żywność</span>}
+                {weekCosmeticsCount > 0 && <span style={{ fontSize: 11, color: "rgba(255,255,255,0.55)", padding: "4px 10px", borderRadius: 10, background: "rgba(255,255,255,0.03)" }}>{weekCosmeticsCount} kosmetyk</span>}
+                {weekSupplementCount > 0 && <span style={{ fontSize: 11, color: "rgba(255,255,255,0.55)", padding: "4px 10px", borderRadius: 10, background: "rgba(255,255,255,0.03)" }}>{weekSupplementCount} suplement</span>}
               </div>
             </div>
           </GlassCard>
@@ -366,7 +366,7 @@ export default function DashboardPage() {
 
         {/* Disclaimer */}
         <div style={{ textAlign: "center", marginTop: 8 }}>
-          <span style={{ fontSize: 10, color: "rgba(255,255,255,0.15)" }}>
+          <span style={{ fontSize: 10, color: "rgba(255,255,255,0.45)" }}>
             SkładAI nie jest wyrobem medycznym. Skonsultuj z dietetykiem.
           </span>
         </div>

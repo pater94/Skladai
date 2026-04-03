@@ -1,4 +1,4 @@
-const CACHE_NAME = "skladai-v39";
+const CACHE_NAME = "skladai-v40";
 const PRECACHE_URLS = ["/manifest.json"];
 
 // Static asset extensions for cache-first strategy

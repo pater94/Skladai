@@ -192,7 +192,7 @@ export default function SkinProfileSetup({ onComplete, onSkip }: Props) {
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div>
             <p style={{ fontWeight: 600, fontSize: 14, color: active ? "#fff" : "rgba(255,255,255,0.7)", margin: 0 }}>{label}</p>
-            {desc && <p style={{ fontSize: 11, marginTop: 2, color: active ? "rgba(192,132,252,0.7)" : "rgba(255,255,255,0.3)", margin: 0 }}>{desc}</p>}
+            {desc && <p style={{ fontSize: 11, marginTop: 2, color: active ? "rgba(192,132,252,0.7)" : "rgba(255,255,255,0.55)", margin: 0 }}>{desc}</p>}
           </div>
           <div style={{
             width: 20, height: 20, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.2s",
@@ -286,7 +286,7 @@ export default function SkinProfileSetup({ onComplete, onSkip }: Props) {
             <h2 style={{ fontSize: 24, fontWeight: 900, color: "#fff", letterSpacing: "-0.03em" }}>
               {STEP_TITLES[step]}
             </h2>
-            <p style={{ color: "rgba(255,255,255,0.35)", fontSize: 12, marginTop: 2 }}>
+            <p style={{ color: "rgba(255,255,255,0.55)", fontSize: 12, marginTop: 2 }}>
               Krok {step + 1} z 3{step === 2 && " (opcjonalne)"}
             </p>
           </div>
@@ -305,7 +305,7 @@ export default function SkinProfileSetup({ onComplete, onSkip }: Props) {
         {step === 0 && (
           <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
             <div>
-              <label style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.3)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+              <label style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.7)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
                 Typ skóry
               </label>
               <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 8 }}>
@@ -316,7 +316,7 @@ export default function SkinProfileSetup({ onComplete, onSkip }: Props) {
             </div>
 
             <div>
-              <label style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.3)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+              <label style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.7)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
                 Wrażliwość
               </label>
               <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 8 }}>
@@ -327,7 +327,7 @@ export default function SkinProfileSetup({ onComplete, onSkip }: Props) {
             </div>
 
             <div>
-              <label style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.3)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+              <label style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.7)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
                 Wiek skóry
               </label>
               <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 8 }}>
@@ -342,7 +342,7 @@ export default function SkinProfileSetup({ onComplete, onSkip }: Props) {
         {/* STEP 1: Skin problems */}
         {step === 1 && (
           <div>
-            <p style={{ fontSize: 12, color: "rgba(255,255,255,0.3)", marginBottom: 12 }}>
+            <p style={{ fontSize: 12, color: "rgba(255,255,255,0.55)", marginBottom: 12 }}>
               Wybierz wszystkie, które Cię dotyczą
             </p>
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -356,12 +356,12 @@ export default function SkinProfileSetup({ onComplete, onSkip }: Props) {
         {/* STEP 2: Hair */}
         {step === 2 && (
           <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-            <p style={{ fontSize: 12, color: "rgba(255,255,255,0.3)" }}>
+            <p style={{ fontSize: 12, color: "rgba(255,255,255,0.55)" }}>
               Możesz pominąć ten krok
             </p>
 
             <div>
-              <label style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.3)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+              <label style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.7)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
                 Typ włosów
               </label>
               <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 8 }}>
@@ -372,7 +372,7 @@ export default function SkinProfileSetup({ onComplete, onSkip }: Props) {
             </div>
 
             <div>
-              <label style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.3)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+              <label style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.7)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
                 Problemy z włosami
               </label>
               <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 8 }}>
@@ -412,7 +412,7 @@ export default function SkinProfileSetup({ onComplete, onSkip }: Props) {
             {step < 2 ? "Dalej" : "Zapisz"}
           </button>
         </div>
-        <p style={{ fontSize: 10, color: "rgba(255,255,255,0.2)", textAlign: "center", marginTop: 10 }}>
+        <p style={{ fontSize: 10, color: "rgba(255,255,255,0.55)", textAlign: "center", marginTop: 10 }}>
           Dane zapisane lokalnie na Twoim urządzeniu
         </p>
       </div>

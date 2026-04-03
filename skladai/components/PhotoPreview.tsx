@@ -109,7 +109,7 @@ export default function PhotoPreview({
               </svg>
               {/* Label */}
               <div style={{ position: "absolute", bottom: 8, left: 0, right: 0, textAlign: "center" }}>
-                <span style={{ fontSize: 10, fontWeight: 700, color: n === 1 ? t.accent : "rgba(255,255,255,0.35)" }}>
+                <span style={{ fontSize: 10, fontWeight: 700, color: n === 1 ? t.accent : "rgba(255,255,255,0.55)" }}>
                   {n === 0 ? t.p1 : t.p2}
                 </span>
               </div>
@@ -141,8 +141,8 @@ export default function PhotoPreview({
 
         {/* Change photo links */}
         <div style={{ display: "flex", justifyContent: "center", gap: 16 }}>
-          <button type="button" onClick={onRetakePhoto1} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.25)", fontSize: 11, cursor: "pointer", padding: 6 }}>🔄 Zmień zdjęcie 1</button>
-          <button type="button" onClick={onRetakePhoto2} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.25)", fontSize: 11, cursor: "pointer", padding: 6 }}>🔄 Zmień zdjęcie 2</button>
+          <button type="button" onClick={onRetakePhoto1} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.55)", fontSize: 11, cursor: "pointer", padding: 6 }}>🔄 Zmień zdjęcie 1</button>
+          <button type="button" onClick={onRetakePhoto2} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.55)", fontSize: 11, cursor: "pointer", padding: 6 }}>🔄 Zmień zdjęcie 2</button>
         </div>
       </div>
     );
@@ -164,7 +164,7 @@ export default function PhotoPreview({
         <div onClick={onBack} style={{ width: 32, height: 32, borderRadius: 10, background: t.accentLight, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, cursor: "pointer" }}>←</div>
         <div>
           <div style={{ color: "#fff", fontWeight: 800, fontSize: 15 }}>Podgląd zdjęcia</div>
-          <div style={{ color: "rgba(255,255,255,0.3)", fontSize: 10.5, marginTop: 1 }}>{source === "gallery" ? "Wybrano z galerii" : "Zrobiono aparatem"}</div>
+          <div style={{ color: "rgba(255,255,255,0.55)", fontSize: 10.5, marginTop: 1 }}>{source === "gallery" ? "Wybrano z galerii" : "Zrobiono aparatem"}</div>
         </div>
         <div style={{ marginLeft: "auto", background: `linear-gradient(135deg, ${t.accent}, ${t.accentMid})`, color: bc, fontSize: 10, fontWeight: 800, padding: "4px 10px", borderRadius: 10 }}>ZDJĘCIE 1</div>
       </div>
@@ -187,7 +187,7 @@ export default function PhotoPreview({
           <div style={{ width: 52, height: 52, borderRadius: 14, background: "rgba(255,255,255,0.05)", backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)", border: "1px solid rgba(255,255,255,0.08)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24 }}>
             {source === "gallery" ? "🖼️" : "📸"}
           </div>
-          <span style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", fontWeight: 600 }}>
+          <span style={{ fontSize: 11, color: "rgba(255,255,255,0.55)", fontWeight: 600 }}>
             {mode === "food" ? "Etykieta produktu" : "Przód opakowania"}
           </span>
         </div>
@@ -208,7 +208,7 @@ export default function PhotoPreview({
               <div style={{ width: 34, height: 34, borderRadius: 10, background: visible ? t.accentLight : "rgba(255,255,255,0.03)", border: `1px solid ${visible ? t.accent + "33" : "rgba(255,255,255,0.05)"}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15, flexShrink: 0 }}>{item.icon}</div>
               <div>
                 <div style={{ fontSize: 13, fontWeight: 700, color: visible ? "rgba(255,255,255,0.9)" : "rgba(255,255,255,0.4)", lineHeight: "17px" }}>{item.text}</div>
-                <div style={{ fontSize: 10.5, color: visible ? "rgba(255,255,255,0.35)" : "rgba(255,255,255,0.15)", lineHeight: "14px", marginTop: 1 }}>{item.desc}</div>
+                <div style={{ fontSize: 10.5, color: visible ? "rgba(255,255,255,0.55)" : "rgba(255,255,255,0.35)", lineHeight: "14px", marginTop: 1 }}>{item.desc}</div>
               </div>
             </div>
           );
@@ -218,7 +218,7 @@ export default function PhotoPreview({
       {/* Hint */}
       <div style={{ borderRadius: 12, padding: "10px 12px", marginBottom: 16, display: "flex", gap: 8, alignItems: "flex-start" }}>
         <span style={{ fontSize: 13, flexShrink: 0, opacity: 0.7 }}>💡</span>
-        <span style={{ fontSize: 11.5, color: "rgba(255,255,255,0.35)", lineHeight: "16px" }}>{t.hint}</span>
+        <span style={{ fontSize: 11.5, color: "rgba(255,255,255,0.55)", lineHeight: "16px" }}>{t.hint}</span>
       </div>
 
       {/* CTA — animated gradient border */}
@@ -229,7 +229,7 @@ export default function PhotoPreview({
       </div>
 
       {/* Secondary — analyze single */}
-      <button type="button" onClick={onAnalyzeSingle} style={{ width: "100%", padding: 13, borderRadius: 13, border: "1px solid rgba(255,255,255,0.06)", background: "transparent", color: "rgba(255,255,255,0.35)", fontWeight: 600, fontSize: 13.5, cursor: "pointer" }}>
+      <button type="button" onClick={onAnalyzeSingle} style={{ width: "100%", padding: 13, borderRadius: 13, border: "1px solid rgba(255,255,255,0.06)", background: "transparent", color: "rgba(255,255,255,0.55)", fontWeight: 600, fontSize: 13.5, cursor: "pointer" }}>
         Analizuj z jednym zdjęciem →
       </button>
     </div>

@@ -179,10 +179,10 @@ export default function ProfilPage() {
             <div style={{ width: 80, height: 80, borderRadius: "50%", margin: "0 auto 16px", background: "rgba(255,255,255,0.04)", border: "2px solid rgba(255,255,255,0.08)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 32, color: "rgba(255,255,255,0.2)" }}>👤</div>
 
             <div style={{ fontSize: 20, fontWeight: 900, color: "#fff", marginBottom: 6 }}>Cześć!</div>
-            <div style={{ fontSize: 13, color: "rgba(255,255,255,0.35)", marginBottom: 28 }}>Uzupełnij profil żeby AI lepiej Cię znał</div>
+            <div style={{ fontSize: 13, color: "rgba(255,255,255,0.55)", marginBottom: 28 }}>Uzupełnij profil żeby AI lepiej Cię znał</div>
 
             <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 16, padding: 16, marginBottom: 20, textAlign: "left" }}>
-              <div style={{ fontSize: 13, fontWeight: 800, color: "rgba(255,255,255,0.6)", marginBottom: 14 }}>Krok 1 z 4</div>
+              <div style={{ fontSize: 13, fontWeight: 800, color: "rgba(255,255,255,0.8)", marginBottom: 14 }}>Krok 1 z 4</div>
               <div style={{ height: 4, background: "rgba(255,255,255,0.06)", borderRadius: 2, marginBottom: 16, overflow: "hidden" }}>
                 <div style={{ height: "100%", width: "25%", background: "#6efcb4", borderRadius: 2 }} />
               </div>
@@ -201,8 +201,8 @@ export default function ProfilPage() {
                 }}>
                   <div style={{ width: 32, height: 32, borderRadius: 10, background: s.active ? "rgba(110,252,180,0.1)" : "rgba(255,255,255,0.03)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14 }}>{s.icon}</div>
                   <div>
-                    <div style={{ fontSize: 12.5, fontWeight: 700, color: s.active ? "#6efcb4" : "rgba(255,255,255,0.4)" }}>{s.label}</div>
-                    <div style={{ fontSize: 10.5, color: "rgba(255,255,255,0.25)", marginTop: 1 }}>{s.desc}</div>
+                    <div style={{ fontSize: 12.5, fontWeight: 700, color: s.active ? "#6efcb4" : "rgba(255,255,255,0.55)" }}>{s.label}</div>
+                    <div style={{ fontSize: 10.5, color: "rgba(255,255,255,0.55)", marginTop: 1 }}>{s.desc}</div>
                   </div>
                 </div>
               ))}
@@ -213,7 +213,7 @@ export default function ProfilPage() {
             </button>
 
             <div style={{ marginTop: 12 }}>
-              <span onClick={() => router.push("/")} style={{ fontSize: 12, color: "rgba(255,255,255,0.2)", cursor: "pointer" }}>Pomiń na razie</span>
+              <span onClick={() => router.push("/")} style={{ fontSize: 12, color: "rgba(255,255,255,0.55)", cursor: "pointer" }}>Pomiń na razie</span>
             </div>
           </div>
         </div>
@@ -242,7 +242,7 @@ export default function ProfilPage() {
       {/* Header with gradient */}
       <div style={{ padding: "16px 22px 30px", background: "linear-gradient(180deg, rgba(110,252,180,0.1) 0%, rgba(110,252,180,0.02) 60%, transparent 100%)", textAlign: "center", position: "relative" }}>
         <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 8 }}>
-          <div onClick={() => setEditing(true)} style={{ padding: "6px 16px", borderRadius: 20, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", fontSize: 12, color: "rgba(255,255,255,0.5)", fontWeight: 600, cursor: "pointer" }}>
+          <div onClick={() => setEditing(true)} style={{ padding: "6px 16px", borderRadius: 20, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", fontSize: 12, color: "rgba(255,255,255,0.6)", fontWeight: 600, cursor: "pointer" }}>
             Edytuj profil
           </div>
         </div>
@@ -270,7 +270,7 @@ export default function ProfilPage() {
             ...(streak > 0 ? [`🔥 ${streak} ${streakLabel}`] : []),
             ...(scanCount > 0 ? [`📱 ${scanCount} skanów`] : []),
           ].map((s, i) => (
-            <div key={i} style={{ padding: "5px 12px", borderRadius: 16, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)", fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.45)" }}>
+            <div key={i} style={{ padding: "5px 12px", borderRadius: 16, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)", fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.55)" }}>
               {s}
             </div>
           ))}
@@ -283,14 +283,14 @@ export default function ProfilPage() {
         <GlassCard>
           <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 12 }}>
             <span style={{ fontSize: 14 }}>🎯</span>
-            <span style={{ fontSize: 13, fontWeight: 800, color: "rgba(255,255,255,0.7)" }}>Aktywność i cel</span>
+            <span style={{ fontSize: 13, fontWeight: 800, color: "rgba(255,255,255,0.8)" }}>Aktywność i cel</span>
           </div>
           {[
             { label: "Aktywność", value: activityLabel },
             { label: "Cel", value: goalLabel },
           ].map((r, i) => (
             <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "10px 0", borderTop: i > 0 ? "1px solid rgba(255,255,255,0.04)" : "none" }}>
-              <span style={{ fontSize: 12.5, color: "rgba(255,255,255,0.4)" }}>{r.label}</span>
+              <span style={{ fontSize: 12.5, color: "rgba(255,255,255,0.7)" }}>{r.label}</span>
               <span style={{ fontSize: 12.5, fontWeight: 700, color: "rgba(255,255,255,0.8)" }}>{r.value}</span>
             </div>
           ))}
@@ -301,7 +301,7 @@ export default function ProfilPage() {
           <GlassCard>
             <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 12 }}>
               <span style={{ fontSize: 14 }}>🏥</span>
-              <span style={{ fontSize: 13, fontWeight: 800, color: "rgba(255,255,255,0.7)" }}>Profil zdrowotny</span>
+              <span style={{ fontSize: 13, fontWeight: 800, color: "rgba(255,255,255,0.8)" }}>Profil zdrowotny</span>
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               {diabetesLabel && (
@@ -340,7 +340,7 @@ export default function ProfilPage() {
         <GlassCard>
           <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 12 }}>
             <span style={{ fontSize: 14 }}>📈</span>
-            <span style={{ fontSize: 13, fontWeight: 800, color: "rgba(255,255,255,0.7)" }}>Progres do celu</span>
+            <span style={{ fontSize: 13, fontWeight: 800, color: "rgba(255,255,255,0.8)" }}>Progres do celu</span>
           </div>
 
           {uniqueDateCount >= 2 ? (
@@ -354,7 +354,7 @@ export default function ProfilPage() {
                         <stop offset="100%" stopColor="#6efcb4" stopOpacity={0} />
                       </linearGradient>
                     </defs>
-                    <XAxis dataKey="date" tick={{ fontSize: 8, fill: "rgba(255,255,255,0.2)" }} tickLine={false} axisLine={false} />
+                    <XAxis dataKey="date" tick={{ fontSize: 8, fill: "rgba(255,255,255,0.5)" }} tickLine={false} axisLine={false} />
                     <YAxis domain={["dataMin - 2", "dataMax + 2"]} tick={false} tickLine={false} axisLine={false} />
                     {targetWeight !== null && (profile.goal === "lose" || profile.goal === "gain") && (
                       <ReferenceLine y={targetWeight} stroke="rgba(110,252,180,0.3)" strokeDasharray="6 4" strokeWidth={1} />
@@ -381,7 +381,7 @@ export default function ProfilPage() {
             </>
           ) : (
             <div style={{ textAlign: "center", padding: "16px 0" }}>
-              <div style={{ fontSize: 13, color: "rgba(255,255,255,0.35)", marginBottom: 12 }}>Zacznij logować wagę żeby zobaczyć progres</div>
+              <div style={{ fontSize: 13, color: "rgba(255,255,255,0.55)", marginBottom: 12 }}>Zacznij logować wagę żeby zobaczyć progres</div>
             </div>
           )}
 
@@ -392,12 +392,12 @@ export default function ProfilPage() {
           ) : (
             <div style={{ display: "flex", alignItems: "flex-end", gap: 8, marginTop: 8 }}>
               <div style={{ flex: 1 }}>
-                <label style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", fontWeight: 600, display: "block", marginBottom: 4 }}>Waga (kg)</label>
+                <label style={{ fontSize: 10, color: "rgba(255,255,255,0.7)", fontWeight: 600, display: "block", marginBottom: 4 }}>Waga (kg)</label>
                 <input type="number" step="0.1" min="20" max="400" value={newWeight} onChange={(e) => setNewWeight(e.target.value)} placeholder={String(profile.weight_kg)}
                   style={{ width: "100%", padding: "8px 10px", borderRadius: 10, border: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.04)", color: "#fff", fontSize: 13 }} />
               </div>
               <div style={{ flex: 1 }}>
-                <label style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", fontWeight: 600, display: "block", marginBottom: 4 }}>Data</label>
+                <label style={{ fontSize: 10, color: "rgba(255,255,255,0.7)", fontWeight: 600, display: "block", marginBottom: 4 }}>Data</label>
                 <input type="date" value={newWeightDate} onChange={(e) => setNewWeightDate(e.target.value)}
                   style={{ width: "100%", padding: "8px 10px", borderRadius: 10, border: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.04)", color: "#fff", fontSize: 13, colorScheme: "dark" }} />
               </div>
@@ -413,9 +413,9 @@ export default function ProfilPage() {
           <div onClick={() => setNormsOpen(!normsOpen)} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", cursor: "pointer" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
               <span style={{ fontSize: 14 }}>📋</span>
-              <span style={{ fontSize: 13, fontWeight: 800, color: "rgba(255,255,255,0.7)" }}>Twoje dzienne normy</span>
+              <span style={{ fontSize: 13, fontWeight: 800, color: "rgba(255,255,255,0.8)" }}>Twoje dzienne normy</span>
             </div>
-            <span style={{ fontSize: 14, color: "rgba(255,255,255,0.3)", transition: "transform 0.2s", transform: normsOpen ? "rotate(90deg)" : "rotate(0deg)" }}>›</span>
+            <span style={{ fontSize: 14, color: "rgba(255,255,255,0.55)", transition: "transform 0.2s", transform: normsOpen ? "rotate(90deg)" : "rotate(0deg)" }}>›</span>
           </div>
 
           {normsOpen && (
@@ -426,7 +426,7 @@ export default function ProfilPage() {
                   <span style={{ fontSize: 13, fontWeight: 700, color: "rgba(110,252,180,0.8)" }}>⚡ Kalorie</span>
                   <span style={{ fontSize: 20, fontWeight: 900, color: "#fff" }}>{n.calories} kcal</span>
                 </div>
-                <div style={{ fontSize: 10, color: "rgba(110,252,180,0.4)", marginTop: 4 }}>BMR: {profile.bmr} · TDEE: {profile.tdee} · Cel: {goalLabel}</div>
+                <div style={{ fontSize: 10, color: "rgba(110,252,180,0.6)", marginTop: 4 }}>BMR: {profile.bmr} · TDEE: {profile.tdee} · Cel: {goalLabel}</div>
               </div>
 
               {/* Macros */}
@@ -437,7 +437,7 @@ export default function ProfilPage() {
                   { icon: "🍞", label: "Węgle", value: `${n.carbs_min}-${n.carbs_max}g` },
                 ].map((m, i) => (
                   <div key={i} style={{ flex: 1, textAlign: "center", padding: "10px 6px", borderRadius: 14, background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.04)" }}>
-                    <div style={{ fontSize: 10, color: "rgba(255,255,255,0.35)", fontWeight: 600 }}>{m.icon} {m.label}</div>
+                    <div style={{ fontSize: 10, color: "rgba(255,255,255,0.7)", fontWeight: 600 }}>{m.icon} {m.label}</div>
                     <div style={{ fontSize: 15, fontWeight: 700, color: "rgba(255,255,255,0.8)", marginTop: 4 }}>{m.value}</div>
                   </div>
                 ))}
@@ -454,7 +454,7 @@ export default function ProfilPage() {
                   <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 12px", borderRadius: 12, background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.04)" }}>
                     <span style={{ fontSize: 12 }}>{m.icon}</span>
                     <div>
-                      <div style={{ fontSize: 10, color: "rgba(255,255,255,0.35)", fontWeight: 600 }}>{m.label}</div>
+                      <div style={{ fontSize: 10, color: "rgba(255,255,255,0.7)", fontWeight: 600 }}>{m.label}</div>
                       <div style={{ fontSize: 13, fontWeight: 700, color: "rgba(255,255,255,0.8)" }}>{m.value}</div>
                     </div>
                   </div>
@@ -469,9 +469,9 @@ export default function ProfilPage() {
           <GlassCard>
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
               <span style={{ fontSize: 14 }}>🔑</span>
-              <span style={{ fontSize: 13, fontWeight: 800, color: "rgba(255,255,255,0.7)" }}>Konto</span>
+              <span style={{ fontSize: 13, fontWeight: 800, color: "rgba(255,255,255,0.8)" }}>Konto</span>
             </div>
-            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", marginBottom: 12, wordBreak: "break-all" }}>
+            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.55)", marginBottom: 12, wordBreak: "break-all" }}>
                {authEmail}
             </div>
             <button
@@ -496,7 +496,7 @@ export default function ProfilPage() {
 
         {/* Disclaimer */}
         <div style={{ textAlign: "center", marginTop: 8 }}>
-          <span style={{ fontSize: 10, color: "rgba(255,255,255,0.15)" }}>
+          <span style={{ fontSize: 10, color: "rgba(255,255,255,0.45)" }}>
             SkładAI nie jest wyrobem medycznym. Skonsultuj z dietetykiem.
           </span>
         </div>

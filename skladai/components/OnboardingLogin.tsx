@@ -126,7 +126,7 @@ export default function OnboardingLogin({ onSkip }: OnboardingLoginProps) {
             <div style={{ marginBottom: 12 }}>
               <ScannerLogo size={72} filterId="glowA" />
             </div>
-            <div style={{ fontSize: 13, fontWeight: 700, color: "rgba(255,255,255,0.4)", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 6 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: "rgba(255,255,255,0.55)", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 6 }}>
               Skład<span style={{ color: "#6efcb4" }}>AI</span>
             </div>
             <div style={{ fontSize: 22, fontWeight: 900, letterSpacing: "-0.03em", color: "#fff", lineHeight: "28px" }}>
@@ -147,7 +147,7 @@ export default function OnboardingLogin({ onSkip }: OnboardingLoginProps) {
                 <div style={{ width: 40, height: 40, borderRadius: 12, background: activeCard === i ? `${c.color}15` : "rgba(255,255,255,0.03)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, flexShrink: 0, transition: "all 0.4s ease" }}>{c.icon}</div>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 14, fontWeight: 800, color: activeCard === i ? "rgba(255,255,255,0.95)" : "rgba(255,255,255,0.55)", transition: "color 0.3s ease", marginBottom: 2 }}>{c.title}</div>
-                  <div style={{ fontSize: 12.5, lineHeight: "17px", color: activeCard === i ? "rgba(255,255,255,0.6)" : "rgba(255,255,255,0.3)", transition: "color 0.3s ease" }}>{c.desc}</div>
+                  <div style={{ fontSize: 12.5, lineHeight: "17px", color: activeCard === i ? "rgba(255,255,255,0.6)" : "rgba(255,255,255,0.55)", transition: "color 0.3s ease" }}>{c.desc}</div>
                 </div>
               </div>
             ))}
@@ -178,7 +178,7 @@ export default function OnboardingLogin({ onSkip }: OnboardingLoginProps) {
             ].map((s, i) => (
               <div key={i} style={{ flex: 1, padding: "16px 8px", borderRadius: 14, textAlign: "center", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
                 <div style={{ fontSize: 22, fontWeight: 900, color: s.color, marginBottom: 5, letterSpacing: "-0.02em" }}>{s.num}</div>
-                <div style={{ fontSize: 10.5, color: "rgba(255,255,255,0.4)", lineHeight: "14px" }}>{s.desc}</div>
+                <div style={{ fontSize: 10.5, color: "rgba(255,255,255,0.55)", lineHeight: "14px" }}>{s.desc}</div>
               </div>
             ))}
           </div>
@@ -193,7 +193,7 @@ export default function OnboardingLogin({ onSkip }: OnboardingLoginProps) {
                 <div style={{ fontSize: 13.5, color: "rgba(255,255,255,0.55)", lineHeight: "20px", fontStyle: "italic", padding: "4px 0" }}>
                   {q.text}
                 </div>
-                <div style={{ fontSize: 11.5, color: "rgba(255,255,255,0.35)", marginTop: 8, fontStyle: "normal" }}>
+                <div style={{ fontSize: 11.5, color: "rgba(255,255,255,0.55)", marginTop: 8, fontStyle: "normal" }}>
                   {q.author}
                 </div>
               </div>
@@ -250,11 +250,11 @@ export default function OnboardingLogin({ onSkip }: OnboardingLoginProps) {
 
           {/* Skip */}
           <div style={{ textAlign: "center" }}>
-            <button onClick={onSkip} style={{ background: "none", border: "none", fontSize: 12.5, color: "rgba(255,255,255,0.3)", cursor: "pointer" }}>Pomiń — korzystaj bez konta</button>
+            <button onClick={onSkip} style={{ background: "none", border: "none", fontSize: 12.5, color: "rgba(255,255,255,0.55)", cursor: "pointer" }}>Pomiń — korzystaj bez konta</button>
           </div>
 
           {/* Privacy */}
-          <div style={{ textAlign: "center", marginTop: 10, fontSize: 10, color: "rgba(255,255,255,0.15)" }}>
+          <div style={{ textAlign: "center", marginTop: 10, fontSize: 10, color: "rgba(255,255,255,0.45)" }}>
             Logując się akceptujesz{" "}
             <Link href="/privacy" style={{ textDecoration: "underline", color: "inherit" }}>Politykę prywatności</Link>
           </div>

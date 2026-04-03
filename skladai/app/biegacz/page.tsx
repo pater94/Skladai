@@ -1138,7 +1138,7 @@ function RunningRecords() {
             <h3 className="text-sm font-semibold text-white/60 mb-1">{dist}</h3>
             {timeData.length >= 2 && (
               <div className="mb-2">
-                <p className="text-[10px] mb-1" style={{ color: "rgba(255,255,255,0.35)" }}>Czas — trend</p>
+                <p className="text-[10px] mb-1" style={{ color: "rgba(255,255,255,0.55)" }}>Czas — trend</p>
                 <ProgressChart data={timeData} label="min" color="#3B82F6" invertTrend />
               </div>
             )}

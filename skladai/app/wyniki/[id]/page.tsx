@@ -271,7 +271,7 @@ function ShareCard({ name, score, verdict, isForma }: { name: string; score: num
       </div>
       {verdict && <p style={{ fontSize: 13, color: "rgba(255,255,255,0.55)", lineHeight: 1.6, marginBottom: 20 }}>{verdict.slice(0, 120)}{verdict.length > 120 ? "..." : ""}</p>}
       <div style={{ borderTop: "1px solid rgba(255,255,255,0.08)", paddingTop: 16 }}>
-        <p style={{ fontSize: 11, color: "rgba(255,255,255,0.3)" }}>Sprawdź skład swoich produktów → skladai.vercel.app</p>
+        <p style={{ fontSize: 11, color: "rgba(255,255,255,0.55)" }}>Sprawdź skład swoich produktów → skladai.vercel.app</p>
       </div>
     </div>
   );
@@ -522,7 +522,7 @@ export default function WynikiPage() {
                         padding: "10px 14px", borderRadius: 10,
                         background: "rgba(255,255,255,0.03)",
                         border: "1px solid rgba(255,255,255,0.06)",
-                        color: "rgba(255,255,255,0.3)", fontSize: 12,
+                        color: "rgba(255,255,255,0.55)", fontSize: 12,
                         cursor: "pointer",
                       }}
                     >
@@ -551,7 +551,7 @@ export default function WynikiPage() {
                     padding: "8px 16px", borderRadius: 10,
                     background: "rgba(255,255,255,0.03)",
                     border: "1px solid rgba(255,255,255,0.06)",
-                    color: "rgba(255,255,255,0.3)", fontSize: 12,
+                    color: "rgba(255,255,255,0.55)", fontSize: 12,
                   }}
                 >
                   👍 Trafna analiza
@@ -563,7 +563,7 @@ export default function WynikiPage() {
                     padding: "8px 16px", borderRadius: 10,
                     background: "rgba(255,255,255,0.03)",
                     border: "1px solid rgba(255,255,255,0.06)",
-                    color: "rgba(255,255,255,0.3)", fontSize: 12,
+                    color: "rgba(255,255,255,0.55)", fontSize: 12,
                   }}
                 >
                   👎 Błędna

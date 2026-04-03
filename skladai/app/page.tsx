@@ -420,7 +420,7 @@ export default function Home() {
                 </span>{" "}
                 {h.line2}
               </h2>
-              <p className="text-[13px] mt-2 font-medium transition-all duration-300" style={{ color: "rgba(255,255,255,0.35)" }}>
+              <p className="text-[13px] mt-2 font-medium transition-all duration-300" style={{ color: "rgba(255,255,255,0.55)" }}>
                 {h.sub}
               </p>
             </div>
@@ -451,7 +451,7 @@ export default function Home() {
                   className="flex-1 flex items-center justify-center gap-1.5 py-2.5 px-1 text-[12px] rounded-xl font-semibold transition-all duration-300"
                   style={{
                     backgroundColor: isActive ? `${tab.color}15` : "transparent",
-                    color: isActive ? tab.color : "rgba(255,255,255,0.35)",
+                    color: isActive ? tab.color : "rgba(255,255,255,0.55)",
                     fontWeight: isActive ? 700 : 500,
                   }}
                 >
@@ -711,7 +711,7 @@ export default function Home() {
                   >
                     <span className="absolute -top-1.5 right-2 text-[8px] font-bold px-1.5 py-0.5 rounded-md text-white" style={{ background: accent.hex }}>NEW</span>
                     <span className="text-[13px] font-bold text-white/80 block">🧊 Lodówka</span>
-                    <span className="text-[9px] text-white/30 block mt-0.5">Multi-skan AI</span>
+                    <span className="text-[9px] text-white/50 block mt-0.5">Multi-skan AI</span>
                   </button>
                 )}
                 <button
@@ -750,11 +750,11 @@ export default function Home() {
             {(mode === "food" || mode === "meal") && (
               <div className="mt-4 rounded-2xl overflow-hidden" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
                 <div className="flex items-center px-4 py-3 gap-3">
-                  <span className="text-white/20 text-[14px]">🔍</span>
+                  <span className="text-white/50 text-[14px]">🔍</span>
                   <input
                     type="text"
                     placeholder="Wpisz lub powiedz co jesz..."
-                    className="flex-1 bg-transparent text-white/80 text-[13px] outline-none placeholder:text-white/25"
+                    className="flex-1 bg-transparent text-white/80 text-[13px] outline-none placeholder:text-white/40"
                     onFocus={() => {
                       // Navigate to a search-focused view or expand inline
                     }}
@@ -780,7 +780,7 @@ export default function Home() {
               <span className="text-lg mt-0.5">💰</span>
               <div>
                 <p className="text-[13px] font-bold text-white/80">{isCosmetics ? "Nie przepłacaj za logo." : "Ten sam skład, ułamek ceny."}</p>
-                <p className="text-[11px] text-white/40 mt-0.5 leading-relaxed">{isCosmetics ? "AI porówna skład i znajdzie tańsze produkty o tym samym działaniu." : "80% suplementów to marketing. AI znajdzie te same formy i dawki w lepszej cenie."}</p>
+                <p className="text-[11px] text-white/55 mt-0.5 leading-relaxed">{isCosmetics ? "AI porówna skład i znajdzie tańsze produkty o tym samym działaniu." : "80% suplementów to marketing. AI znajdzie te same formy i dawki w lepszej cenie."}</p>
               </div>
             </div>
           </div>
@@ -800,9 +800,9 @@ export default function Home() {
               <div className="w-11 h-11 rounded-xl bg-blue-500/10 flex items-center justify-center text-xl shrink-0">💊</div>
               <div>
                 <span className="text-[13px] font-bold text-white/80 block">Suplement Academy</span>
-                <span className="text-[10px] text-blue-400/50 block mt-0.5">Naucz się wybierać suplementy jak ekspert</span>
+                <span className="text-[10px] text-blue-400/70 block mt-0.5">Naucz się wybierać suplementy jak ekspert</span>
               </div>
-              <span className="text-white/15 text-sm shrink-0 ml-auto">{"›"}</span>
+              <span className="text-white/55 text-sm shrink-0 ml-auto">{"›"}</span>
             </a>
           </div>
         )}
@@ -827,7 +827,7 @@ export default function Home() {
                   }}
                 >
                   <span className="text-[20px] block">{link.emoji}</span>
-                  <span className="text-[11px] font-bold text-white/50 mt-1 block">{link.label}</span>
+                  <span className="text-[11px] font-bold text-white/60 mt-1 block">{link.label}</span>
                 </a>
               ))}
             </div>
@@ -865,7 +865,7 @@ export default function Home() {
               >
                 PORADA
               </p>
-              <p className="text-[12px] leading-relaxed font-medium text-white/50 transition-opacity duration-300">
+              <p className="text-[12px] leading-relaxed font-medium text-white/60 transition-opacity duration-300">
                 {tips[tipIndex]}
               </p>
             </div>
