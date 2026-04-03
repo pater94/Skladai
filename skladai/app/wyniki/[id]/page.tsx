@@ -400,7 +400,7 @@ export default function WynikiPage() {
         )}
         <div className="max-w-md mx-auto px-5 pt-6 pb-28 relative z-10 flex items-center justify-between">
           <button
-            onClick={() => router.push("/")}
+            onClick={() => router.push(isForma ? "/forma" : "/")}
             className={`text-[12px] font-semibold px-3.5 py-1.5 rounded-full active:scale-95 transition-all ${
               isDark ? "text-white/60 bg-white/5 border border-white/[0.08]" : "text-white/70 bg-white/10 backdrop-blur-sm border border-white/15"
             }`}

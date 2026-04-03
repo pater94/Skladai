@@ -860,6 +860,23 @@ function MainView({
         </div>
       )}
 
+      {/* CheckForm score chart */}
+      {checkFormHistory.length >= 2 && (
+        <div className="mb-6 rounded-[14px] p-4" style={{
+          background: "rgba(255,255,255,0.03)",
+          border: "1px solid rgba(255,255,255,0.06)",
+        }}>
+          <p className="text-xs font-semibold mb-2" style={{ color: "rgba(255,255,255,0.4)" }}>Wynik CheckForm — trend</p>
+          <ProgressChart
+            data={checkFormHistory.map((h) => ({ date: h.date, value: h.score }))}
+            label="/10"
+            color="#f97316"
+            targetValue={8}
+            targetLabel="Cel: 8/10"
+          />
+        </div>
+      )}
+
       {/* Separator */}
       <div className="flex items-center gap-3 mb-4" style={{ animation: "fadeInUp 0.4s ease both", animationDelay: "0.25s" }}>
         <div className="flex-1 h-px" style={{ background: "linear-gradient(to right, transparent, rgba(255,255,255,0.08), transparent)" }} />
