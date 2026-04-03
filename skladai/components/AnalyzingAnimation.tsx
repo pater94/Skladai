@@ -21,6 +21,13 @@ const DEFAULT_STEPS = [
   { text: "Przygotowuję ocenę...", icon: "⭐" },
 ];
 
+const MEAL_STEPS = [
+  { text: "Rozpoznaję danie...", icon: "🍽️" },
+  { text: "Szacuję składniki...", icon: "🥗" },
+  { text: "Obliczam kalorie...", icon: "🔥" },
+  { text: "Przygotowuję ocenę...", icon: "⭐" },
+];
+
 const FORMA_STEPS = [
   { text: "Skanuję Twoją sylwetkę...", icon: "📸" },
   { text: "Szacuję masę mięśniową i tkankę tłuszczową...", icon: "🧬" },
@@ -34,7 +41,7 @@ const STEP_DELAYS = [2500, 7000, 11500]; // cumulative ms for steps 1, 2, 3
 export default function AnalyzingAnimation({ mode }: AnalyzingAnimationProps) {
   const [step, setStep] = useState(0);
   const c = MODE_COLORS[mode] || MODE_COLORS.food;
-  const steps = mode === "forma" ? FORMA_STEPS : DEFAULT_STEPS;
+  const steps = mode === "forma" ? FORMA_STEPS : mode === "meal" ? MEAL_STEPS : DEFAULT_STEPS;
 
   useEffect(() => {
     setStep(0);
