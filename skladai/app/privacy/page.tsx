@@ -3,7 +3,7 @@ export default function PrivacyPolicy() {
     <div style={{ background: "#0a0f0d", color: "#e0e0e0", minHeight: "100vh", padding: "24px 20px", fontFamily: "system-ui, sans-serif", lineHeight: 1.7 }}>
       <div style={{ maxWidth: 680, margin: "0 auto" }}>
         <h1 style={{ fontSize: 28, fontWeight: 800, color: "#fff", marginBottom: 8 }}>Polityka Prywatności</h1>
-        <p style={{ fontSize: 13, color: "#888", marginBottom: 32 }}>Ostatnia aktualizacja: 31 marca 2026</p>
+        <p style={{ fontSize: 13, color: "#888", marginBottom: 32 }}>Ostatnia aktualizacja: kwiecień 2026</p>
 
         <h2 style={{ fontSize: 18, fontWeight: 700, color: "#84CC16", marginTop: 32, marginBottom: 12 }}>1. Administrator danych</h2>
         <p style={{ fontSize: 14 }}>
@@ -15,7 +15,8 @@ export default function PrivacyPolicy() {
         <ul style={{ fontSize: 14, paddingLeft: 20, marginTop: 8 }}>
           <li><strong>Zdjęcia produktów</strong> — robione aparatem lub wybierane z galerii. Są przesyłane do serwera w celu analizy składu przez AI. Nie są przechowywane na serwerze po zakończeniu analizy.</li>
           <li><strong>Historia skanów</strong> — przechowywana lokalnie na urządzeniu użytkownika (localStorage). Nie jest wysyłana na serwer.</li>
-          <li><strong>Profil użytkownika</strong> — dane takie jak waga, wzrost, wiek (jeśli podane) są przechowywane wyłącznie lokalnie na urządzeniu.</li>
+          <li><strong>Profil użytkownika</strong> — dane takie jak waga, wzrost, wiek, alergie (jeśli podane) są przechowywane lokalnie na urządzeniu oraz w Supabase (serwer Frankfurt, UE).</li>
+          <li><strong>Dane logowania</strong> — logowanie odbywa się przez Google OAuth lub Apple Sign In. Nie przechowujemy haseł — uwierzytelnianie obsługuje Supabase Auth.</li>
         </ul>
 
         <h2 style={{ fontSize: 18, fontWeight: 700, color: "#84CC16", marginTop: 32, marginBottom: 12 }}>3. Uprawnienia aplikacji</h2>
@@ -31,14 +32,14 @@ export default function PrivacyPolicy() {
           Zdjęcia przesyłane do analizy są przetwarzane przez zewnętrzne usługi AI (Anthropic Claude API, Google Cloud Vision) wyłącznie w celu rozpoznania tekstu i analizy składu. Zdjęcia nie są przechowywane na serwerach po zakończeniu analizy. Nie są wykorzystywane do trenowania modeli AI.
         </p>
 
-        <h2 style={{ fontSize: 18, fontWeight: 700, color: "#84CC16", marginTop: 32, marginBottom: 12 }}>5. Dane lokalne</h2>
+        <h2 style={{ fontSize: 18, fontWeight: 700, color: "#84CC16", marginTop: 32, marginBottom: 12 }}>5. Przechowywanie danych</h2>
         <p style={{ fontSize: 14 }}>
-          Wszystkie dane osobowe (profil, historia skanów, preferencje) są przechowywane wyłącznie w pamięci lokalnej urządzenia (localStorage/IndexedDB). Nie mamy do nich dostępu. Użytkownik może je usunąć w dowolnym momencie czyszcząc dane aplikacji.
+          Historia skanów i preferencje są przechowywane lokalnie na urządzeniu (localStorage). Logi skanów i dane konta przechowywane są w Supabase (region Frankfurt, Unia Europejska). Użytkownik może usunąć dane lokalne czyszcząc dane aplikacji, a konto usunąć kontaktując się z nami.
         </p>
 
         <h2 style={{ fontSize: 18, fontWeight: 700, color: "#84CC16", marginTop: 32, marginBottom: 12 }}>6. Udostępnianie danych</h2>
         <p style={{ fontSize: 14 }}>
-          Nie sprzedajemy, nie udostępniamy i nie przekazujemy danych osobowych użytkowników podmiotom trzecim. Zdjęcia są przesyłane wyłącznie do dostawców usług AI w celu analizy składu.
+          Nie sprzedajemy, nie udostępniamy i nie przekazujemy danych osobowych użytkowników podmiotom trzecim w celach reklamowych. Zdjęcia są przesyłane wyłącznie do Google Cloud Vision API (OCR tekstu) i Anthropic Claude API (analiza składników) w celu jednorazowego przetworzenia.
         </p>
 
         <h2 style={{ fontSize: 18, fontWeight: 700, color: "#84CC16", marginTop: 32, marginBottom: 12 }}>7. Bezpieczeństwo</h2>
