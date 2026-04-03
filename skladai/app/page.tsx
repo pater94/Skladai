@@ -872,42 +872,6 @@ export default function Home() {
           </div>
         </div>
 
-        {/* ══ 8. RECENT SCANS (below fold) ══ */}
-        {recentScans.length > 0 && (
-          <div className="mt-10 anim-fade-up-4">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-[14px] font-bold text-white/80">Ostatnie skany</h3>
-              <Link href="/dashboard" className="text-[11px] font-semibold transition-colors duration-300" style={{ color: accent.hex }}>
-                Zobacz wszystkie
-              </Link>
-            </div>
-            <div className="space-y-2">
-              {recentScans.map((scan) => (
-                <Link
-                  key={scan.id}
-                  href={`/wyniki/${scan.id}`}
-                  className="flex items-center gap-3 p-3 rounded-xl active:scale-[0.98] transition-all"
-                  style={{
-                    background: "rgba(255,255,255,0.03)",
-                    border: "1px solid rgba(255,255,255,0.06)",
-                  }}
-                >
-                  <div
-                    className="w-8 h-8 rounded-lg flex items-center justify-center text-[12px] font-bold text-white flex-shrink-0"
-                    style={{ backgroundColor: getScoreColor(scan.score) }}
-                  >
-                    {scan.score}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[13px] font-semibold text-white/80 truncate">{scan.name}</p>
-                    <p className="text-[10px] text-white/30">{timeAgo(scan.date)}</p>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          </div>
-        )}
-
         {/* ══ Full History ══ */}
         <HistoryList isCosmetics={true} mode={mode} />
       </div>
