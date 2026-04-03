@@ -39,6 +39,7 @@
 		"CAPCameraPlugin",
 		"HapticsPlugin",
 		"SplashScreenPlugin",
-		"StatusBarPlugin"
+		"StatusBarPlugin",
+		"HealthPlugin"
 	]
 }
