@@ -409,10 +409,35 @@ export default function FormaPage() {
   };
 
   return (
-    <div className="min-h-screen" style={{ background: "#111111", color: "#fff" }}>
-      <div className="max-w-md mx-auto px-4 pt-6" style={{
+    <div className="min-h-screen relative overflow-hidden" style={{ background: "#0a0e0c", color: "#fff" }}>
+      {/* Ambient blobs */}
+      <div className="pointer-events-none absolute" style={{
+        top: "-40px", right: "-60px", width: "220px", height: "220px",
+        background: "radial-gradient(circle, rgba(249,115,22,0.07), transparent 70%)",
+        filter: "blur(40px)",
+        animation: "floatBlob1 8s ease-in-out infinite",
+      }} />
+      <div className="pointer-events-none absolute" style={{
+        bottom: "120px", left: "-80px", width: "180px", height: "180px",
+        background: "radial-gradient(circle, rgba(249,115,22,0.07), transparent 70%)",
+        filter: "blur(50px)",
+        animation: "floatBlob2 10s ease-in-out infinite",
+      }} />
+      {/* Film grain */}
+      <div className="pointer-events-none fixed inset-0 z-[1]" style={{ opacity: 0.08 }}>
+        <svg width="100%" height="100%">
+          <filter id="grain"><feTurbulence type="fractalNoise" baseFrequency="0.65" numOctaves="3" stitchTiles="stitch" /></filter>
+          <rect width="100%" height="100%" filter="url(#grain)" />
+        </svg>
+      </div>
+      <style>{`
+        @keyframes floatBlob1 { 0%,100% { transform: translate(0,0); } 50% { transform: translate(-20px,30px); } }
+        @keyframes floatBlob2 { 0%,100% { transform: translate(0,0); } 50% { transform: translate(25px,-20px); } }
+        @keyframes breathe { 0%,100% { opacity: 0.6; transform: scale(1); } 50% { opacity: 1; transform: scale(1.05); } }
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+      `}</style>
+      <div className="max-w-md mx-auto px-4 pt-6 relative z-[2]" style={{
         paddingBottom: "200px",
-        backgroundImage: "radial-gradient(ellipse at top, rgba(249,115,22,0.08), transparent 60%)",
       }}>
         {view === "main" && (
           <MainView
@@ -422,6 +447,7 @@ export default function FormaPage() {
             onRunnerClick={() => router.push("/biegacz")}
             router={router}
             onGalleryCheckForm={() => { setAutoOpenGallery(true); setView("checkform"); }}
+            onTimerOpen={() => setTimerOpen(true)}
           />
         )}
         {view === "calculator" && (
@@ -446,8 +472,8 @@ export default function FormaPage() {
         )}
       </div>
 
-      {/* Floating Timer Button */}
-      <button
+      {/* Floating Timer Button (hidden on main view — timer icon in header instead) */}
+      {view !== "main" && <button
         onClick={(e) => { e.preventDefault(); e.stopPropagation(); setTimerOpen(true); }}
         className="fixed z-[100] flex items-center justify-center rounded-full shadow-lg transition-transform active:scale-95"
         style={{
@@ -467,7 +493,7 @@ export default function FormaPage() {
             {formatTime(timerLeft)}
           </span>
         )}
-      </button>
+      </button>}
 
       {/* Timer Modal */}
       {timerOpen && (
@@ -497,43 +523,52 @@ function Card({
   title,
   subtitle,
   onClick,
+  accentColor = "#f97316",
+  animDelay = 0,
 }: {
   icon: string;
   title: string;
   subtitle?: string;
   onClick: () => void;
+  accentColor?: string;
+  animDelay?: number;
 }) {
   return (
     <button
       onClick={onClick}
-      className="w-full flex items-center gap-3 p-3.5 rounded-2xl text-left transition-all active:scale-[0.98]"
+      className="w-full flex items-center gap-3 text-left transition-all active:scale-[0.98]"
       style={{
-        background: "rgba(255,255,255,0.03)",
-        border: "1px solid rgba(255,255,255,0.06)",
-        boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
+        padding: "15px 15px 15px 20px",
+        borderRadius: "14px",
+        background: "rgba(255,255,255,0.025)",
+        border: "1px solid rgba(255,255,255,0.05)",
+        borderLeft: `3px solid ${accentColor}`,
+        backdropFilter: "blur(8px)",
+        animation: `fadeInUp 0.4s ease both`,
+        animationDelay: `${0.35 + animDelay * 0.05}s`,
       }}
     >
       <div
         className="flex items-center justify-center flex-shrink-0"
         style={{
-          width: "42px",
-          height: "42px",
-          borderRadius: "12px",
-          background: "rgba(249,115,22,0.1)",
+          width: "44px",
+          height: "44px",
+          borderRadius: "13px",
+          background: `linear-gradient(135deg, ${accentColor}18, ${accentColor}08)`,
           fontSize: "20px",
         }}
       >
         {icon}
       </div>
       <div className="flex-1 min-w-0">
-        <div className="font-bold text-white" style={{ fontSize: "15px" }}>{title}</div>
+        <div className="font-bold text-white" style={{ fontSize: "14px" }}>{title}</div>
         {subtitle && (
-          <div className="mt-0.5" style={{ color: "rgba(255,255,255,0.45)", fontSize: "11px" }}>
+          <div className="mt-0.5" style={{ color: "rgba(255,255,255,0.3)", fontSize: "11px" }}>
             {subtitle}
           </div>
         )}
       </div>
-      <span style={{ color: "rgba(255,255,255,0.25)", fontSize: "16px" }}>{"▸"}</span>
+      <span style={{ color: "rgba(255,255,255,0.2)", fontSize: "15px" }}>{"›"}</span>
     </button>
   );
 }
@@ -566,6 +601,7 @@ function MainView({
   onRunnerClick,
   router,
   onGalleryCheckForm,
+  onTimerOpen,
 }: {
   setView: (v: View) => void;
   big3: number;
@@ -573,128 +609,229 @@ function MainView({
   onRunnerClick?: () => void;
   router: AppRouterInstance;
   onGalleryCheckForm?: () => void;
+  onTimerOpen?: () => void;
 }) {
   const [checkFormHistory, setCheckFormHistory] = useState<CheckFormEntry[]>([]);
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [galleryDate, setGalleryDate] = useState(() => new Date().toISOString().split("T")[0]);
 
   useEffect(() => {
     setCheckFormHistory(getCheckFormHistory());
   }, []);
 
-  const recentCheckForms = checkFormHistory.slice(0, 3);
+  const recentCheckForms = checkFormHistory.slice(0, 2);
+
+  const getScoreColor = (score: number) => score >= 8 ? "#22c55e" : score >= 5 ? "#f97316" : "#ef4444";
 
   return (
     <>
-      {/* Header */}
-      <h1 className="font-bold mb-0.5" style={{ fontSize: "28px" }}>
-        <span>{"🔥"}</span>{" "}
-        <span style={{
-          background: "linear-gradient(135deg, #F97316, #EF4444)",
-          WebkitBackgroundClip: "text",
-          WebkitTextFillColor: "transparent",
-        }}>Forma</span>
-      </h1>
-      <p className="mb-6" style={{ color: "rgba(255,255,255,0.5)", fontSize: "13px" }}>
-        {"Śledź siłę, pomiary i progres"}
-      </p>
-
-      {/* HERO: CheckForm */}
-      <div className="rounded-2xl p-5 mb-6" style={{
-        background: "rgba(255,255,255,0.03)",
-        border: "1px solid rgba(255,255,255,0.06)",
+      {/* Header with gradient bg */}
+      <div style={{
+        background: "linear-gradient(to bottom, rgba(26,16,8,0.9), transparent)",
+        margin: "-24px -16px 0",
+        padding: "24px 16px 16px",
       }}>
-        <button
-          onClick={() => setView("checkform")}
-          className="w-full py-4 rounded-2xl font-bold text-white transition-all active:scale-[0.97]"
-          style={{
-            background: "linear-gradient(135deg, #F97316, #EF4444)",
-            fontSize: "17px",
-            boxShadow: "0 8px 32px rgba(249,115,22,0.25)",
-          }}
-        >
-          {"📸"} Zrób CheckForm
-        </button>
-        <div className="text-center mt-3" style={{
-          fontSize: "11px",
-          color: "rgba(255,255,255,0.85)",
-          textTransform: "uppercase",
-          letterSpacing: "1.5px",
-          fontWeight: 600,
-          textShadow: "0 1px 4px rgba(0,0,0,0.3)",
-        }}>
-          {"✦"} POWERED BY AI VISION
-        </div>
-        <div className="text-center mt-2">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="flex items-center gap-2" style={{ fontSize: "26px", fontWeight: 900 }}>
+              <span>{"🔥"}</span>
+              <span style={{ color: "#f97316" }}>Forma</span>
+            </h1>
+            <p style={{ color: "rgba(255,255,255,0.35)", fontSize: "13px", marginTop: "2px" }}>
+              Śledź siłę, pomiary i progres
+            </p>
+          </div>
           <button
-            onClick={() => onGalleryCheckForm ? onGalleryCheckForm() : setView("checkform")}
-            className="px-4 py-1.5 rounded-lg text-xs transition-all active:scale-95"
+            onClick={() => onTimerOpen?.()}
+            className="flex items-center justify-center transition-all active:scale-95"
             style={{
-              background: "rgba(255,255,255,0.06)",
-              border: "1px solid rgba(255,255,255,0.1)",
-              color: "rgba(255,255,255,0.6)",
+              width: "42px", height: "42px", borderRadius: "50%",
+              background: "rgba(249,115,22,0.1)",
+              border: "1px solid rgba(249,115,22,0.15)",
             }}
           >
-            Wybierz z galerii
+            <Timer size={20} style={{ color: "#f97316" }} />
           </button>
         </div>
-
-        {/* Recent CheckForm results */}
-        {recentCheckForms.length > 0 && (
-          <div className="mt-4 pt-3" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
-            <div className="text-xs mb-2" style={{ color: "rgba(255,255,255,0.35)" }}>Ostatnie wyniki</div>
-            <div className="space-y-1.5">
-              {recentCheckForms.map((entry) => (
-                <button
-                  key={entry.id}
-                  onClick={() => router.push(`/wyniki/${entry.id}`)}
-                  className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-left transition-all active:scale-[0.98]"
-                  style={{
-                    background: "rgba(255,255,255,0.03)",
-                    border: "1px solid rgba(255,255,255,0.05)",
-                  }}
-                >
-                  <div>
-                    <div className="text-xs font-medium text-white">{entry.name}</div>
-                    <div style={{ color: "rgba(255,255,255,0.35)", fontSize: "10px" }}>
-                      {new Date(entry.date).toLocaleDateString("pl-PL")}
-                    </div>
-                  </div>
-                  <div className="text-sm font-bold" style={{ color: "#F97316" }}>
-                    {entry.score}/10
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
       </div>
 
+      {/* HERO: CheckForm */}
+      <div className="relative mt-5 mb-6" style={{ animation: "fadeInUp 0.5s ease both" }}>
+        {/* Ambient glow */}
+        <div className="absolute inset-0 -z-10" style={{
+          background: "radial-gradient(ellipse at center, rgba(249,115,22,0.12), transparent 70%)",
+          animation: "breathe 4s ease-in-out infinite",
+          filter: "blur(20px)",
+          transform: "scale(1.2)",
+        }} />
+        <div className="relative" style={{
+          padding: "24px",
+          borderRadius: "20px",
+          background: "linear-gradient(145deg, rgba(249,115,22,0.1), rgba(249,115,22,0.03))",
+          border: "1.5px solid rgba(249,115,22,0.18)",
+          backdropFilter: "blur(16px)",
+          overflow: "hidden",
+        }}>
+          {/* Scanner corners */}
+          <div className="absolute" style={{ top: 10, left: 10, width: 22, height: 22, borderTop: "2.5px solid #f97316", borderLeft: "2.5px solid #f97316", borderRadius: "4px 0 0 0" }} />
+          <div className="absolute" style={{ top: 10, right: 10, width: 22, height: 22, borderTop: "2.5px solid #f97316", borderRight: "2.5px solid #f97316", borderRadius: "0 4px 0 0" }} />
+          <div className="absolute" style={{ bottom: 10, left: 10, width: 22, height: 22, borderBottom: "2.5px solid #f97316", borderLeft: "2.5px solid #f97316", borderRadius: "0 0 0 4px" }} />
+          <div className="absolute" style={{ bottom: 10, right: 10, width: 22, height: 22, borderBottom: "2.5px solid #f97316", borderRight: "2.5px solid #f97316", borderRadius: "0 0 4px 0" }} />
+          {/* Decorative circles */}
+          <div className="absolute pointer-events-none" style={{ top: -20, right: -20, width: 80, height: 80, borderRadius: "50%", background: "rgba(249,115,22,0.06)" }} />
+          <div className="absolute pointer-events-none" style={{ bottom: -10, left: -10, width: 45, height: 45, borderRadius: "50%", background: "rgba(249,115,22,0.04)" }} />
+
+          {/* Content */}
+          <div className="flex flex-col items-center text-center relative z-10">
+            <div className="flex items-center justify-center mb-3" style={{
+              width: 52, height: 52, borderRadius: "16px",
+              background: "linear-gradient(135deg, #f97316, #ea580c)",
+              boxShadow: "0 4px 20px rgba(249,115,22,0.3)",
+              fontSize: "26px",
+            }}>{"📸"}</div>
+            <h2 style={{ fontSize: "20px", fontWeight: 800, color: "#fff" }}>CheckForm</h2>
+            <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.4)", marginTop: "4px", marginBottom: "16px" }}>
+              AI przeanalizuje Twoją sylwetkę
+            </p>
+            <button
+              onClick={() => setView("checkform")}
+              className="w-full py-3.5 rounded-2xl font-bold text-white transition-all active:scale-[0.97]"
+              style={{
+                background: "linear-gradient(135deg, #f97316, #ea580c)",
+                fontSize: "15px",
+                boxShadow: "0 4px 24px rgba(249,115,22,0.4)",
+              }}
+            >
+              {"🎯"} Rozpocznij analizę
+            </button>
+            <div className="flex items-center justify-center gap-4 mt-3">
+              <span style={{
+                fontSize: "10px",
+                color: "rgba(255,255,255,0.5)",
+                textTransform: "uppercase",
+                letterSpacing: "1.5px",
+                fontWeight: 600,
+              }}>{"✦"} AI VISION</span>
+              <button
+                onClick={() => setShowDatePicker(true)}
+                className="transition-all active:scale-95"
+                style={{ fontSize: "12px", color: "#f97316", fontWeight: 600 }}
+              >
+                z galerii
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Date Picker Modal */}
+      {showDatePicker && (
+        <div
+          className="fixed inset-0 z-[200] flex items-center justify-center"
+          style={{ background: "rgba(0,0,0,0.8)" }}
+          onClick={() => setShowDatePicker(false)}
+        >
+          <div
+            className="w-[85%] max-w-xs rounded-2xl p-6"
+            style={{ background: "#1a1a1a", border: "1px solid rgba(255,255,255,0.1)" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-lg font-bold text-white mb-1">Kiedy zrobiono zdjęcie?</h3>
+            <p className="text-xs mb-4" style={{ color: "rgba(255,255,255,0.4)" }}>
+              Wybierz datę wykonania zdjęcia
+            </p>
+            <input
+              type="date"
+              value={galleryDate}
+              onChange={(e) => setGalleryDate(e.target.value)}
+              className="w-full rounded-xl px-4 py-3 text-sm outline-none mb-4"
+              style={{
+                background: "rgba(255,255,255,0.06)",
+                border: "1px solid rgba(255,255,255,0.1)",
+                color: "#fff",
+                colorScheme: "dark",
+              }}
+            />
+            <button
+              onClick={() => {
+                setShowDatePicker(false);
+                if (onGalleryCheckForm) {
+                  localStorage.setItem("skladai_checkform_date", galleryDate);
+                  onGalleryCheckForm();
+                } else {
+                  localStorage.setItem("skladai_checkform_date", galleryDate);
+                  setView("checkform");
+                }
+              }}
+              className="w-full py-3 rounded-xl font-semibold text-white transition-all active:scale-95"
+              style={{ background: "linear-gradient(135deg, #f97316, #ea580c)" }}
+            >
+              Dalej
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Recent results */}
+      {recentCheckForms.length > 0 && (
+        <div className="mb-6" style={{ animation: "fadeInUp 0.5s ease both", animationDelay: "0.15s" }}>
+          <div className="mb-3" style={{
+            fontSize: "10px", color: "rgba(255,255,255,0.3)",
+            textTransform: "uppercase", letterSpacing: "2px", fontWeight: 600,
+          }}>OSTATNIE WYNIKI</div>
+          <div className="grid grid-cols-2 gap-2.5">
+            {recentCheckForms.map((entry) => (
+              <button
+                key={entry.id}
+                onClick={() => router.push(`/wyniki/${entry.id}`)}
+                className="flex flex-col p-3 rounded-[14px] text-left transition-all active:scale-[0.97]"
+                style={{
+                  background: "rgba(255,255,255,0.03)",
+                  border: "1px solid rgba(255,255,255,0.06)",
+                  backdropFilter: "blur(8px)",
+                }}
+              >
+                <div className="text-xs font-medium text-white">CheckForm</div>
+                <div style={{ color: "rgba(255,255,255,0.3)", fontSize: "10px", marginTop: "2px" }}>
+                  {new Date(entry.date).toLocaleDateString("pl-PL")}
+                </div>
+                <div className="text-lg font-bold mt-1" style={{ color: getScoreColor(entry.score) }}>
+                  {entry.score}/10
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Separator */}
-      <div className="flex items-center gap-3 mb-4">
-        <div className="flex-1 h-px" style={{ background: "rgba(255,255,255,0.08)" }} />
+      <div className="flex items-center gap-3 mb-4" style={{ animation: "fadeInUp 0.4s ease both", animationDelay: "0.25s" }}>
+        <div className="flex-1 h-px" style={{ background: "linear-gradient(to right, transparent, rgba(255,255,255,0.08), transparent)" }} />
         <span style={{
-          fontSize: "10px",
-          color: "rgba(255,255,255,0.3)",
+          fontSize: "9px",
+          color: "rgba(255,255,255,0.25)",
           textTransform: "uppercase",
-          letterSpacing: "2px",
+          letterSpacing: "2.5px",
           fontWeight: 600,
         }}>NARZĘDZIA</span>
-        <div className="flex-1 h-px" style={{ background: "rgba(255,255,255,0.08)" }} />
+        <div className="flex-1 h-px" style={{ background: "linear-gradient(to right, transparent, rgba(255,255,255,0.08), transparent)" }} />
       </div>
 
       {/* Tool cards */}
       <div className="flex flex-col gap-2.5">
-        <Card icon={"🏋️"} title="Kalkulator 1RM" subtitle="Oblicz maksymalną siłę" onClick={() => setView("calculator")} />
+        <Card icon={"🏋️"} title="Kalkulator 1RM" subtitle="Oblicz maksymalną siłę" accentColor="#f97316" animDelay={0} onClick={() => setView("calculator")} />
         <Card
           icon={"🏆"}
           title="Moje Rekordy"
-          subtitle={records.length > 0 ? `Big 3: ${Math.round(big3)}kg` : "Śledź postępy"}
+          subtitle={records.length > 0 ? `Big 3: ${Math.round(big3)}kg` : "Śledź postępy w siłowni"}
+          accentColor="#eab308" animDelay={1}
           onClick={() => setView("records")}
         />
-        <Card icon={"📏"} title="Pomiary ciała" subtitle="Obwody + % tłuszczu" onClick={() => setView("measurements")} />
-        <Card icon={"📸"} title="Zdjęcia progresowe" subtitle="Before / After" onClick={() => setView("photos")} />
-        <Card icon={"💪"} title="Karta siły" subtitle="Udostępnij osiągnięcia" onClick={() => setView("strength-card")} />
-        {onRunnerClick && <Card icon={"🏃"} title="Strefa Biegacza" subtitle="Tempo, tętno, plany" onClick={onRunnerClick} />}
-        <Card icon={"🍺"} title="Alkomat" subtitle="Oblicz promile i kalorie" onClick={() => router.push("/promile")} />
+        <Card icon={"📐"} title="Pomiary ciała" subtitle="Obwody + % tłuszczu" accentColor="#3b82f6" animDelay={2} onClick={() => setView("measurements")} />
+        <Card icon={"📷"} title="Zdjęcia progresowe" subtitle="Before / After" accentColor="#a855f7" animDelay={3} onClick={() => setView("photos")} />
+        <Card icon={"💪"} title="Karta siły" subtitle="Udostępnij osiągnięcia" accentColor="#ef4444" animDelay={4} onClick={() => setView("strength-card")} />
+        {onRunnerClick && <Card icon={"🏃"} title="Strefa Biegacza" subtitle="Tempo, tętno, plany" accentColor="#22c55e" animDelay={5} onClick={onRunnerClick} />}
+        <Card icon={"🍺"} title="Alkomat" subtitle="Oblicz promile i kalorie" accentColor="#fbbf24" animDelay={6} onClick={() => router.push("/promile")} />
       </div>
     </>
   );
