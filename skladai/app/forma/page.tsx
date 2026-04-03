@@ -2121,7 +2121,14 @@ function CheckFormView({
           96
         );
         const thumbnail = canvas.toDataURL("image/jpeg", 0.5);
-        const historyItem = addToHistory(data, thumbnail, "forma");
+        // Use gallery date if set, otherwise current date
+        const galleryDateStr = localStorage.getItem("skladai_checkform_date");
+        let customDate: string | undefined;
+        if (galleryDateStr) {
+          customDate = new Date(galleryDateStr + "T12:00:00").toISOString();
+          localStorage.removeItem("skladai_checkform_date");
+        }
+        const historyItem = addToHistory(data, thumbnail, "forma", customDate);
         router.push(`/wyniki/${historyItem.id}`);
       } catch (err) {
         const msg = err instanceof Error ? err.message : "";
@@ -2174,7 +2181,7 @@ function CheckFormView({
         <div className="mt-6">
           <p className="text-xs font-semibold mb-2" style={{ color: "rgba(255,255,255,0.5)" }}>Wynik CheckForm — trend</p>
           <ProgressChart
-            data={history.map((h) => ({ date: h.date, value: h.score }))}
+            data={[...history].sort((a, b) => a.date.localeCompare(b.date)).map((h) => ({ date: h.date, value: h.score }))}
             label="/10"
             color="#F97316"
             targetValue={8}

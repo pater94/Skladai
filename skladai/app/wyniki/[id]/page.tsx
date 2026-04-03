@@ -1337,32 +1337,55 @@ export default function WynikiPage() {
         {/* CheckForm body analysis */}
         {formaResult && (
           <div className="mt-4 space-y-3 anim-fade-up-1">
-            {/* Body stats */}
-            <div className="rounded-[20px] p-5 bg-white/[0.04] border border-white/[0.08]">
-              <h3 className="font-bold text-white text-[14px] mb-4">📊 Estymacja</h3>
+            {/* Body composition — premium 3-tile card */}
+            <div style={{ padding: 18, borderRadius: 16, background: "rgba(249,115,22,0.04)", border: "1px solid rgba(249,115,22,0.1)" }}>
+              <h3 style={{ fontSize: 14, fontWeight: 700, color: "rgba(255,255,255,0.8)", marginBottom: 14 }}>🏋️ Kompozycja ciała</h3>
               {(() => {
                 const weight = profile?.weight_kg;
+                const heightCm = profile?.height_cm;
                 const bfMatch = formaResult.body_fat_range?.match(/(\d+)-(\d+)/);
                 const bfMid = bfMatch ? (parseInt(bfMatch[1]) + parseInt(bfMatch[2])) / 2 : null;
-                // Use AI estimates if available, fall back to calculated values
                 const aiFatKg = formaResult.estimated_fat_kg;
                 const aiMuscleKg = formaResult.estimated_muscle_kg;
                 const fatKg = aiFatKg ?? (weight && bfMid ? Math.round(weight * bfMid / 100 * 10) / 10 : null);
                 const leanMass = weight && fatKg ? Math.round((weight - fatKg) * 10) / 10 : null;
                 const muscleKg = aiMuscleKg ?? (leanMass ? Math.round(leanMass * 0.75 * 10) / 10 : null);
-                const hasProfile = weight && weight > 0;
+                const hasProfile = weight && weight > 0 && heightCm && heightCm > 0;
+
+                if (!hasProfile) {
+                  return (
+                    <div style={{ padding: 14, borderRadius: 12, background: "rgba(249,115,22,0.08)", border: "1px solid rgba(249,115,22,0.15)", textAlign: "center" }}>
+                      <p style={{ fontSize: 12, color: "rgba(255,255,255,0.55)", marginBottom: 8 }}>
+                        Uzupełnij wagę i wzrost w Profilu żeby zobaczyć szacunek kompozycji ciała
+                      </p>
+                      <button onClick={() => router.push("/profil")} style={{ fontSize: 12, color: "#f97316", fontWeight: 600, cursor: "pointer", background: "none", border: "none" }}>
+                        Uzupełnij profil →
+                      </button>
+                    </div>
+                  );
+                }
 
                 return (
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[13px] text-white/55">🏋️ Tkanka tłuszczowa</span>
-                      <div className="text-right">
-                        <span className="text-[14px] font-bold text-white">{formaResult.body_fat_range}</span>
-                        {fatKg && <span className="text-[11px] text-white/55 ml-1">(~{fatKg} kg)</span>}
+                  <>
+                    {/* 3 tiles */}
+                    <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+                      <div style={{ flex: 1, textAlign: "center", padding: 12, borderRadius: 12, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.05)" }}>
+                        <div style={{ fontSize: 22, fontWeight: 800, color: "#FBBF24" }}>{bfMid ? `${bfMid}%` : formaResult.body_fat_range}</div>
+                        <div style={{ fontSize: 10, color: "rgba(255,255,255,0.45)", marginTop: 4 }}>% tłuszczu</div>
+                      </div>
+                      <div style={{ flex: 1, textAlign: "center", padding: 12, borderRadius: 12, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.05)" }}>
+                        <div style={{ fontSize: 22, fontWeight: 800, color: "#ef4444" }}>{fatKg ? `~${fatKg}` : "—"}<span style={{ fontSize: 12 }}> kg</span></div>
+                        <div style={{ fontSize: 10, color: "rgba(255,255,255,0.45)", marginTop: 4 }}>tłuszcz</div>
+                      </div>
+                      <div style={{ flex: 1, textAlign: "center", padding: 12, borderRadius: 12, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.05)" }}>
+                        <div style={{ fontSize: 22, fontWeight: 800, color: "#22c55e" }}>{muscleKg ? `~${muscleKg}` : "—"}<span style={{ fontSize: 12 }}> kg</span></div>
+                        <div style={{ fontSize: 10, color: "rgba(255,255,255,0.45)", marginTop: 4 }}>mięśnie</div>
                       </div>
                     </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-[13px] text-white/55">Kategoria</span>
+
+                    {/* Category + BMI rows */}
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderTop: "1px solid rgba(255,255,255,0.05)" }}>
+                      <span style={{ fontSize: 12, color: "rgba(255,255,255,0.5)" }}>Kategoria</span>
                       <span className={`text-[11px] font-bold px-3 py-1 rounded-full ${
                         formaResult.body_fat_category === "athletic" ? "bg-blue-500/15 text-blue-400"
                         : formaResult.body_fat_category === "fit" ? "bg-emerald-500/15 text-emerald-400"
@@ -1372,45 +1395,21 @@ export default function WynikiPage() {
                         {formaResult.body_fat_category?.toUpperCase()}
                       </span>
                     </div>
-                    {hasProfile ? (
-                      <>
-                        {fatKg && (
-                          <div className="flex items-center justify-between">
-                            <span className="text-[13px] text-white/55">🔥 Masa tłuszczowa</span>
-                            <span className="text-[14px] font-bold text-white">~{fatKg} kg</span>
-                          </div>
-                        )}
-                        {muscleKg && (
-                          <div className="flex items-center justify-between">
-                            <span className="text-[13px] text-white/55">💪 Masa mięśniowa</span>
-                            <span className="text-[14px] font-bold text-white">~{muscleKg} kg</span>
-                          </div>
-                        )}
-                        {leanMass && (
-                          <div className="flex items-center justify-between">
-                            <span className="text-[13px] text-white/55">⚖️ Masa beztłuszczowa</span>
-                            <span className="text-[13px] font-semibold text-white">~{leanMass} kg</span>
-                          </div>
-                        )}
-                      </>
-                    ) : (
-                      <div className="rounded-xl p-3 bg-amber-500/10 border border-amber-500/15">
-                        <p className="text-[12px] text-amber-400">
-                          Uzupełnij profil (waga, wzrost) żeby zobaczyć szacunek masy tłuszczowej i mięśniowej.
-                        </p>
-                      </div>
-                    )}
-                    <div className="flex items-center justify-between">
-                      <span className="text-[13px] text-white/55">💪 Ocena masy mięśniowej</span>
-                      <span className="text-[13px] font-semibold text-white">
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderTop: "1px solid rgba(255,255,255,0.05)" }}>
+                      <span style={{ fontSize: 12, color: "rgba(255,255,255,0.5)" }}>💪 Ocena mięśni</span>
+                      <span style={{ fontSize: 12, fontWeight: 600, color: "white" }}>
                         {formaResult.muscle_mass === "above_average" ? "Powyżej średniej" : formaResult.muscle_mass === "average" ? "Średnia" : "Poniżej średniej"}
                       </span>
                     </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-[13px] text-white/55">📏 BMI</span>
-                      <span className="text-[13px] font-semibold text-white">{formaResult.bmi} — {formaResult.bmi_category}</span>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderTop: "1px solid rgba(255,255,255,0.05)" }}>
+                      <span style={{ fontSize: 12, color: "rgba(255,255,255,0.5)" }}>📏 BMI</span>
+                      <span style={{ fontSize: 12, fontWeight: 600, color: "white" }}>{formaResult.bmi} — {formaResult.bmi_category}</span>
                     </div>
-                  </div>
+
+                    <p style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", textAlign: "center", marginTop: 10 }}>
+                      ⚠️ Szacunek AI na podstawie zdjęcia — dokładność ±5%. Dla precyzji użyj DEXA scan.
+                    </p>
+                  </>
                 );
               })()}
             </div>

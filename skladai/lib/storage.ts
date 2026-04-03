@@ -21,7 +21,8 @@ export function getHistory(): ScanHistoryItem[] {
 export function addToHistory(
   result: AnalysisResult,
   thumbnail: string,
-  scanType: ScanMode = "food"
+  scanType: ScanMode = "food",
+  customDate?: string
 ): ScanHistoryItem {
   const item: ScanHistoryItem = {
     id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
@@ -29,7 +30,7 @@ export function addToHistory(
     name: result.name || "Nieznany",
     brand: result.brand || "",
     score: result.score || 5,
-    date: new Date().toISOString(),
+    date: customDate || new Date().toISOString(),
     thumbnail,
     result,
   };
