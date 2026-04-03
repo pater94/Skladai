@@ -231,6 +231,8 @@ export interface CheckFormResult {
   body_fat_range: string;
   body_fat_category: "essential" | "athletic" | "fit" | "average" | "above_average" | "high";
   muscle_mass: "above_average" | "average" | "below_average";
+  estimated_fat_kg: number | null;
+  estimated_muscle_kg: number | null;
   overall_score: number;
   score_label: string;
   visible_strengths: string[];

@@ -21,7 +21,7 @@ import Scanner from "@/components/Scanner";
 import dynamic from "next/dynamic";
 
 const ProgressChart = dynamic(() => import("@/components/ProgressChart"), { ssr: false });
-import { addToHistory, checkFreeTierLimit, incrementScanCount, updateStreak } from "@/lib/storage";
+import { addToHistory, checkFreeTierLimit, incrementScanCount, updateStreak, removeHistoryItem, getProfile as getStorageProfile } from "@/lib/storage";
 import { isNative, takePhotoForMode } from "@/lib/native-camera";
 import type { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
 
@@ -614,6 +614,7 @@ function MainView({
   const [checkFormHistory, setCheckFormHistory] = useState<CheckFormEntry[]>([]);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [galleryDate, setGalleryDate] = useState(() => new Date().toISOString().split("T")[0]);
+  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
 
   useEffect(() => {
     setCheckFormHistory(getCheckFormHistory());
@@ -622,6 +623,12 @@ function MainView({
   const recentCheckForms = checkFormHistory.slice(0, 2);
 
   const getScoreColor = (score: number) => score >= 8 ? "#22c55e" : score >= 5 ? "#f97316" : "#ef4444";
+
+  const handleDeleteResult = (id: string) => {
+    removeHistoryItem(id);
+    setCheckFormHistory(getCheckFormHistory());
+    setDeleteConfirm(null);
+  };
 
   return (
     <>
@@ -781,26 +788,75 @@ function MainView({
           }}>OSTATNIE WYNIKI</div>
           <div className="grid grid-cols-2 gap-2.5">
             {recentCheckForms.map((entry) => (
-              <button
+              <div
                 key={entry.id}
-                onClick={() => router.push(`/wyniki/${entry.id}`)}
-                className="flex flex-col p-3 rounded-[14px] text-left transition-all active:scale-[0.97]"
+                className="relative flex flex-col p-3 rounded-[14px] text-left transition-all"
                 style={{
                   background: "rgba(255,255,255,0.03)",
                   border: "1px solid rgba(255,255,255,0.06)",
                   backdropFilter: "blur(8px)",
                 }}
               >
-                <div className="text-xs font-medium text-white">CheckForm</div>
-                <div style={{ color: "rgba(255,255,255,0.3)", fontSize: "10px", marginTop: "2px" }}>
-                  {new Date(entry.date).toLocaleDateString("pl-PL")}
-                </div>
-                <div className="text-lg font-bold mt-1" style={{ color: getScoreColor(entry.score) }}>
-                  {entry.score}/10
-                </div>
-              </button>
+                <button
+                  onClick={() => router.push(`/wyniki/${entry.id}`)}
+                  className="flex-1 text-left active:scale-[0.97] transition-all"
+                >
+                  <div className="text-xs font-medium text-white">CheckForm</div>
+                  <div style={{ color: "rgba(255,255,255,0.3)", fontSize: "10px", marginTop: "2px" }}>
+                    {new Date(entry.date).toLocaleDateString("pl-PL")}
+                  </div>
+                  <div className="text-lg font-bold mt-1" style={{ color: getScoreColor(entry.score) }}>
+                    {entry.score}/10
+                  </div>
+                </button>
+                <button
+                  onClick={(e) => { e.stopPropagation(); setDeleteConfirm(entry.id); }}
+                  className="absolute top-2 right-2 p-1.5 rounded-lg transition-all active:scale-90"
+                  style={{ background: "rgba(239,68,68,0.1)" }}
+                >
+                  <Trash2 size={12} style={{ color: "#ef4444" }} />
+                </button>
+              </div>
             ))}
           </div>
+
+          {/* Delete confirmation */}
+          {deleteConfirm && (() => {
+            const entry = recentCheckForms.find((e) => e.id === deleteConfirm);
+            return entry ? (
+              <div
+                className="fixed inset-0 z-[200] flex items-center justify-center"
+                style={{ background: "rgba(0,0,0,0.8)" }}
+                onClick={() => setDeleteConfirm(null)}
+              >
+                <div
+                  className="w-[85%] max-w-xs rounded-2xl p-5"
+                  style={{ background: "#1a1a1a", border: "1px solid rgba(255,255,255,0.1)" }}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <p className="text-sm text-white mb-4">
+                    Usunąć wynik CheckForm z {new Date(entry.date).toLocaleDateString("pl-PL")}?
+                  </p>
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => setDeleteConfirm(null)}
+                      className="flex-1 py-2.5 rounded-xl text-sm font-medium"
+                      style={{ background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.7)" }}
+                    >
+                      Nie
+                    </button>
+                    <button
+                      onClick={() => handleDeleteResult(deleteConfirm)}
+                      className="flex-1 py-2.5 rounded-xl text-sm font-semibold"
+                      style={{ background: "rgba(239,68,68,0.2)", color: "#ef4444" }}
+                    >
+                      Tak, usuń
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ) : null;
+          })()}
         </div>
       )}
 
@@ -1999,10 +2055,20 @@ function CheckFormView({
       }
       setIsLoading(true);
       try {
+        const userProfile = getStorageProfile();
+        const profileData = userProfile ? {
+          gender: userProfile.gender || "male",
+          weight_kg: userProfile.weight_kg || 0,
+          height_cm: userProfile.height_cm || 0,
+          age: userProfile.age || 0,
+          bmi: userProfile.weight_kg && userProfile.height_cm
+            ? Math.round(userProfile.weight_kg / ((userProfile.height_cm / 100) ** 2) * 10) / 10
+            : 0,
+        } : undefined;
         const res = await fetch("/api/analyze", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ image: base64, mode: "forma" }),
+          body: JSON.stringify({ image: base64, mode: "forma", profileData }),
         });
         let data;
         try {

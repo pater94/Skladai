@@ -528,6 +528,12 @@ const CHECKFORM_PROMPT = `Analizujesz ZDJĘCIE SYLWETKI użytkownika.
 Oceń wizualnie kompozycję ciała. To jest ESTYMACJA WIZUALNA, nie pomiar medyczny.
 Zawsze podawaj ZAKRESY, nie dokładne liczby.
 
+Na podstawie zdjęcia sylwetki oraz danych z profilu (wzrost, waga, płeć) oszacuj:
+- Przybliżony % tłuszczu (zakres, np. "15-20%")
+- Szacowaną masę tłuszczową w kg (jedno przybliżenie, np. 12.5)
+- Szacowaną masę mięśniową w kg (jedno przybliżenie, np. 35.2)
+Jeśli dane profilu nie są dostępne (waga=0 lub wzrost=0), ustaw estimated_fat_kg i estimated_muscle_kg na null.
+
 Odpowiedz WYŁĄCZNIE JSON:
 {
   "name": "CheckForm",
@@ -538,6 +544,8 @@ Odpowiedz WYŁĄCZNIE JSON:
   "body_fat_range_high": 20,
   "body_fat_category": "athletic|fit|average|above_average|high",
   "muscle_mass": "above_average|average|below_average",
+  "estimated_fat_kg": 12.5,
+  "estimated_muscle_kg": 35.2,
   "overall_score": 7.5,
   "score_label": "Dobra forma",
   "visible_strengths": ["Widoczna definicja ramion", "Proporcjonalna sylwetka"],

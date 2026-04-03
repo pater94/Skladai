@@ -670,9 +670,13 @@ export default function WynikiPage() {
                 const weight = profile?.weight_kg;
                 const bfMatch = formaResult.body_fat_range?.match(/(\d+)-(\d+)/);
                 const bfMid = bfMatch ? (parseInt(bfMatch[1]) + parseInt(bfMatch[2])) / 2 : null;
-                const fatKg = weight && bfMid ? Math.round(weight * bfMid / 100 * 10) / 10 : null;
+                // Use AI estimates if available, fall back to calculated values
+                const aiFatKg = formaResult.estimated_fat_kg;
+                const aiMuscleKg = formaResult.estimated_muscle_kg;
+                const fatKg = aiFatKg ?? (weight && bfMid ? Math.round(weight * bfMid / 100 * 10) / 10 : null);
                 const leanMass = weight && fatKg ? Math.round((weight - fatKg) * 10) / 10 : null;
-                const muscleKg = leanMass ? Math.round(leanMass * 0.75 * 10) / 10 : null;
+                const muscleKg = aiMuscleKg ?? (leanMass ? Math.round(leanMass * 0.75 * 10) / 10 : null);
+                const hasProfile = weight && weight > 0;
 
                 return (
                   <div className="space-y-4">
@@ -694,21 +698,40 @@ export default function WynikiPage() {
                         {formaResult.body_fat_category?.toUpperCase()}
                       </span>
                     </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-[13px] text-white/55">💪 Masa mięśniowa</span>
-                      <div className="text-right">
-                        <span className="text-[13px] font-semibold text-white">
-                          {formaResult.muscle_mass === "above_average" ? "Powyżej średniej" : formaResult.muscle_mass === "average" ? "Średnia" : "Poniżej średniej"}
-                        </span>
-                        {muscleKg && <span className="text-[11px] text-white/55 ml-1">(~{muscleKg} kg)</span>}
-                      </div>
-                    </div>
-                    {leanMass && (
-                      <div className="flex items-center justify-between">
-                        <span className="text-[13px] text-white/55">⚖️ Masa beztłuszczowa</span>
-                        <span className="text-[13px] font-semibold text-white">~{leanMass} kg</span>
+                    {hasProfile ? (
+                      <>
+                        {fatKg && (
+                          <div className="flex items-center justify-between">
+                            <span className="text-[13px] text-white/55">🔥 Masa tłuszczowa</span>
+                            <span className="text-[14px] font-bold text-white">~{fatKg} kg</span>
+                          </div>
+                        )}
+                        {muscleKg && (
+                          <div className="flex items-center justify-between">
+                            <span className="text-[13px] text-white/55">💪 Masa mięśniowa</span>
+                            <span className="text-[14px] font-bold text-white">~{muscleKg} kg</span>
+                          </div>
+                        )}
+                        {leanMass && (
+                          <div className="flex items-center justify-between">
+                            <span className="text-[13px] text-white/55">⚖️ Masa beztłuszczowa</span>
+                            <span className="text-[13px] font-semibold text-white">~{leanMass} kg</span>
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <div className="rounded-xl p-3 bg-amber-500/10 border border-amber-500/15">
+                        <p className="text-[12px] text-amber-400">
+                          Uzupełnij profil (waga, wzrost) żeby zobaczyć szacunek masy tłuszczowej i mięśniowej.
+                        </p>
                       </div>
                     )}
+                    <div className="flex items-center justify-between">
+                      <span className="text-[13px] text-white/55">💪 Ocena masy mięśniowej</span>
+                      <span className="text-[13px] font-semibold text-white">
+                        {formaResult.muscle_mass === "above_average" ? "Powyżej średniej" : formaResult.muscle_mass === "average" ? "Średnia" : "Poniżej średniej"}
+                      </span>
+                    </div>
                     <div className="flex items-center justify-between">
                       <span className="text-[13px] text-white/55">📏 BMI</span>
                       <span className="text-[13px] font-semibold text-white">{formaResult.bmi} — {formaResult.bmi_category}</span>
@@ -765,8 +788,13 @@ export default function WynikiPage() {
             )}
 
             {/* Disclaimer */}
+            <div className="rounded-[16px] p-4 bg-amber-500/[0.06] border border-amber-500/15">
+              <p className="text-[11px] text-amber-400/80 leading-relaxed text-center">
+                ⚠️ Szacunek AI na podstawie zdjęcia — dokładność ±5%. Dla precyzyjnego pomiaru użyj DEXA scan.
+              </p>
+            </div>
             <p className="text-[10px] text-white/25 text-center leading-relaxed px-4">
-              ⚠️ Wartości szacunkowe na podstawie zdjęcia. Dokładny pomiar wymaga DEXA lub kaliperów. Nie traktuj jako diagnozy medycznej.
+              Nie traktuj jako diagnozy medycznej.
             </p>
           </div>
         )}

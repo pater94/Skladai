@@ -46,6 +46,11 @@ export function getHistoryItem(id: string): ScanHistoryItem | null {
   return history.find((item) => item.id === id) || null;
 }
 
+export function removeHistoryItem(id: string): void {
+  const history = getHistory().filter((item) => item.id !== id);
+  localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+}
+
 export function clearHistory(): void {
   localStorage.removeItem(HISTORY_KEY);
 }
