@@ -87,6 +87,93 @@ const ACCENT_MAP: Record<string, { hex: string; rgb: string }> = {
   suplement: { hex: "#3b82f6", rgb: "59,130,246" },
 };
 
+/* ── MicButton component ── */
+function MicButton({ accentRgb }: { accentRgb: string }) {
+  const [showTooltip, setShowTooltip] = useState(false);
+  const [showBadge, setShowBadge] = useState(false);
+
+  useEffect(() => {
+    // Show tooltip on first visit
+    if (!localStorage.getItem("micTooltipShown")) {
+      setShowTooltip(true);
+      const timer = setTimeout(() => {
+        setShowTooltip(false);
+        localStorage.setItem("micTooltipShown", "1");
+      }, 6000);
+      return () => clearTimeout(timer);
+    }
+  }, []);
+
+  useEffect(() => {
+    // Show NEW badge until first mic use
+    if (!localStorage.getItem("voiceUsed")) {
+      setShowBadge(true);
+    }
+  }, []);
+
+  const handleMicClick = () => {
+    setShowTooltip(false);
+    localStorage.setItem("micTooltipShown", "1");
+    if (!localStorage.getItem("voiceUsed")) {
+      localStorage.setItem("voiceUsed", "1");
+      setShowBadge(false);
+    }
+    // TODO: trigger voice recognition
+  };
+
+  return (
+    <div style={{ position: "relative" }}>
+      {/* Tooltip */}
+      {showTooltip && (
+        <div style={{
+          position: "absolute", bottom: "calc(100% + 10px)", right: 0,
+          padding: "8px 14px", borderRadius: 10,
+          background: "rgba(110,252,180,0.15)", border: "1px solid rgba(110,252,180,0.25)",
+          color: "#6efcb4", fontSize: 12, fontWeight: 600,
+          whiteSpace: "nowrap", zIndex: 10,
+          animation: "micTooltipFade 0.3s ease",
+        }}>
+          Powiedz co zjadłeś!
+          <div style={{
+            position: "absolute", bottom: -5, right: 18, width: 10, height: 10,
+            background: "rgba(110,252,180,0.15)", border: "1px solid rgba(110,252,180,0.25)",
+            borderTop: "none", borderLeft: "none",
+            transform: "rotate(45deg)",
+          }} />
+        </div>
+      )}
+      {/* NEW badge */}
+      {showBadge && (
+        <span style={{
+          position: "absolute", top: -4, right: -4, zIndex: 10,
+          fontSize: 8, padding: "2px 6px", borderRadius: 6,
+          background: "#6efcb4", color: "#0a0e0c", fontWeight: 700,
+        }}>NEW</span>
+      )}
+      {/* Mic button */}
+      <button
+        onClick={handleMicClick}
+        style={{
+          width: 52, height: 52, borderRadius: "50%",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          background: "rgba(110,252,180,0.12)",
+          border: "1.5px solid rgba(110,252,180,0.25)",
+          cursor: "pointer",
+          animation: "micPulse 2.5s ease-in-out infinite",
+          transition: "all 0.2s",
+        }}
+      >
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6efcb4" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <rect x="9" y="1" width="6" height="12" rx="3" />
+          <path d="M5 10a7 7 0 0 0 14 0" />
+          <line x1="12" y1="17" x2="12" y2="21" />
+          <line x1="8" y1="21" x2="16" y2="21" />
+        </svg>
+      </button>
+    </div>
+  );
+}
+
 export default function Home() {
   const [isLoading, setIsLoading] = useState(false);
   const [isScanning, setIsScanning] = useState(false); // State-based lock — disables button + blocks onChange
@@ -759,9 +846,7 @@ export default function Home() {
                       // Navigate to a search-focused view or expand inline
                     }}
                   />
-                  <button className="w-9 h-9 rounded-full flex items-center justify-center transition-all" style={{ background: `rgba(${accent.rgb},0.08)`, border: `1px solid rgba(${accent.rgb},0.15)`, animation: "mic-pulse 3s ease-in-out infinite" }}>
-                    <span className="text-[16px]">🎙️</span>
-                  </button>
+                  <MicButton accentRgb={accent.rgb} />
                 </div>
               </div>
             )}
