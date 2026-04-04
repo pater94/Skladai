@@ -50,6 +50,8 @@ export default function BottomNav() {
           backdropFilter: "blur(20px)",
           WebkitBackdropFilter: "blur(20px)",
           height: "68px",
+          transform: "translateZ(0)",
+          WebkitTransform: "translateZ(0)",
         }}
       >
         <div className="max-w-md mx-auto flex justify-around items-center h-full px-2">

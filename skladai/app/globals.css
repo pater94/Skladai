@@ -12,6 +12,7 @@
 html {
   scroll-behavior: smooth;
   background: #0a0e0c !important;
+  overscroll-behavior: none;
 }
 
 body {
@@ -21,6 +22,7 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   min-height: 100dvh;
+  overscroll-behavior: none;
 }
 
 /* PWA standalone mode */
