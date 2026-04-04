@@ -458,19 +458,35 @@ Odpowiedz WYŁĄCZNIE JSON:
   "meal_name": "nazwa dania", "name": "nazwa dania", "brand": "", "score": 8,
   "verdict_short": "Dobry/Doskonały/Przeciętny/Słaby", "verdict": "2-3 zdania z charakterem",
   "items": [
-    {"name": "składnik", "estimated_weight_g": 200, "min_reasonable_g": 80, "max_reasonable_g": 400,
+    {"name": "składnik", "emoji": "🍗", "estimated_weight_g": 200, "min_reasonable_g": 80, "max_reasonable_g": 400,
      "calories_per_100g": 165, "protein_per_100g": 31, "fat_per_100g": 3.6, "carbs_per_100g": 0,
      "calories": 330, "protein": 62, "fat": 7, "carbs": 0}
   ],
   "total": {"calories": 566, "protein": 67, "fat": 7.6, "carbs": 53},
   "sugar_teaspoons": 0,
-  "fun_comparisons": ["porównanie 1", "porównanie 2"],
-  "tip": "rada", "pros": [], "cons": [], "allergens": []
+  "nutrition": [
+    {"label": "Energia", "value": "566 kcal", "icon": "⚡"},
+    {"label": "Białko", "value": "67 g", "icon": "💪"},
+    {"label": "Tłuszcz", "value": "7.6 g", "icon": "🫧"},
+    {"label": "Węglowodany", "value": "53 g", "icon": "🍞"}
+  ],
+  "fun_comparisons": ["porównanie 1", "porównanie 2", "porównanie 3"],
+  "tip": "rada", "pros": ["plus 1"], "cons": ["minus 1"], "allergens": [],
+  "diabetes_info": {"ww_per_100g": null, "ww_per_package": null, "glycemic_index": "średni", "diabetes_badge": "ok", "diabetes_tip": "rada"},
+  "pregnancy_info": {"alerts": [], "safe_nutrients": [], "caffeine_mg": 0}
 }
 
-ZASADY: Oszacuj wizualnie (talerz ~25cm). Wagi z "~". Sos/dressing = dolicz!
-Podaj wartości PER 100g (do slidera) + szacowane wagi + min/max.
-STYL: mądry kumpel. Porównania: Big Mac=563, jabłko=52, jajko=78. Spalanie: bieganie ~6kcal/min.`;
+ZASADY:
+- Oszacuj wizualnie (talerz ~25cm). Wagi z "~". Sos/dressing = dolicz!
+- Podaj wartości PER 100g (calories_per_100g, protein_per_100g itd.) + szacowane wagi + min/max dla KAŻDEGO składnika
+- Każdy item MUSI mieć: name, emoji, estimated_weight_g, min_reasonable_g, max_reasonable_g, calories_per_100g, protein_per_100g, fat_per_100g, carbs_per_100g, calories, protein, fat, carbs
+- NUTRITION array: podsumowanie całego dania (energia, białko, tłuszcz, węgle) — jest wyświetlany na ekranie wyniku
+- sugar_teaspoons: 1 łyżeczka = 4g cukru. Oblicz z węglowodanów prostych
+- DIABETES_INFO: WW = węgle_przyswajalne/10. IG: niski<55, średni 55-70, wysoki>70
+- PREGNANCY_INFO: surowe mięso/ryba → alert. Kofeina → caffeine_mg
+- fun_comparisons: ZAWSZE 2-3. Big Mac=563kcal, Snickers=488, pączek=350, jabłko=52, jajko=78. Spalanie: bieganie ~6kcal/min
+- STYL: mądry kumpel z humorem
+- pros/cons: ZAWSZE min 1 element każdy`;
 
 // ==================== TEXT SEARCH (AI food database) ====================
 
@@ -715,41 +731,59 @@ async function callClaude(
   maxTokens: number,
   timeoutMs: number,
   model: string = "claude-sonnet-4-20250514"
-) {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), timeoutMs);
-  try {
-    const response = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": apiKey,
-        "anthropic-version": "2023-06-01",
-      },
-      signal: controller.signal,
-      body: JSON.stringify({
-        model,
-        max_tokens: maxTokens,
-        temperature: 0,
-        system,
-        messages: [{ role: "user", content: userContent }],
-      }),
-    });
-    clearTimeout(timeout);
-    if (!response.ok) {
-      const errText = await response.text();
-      console.error("Anthropic API error:", response.status, errText);
-      return { error: true, status: response.status };
+): Promise<{ error: boolean; text: string; status?: number }> {
+  const MAX_RETRIES = 1;
+
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      const response = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": apiKey,
+          "anthropic-version": "2023-06-01",
+        },
+        signal: controller.signal,
+        body: JSON.stringify({
+          model,
+          max_tokens: maxTokens,
+          temperature: 0,
+          system,
+          messages: [{ role: "user", content: userContent }],
+        }),
+      });
+      clearTimeout(timeout);
+
+      if (!response.ok) {
+        const errText = await response.text();
+        console.error(`Anthropic API error (attempt ${attempt}):`, response.status, errText);
+        // Retry on transient errors (500, 529 overloaded)
+        if (attempt < MAX_RETRIES && (response.status >= 500 || response.status === 429)) {
+          await new Promise(r => setTimeout(r, 1500));
+          continue;
+        }
+        return { error: true, text: "", status: response.status };
+      }
+      const data = await response.json();
+      return { error: false, text: data.content?.[0]?.text || "" };
+    } catch (err: unknown) {
+      clearTimeout(timeout);
+      if (err instanceof Error && err.name === "AbortError") {
+        if (attempt < MAX_RETRIES) {
+          continue; // Retry on timeout
+        }
+        return { error: true, text: "", status: 504 };
+      }
+      if (attempt < MAX_RETRIES) {
+        await new Promise(r => setTimeout(r, 1000));
+        continue;
+      }
+      throw err;
     }
-    const data = await response.json();
-    return { error: false, text: data.content?.[0]?.text || "" };
-  } catch (err: unknown) {
-    clearTimeout(timeout);
-    if (err instanceof Error && err.name === "AbortError") {
-      return { error: true, status: 504 };
-    }
-    throw err;
   }
+  return { error: true, text: "", status: 500 };
 }
 
 function parseJsonResponse(text: string) {
@@ -821,7 +855,7 @@ export async function POST(request: NextRequest) {
       const res = await callClaude(apiKey, ALCOHOL_SEARCH_PROMPT, [
         { type: "text", text: `Użytkownik szuka: "${text.trim()}"` },
       ], 1536, 15000);
-      if (res.error) return NextResponse.json({ error: `Błąd (${res.status}).` }, { status: res.status! });
+      if (res.error) return NextResponse.json({ error: "Nie udało się przetworzyć. Spróbuj ponownie." }, { status: res.status! });
       try {
         const result = parseJsonResponse(res.text);
         result.mode = "alcohol_search";
@@ -843,7 +877,7 @@ export async function POST(request: NextRequest) {
         imgContent,
         { type: "text", text: "Rozpoznaj ten alkohol — markę, objętość, % alkoholu. Odpowiedz JSON." },
       ], 1536, 30000); // Sonnet — etykieta alkoholu (tekst)
-      if (res.error) return NextResponse.json({ error: `Błąd (${res.status}).` }, { status: res.status! });
+      if (res.error) return NextResponse.json({ error: "Nie udało się przetworzyć. Spróbuj ponownie." }, { status: res.status! });
       try {
         const result = parseJsonResponse(res.text);
         result.mode = "alcohol_scan";
@@ -862,7 +896,7 @@ export async function POST(request: NextRequest) {
       const res = await callClaude(apiKey, INCI_SEARCH_PROMPT, [
         { type: "text", text: `Użytkownik szuka składnika kosmetycznego: "${text.trim()}"` },
       ], 2048, 15000);
-      if (res.error) return NextResponse.json({ error: `Błąd (${res.status}).` }, { status: res.status! });
+      if (res.error) return NextResponse.json({ error: "Nie udało się przetworzyć. Spróbuj ponownie." }, { status: res.status! });
       try {
         return NextResponse.json(parseJsonResponse(res.text));
       } catch {
@@ -878,7 +912,7 @@ export async function POST(request: NextRequest) {
       const res = await callClaude(apiKey, BEAUTY_ACADEMY_PROMPT, [
         { type: "text", text: `Temat/pytanie: "${text.trim()}"` },
       ], 2048, 15000);
-      if (res.error) return NextResponse.json({ error: `Błąd (${res.status}).` }, { status: res.status! });
+      if (res.error) return NextResponse.json({ error: "Nie udało się przetworzyć. Spróbuj ponownie." }, { status: res.status! });
       try {
         return NextResponse.json(parseJsonResponse(res.text));
       } catch {
@@ -912,7 +946,7 @@ export async function POST(request: NextRequest) {
         { type: "text", text: `Wyjaśnij składnik/alergen: "${text.trim()}"` },
       ], 1024, 15000);
 
-      if (res.error) return NextResponse.json({ error: `Błąd (${res.status}).` }, { status: res.status! });
+      if (res.error) return NextResponse.json({ error: "Nie udało się przetworzyć. Spróbuj ponownie." }, { status: res.status! });
       try {
         const result = parseJsonResponse(res.text);
         return NextResponse.json(result);
@@ -931,7 +965,7 @@ export async function POST(request: NextRequest) {
       ], 1500, 20000);
 
       if (res.error) {
-        return NextResponse.json({ error: `Błąd (${res.status}).` }, { status: res.status! });
+        return NextResponse.json({ error: "Nie udało się przetworzyć. Spróbuj ponownie." }, { status: res.status! });
       }
       try {
         const result = parseJsonResponse(res.text);
@@ -954,7 +988,7 @@ Odpowiedz WYŁĄCZNIE JSON:
 {"interpreted_text":"...","confidence":"high","items":[{"name":"Jajko na twardo","emoji":"🥚","quantity":2,"unit":"szt","portion_label":"2 sztuki","portion_grams":120,"calories_per_100g":130,"calories":156,"protein":12.6,"fat":10.6,"carbs":1.2,"slider_min_qty":1,"slider_max_qty":6,"slider_min_grams":30,"slider_max_grams":360,"measures":[{"name":"sztuka","grams":60}]}],"total":{"calories":156,"protein":12.6,"fat":10.6,"carbs":1.2},"verdict":"Komentarz z osobowością","needs_clarification":false,"clarification_question":null}
 Podaj calories_per_100g i measures dla KAŻDEGO produktu. Po polsku.`;
       const res = await callClaude(apiKey, voiceFoodPrompt, [{ type: "text", text: `Transkrypcja: "${text.trim()}"` }], 2048, 25000);
-      if (res.error) return NextResponse.json({ error: `Błąd (${res.status}).` }, { status: res.status! });
+      if (res.error) return NextResponse.json({ error: "Nie udało się przetworzyć. Spróbuj ponownie." }, { status: res.status! });
       try { return NextResponse.json(parseJsonResponse(res.text)); } catch { return NextResponse.json({ error: "Nie udało się rozpoznać." }, { status: 422 }); }
     }
 
@@ -967,7 +1001,7 @@ Odpowiedz WYŁĄCZNIE JSON:
 {"interpreted_text":"...","items":[{"name":"Tyskie","emoji":"🍺","type":"piwo","quantity":2,"unit":"szt","default_ml":500,"abv_percent":5.2,"alcohol_grams":20.5,"total_alcohol_grams":41.0,"calories_per_unit":215,"total_calories":430,"flavor_profile":"Opis smaku 2-3 zdania","fun_fact":"Ciekawostka 1-2 zdania","slider_min_qty":1,"slider_max_qty":10,"slider_min_ml":330,"slider_max_ml":1000}],"total_alcohol_grams":41,"total_calories":430,"fun_comparison":"porównanie kaloryczne"}
 Po polsku. Styl: jak sommelier z humorem.`;
       const res = await callClaude(apiKey, voiceAlcPrompt, [{ type: "text", text: `Transkrypcja: "${text.trim()}"` }], 2048, 25000);
-      if (res.error) return NextResponse.json({ error: `Błąd (${res.status}).` }, { status: res.status! });
+      if (res.error) return NextResponse.json({ error: "Nie udało się przetworzyć. Spróbuj ponownie." }, { status: res.status! });
       try { return NextResponse.json(parseJsonResponse(res.text)); } catch { return NextResponse.json({ error: "Nie udało się rozpoznać." }, { status: 422 }); }
     }
 
@@ -983,7 +1017,7 @@ Odpowiedz WYŁĄCZNIE JSON:
 {"recipes":[{"name":"nazwa","emoji":"🥗","calories":420,"protein":38,"fat":16,"carbs":28,"fiber":6,"prep_time_min":15,"difficulty":"łatwy","difficulty_emoji":"🟢","uses_ingredients":["kurczak","ryż"],"missing_ingredients":["awokado (opcjonalne)"],"short_description":"Szybki i sycący","why_good_for_goal":"Idealny stosunek białko/kalorie","tags":["high-protein"]}]}
 Styl: APETYCZNY i MOTYWUJĄCY. Po polsku.`;
       const res = await callClaude(apiKey, fridgePrompt, [{ type: "text", text: "Zaproponuj przepisy." }], 4096, 25000);
-      if (res.error) return NextResponse.json({ error: `Błąd (${res.status}).` }, { status: res.status! });
+      if (res.error) return NextResponse.json({ error: "Nie udało się przetworzyć. Spróbuj ponownie." }, { status: res.status! });
       try { return NextResponse.json(parseJsonResponse(res.text)); } catch { return NextResponse.json({ error: "Nie udało się wygenerować przepisów." }, { status: 422 }); }
     }
 
@@ -999,7 +1033,7 @@ Odpowiedz WYŁĄCZNIE JSON:
 {"name":"...","subtitle":"...","emoji":"🥗","servings":1,"prep_time_min":15,"difficulty":"łatwy","nutrition":{"calories":420,"protein":38,"fat":16,"carbs":28,"fiber":6,"sugar":5},"percent_of_daily":20,"goal_comment":"Komentarz do celu","ingredients":[{"name":"Pierś z kurczaka","amount":"150g","in_fridge":true,"calories":248,"note":null}],"seasonings":"sól, pieprz, papryka","steps":[{"number":1,"title":"NAZWA KROKU","time_min":10,"instruction":"Szczegółowa instrukcja","tip":"Pro tip"}],"pro_tips":["tip1","tip2"],"verdict":"Zabawny komentarz końcowy"}
 Język: jak kumpel w kuchni. Kroki KRÓTKIE (max 3 zdania). Po polsku.`;
       const res = await callClaude(apiKey, recipePrompt, [{ type: "text", text: "Wygeneruj przepis." }], 6144, 30000);
-      if (res.error) return NextResponse.json({ error: `Błąd (${res.status}).` }, { status: res.status! });
+      if (res.error) return NextResponse.json({ error: "Nie udało się przetworzyć. Spróbuj ponownie." }, { status: res.status! });
       try { return NextResponse.json(parseJsonResponse(res.text)); } catch { return NextResponse.json({ error: "Nie udało się wygenerować przepisu." }, { status: 422 }); }
     }
 
@@ -1016,7 +1050,7 @@ Odpowiedz WYŁĄCZNIE poprawnym JSON (bez markdown, bez komentarzy):
       const res = await callClaude(apiKey, supplementAcademyPrompt, [
         { type: "text", text: `Napisz artykuł na temat: "${text.trim()}". Odpowiedz WYŁĄCZNIE JSON.` },
       ], 3072, 25000);
-      if (res.error) return NextResponse.json({ error: `Błąd (${res.status}).` }, { status: res.status! });
+      if (res.error) return NextResponse.json({ error: "Nie udało się przetworzyć. Spróbuj ponownie." }, { status: res.status! });
       try {
         return NextResponse.json(parseJsonResponse(res.text));
       } catch {
@@ -1065,7 +1099,7 @@ Odpowiedz WYŁĄCZNIE poprawnym JSON (bez markdown, bez komentarzy):
       ], 4096, 45000, "claude-opus-4-20250514");
 
       if (res.error) {
-        return NextResponse.json({ error: `Błąd analizy (${res.status}).` }, { status: res.status! });
+        return NextResponse.json({ error: "Nie udało się przeanalizować. Spróbuj ponownie." }, { status: res.status! });
       }
 
       try {
@@ -1073,6 +1107,41 @@ Odpowiedz WYŁĄCZNIE poprawnym JSON (bez markdown, bez komentarzy):
         if (!result.name && result.meal_name) result.name = result.meal_name;
         if (!result.brand) result.brand = "";
         result.type = "meal";
+        // Ensure required fields
+        if (typeof result.score !== "number" || result.score < 1 || result.score > 10) result.score = 5;
+        if (!result.pros) result.pros = [];
+        if (!result.cons) result.cons = [];
+        if (!result.allergens) result.allergens = [];
+        if (!result.fun_comparisons) result.fun_comparisons = [];
+        if (!result.total) result.total = { calories: 0, protein: 0, fat: 0, carbs: 0 };
+        if (!result.items) result.items = [];
+        // Ensure each item has per-100g values
+        for (const item of result.items) {
+          if (!item.calories_per_100g && item.calories && item.estimated_weight_g) {
+            item.calories_per_100g = Math.round((item.calories / item.estimated_weight_g) * 100);
+          }
+          if (!item.protein_per_100g && item.protein && item.estimated_weight_g) {
+            item.protein_per_100g = Math.round(((item.protein / item.estimated_weight_g) * 100) * 10) / 10;
+          }
+          if (!item.fat_per_100g && item.fat && item.estimated_weight_g) {
+            item.fat_per_100g = Math.round(((item.fat / item.estimated_weight_g) * 100) * 10) / 10;
+          }
+          if (!item.carbs_per_100g && item.carbs && item.estimated_weight_g) {
+            item.carbs_per_100g = Math.round(((item.carbs / item.estimated_weight_g) * 100) * 10) / 10;
+          }
+          if (!item.emoji) item.emoji = "🍽️";
+          if (!item.min_reasonable_g) item.min_reasonable_g = Math.round((item.estimated_weight_g || 100) * 0.3);
+          if (!item.max_reasonable_g) item.max_reasonable_g = Math.round((item.estimated_weight_g || 100) * 2.5);
+        }
+        // Build nutrition array if missing
+        if (!result.nutrition && result.total) {
+          result.nutrition = [
+            { label: "Energia", value: `${result.total.calories} kcal`, icon: "⚡" },
+            { label: "Białko", value: `${result.total.protein} g`, icon: "💪" },
+            { label: "Tłuszcz", value: `${result.total.fat} g`, icon: "🫧" },
+            { label: "Węglowodany", value: `${result.total.carbs} g`, icon: "🍞" },
+          ];
+        }
         await logScanToSupabase({ mode: "meal", base64Image: image, result, aiModel: "claude-opus-4-20250514", startTime });
         return NextResponse.json(result);
       } catch {
@@ -1088,7 +1157,7 @@ Odpowiedz WYŁĄCZNIE poprawnym JSON (bez markdown, bez komentarzy):
         { type: "text", text: "Przeanalizuj zawartość tej lodówki. Rozpoznaj produkty, oceń każdy 1-10, daj średnią. Odpowiedz JSON." },
       ], 4096, 45000, "claude-opus-4-20250514");
 
-      if (res.error) return NextResponse.json({ error: `Błąd analizy (${res.status}).` }, { status: res.status! });
+      if (res.error) return NextResponse.json({ error: "Nie udało się przeanalizować. Spróbuj ponownie." }, { status: res.status! });
       try {
         const result = parseJsonResponse(res.text);
         result.type = "fridge_scan";
@@ -1116,7 +1185,7 @@ Odpowiedz WYŁĄCZNIE poprawnym JSON (bez markdown, bez komentarzy):
       ], 4096, 45000, "claude-opus-4-20250514");
 
       if (res.error) {
-        return NextResponse.json({ error: `Błąd analizy (${res.status}).` }, { status: res.status! });
+        return NextResponse.json({ error: "Nie udało się przeanalizować. Spróbuj ponownie." }, { status: res.status! });
       }
       try {
         const result = parseJsonResponse(res.text);
@@ -1261,7 +1330,7 @@ ZASADY:
       }
 
       const res = await callClaude(apiKey, supplementAnalysisPrompt, supplUserContent, 5120, 45000);
-      if (res.error) return NextResponse.json({ error: `Błąd analizy (${res.status}).` }, { status: res.status! });
+      if (res.error) return NextResponse.json({ error: "Nie udało się przeanalizować. Spróbuj ponownie." }, { status: res.status! });
       try {
         const result = parseJsonResponse(res.text);
         result.type = "suplement";
@@ -1348,11 +1417,27 @@ ZASADY:
         text: `Google Vision OCR odczytał z etykiety następujący tekst:\n\n---\n${ocrText}\n---\n\n!!! KRYTYCZNE: Nazwa produktu i marka MUSZĄ pochodzić z tekstu OCR powyżej. NIE wymyślaj nazwy ani marki. Jeśli OCR zawiera "Colgate" to marka to Colgate. Jeśli OCR zawiera "Sodium Fluoride 1450 ppm" to jest pasta do zębów. Użyj OCR jako JEDYNE źródło danych. Zweryfikuj z obrazem. Odpowiedz WYŁĄCZNIE poprawnym JSON.${skinProfileHint}`,
       });
     } else {
-      // OCR failed or returned too little — fall back to image-only analysis
-      userContent.push({
-        type: "text",
-        text: `Odczytaj DOKŁADNIE cały tekst z tego zdjęcia etykiety, a następnie przeanalizuj produkt. Odpowiedz WYŁĄCZNIE poprawnym JSON.${skinProfileHint}`,
-      });
+      // OCR failed — let Claude do the reading with specialized prompt
+      console.log("Google Vision OCR failed or empty — falling back to Claude OCR");
+      const ocrLabel = isCosmetics ? READ_COSMETICS_LABEL : READ_FOOD_LABEL;
+      const claudeOcr = await callClaude(apiKey, ocrLabel, [
+        imageContent,
+        { type: "text", text: "Odczytaj CAŁY tekst z tej etykiety. Przepisz dokładnie." },
+      ], 2048, 20000);
+
+      if (!claudeOcr.error && claudeOcr.text.length > 30) {
+        ocrText = claudeOcr.text;
+        userContent.push({
+          type: "text",
+          text: `AI OCR odczytał z etykiety:\n\n---\n${ocrText}\n---\n\nUżyj tego tekstu jako źródła danych. Zweryfikuj z obrazem. Nazwa i marka z OCR. Odpowiedz WYŁĄCZNIE poprawnym JSON.${skinProfileHint}`,
+        });
+      } else {
+        // Total fallback — image-only
+        userContent.push({
+          type: "text",
+          text: `Odczytaj DOKŁADNIE cały tekst z tego zdjęcia etykiety (nazwa, marka, skład, wartości odżywcze), a następnie przeanalizuj produkt. Odpowiedz WYŁĄCZNIE poprawnym JSON.${skinProfileHint}`,
+        });
+      }
     }
 
     // Sonnet for labels (Google Vision does the OCR heavy lifting)
@@ -1362,7 +1447,8 @@ ZASADY:
     if (result1.error) {
       if (result1.status === 429) return NextResponse.json({ error: "Zbyt wiele zapytań. Poczekaj chwilę." }, { status: 429 });
       if (result1.status === 401) return NextResponse.json({ error: "Problem z kluczem API." }, { status: 401 });
-      return NextResponse.json({ error: `Błąd analizy (${result1.status}).` }, { status: result1.status! });
+      if (result1.status === 504) return NextResponse.json({ error: "Analiza trwała za długo. Spróbuj ponownie." }, { status: 504 });
+      return NextResponse.json({ error: "Nie udało się przeanalizować. Spróbuj ponownie." }, { status: result1.status || 500 });
     }
 
     const step2 = result1;
