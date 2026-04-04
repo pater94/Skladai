@@ -194,7 +194,7 @@ export default function RutynaPage() {
                       </button>
                     </div>
                     {showHistory && cosmeticHistory.length > 0 && (
-                      <div className="space-y-1 max-h-40 overflow-y-auto">
+                      <div data-scrollable="true" className="space-y-1 max-h-40 overflow-y-auto">
                         {cosmeticHistory.map((item) => (
                           <button
                             key={item.id}

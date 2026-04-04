@@ -557,6 +557,7 @@ export default function VoiceLog({ mode, onComplete, onClose, initialOpen = fals
 
           {/* Panel */}
           <div
+            data-scrollable="true"
             className={`
               relative w-full max-w-lg max-h-[90vh] overflow-y-auto
               rounded-t-2xl sm:rounded-2xl shadow-2xl p-5

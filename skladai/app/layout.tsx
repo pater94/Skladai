@@ -37,12 +37,19 @@ export default function RootLayout({
         <meta name="theme-color" content="#84CC16" />
       </head>
       <body style={{ fontFamily: "-apple-system, 'SF Pro Display', 'Helvetica Neue', system-ui, sans-serif" }}>
-        <div id="scroll-container">
+        <div id="scroll-container" data-scrollable="true">
           {children}
         </div>
         <BottomNav />
         <SWUpdateBanner />
         <OnboardingWrapper />
+        {/* Block iOS rubber-band bounce on non-scrollable areas */}
+        <script dangerouslySetInnerHTML={{ __html: `
+          document.body.addEventListener('touchmove', function(e) {
+            if (e.target.closest('[data-scrollable]')) return;
+            e.preventDefault();
+          }, { passive: false });
+        `}} />
       </body>
     </html>
   );

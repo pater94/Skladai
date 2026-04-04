@@ -119,7 +119,7 @@ export default function OnboardingLogin({ onSkip }: OnboardingLoginProps) {
       >
 
         {/* SLIDE A — Value Cards */}
-        <div style={slideBase(0)}>
+        <div style={slideBase(0)} data-scrollable="true">
           <div style={{ position: "absolute", top: -30, left: "50%", transform: "translateX(-50%)", width: 350, height: 220, background: "radial-gradient(ellipse at 30% 40%, rgba(110,252,180,0.08) 0%, transparent 60%), radial-gradient(ellipse at 70% 60%, rgba(59,130,246,0.05) 0%, transparent 50%)", pointerEvents: "none" }} />
 
           <div style={{ textAlign: "center", marginBottom: 8, position: "relative" }}>
@@ -155,7 +155,7 @@ export default function OnboardingLogin({ onSkip }: OnboardingLoginProps) {
         </div>
 
         {/* SLIDE B — Social Proof */}
-        <div style={slideBase(1)}>
+        <div style={slideBase(1)} data-scrollable="true">
           <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 280, background: "linear-gradient(180deg, rgba(110,252,180,0.06) 0%, transparent 100%)", pointerEvents: "none" }} />
 
           <div style={{ textAlign: "center", marginBottom: 20, position: "relative" }}>
@@ -202,7 +202,7 @@ export default function OnboardingLogin({ onSkip }: OnboardingLoginProps) {
         </div>
 
         {/* SLIDE C — Login */}
-        <div style={slideBase(2)}>
+        <div style={slideBase(2)} data-scrollable="true">
           <div style={{ position: "absolute", top: -20, left: "50%", transform: "translateX(-50%)", width: 300, height: 180, background: "radial-gradient(ellipse, rgba(110,252,180,0.1), transparent 70%)", animation: "breathe 3s ease-in-out infinite", pointerEvents: "none" }} />
 
           <div style={{ textAlign: "center", marginBottom: 20, position: "relative" }}>

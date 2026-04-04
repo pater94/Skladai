@@ -300,7 +300,7 @@ export default function SkinProfileSetup({ onComplete, onSkip }: Props) {
       </div>
 
       {/* Content — scrollable */}
-      <div style={{ flex: 1, overflowY: "auto", padding: "8px 22px 16px", minHeight: 0 }}>
+      <div data-scrollable="true" style={{ flex: 1, overflowY: "auto", padding: "8px 22px 16px", minHeight: 0 }}>
         {/* STEP 0: Skin type */}
         {step === 0 && (
           <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
