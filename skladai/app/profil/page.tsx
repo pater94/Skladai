@@ -61,7 +61,7 @@ export default function ProfilPage() {
   const [authEmail, setAuthEmail] = useState<string | null>(null);
 
   useEffect(() => {
-    window.scrollTo(0, 0);
+    (document.getElementById("scroll-container") || window).scrollTo(0, 0);
     const p = getProfile();
     setProfile(p);
     setStreak(getStreak());

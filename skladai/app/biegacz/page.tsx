@@ -312,7 +312,7 @@ export default function BiegaczPage() {
 
   // Scroll to top on view change
   useEffect(() => {
-    window.scrollTo(0, 0);
+    (document.getElementById("scroll-container") || window).scrollTo(0, 0);
   }, [view]);
 
   const goBack = () => setView("main");

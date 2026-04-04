@@ -10,9 +10,11 @@
 }
 
 html {
-  scroll-behavior: smooth;
   background: #0a0e0c !important;
-  overscroll-behavior: none;
+  overflow: hidden;
+  height: 100%;
+  width: 100%;
+  position: fixed;
 }
 
 body {
@@ -21,16 +23,41 @@ body {
   font-family: -apple-system, 'SF Pro Display', 'Helvetica Neue', system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  min-height: 100dvh;
-  overscroll-behavior: none;
+  overflow: hidden;
+  height: 100%;
+  width: 100%;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+}
+
+/* Scrollable content container */
+#scroll-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 68px; /* bottom nav height */
+  bottom: calc(68px + env(safe-area-inset-bottom, 0px));
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  -webkit-overscroll-behavior: contain;
 }
 
 /* PWA standalone mode */
 @media (display-mode: standalone) {
-  body {
-    padding-top: env(safe-area-inset-top);
-    padding-bottom: env(safe-area-inset-bottom);
+  #scroll-container {
+    top: env(safe-area-inset-top, 0px);
   }
+}
+
+/* Pages where bottom nav is hidden (wyniki, admin) — scroll container fills screen */
+body.no-bottom-nav #scroll-container {
+  bottom: 0;
 }
 
 /* === MATCHA HERO === */

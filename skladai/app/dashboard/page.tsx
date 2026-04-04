@@ -31,7 +31,7 @@ export default function DashboardPage() {
   };
 
   useEffect(() => {
-    window.scrollTo(0, 0);
+    (document.getElementById("scroll-container") || window).scrollTo(0, 0);
     reload();
   }, []);
 

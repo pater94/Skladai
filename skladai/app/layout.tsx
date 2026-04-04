@@ -30,14 +30,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="pl" className="h-full antialiased">
+    <html lang="pl">
       <head>
         <link rel="apple-touch-icon" href="/icons/icon-192.svg" />
         <link rel="icon" href="/icons/icon-192.svg" type="image/svg+xml" />
         <meta name="theme-color" content="#84CC16" />
       </head>
-      <body className="min-h-full flex flex-col" style={{ fontFamily: "-apple-system, 'SF Pro Display', 'Helvetica Neue', system-ui, sans-serif" }}>
-        <div style={{ paddingBottom: "calc(80px + env(safe-area-inset-bottom, 0px))" }}>
+      <body style={{ fontFamily: "-apple-system, 'SF Pro Display', 'Helvetica Neue', system-ui, sans-serif" }}>
+        <div id="scroll-container">
           {children}
         </div>
         <BottomNav />

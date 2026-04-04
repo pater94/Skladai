@@ -359,7 +359,7 @@ export default function FormaPage() {
 
   // Scroll to top on view change
   useEffect(() => {
-    window.scrollTo(0, 0);
+    (document.getElementById("scroll-container") || window).scrollTo(0, 0);
   }, [view]);
 
   // Timer tick
