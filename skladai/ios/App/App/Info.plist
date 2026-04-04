@@ -56,7 +56,7 @@
 	<key>NSSpeechRecognitionUsageDescription</key>
 	<string>SkładAI używa rozpoznawania mowy żebyś mógł dyktować co jesz.</string>
 	<key>NSHealthShareUsageDescription</key>
-	<string>SkładAI odczytuje dane o krokach żeby śledzić Twoją aktywność fizyczną.</string>
+	<string>SkładAI potrzebuje dostępu do Apple Health żeby wyświetlać Twoje kroki, spalone kalorie i dystans.</string>
 	<key>NSHealthUpdateUsageDescription</key>
 	<string>SkładAI zapisuje dane zdrowotne które sam dodasz w aplikacji.</string>
 </dict>
