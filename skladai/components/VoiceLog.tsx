@@ -357,18 +357,28 @@ export default function VoiceLog({ mode, onComplete, onClose, initialOpen = fals
     setPhase("processing");
     setError("");
 
-    const apiMode = mode === "food" ? "text_search" : "alcohol_search";
+    const apiMode = mode === "food" ? "voice_food" : "voice_alcohol";
+
+    // Abort controller with 28s timeout (Vercel limit is 60s)
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 28000);
 
     try {
       const res = await fetch("/api/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text, mode: apiMode }),
+        signal: controller.signal,
       });
+
+      clearTimeout(timeoutId);
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || `Błąd serwera (${res.status})`);
+        if (res.status === 504) {
+          throw new Error("Serwer nie zdążył odpowiedzieć. Spróbuj ponownie — powiedz krócej.");
+        }
+        throw new Error(data.error || "Nie udało się przeanalizować. Spróbuj ponownie.");
       }
 
       const data = await res.json();
@@ -428,7 +438,12 @@ export default function VoiceLog({ mode, onComplete, onClose, initialOpen = fals
       setItems(parsed);
       setPhase("results");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Nie udało się przeanalizować. Spróbuj ponownie.");
+      clearTimeout(timeoutId);
+      if (err instanceof DOMException && err.name === "AbortError") {
+        setError("Analiza trwa za długo. Spróbuj ponownie — powiedz krócej.");
+      } else {
+        setError(err instanceof Error ? err.message : "Nie udało się przeanalizować. Spróbuj ponownie.");
+      }
       setPhase("idle");
     }
   }, [mode]);

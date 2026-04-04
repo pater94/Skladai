@@ -928,7 +928,7 @@ export async function POST(request: NextRequest) {
       }
       const res = await callClaude(apiKey, TEXT_SEARCH_PROMPT, [
         { type: "text", text: `Użytkownik szuka: "${text.trim()}"\nPodaj wartości odżywcze. Odpowiedz JSON.` },
-      ], 4096, 20000);
+      ], 1500, 20000);
 
       if (res.error) {
         return NextResponse.json({ error: `Błąd (${res.status}).` }, { status: res.status! });
@@ -953,7 +953,7 @@ ZASADY: Rozpoznaj ilości (dwa, trzy, pół), miary (kromka, szklanka, łyżka, 
 Odpowiedz WYŁĄCZNIE JSON:
 {"interpreted_text":"...","confidence":"high","items":[{"name":"Jajko na twardo","emoji":"🥚","quantity":2,"unit":"szt","portion_label":"2 sztuki","portion_grams":120,"calories_per_100g":130,"calories":156,"protein":12.6,"fat":10.6,"carbs":1.2,"slider_min_qty":1,"slider_max_qty":6,"slider_min_grams":30,"slider_max_grams":360,"measures":[{"name":"sztuka","grams":60}]}],"total":{"calories":156,"protein":12.6,"fat":10.6,"carbs":1.2},"verdict":"Komentarz z osobowością","needs_clarification":false,"clarification_question":null}
 Podaj calories_per_100g i measures dla KAŻDEGO produktu. Po polsku.`;
-      const res = await callClaude(apiKey, voiceFoodPrompt, [{ type: "text", text: `Transkrypcja: "${text.trim()}"` }], 4096, 25000);
+      const res = await callClaude(apiKey, voiceFoodPrompt, [{ type: "text", text: `Transkrypcja: "${text.trim()}"` }], 2048, 25000);
       if (res.error) return NextResponse.json({ error: `Błąd (${res.status}).` }, { status: res.status! });
       try { return NextResponse.json(parseJsonResponse(res.text)); } catch { return NextResponse.json({ error: "Nie udało się rozpoznać." }, { status: 422 }); }
     }
@@ -966,7 +966,7 @@ Zinterpretuj co wypił. Rozpoznaj marki, typ (piwo/wino/wódka/whisky/drink), il
 Odpowiedz WYŁĄCZNIE JSON:
 {"interpreted_text":"...","items":[{"name":"Tyskie","emoji":"🍺","type":"piwo","quantity":2,"unit":"szt","default_ml":500,"abv_percent":5.2,"alcohol_grams":20.5,"total_alcohol_grams":41.0,"calories_per_unit":215,"total_calories":430,"flavor_profile":"Opis smaku 2-3 zdania","fun_fact":"Ciekawostka 1-2 zdania","slider_min_qty":1,"slider_max_qty":10,"slider_min_ml":330,"slider_max_ml":1000}],"total_alcohol_grams":41,"total_calories":430,"fun_comparison":"porównanie kaloryczne"}
 Po polsku. Styl: jak sommelier z humorem.`;
-      const res = await callClaude(apiKey, voiceAlcPrompt, [{ type: "text", text: `Transkrypcja: "${text.trim()}"` }], 4096, 25000);
+      const res = await callClaude(apiKey, voiceAlcPrompt, [{ type: "text", text: `Transkrypcja: "${text.trim()}"` }], 2048, 25000);
       if (res.error) return NextResponse.json({ error: `Błąd (${res.status}).` }, { status: res.status! });
       try { return NextResponse.json(parseJsonResponse(res.text)); } catch { return NextResponse.json({ error: "Nie udało się rozpoznać." }, { status: 422 }); }
     }
