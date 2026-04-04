@@ -49,6 +49,7 @@ export default function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: `
           document.body.addEventListener('touchmove', function(e) {
             if (e.target.closest('[data-scrollable]')) return;
+            if (e.target.closest('button, a, input, label, select, textarea')) return;
             e.preventDefault();
           }, { passive: false });
         `}} />

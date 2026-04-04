@@ -211,6 +211,18 @@ export default function Home() {
     return () => { document.body.style.overflow = ""; };
   }, [photoPreview, isLoading, showPhotoPreview]);
 
+  // Safety: auto-reset stuck scan lock after 10s
+  useEffect(() => {
+    if (isScanning) {
+      const timeout = setTimeout(() => {
+        console.warn("[ScanLock] Auto-reset after 10s timeout");
+        setIsScanning(false);
+        scanLockRef.current = false;
+      }, 10000);
+      return () => clearTimeout(timeout);
+    }
+  }, [isScanning]);
+
   // Filter recent scans by current mode
   useEffect(() => {
     const all = getHistory();
