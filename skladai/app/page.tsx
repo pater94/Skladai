@@ -815,8 +815,8 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Wyszukiwarka — glass dark style (bez wyboru posiłku) */}
-            {(mode === "food" || mode === "meal") && (
+            {/* Wyszukiwarka — glass dark style (tylko Żywność) */}
+            {mode === "food" && (
               <div className="mt-4 rounded-2xl overflow-hidden" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
                 <div className="flex items-center px-4 py-3 gap-3">
                   <span className="text-white/50 text-[14px]">🔍</span>
