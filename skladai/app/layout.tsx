@@ -37,7 +37,7 @@ export default function RootLayout({
         <meta name="theme-color" content="#84CC16" />
       </head>
       <body className="min-h-full flex flex-col" style={{ fontFamily: "-apple-system, 'SF Pro Display', 'Helvetica Neue', system-ui, sans-serif" }}>
-        <div className="pb-16">
+        <div style={{ paddingBottom: "calc(80px + env(safe-area-inset-bottom, 0px))" }}>
           {children}
         </div>
         <BottomNav />

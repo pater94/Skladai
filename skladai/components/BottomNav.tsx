@@ -41,17 +41,15 @@ export default function BottomNav() {
 
   return (
     <>
-      {/* Spacer */}
-      <div className="h-20" />
-
       {/* Fixed nav */}
       <nav
-        className={`fixed bottom-0 left-0 right-0 z-[100] border-t transition-colors duration-400 ${theme.bg} ${theme.border}`}
+        className={`fixed bottom-0 left-0 right-0 z-[100] border-t transition-colors duration-400 ${theme.border}`}
         style={{
           paddingBottom: "env(safe-area-inset-bottom, 0px)",
-          boxShadow: theme.isDark ? "none" : "0 -2px 16px rgba(0,0,0,0.06)",
+          background: "rgba(10,14,12,0.95)",
+          backdropFilter: "blur(20px)",
+          WebkitBackdropFilter: "blur(20px)",
           height: "68px",
-          ...("customBg" in theme && theme.customBg ? { background: theme.customBg, backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)" } : {}),
         }}
       >
         <div className="max-w-md mx-auto flex justify-around items-center h-full px-2">
