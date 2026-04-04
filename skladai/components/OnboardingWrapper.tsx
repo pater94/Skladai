@@ -24,6 +24,16 @@ export default function OnboardingWrapper() {
     });
   }, []);
 
+  // Hide bottom nav & let onboarding fill full screen
+  useEffect(() => {
+    if (show) {
+      document.body.classList.add("onboarding-active");
+    } else {
+      document.body.classList.remove("onboarding-active");
+    }
+    return () => document.body.classList.remove("onboarding-active");
+  }, [show]);
+
   if (!show) return null;
 
   return (

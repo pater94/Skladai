@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Scan, Dumbbell, BarChart3, User } from "lucide-react";
@@ -26,6 +26,18 @@ export default function BottomNav() {
   const pathname = usePathname();
   const hidden = pathname.startsWith("/wyniki") || pathname.startsWith("/admin");
 
+  // Track onboarding-active class on body to hide nav during onboarding
+  const [onboarding, setOnboarding] = useState(false);
+  useEffect(() => {
+    const obs = new MutationObserver(() => {
+      setOnboarding(document.body.classList.contains("onboarding-active"));
+    });
+    obs.observe(document.body, { attributes: true, attributeFilter: ["class"] });
+    // Initial check
+    setOnboarding(document.body.classList.contains("onboarding-active"));
+    return () => obs.disconnect();
+  }, []);
+
   // Toggle body class so CSS knows whether to shrink scroll-container
   useEffect(() => {
     if (hidden) {
@@ -35,7 +47,7 @@ export default function BottomNav() {
     }
   }, [hidden]);
 
-  if (hidden) return null;
+  if (hidden || onboarding) return null;
 
   const theme = getThemeColors(pathname);
 

@@ -60,6 +60,11 @@ body.no-bottom-nav #scroll-container {
   bottom: 0;
 }
 
+/* Onboarding active — hide bottom nav, let onboarding fill full screen */
+body.onboarding-active #scroll-container {
+  bottom: 0;
+}
+
 /* === MATCHA HERO === */
 .matcha-hero {
   background: linear-gradient(165deg, #1A3A0A 0%, #2D5A16 40%, #3D7A1F 70%, #4A8C26 100%);
