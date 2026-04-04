@@ -2098,29 +2098,20 @@ function CheckFormView({
         incrementScanCount();
         updateStreak();
 
-        // Create thumbnail
+        // Create thumbnail — keep high res for hero card display
         const canvas = document.createElement("canvas");
         const img = new Image();
         img.src = base64;
         await new Promise((resolve) => {
           img.onload = resolve;
         });
-        canvas.width = 96;
-        canvas.height = 96;
+        const maxDim = 480;
+        const scale = Math.min(maxDim / img.width, maxDim / img.height, 1);
+        canvas.width = Math.round(img.width * scale);
+        canvas.height = Math.round(img.height * scale);
         const ctx = canvas.getContext("2d")!;
-        const minDim = Math.min(img.width, img.height);
-        ctx.drawImage(
-          img,
-          (img.width - minDim) / 2,
-          (img.height - minDim) / 2,
-          minDim,
-          minDim,
-          0,
-          0,
-          96,
-          96
-        );
-        const thumbnail = canvas.toDataURL("image/jpeg", 0.5);
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        const thumbnail = canvas.toDataURL("image/jpeg", 0.92);
         // Use gallery date if set, otherwise current date
         const galleryDateStr = localStorage.getItem("skladai_checkform_date");
         let customDate: string | undefined;

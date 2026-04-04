@@ -1503,7 +1503,7 @@ export default function WynikiPage() {
                     {[
                       { label: "Kategoria", value: formaResult.body_fat_category?.toUpperCase() || "—", color: "#22c55e" },
                       { label: "Ocena mięśni", value: formaResult.muscle_mass === "above_average" ? "Powyżej średniej" : formaResult.muscle_mass === "average" ? "Średnia" : "Poniżej średniej", color: "rgba(255,255,255,0.8)" },
-                      { label: "BMI", value: `${formaResult.bmi} — ${formaResult.bmi_category}`, color: "rgba(255,255,255,0.8)" },
+                      ...(formaResult.bmi && formaResult.bmi_category ? [{ label: "BMI", value: `${formaResult.bmi} — ${formaResult.bmi_category}`, color: "rgba(255,255,255,0.8)" }] : []),
                     ].map((row, i) => (
                       <div key={i} style={{
                         display: "flex", justifyContent: "space-between", alignItems: "center",
