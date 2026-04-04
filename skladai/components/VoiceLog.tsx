@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
+import { addDiaryEntry } from "@/lib/storage";
+import { useRouter } from "next/navigation";
 
 // Web Speech API type declarations
 interface SpeechRecognitionEvent extends Event {
@@ -387,18 +389,26 @@ export default function VoiceLog({ mode, onComplete, onClose, initialOpen = fals
       let parsed: VoiceItem[] = [];
 
       if (mode === "food" && data.items && Array.isArray(data.items)) {
-        parsed = data.items.map((it: Record<string, unknown>) => ({
-          id: uid(),
-          emoji: (it.emoji as string) || "🍽️",
-          name: (it.name as string) || "Produkt",
-          weight_g: (it.default_portion_g as number) || (it.estimated_weight_g as number) || 100,
-          min_g: (it.min_portion_g as number) || (it.min_reasonable_g as number) || 10,
-          max_g: (it.max_portion_g as number) || (it.max_reasonable_g as number) || 1000,
-          calories_per_100g: (it.calories_per_100g as number) || 0,
-          protein_per_100g: (it.protein_per_100g as number) || 0,
-          fat_per_100g: (it.fat_per_100g as number) || 0,
-          carbs_per_100g: (it.carbs_per_100g as number) || 0,
-        }));
+        parsed = data.items.map((it: Record<string, unknown>) => {
+          const portionG = (it.portion_grams as number) || (it.default_portion_g as number) || (it.estimated_weight_g as number) || 100;
+          // API returns totals (protein, fat, carbs) for the portion — convert to per_100g
+          const protPer100 = (it.protein_per_100g as number) || ((it.protein as number) && portionG ? Math.round(((it.protein as number) / portionG) * 1000) / 10 : 0);
+          const fatPer100 = (it.fat_per_100g as number) || ((it.fat as number) && portionG ? Math.round(((it.fat as number) / portionG) * 1000) / 10 : 0);
+          const carbsPer100 = (it.carbs_per_100g as number) || ((it.carbs as number) && portionG ? Math.round(((it.carbs as number) / portionG) * 1000) / 10 : 0);
+          const calPer100 = (it.calories_per_100g as number) || ((it.calories as number) && portionG ? Math.round(((it.calories as number) / portionG) * 1000) / 10 : 0);
+          return {
+            id: uid(),
+            emoji: (it.emoji as string) || "🍽️",
+            name: (it.name as string) || "Produkt",
+            weight_g: portionG,
+            min_g: (it.slider_min_grams as number) || (it.min_portion_g as number) || (it.min_reasonable_g as number) || 10,
+            max_g: (it.slider_max_grams as number) || (it.max_portion_g as number) || (it.max_reasonable_g as number) || 1000,
+            calories_per_100g: calPer100,
+            protein_per_100g: protPer100,
+            fat_per_100g: fatPer100,
+            carbs_per_100g: carbsPer100,
+          };
+        });
       } else if (mode === "alcohol") {
         // Alcohol search returns single item or items array
         const alcItems = data.items ? data.items : [data];
@@ -493,12 +503,51 @@ export default function VoiceLog({ mode, onComplete, onClose, initialOpen = fals
     onClose?.();
   }, [stopRecording, onClose]);
 
+  const router = useRouter();
+  const [toast, setToast] = useState("");
+
   // ---- SUBMIT ----
   const handleSubmit = useCallback(() => {
     if (items.length === 0) return;
-    onComplete(items, mode === "food" ? mealType : undefined);
-    handleClose();
-  }, [items, mealType, mode, onComplete, handleClose]);
+
+    // Save each item to diary
+    const today = new Date().toISOString().split("T")[0];
+    for (const item of items) {
+      const kcal = calc(item.calories_per_100g, item.weight_g);
+      const prot = Math.round(calc(item.protein_per_100g, item.weight_g) * 10) / 10;
+      const fatVal = Math.round(calc(item.fat_per_100g, item.weight_g) * 10) / 10;
+      const carbsVal = Math.round(calc(item.carbs_per_100g, item.weight_g) * 10) / 10;
+      addDiaryEntry({
+        date: today,
+        productName: `${item.emoji} ${item.name}`,
+        brand: "",
+        calories: kcal,
+        protein: prot,
+        fat: fatVal,
+        carbs: carbsVal,
+        sugar: 0,
+        salt: 0,
+        fiber: 0,
+        score: 5,
+        mealType: (mode === "food" ? mealType : "snack") as "breakfast" | "lunch" | "dinner" | "snack",
+        portion_g: item.weight_g,
+        package_g: item.weight_g,
+        scanId: "voice_" + uid(),
+      });
+    }
+
+    // Show toast
+    setToast("✅ Dodano do dziennika!");
+    setTimeout(() => {
+      onComplete(items, mode === "food" ? mealType : undefined);
+      setToast("");
+      setOpen(false);
+      setPhase("idle");
+      onClose?.();
+      // Navigate to dashboard to show results
+      router.push("/dashboard");
+    }, 1200);
+  }, [items, mealType, mode, onComplete, onClose, router]);
 
   // ---- SUMS ----
   const totalCal = sumField(items, "calories_per_100g");
@@ -881,46 +930,67 @@ export default function VoiceLog({ mode, onComplete, onClose, initialOpen = fals
                   )}
                 </div>
 
+                {/* ── Save button ── */}
+                <button
+                  onClick={handleSubmit}
+                  disabled={items.length === 0}
+                  style={{
+                    width: "100%",
+                    padding: "16px",
+                    borderRadius: 16,
+                    background: "#22c55e",
+                    color: "#fff",
+                    fontSize: 16,
+                    fontWeight: 700,
+                    border: "none",
+                    cursor: "pointer",
+                    opacity: items.length === 0 ? 0.4 : 1,
+                    boxShadow: "0 4px 20px rgba(34,197,94,0.3)",
+                  }}
+                  className="active:scale-[0.97] transition-transform"
+                >
+                  ✅ Dodaj do dziennika
+                </button>
+
+                {/* Retry button */}
+                <button
+                  onClick={() => {
+                    setPhase("idle");
+                    setItems([]);
+                    setError("");
+                  }}
+                  className={`w-full py-3 rounded-xl text-sm font-semibold ${btnSecondary}`}
+                >
+                  🔄 Nagraj ponownie
+                </button>
+
                 {error && (
                   <p className="text-sm text-red-500 text-center">{error}</p>
                 )}
+
+                {/* Bottom padding so content isn't hidden behind nav */}
+                <div style={{ height: 40 }} />
               </div>
             )}
 
-            {/* Fixed action buttons — always visible at bottom */}
-            {phase === "results" && (
+            {/* Toast notification */}
+            {toast && (
               <div style={{
                 position: "fixed",
-                bottom: 0,
-                left: 0,
-                right: 0,
-                padding: "12px 20px",
-                paddingBottom: "calc(12px + env(safe-area-inset-bottom, 0px))",
-                background: "linear-gradient(transparent, #0a0e0c 20%, #0a0e0c)",
-                zIndex: 10000,
+                top: 60,
+                left: "50%",
+                transform: "translateX(-50%)",
+                padding: "12px 28px",
+                borderRadius: 16,
+                background: "rgba(34,197,94,0.95)",
+                color: "#fff",
+                fontSize: 15,
+                fontWeight: 700,
+                zIndex: 10001,
+                boxShadow: "0 4px 20px rgba(0,0,0,0.3)",
+                animation: "fadeIn 0.3s ease",
               }}>
-                <div className="flex gap-2 max-w-lg mx-auto">
-                  <button
-                    onClick={() => {
-                      setPhase("idle");
-                      setItems([]);
-                      setError("");
-                    }}
-                    className={`flex-1 py-3 rounded-xl text-sm font-semibold ${btnSecondary}`}
-                  >
-                    🔄 Ponownie
-                  </button>
-                  <button
-                    onClick={handleSubmit}
-                    disabled={items.length === 0}
-                    className={`
-                      flex-[1.5] py-3 rounded-xl text-sm font-bold shadow-lg
-                      ${btnPrimary} disabled:opacity-40
-                    `}
-                  >
-                    {mode === "food" ? "📝 Dodaj do dziennika" : "🍺 Dodaj do Alkomatu"}
-                  </button>
-                </div>
+                {toast}
               </div>
             )}
           </div>
