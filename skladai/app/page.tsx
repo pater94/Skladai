@@ -9,6 +9,7 @@ import MorningAfter from "@/components/MorningAfter";
 import FoodSearch from "@/components/FoodSearch";
 import SkinProfileSetup, { hasSkinProfile } from "@/components/SkinProfileSetup";
 import InciSearch from "@/components/InciSearch";
+import VoiceLog from "@/components/VoiceLog";
 import {
   addToHistory,
   checkFreeTierLimit,
@@ -87,7 +88,7 @@ const ACCENT_MAP: Record<string, { hex: string; rgb: string }> = {
 };
 
 /* ── MicButton component ── */
-function MicButton({ accentRgb }: { accentRgb: string }) {
+function MicButton({ accentRgb, onPress }: { accentRgb: string; onPress?: () => void }) {
   const [showTooltip, setShowTooltip] = useState(false);
   const [showBadge, setShowBadge] = useState(false);
 
@@ -111,13 +112,14 @@ function MicButton({ accentRgb }: { accentRgb: string }) {
   }, []);
 
   const handleMicClick = () => {
+    console.log("[MicButton] clicked");
     setShowTooltip(false);
     localStorage.setItem("micTooltipShown", "1");
     if (!localStorage.getItem("voiceUsed")) {
       localStorage.setItem("voiceUsed", "1");
       setShowBadge(false);
     }
-    // TODO: trigger voice recognition
+    onPress?.();
   };
 
   return (
@@ -187,6 +189,7 @@ export default function Home() {
   const [secondPhotoPreview, setSecondPhotoPreview] = useState<string | null>(null);
   const [photoSource, setPhotoSource] = useState<"camera" | "gallery">("camera");
   const [awaitingSecondPhoto, setAwaitingSecondPhoto] = useState(false);
+  const [showVoice, setShowVoice] = useState(false);
   const router = useRouter();
 
   const fridgeInputRef = useRef<HTMLInputElement>(null);
@@ -825,7 +828,7 @@ export default function Home() {
                       // Navigate to a search-focused view or expand inline
                     }}
                   />
-                  <MicButton accentRgb={accent.rgb} />
+                  <MicButton accentRgb={accent.rgb} onPress={() => setShowVoice(true)} />
                 </div>
               </div>
             )}
@@ -952,6 +955,19 @@ export default function Home() {
 
       {/* ── Hidden fridge input ── */}
       <input ref={fridgeInputRef} type="file" accept="image/*" capture="environment" onChange={onFridgeInputChange} className="hidden" />
+
+      {/* ── Voice Log Modal ── */}
+      {showVoice && (
+        <VoiceLog
+          mode="food"
+          initialOpen={true}
+          hideButton={true}
+          onComplete={() => {
+            setShowVoice(false);
+          }}
+          onClose={() => setShowVoice(false)}
+        />
+      )}
     </div>
   );
 }
