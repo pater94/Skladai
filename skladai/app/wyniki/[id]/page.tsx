@@ -366,8 +366,8 @@ export default function WynikiPage() {
     mainCalories = Math.round(textSearchResult.total?.calories || 0);
   }
 
-  const bgClass = isForma ? "bg-[#111111]" : "bg-[#0a0e0c]";
-  const heroClass = isForma ? "bg-gradient-to-b from-[#1a1a2e] to-[#111111]" : isMeal ? "meal-hero" : "bg-gradient-to-b from-[#0a1a10] to-[#0a0e0c]";
+  const bgClass = isForma ? "bg-[#0a0e0c]" : "bg-[#0a0e0c]";
+  const heroClass = isForma ? "" : isMeal ? "meal-hero" : "bg-gradient-to-b from-[#0a1a10] to-[#0a0e0c]";
 
   const accentColor = isCosmetics ? "#C084FC" : isSuplement ? "#3b82f6" : "#6efcb4";
   const accentRgb = isCosmetics ? "192,132,252" : isSuplement ? "59,130,246" : "110,252,180";
@@ -431,23 +431,54 @@ export default function WynikiPage() {
 
       {/* Header */}
       {isForma ? (
-        <div className={`relative overflow-hidden ${heroClass}`}>
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[400px] h-[400px] rounded-full blur-[80px] bg-purple-500/5" />
-          <div className="max-w-md mx-auto px-5 pt-6 pb-28 relative z-10 flex items-center justify-between">
-            <button
-              onClick={() => router.push("/forma")}
-              className="text-[12px] font-semibold px-3.5 py-1.5 rounded-full active:scale-95 transition-all text-white/60 bg-white/5 border border-white/[0.08]"
-            >
-              ← Powrót
-            </button>
-            <button
-              onClick={() => router.push("/forma")}
-              className="text-[12px] font-semibold px-3.5 py-1.5 rounded-full active:scale-95 transition-all text-white/60 bg-white/5 border border-white/[0.08]"
-            >
-              Skanuj kolejny
-            </button>
+        <>
+          {/* Ambient blob + grain for forma */}
+          <div style={{
+            position: "absolute", top: -40, right: -60, width: 200, height: 200,
+            borderRadius: "50%", background: "radial-gradient(circle, rgba(249,115,22,0.1) 0%, transparent 70%)",
+            filter: "blur(50px)", animation: "float1 8s ease-in-out infinite",
+          }} />
+          <svg style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", pointerEvents: "none", opacity: 0.4, zIndex: 1 }}>
+            <filter id="grain"><feTurbulence type="fractalNoise" baseFrequency="0.65" numOctaves="3" stitchTiles="stitch" /></filter>
+            <rect width="100%" height="100%" filter="url(#grain)" opacity="0.08" />
+          </svg>
+          <style>{`
+            @keyframes float1 { 0%,100% { transform: translate(0,0); } 33% { transform: translate(15px,-20px); } 66% { transform: translate(-10px,10px); } }
+          `}</style>
+
+          <div style={{ position: "relative", zIndex: 2 }}>
+            <div style={{
+              padding: "14px 16px 10px", display: "flex", justifyContent: "space-between", alignItems: "center",
+            }}>
+              <button
+                onClick={() => router.push("/forma")}
+                className="active:scale-95 transition-all"
+                style={{
+                  padding: "7px 14px", borderRadius: 11,
+                  background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)",
+                  backdropFilter: "blur(12px)",
+                  fontSize: 12, fontWeight: 600, color: "rgba(255,255,255,0.6)",
+                  display: "flex", alignItems: "center", gap: 5, cursor: "pointer",
+                }}
+              >
+                <span style={{ fontSize: 13 }}>←</span> Powrót
+              </button>
+              <button
+                onClick={() => router.push("/forma")}
+                className="active:scale-95 transition-all"
+                style={{
+                  padding: "7px 14px", borderRadius: 11,
+                  background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)",
+                  backdropFilter: "blur(12px)",
+                  fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.45)",
+                  cursor: "pointer",
+                }}
+              >
+                Nowy CheckForm
+              </button>
+            </div>
           </div>
-        </div>
+        </>
       ) : (
         <div style={{ position: "relative", zIndex: 2 }}>
           <div className="max-w-md mx-auto" style={{ padding: "16px 16px 12px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -480,64 +511,145 @@ export default function WynikiPage() {
       )}
 
       {/* Content */}
-      <div className={`max-w-md mx-auto pb-10 relative z-20 ${isForma ? "px-5 -mt-24" : "px-0 mt-0"}`}>
+      <div className={`max-w-md mx-auto pb-10 relative z-20 ${isForma ? "px-0 mt-0" : "px-0 mt-0"}`}>
 
         {/* ─── 1. SCORE CARD ─── */}
         {isForma ? (
-          /* --- Original score card for forma --- */
-          <div
-            className="rounded-[20px] p-4 anim-fade-up relative overflow-hidden"
-            style={{
-              background: "rgba(255,255,255,0.02)",
-              border: "1px solid rgba(255,255,255,0.06)",
-            }}
-          >
-            <div className="absolute top-0 left-0 right-0" style={{ height: 3, background: `linear-gradient(90deg, transparent, ${color}, transparent)` }} />
-            <div className="flex items-center gap-3.5">
-              <ScoreRing score={result.score} size={68} />
-              <div className="flex-1 min-w-0">
-                <h1 className="text-[16px] font-bold leading-snug text-white">{result.name}</h1>
-                <p className="text-[12px] mt-0.5 font-medium text-white/55">{subtitle}</p>
-                <div className="mt-2 flex items-center gap-1.5 flex-wrap">
-                  <span className="text-[10px] font-bold px-3 py-1 rounded-full" style={{ backgroundColor: bg, color }}>{result.verdict_short || label}</span>
-                  <span className="text-[10px] font-bold px-3 py-1 rounded-full bg-white/5 text-white/55">
-                    💪 Forma
-                  </span>
-                </div>
-              </div>
-            </div>
-            <div className="mt-3 p-3 rounded-xl bg-white/[0.03] border border-white/[0.06]">
-              <p className="text-[12px] leading-relaxed text-white/55 line-clamp-2">{result.verdict}</p>
-            </div>
-            {mainCalories !== null && mainCalories > 0 && (
-              <p className="mt-2 text-center text-[13px] font-semibold text-white/30">⚡ {mainCalories} kcal</p>
-            )}
-            {/* Feedback buttons - forma */}
-            <div className="mt-3">
-              {feedbackSent === "good" ? (
-                <p style={{ fontSize: 12, color: "rgba(110,252,180,0.5)", textAlign: "center" }}>Dzięki za opinię! 🙏</p>
-              ) : feedbackSent === "bad" ? (
-                <div style={{ overflow: "hidden", animation: "feedbackSlideIn 0.3s ease-out" }}>
-                  <div style={{ padding: 12, borderRadius: 14, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
-                    <p style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginBottom: 8, fontWeight: 600 }}>Co było nie tak?</p>
-                    <textarea autoFocus rows={2} maxLength={300} placeholder="Np. źle odczytał kalorie, to nie ten produkt..." value={feedbackNote} onChange={(e) => setFeedbackNote(e.target.value)} style={{ width: "100%", padding: "10px 12px", borderRadius: 10, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "#fff", fontSize: 12, resize: "none", outline: "none", fontFamily: "inherit" }} />
-                    <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
-                      <button onClick={() => { fetch("/api/feedback", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ product_name: result.name, feedback: "bad", feedback_note: feedbackNote || null }) }); setFeedbackSent("sent"); }} style={{ flex: 1, padding: 10, borderRadius: 10, background: "rgba(110,252,180,0.1)", border: "1px solid rgba(110,252,180,0.2)", color: "#6efcb4", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>{feedbackNote.trim() ? "Wyślij" : "Wyślij bez komentarza"}</button>
-                      <button onClick={() => { setFeedbackSent(null); setFeedbackNote(""); }} style={{ padding: "10px 14px", borderRadius: 10, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.55)", fontSize: 12, cursor: "pointer" }}>✕</button>
+          /* --- Premium Hero Card for CheckForm --- */
+          (() => {
+            const formaScoreColor = result.score >= 8 ? "#22c55e" : result.score >= 5 ? "#FBBF24" : "#ef4444";
+            const scoreCircumForma = 2 * Math.PI * 18;
+            const thumbnailSrc = item.thumbnail
+              ? (item.thumbnail.startsWith("data:") ? item.thumbnail : `data:image/jpeg;base64,${item.thumbnail}`)
+              : null;
+
+            return (
+              <div style={{
+                margin: "0 16px 12px", borderRadius: 20,
+                background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.06)",
+                backdropFilter: "blur(20px)", position: "relative", overflow: "hidden",
+              }}>
+                {/* Gradient stripe */}
+                <div style={{
+                  position: "absolute", top: 0, left: 0, right: 0, height: 3,
+                  background: "linear-gradient(90deg, transparent, #f97316, transparent)", zIndex: 3,
+                }} />
+
+                {/* Photo area */}
+                <div style={{
+                  position: "relative", width: "100%", height: 170,
+                  background: "linear-gradient(135deg, #1a1208 0%, #0f1a0a 50%, #0a1210 100%)",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  overflow: "hidden",
+                }}>
+                  {thumbnailSrc ? (
+                    <img src={thumbnailSrc} alt="Sylwetka" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                  ) : (
+                    <div style={{ textAlign: "center" }}>
+                      <div style={{ fontSize: 60, opacity: 0.8, filter: "drop-shadow(0 4px 12px rgba(0,0,0,0.3))" }}>🏋️</div>
+                      <div style={{ fontSize: 10, color: "rgba(255,255,255,0.2)", marginTop: 2 }}>Twoje zdjęcie sylwetki</div>
+                    </div>
+                  )}
+
+                  {/* Gradient overlay */}
+                  <div style={{
+                    position: "absolute", bottom: 0, left: 0, right: 0, height: 70,
+                    background: "linear-gradient(transparent, rgba(10,14,12,0.95))",
+                  }} />
+
+                  {/* Score badge */}
+                  <div style={{
+                    position: "absolute", top: 10, right: 10,
+                    width: 58, height: 58, borderRadius: 14,
+                    background: "rgba(0,0,0,0.6)", border: "1.5px solid rgba(255,255,255,0.1)",
+                    backdropFilter: "blur(16px)",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    zIndex: 2, boxShadow: `0 0 16px ${formaScoreColor}15`,
+                  }}>
+                    <div style={{ position: "relative", width: 44, height: 44 }}>
+                      <svg width="44" height="44" style={{ transform: "rotate(-90deg)", position: "absolute", top: 0, left: 0 }}>
+                        <circle cx="22" cy="22" r="18" stroke="rgba(255,255,255,0.08)" strokeWidth="3" fill="none" />
+                        <circle cx="22" cy="22" r="18" stroke={formaScoreColor} strokeWidth="3" fill="none"
+                          strokeLinecap="round"
+                          strokeDasharray={scoreCircumForma}
+                          strokeDashoffset={scoreCircumForma - (result.score / 10) * scoreCircumForma}
+                          style={{ transition: "stroke-dashoffset 1.2s cubic-bezier(.4,0,.2,1)" }}
+                        />
+                      </svg>
+                      <div style={{
+                        position: "absolute", top: "50%", left: "50%",
+                        transform: "translate(-50%, -50%)", textAlign: "center",
+                      }}>
+                        <div style={{ fontSize: 15, fontWeight: 900, color: formaScoreColor, lineHeight: 1 }}>{result.score}</div>
+                        <div style={{ fontSize: 7, color: "rgba(255,255,255,0.4)" }}>/10</div>
+                      </div>
                     </div>
                   </div>
+
+                  {/* Forma tag */}
+                  <div style={{
+                    position: "absolute", top: 10, left: 10,
+                    padding: "4px 10px", borderRadius: 9,
+                    background: "rgba(249,115,22,0.15)", border: "1px solid rgba(249,115,22,0.25)",
+                    backdropFilter: "blur(12px)",
+                    fontSize: 10, fontWeight: 600, color: "#f97316", zIndex: 2,
+                  }}>💪 Forma</div>
                 </div>
-              ) : feedbackSent === "sent" ? (
-                <p style={{ fontSize: 12, color: "rgba(110,252,180,0.5)", textAlign: "center" }}>Dzięki za opinię! 🙏</p>
-              ) : (
-                <div className="flex items-center justify-center gap-2.5">
-                  <button onClick={() => { setFeedbackSent("good"); fetch("/api/feedback", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ product_name: result.name, feedback: "good" }) }); }} className="active:scale-95 transition-transform" style={{ padding: "8px 16px", borderRadius: 10, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.55)", fontSize: 12 }}>👍 Trafna analiza</button>
-                  <button onClick={() => setFeedbackSent("bad")} className="active:scale-95 transition-transform" style={{ padding: "8px 16px", borderRadius: 10, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.55)", fontSize: 12 }}>👎 Błędna</button>
+
+                {/* Content below photo */}
+                <div style={{ padding: "12px 18px 16px" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 }}>
+                    <div>
+                      <div style={{ fontSize: 18, fontWeight: 800, color: "white", marginBottom: 2 }}>CheckForm</div>
+                      <div style={{ fontSize: 12, color: "rgba(255,255,255,0.45)" }}>{subtitle}</div>
+                    </div>
+                    <span style={{
+                      padding: "4px 10px", borderRadius: 7, fontSize: 10, fontWeight: 600,
+                      background: `${formaScoreColor}18`, color: formaScoreColor, border: `1px solid ${formaScoreColor}30`,
+                    }}>{result.verdict_short || label}</span>
+                  </div>
+
+                  {/* AI Comment */}
+                  <div style={{
+                    padding: 11, borderRadius: 12,
+                    background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.05)",
+                  }}>
+                    <p style={{ fontSize: 12, color: "rgba(255,255,255,0.6)", lineHeight: 1.45, margin: 0 }}>
+                      {result.verdict}
+                    </p>
+                  </div>
+
+                  {/* Feedback */}
+                  <div style={{ marginTop: 10, display: "flex", justifyContent: "center", gap: 8 }}>
+                    {feedbackSent === "good" || feedbackSent === "sent" ? (
+                      <span style={{ fontSize: 12, color: "rgba(255,255,255,0.4)" }}>Dzięki! 🙏</span>
+                    ) : feedbackSent === "bad" ? (
+                      <div style={{ width: "100%" }}>
+                        <textarea rows={2} maxLength={300} placeholder="Co było nie tak?" value={feedbackNote} onChange={(e) => setFeedbackNote(e.target.value)} style={{ width: "100%", padding: "8px 12px", borderRadius: 10, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "#fff", fontSize: 12, resize: "none", outline: "none", fontFamily: "inherit" }} />
+                        <div style={{ display: "flex", gap: 8, marginTop: 6 }}>
+                          <button onClick={() => { fetch("/api/feedback", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ product_name: result.name, feedback: "bad", feedback_note: feedbackNote || null }) }); setFeedbackSent("sent"); }} style={{ flex: 1, padding: 8, borderRadius: 10, background: "rgba(249,115,22,0.1)", border: "1px solid rgba(249,115,22,0.2)", color: "#f97316", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>Wyślij</button>
+                          <button onClick={() => { setFeedbackSent(null); setFeedbackNote(""); }} style={{ padding: "8px 12px", borderRadius: 10, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.55)", fontSize: 12, cursor: "pointer" }}>✕</button>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <button onClick={() => { setFeedbackSent("good"); fetch("/api/feedback", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ product_name: result.name, feedback: "good" }) }); }} className="active:scale-95 transition-transform" style={{
+                          padding: "6px 16px", borderRadius: 10, border: "1px solid rgba(255,255,255,0.06)",
+                          background: "rgba(255,255,255,0.03)", color: "rgba(255,255,255,0.5)",
+                          fontSize: 12, cursor: "pointer",
+                        }}>👍 Trafna</button>
+                        <button onClick={() => setFeedbackSent("bad")} className="active:scale-95 transition-transform" style={{
+                          padding: "6px 16px", borderRadius: 10, border: "1px solid rgba(255,255,255,0.06)",
+                          background: "rgba(255,255,255,0.03)", color: "rgba(255,255,255,0.5)",
+                          fontSize: 12, cursor: "pointer",
+                        }}>👎 Błędna</button>
+                      </>
+                    )}
+                  </div>
                 </div>
-              )}
-            </div>
-            <style>{`@keyframes feedbackSlideIn { from { opacity: 0; max-height: 0; } to { opacity: 1; max-height: 200px; } }`}</style>
-          </div>
+              </div>
+            );
+          })()
         ) : isMeal ? (
           /* --- Premium Hero Card for meal mode --- */
           (() => {
@@ -1328,18 +1440,22 @@ export default function WynikiPage() {
         ) : null}
 
         {/* FunComparisons — food/meal only (cosmetics data is now in tabs) */}
-        {!isCosmetics && (
-          <div style={{ margin: isForma ? "0" : "0 16px" }}>
+        {!isCosmetics && !isForma && (
+          <div style={{ margin: "0 16px" }}>
             <FunComparisons items={funComparisons} isDark={isDark} />
           </div>
         )}
 
         {/* CheckForm body analysis */}
         {formaResult && (
-          <div className="mt-4 space-y-3 anim-fade-up-1">
-            {/* Body composition — premium 3-tile card */}
-            <div style={{ padding: 18, borderRadius: 16, background: "rgba(249,115,22,0.04)", border: "1px solid rgba(249,115,22,0.1)" }}>
-              <h3 style={{ fontSize: 14, fontWeight: 700, color: "rgba(255,255,255,0.8)", marginBottom: 14 }}>🏋️ Kompozycja ciała</h3>
+          <div style={{ position: "relative", zIndex: 2 }}>
+            {/* Body composition — right after hero card */}
+            <div style={{
+              margin: "0 16px 12px", padding: 16, borderRadius: 16,
+              background: "rgba(249,115,22,0.04)", border: "1px solid rgba(249,115,22,0.1)",
+              backdropFilter: "blur(12px)",
+            }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: "rgba(255,255,255,0.8)", marginBottom: 12 }}>🏋️ Kompozycja ciała</div>
               {(() => {
                 const weight = profile?.weight_kg;
                 const heightCm = profile?.height_cm;
@@ -1368,47 +1484,42 @@ export default function WynikiPage() {
                 return (
                   <>
                     {/* 3 tiles */}
-                    <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
-                      <div style={{ flex: 1, textAlign: "center", padding: 12, borderRadius: 12, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.05)" }}>
-                        <div style={{ fontSize: 22, fontWeight: 800, color: "#FBBF24" }}>{bfMid ? `${bfMid}%` : formaResult.body_fat_range}</div>
-                        <div style={{ fontSize: 10, color: "rgba(255,255,255,0.45)", marginTop: 4 }}>% tłuszczu</div>
+                    <div style={{ display: "flex", gap: 6, marginBottom: 12 }}>
+                      <div style={{ flex: 1, textAlign: "center", padding: 10, borderRadius: 12, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.05)" }}>
+                        <div style={{ fontSize: 20, fontWeight: 800, color: "#FBBF24" }}>{bfMid ? `${bfMid}%` : formaResult.body_fat_range}</div>
+                        <div style={{ fontSize: 9, color: "rgba(255,255,255,0.45)", marginTop: 3 }}>% tłuszczu</div>
                       </div>
-                      <div style={{ flex: 1, textAlign: "center", padding: 12, borderRadius: 12, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.05)" }}>
-                        <div style={{ fontSize: 22, fontWeight: 800, color: "#ef4444" }}>{fatKg ? `~${fatKg}` : "—"}<span style={{ fontSize: 12 }}> kg</span></div>
-                        <div style={{ fontSize: 10, color: "rgba(255,255,255,0.45)", marginTop: 4 }}>tłuszcz</div>
+                      <div style={{ flex: 1, textAlign: "center", padding: 10, borderRadius: 12, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.05)" }}>
+                        <div style={{ fontSize: 20, fontWeight: 800, color: "#ef4444" }}>{fatKg ? `~${fatKg}` : "—"} <span style={{ fontSize: 12 }}>kg</span></div>
+                        <div style={{ fontSize: 9, color: "rgba(255,255,255,0.45)", marginTop: 3 }}>tłuszcz</div>
                       </div>
-                      <div style={{ flex: 1, textAlign: "center", padding: 12, borderRadius: 12, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.05)" }}>
-                        <div style={{ fontSize: 22, fontWeight: 800, color: "#22c55e" }}>{muscleKg ? `~${muscleKg}` : "—"}<span style={{ fontSize: 12 }}> kg</span></div>
-                        <div style={{ fontSize: 10, color: "rgba(255,255,255,0.45)", marginTop: 4 }}>mięśnie</div>
+                      <div style={{ flex: 1, textAlign: "center", padding: 10, borderRadius: 12, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.05)" }}>
+                        <div style={{ fontSize: 20, fontWeight: 800, color: "#22c55e" }}>{muscleKg ? `~${muscleKg}` : "—"} <span style={{ fontSize: 12 }}>kg</span></div>
+                        <div style={{ fontSize: 9, color: "rgba(255,255,255,0.45)", marginTop: 3 }}>mięśnie</div>
                       </div>
                     </div>
 
-                    {/* Category + BMI rows */}
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderTop: "1px solid rgba(255,255,255,0.05)" }}>
-                      <span style={{ fontSize: 12, color: "rgba(255,255,255,0.5)" }}>Kategoria</span>
-                      <span className={`text-[11px] font-bold px-3 py-1 rounded-full ${
-                        formaResult.body_fat_category === "athletic" ? "bg-blue-500/15 text-blue-400"
-                        : formaResult.body_fat_category === "fit" ? "bg-emerald-500/15 text-emerald-400"
-                        : formaResult.body_fat_category === "average" ? "bg-amber-500/15 text-amber-400"
-                        : "bg-red-500/15 text-red-400"
-                      }`}>
-                        {formaResult.body_fat_category?.toUpperCase()}
-                      </span>
-                    </div>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderTop: "1px solid rgba(255,255,255,0.05)" }}>
-                      <span style={{ fontSize: 12, color: "rgba(255,255,255,0.5)" }}>💪 Ocena mięśni</span>
-                      <span style={{ fontSize: 12, fontWeight: 600, color: "white" }}>
-                        {formaResult.muscle_mass === "above_average" ? "Powyżej średniej" : formaResult.muscle_mass === "average" ? "Średnia" : "Poniżej średniej"}
-                      </span>
-                    </div>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderTop: "1px solid rgba(255,255,255,0.05)" }}>
-                      <span style={{ fontSize: 12, color: "rgba(255,255,255,0.5)" }}>📏 BMI</span>
-                      <span style={{ fontSize: 12, fontWeight: 600, color: "white" }}>{formaResult.bmi} — {formaResult.bmi_category}</span>
-                    </div>
+                    {/* Details rows */}
+                    {[
+                      { label: "Kategoria", value: formaResult.body_fat_category?.toUpperCase() || "—", color: "#22c55e" },
+                      { label: "Ocena mięśni", value: formaResult.muscle_mass === "above_average" ? "Powyżej średniej" : formaResult.muscle_mass === "average" ? "Średnia" : "Poniżej średniej", color: "rgba(255,255,255,0.8)" },
+                      { label: "BMI", value: `${formaResult.bmi} — ${formaResult.bmi_category}`, color: "rgba(255,255,255,0.8)" },
+                    ].map((row, i) => (
+                      <div key={i} style={{
+                        display: "flex", justifyContent: "space-between", alignItems: "center",
+                        padding: "8px 0", borderTop: "1px solid rgba(255,255,255,0.05)",
+                      }}>
+                        <span style={{ fontSize: 11, color: "rgba(255,255,255,0.45)" }}>{row.label}</span>
+                        <span style={{ fontSize: 11, fontWeight: 700, color: row.color, textAlign: "right", maxWidth: "60%" }}>{row.value}</span>
+                      </div>
+                    ))}
 
-                    <p style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", textAlign: "center", marginTop: 10 }}>
-                      ⚠️ Szacunek AI na podstawie zdjęcia — dokładność ±5%. Dla precyzji użyj DEXA scan.
-                    </p>
+                    <div style={{
+                      marginTop: 10, paddingTop: 8, borderTop: "1px solid rgba(255,255,255,0.05)",
+                      fontSize: 9, color: "rgba(255,255,255,0.3)", textAlign: "center", lineHeight: 1.4,
+                    }}>
+                      ⚠️ Szacunek AI — dokładność ±5%. Dla precyzji użyj DEXA scan.
+                    </div>
                   </>
                 );
               })()}
@@ -1416,59 +1527,71 @@ export default function WynikiPage() {
 
             {/* Strengths */}
             {formaResult.visible_strengths && formaResult.visible_strengths.length > 0 && (
-              <div className="rounded-[20px] p-5 bg-white/[0.04] border border-white/[0.08] border-l-4 border-l-emerald-500">
-                <h3 className="font-bold text-emerald-400 mb-3 text-[13px]">✅ Mocne strony</h3>
-                <ul className="space-y-2">
-                  {formaResult.visible_strengths.map((s, i) => (
-                    <li key={i} className="flex items-start gap-2 text-[13px] text-white/60">
-                      <span className="text-emerald-400">•</span><span>{s}</span>
-                    </li>
-                  ))}
-                </ul>
+              <div style={{ margin: "0 16px 12px", padding: 14, borderRadius: 14, background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.06)", backdropFilter: "blur(8px)" }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: "rgba(255,255,255,0.8)", marginBottom: 8 }}>✅ Mocne strony</div>
+                {formaResult.visible_strengths.map((s, i) => (
+                  <div key={i} style={{ padding: "6px 0", fontSize: 12, color: "rgba(255,255,255,0.55)", borderBottom: i < formaResult.visible_strengths.length - 1 ? "1px solid rgba(255,255,255,0.04)" : "none", display: "flex", alignItems: "center", gap: 8 }}>
+                    <span style={{ color: "#22c55e", fontSize: 10 }}>●</span> {s}
+                  </div>
+                ))}
               </div>
             )}
 
             {/* Areas to improve */}
             {formaResult.areas_to_improve && formaResult.areas_to_improve.length > 0 && (
-              <div className="rounded-[20px] p-5 bg-white/[0.04] border border-white/[0.08] border-l-4 border-l-blue-500">
-                <h3 className="font-bold text-blue-400 mb-3 text-[13px]">🎯 Do poprawy</h3>
-                <ul className="space-y-2">
-                  {formaResult.areas_to_improve.map((a, i) => (
-                    <li key={i} className="flex items-start gap-2 text-[13px] text-white/60">
-                      <span className="text-blue-400">•</span><span>{a}</span>
-                    </li>
-                  ))}
-                </ul>
+              <div style={{ margin: "0 16px 12px", padding: 14, borderRadius: 14, background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.06)", backdropFilter: "blur(8px)" }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: "rgba(255,255,255,0.8)", marginBottom: 8 }}>🎯 Do poprawy</div>
+                {formaResult.areas_to_improve.map((a, i) => (
+                  <div key={i} style={{ padding: "6px 0", fontSize: 12, color: "rgba(255,255,255,0.55)", borderBottom: i < formaResult.areas_to_improve.length - 1 ? "1px solid rgba(255,255,255,0.04)" : "none", display: "flex", alignItems: "center", gap: 8 }}>
+                    <span style={{ color: "#3b82f6", fontSize: 10 }}>●</span> {a}
+                  </div>
+                ))}
               </div>
             )}
 
             {/* Tip */}
             {formaResult.tip && (
-              <div className="rounded-[20px] p-5 bg-white/[0.04] border border-white/[0.08] border-l-4 border-l-amber-500">
-                <h3 className="font-bold text-amber-400 mb-2 text-[13px]">💡 Rada</h3>
-                <p className="text-[13px] text-white/60 leading-relaxed">{formaResult.tip}</p>
+              <div style={{ margin: "0 16px 12px", padding: 14, borderRadius: 14, background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.06)", backdropFilter: "blur(8px)" }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: "rgba(255,255,255,0.8)", marginBottom: 8 }}>💡 Rada</div>
+                <p style={{ fontSize: 12, color: "rgba(255,255,255,0.55)", lineHeight: 1.5, margin: 0 }}>{formaResult.tip}</p>
               </div>
             )}
 
             {/* Photo warnings */}
             {formaResult.photo_warnings && formaResult.photo_warnings.length > 0 && (
-              <div className="rounded-[20px] p-4 bg-amber-500/10 border border-amber-500/20">
-                <p className="text-[11px] font-semibold text-amber-400 mb-2">📸 Wskazówki do zdjęcia:</p>
+              <div style={{ margin: "0 16px 12px", padding: 14, borderRadius: 14, background: "rgba(249,115,22,0.06)", border: "1px solid rgba(249,115,22,0.15)" }}>
+                <p style={{ fontSize: 11, fontWeight: 600, color: "#f97316", marginBottom: 6 }}>📸 Wskazówki do zdjęcia:</p>
                 {formaResult.photo_warnings.map((w, i) => (
-                  <p key={i} className="text-[11px] text-amber-400/70">{w}</p>
+                  <p key={i} style={{ fontSize: 11, color: "rgba(249,115,22,0.7)", margin: "2px 0" }}>{w}</p>
                 ))}
               </div>
             )}
 
-            {/* Disclaimer */}
-            <div className="rounded-[16px] p-4 bg-amber-500/[0.06] border border-amber-500/15">
-              <p className="text-[11px] text-amber-400/80 leading-relaxed text-center">
-                ⚠️ Szacunek AI na podstawie zdjęcia — dokładność ±5%. Dla precyzyjnego pomiaru użyj DEXA scan.
-              </p>
+            {/* Fun facts / Ciekawostki */}
+            {funComparisons.length > 0 && (
+              <div style={{ margin: "0 16px 12px", padding: 14, borderRadius: 14, background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.06)", backdropFilter: "blur(8px)" }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: "rgba(255,255,255,0.8)", marginBottom: 8 }}>💡 Ciekawostki</div>
+                {funComparisons.map((fact, i) => (
+                  <div key={i} style={{ padding: "6px 0", fontSize: 12, color: "rgba(255,255,255,0.55)", borderBottom: i < funComparisons.length - 1 ? "1px solid rgba(255,255,255,0.04)" : "none", display: "flex", alignItems: "center", gap: 8 }}>
+                    <span style={{ color: result.score >= 8 ? "#22c55e" : result.score >= 5 ? "#FBBF24" : "#ef4444", fontSize: 10 }}>●</span> {fact}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* New CheckForm button */}
+            <div
+              onClick={() => router.push("/forma")}
+              style={{
+                margin: "0 16px 12px", padding: 14, borderRadius: 14,
+                background: "linear-gradient(135deg, rgba(249,115,22,0.15) 0%, rgba(249,115,22,0.05) 100%)",
+                border: "1px solid rgba(249,115,22,0.2)", textAlign: "center",
+                fontSize: 13, fontWeight: 700, color: "#f97316", cursor: "pointer",
+                boxShadow: "0 4px 20px rgba(249,115,22,0.1)",
+              }}
+            >
+              📸 Zrób nowy CheckForm
             </div>
-            <p className="text-[10px] text-white/25 text-center leading-relaxed px-4">
-              Nie traktuj jako diagnozy medycznej.
-            </p>
           </div>
         )}
 
@@ -1496,7 +1619,7 @@ export default function WynikiPage() {
         })()}
 
         {/* ─── SHARE BUTTON ─── */}
-        <div style={{ margin: isForma ? "0" : "0 16px" }}>
+        <div style={{ margin: "0 16px" }}>
           <button
             onClick={handleShare}
             disabled={sharing}
