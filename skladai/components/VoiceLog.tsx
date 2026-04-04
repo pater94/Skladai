@@ -559,11 +559,15 @@ export default function VoiceLog({ mode, onComplete, onClose, initialOpen = fals
           <div
             data-scrollable="true"
             className={`
-              relative w-full max-w-lg max-h-[90vh] overflow-y-auto
+              relative w-full max-w-lg max-h-[85vh] overflow-y-auto
               rounded-t-2xl sm:rounded-2xl shadow-2xl p-5
               ${bgOverlay} ${textMain}
             `}
-            style={{ border: "1px solid rgba(255,255,255,0.06)" }}
+            style={{
+              border: "1px solid rgba(255,255,255,0.06)",
+              WebkitOverflowScrolling: "touch",
+              overscrollBehavior: "contain",
+            }}
           >
             {/* Close */}
             <button
@@ -709,11 +713,35 @@ export default function VoiceLog({ mode, onComplete, onClose, initialOpen = fals
 
             {/* ===== RESULTS ===== */}
             {phase === "results" && (
-              <div className="flex flex-col gap-3">
+              <div className="flex flex-col gap-3" style={{ paddingBottom: 80 }}>
                 {/* Transcript recap */}
                 <p className={`text-xs ${textSub} italic`}>
                   Rozpoznano: &ldquo;{transcript}&rdquo;
                 </p>
+
+                {/* Meal type selector (food only) — AT TOP before items */}
+                {mode === "food" && (
+                  <div>
+                    <label className={`text-xs font-semibold ${textSub} mb-1 block`}>Typ posiłku</label>
+                    <div className="grid grid-cols-4 gap-1.5">
+                      {MEAL_TYPES.map(mt => (
+                        <button
+                          key={mt.key}
+                          onClick={() => setMealType(mt.key)}
+                          className={`
+                            py-1.5 rounded-lg text-xs font-medium transition-colors
+                            ${mealType === mt.key
+                              ? btnPrimary
+                              : btnSecondary
+                            }
+                          `}
+                        >
+                          {mt.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 {/* Items */}
                 {items.map((item) => (
@@ -855,32 +883,21 @@ export default function VoiceLog({ mode, onComplete, onClose, initialOpen = fals
                   )}
                 </div>
 
-                {/* Meal type selector (food only) */}
-                {mode === "food" && (
-                  <div>
-                    <label className={`text-xs font-semibold ${textSub} mb-1 block`}>Typ posiłku</label>
-                    <div className="grid grid-cols-4 gap-1.5">
-                      {MEAL_TYPES.map(mt => (
-                        <button
-                          key={mt.key}
-                          onClick={() => setMealType(mt.key)}
-                          className={`
-                            py-1.5 rounded-lg text-xs font-medium transition-colors
-                            ${mealType === mt.key
-                              ? btnPrimary
-                              : btnSecondary
-                            }
-                          `}
-                        >
-                          {mt.label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
+                {error && (
+                  <p className="text-sm text-red-500 text-center">{error}</p>
                 )}
+              </div>
+            )}
 
-                {/* Action buttons */}
-                <div className="flex gap-2 mt-1">
+            {/* Sticky action buttons — always visible at bottom of modal */}
+            {phase === "results" && (
+              <div style={{
+                position: "sticky", bottom: -20, left: 0, right: 0,
+                padding: "12px 0 4px",
+                background: "linear-gradient(transparent, #0a0e0c 16px)",
+                zIndex: 10,
+              }}>
+                <div className="flex gap-2">
                   <button
                     onClick={() => {
                       setPhase("idle");
@@ -889,23 +906,19 @@ export default function VoiceLog({ mode, onComplete, onClose, initialOpen = fals
                     }}
                     className={`flex-1 py-2.5 rounded-xl text-sm font-semibold ${btnSecondary}`}
                   >
-                    🔄 Nagraj ponownie
+                    🔄 Ponownie
                   </button>
                   <button
                     onClick={handleSubmit}
                     disabled={items.length === 0}
                     className={`
-                      flex-1 py-2.5 rounded-xl text-sm font-bold shadow-lg
+                      flex-[1.5] py-2.5 rounded-xl text-sm font-bold shadow-lg
                       ${btnPrimary} disabled:opacity-40
                     `}
                   >
                     {mode === "food" ? "📝 Dodaj do dziennika" : "🍺 Dodaj do Alkomatu"}
                   </button>
                 </div>
-
-                {error && (
-                  <p className="text-sm text-red-500 text-center">{error}</p>
-                )}
               </div>
             )}
           </div>
