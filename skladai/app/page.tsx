@@ -23,7 +23,7 @@ import { compressImageSmall } from "@/lib/compress";
 import { isNative, takePhotoForMode } from "@/lib/native-camera";
 import type { ScanMode, ScanHistoryItem } from "@/lib/types";
 import Link from "next/link";
-import { Apple, UtensilsCrossed, Sparkles, Pill, Bell } from "lucide-react";
+import { Apple, UtensilsCrossed, Sparkles, Pill } from "lucide-react";
 
 /* ── tip arrays ── */
 const FOOD_TIPS = [
@@ -483,9 +483,6 @@ export default function Home() {
                 <span>{streak}</span>
               </div>
             )}
-            <button className="w-9 h-9 flex items-center justify-center rounded-full" style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }}>
-              <Bell size={16} className="text-white/40" />
-            </button>
           </div>
         </div>
 
