@@ -20,6 +20,7 @@ export default function DashboardPage() {
   const [loaded, setLoaded] = useState(false);
   const [view, setView] = useState<DashView>("today");
   const health = useHealthData();
+  const [healthMsg, setHealthMsg] = useState("");
 
   const reload = () => {
     const p = getProfile();
@@ -154,6 +155,58 @@ export default function DashboardPage() {
 
       <div style={{ padding: "0 16px 24px" }}>
 
+        {/* Health connect button — always visible when not connected */}
+        {!health.loading && !health.isConnected && (
+          <div style={{ marginBottom: 12 }}>
+            <button
+              onClick={async () => {
+                if (health.isNative) {
+                  try {
+                    await health.requestAccess();
+                  } catch {
+                    localStorage.setItem("healthKitInterested", "true");
+                    setHealthMsg("Wkrótce dostępne! Pracujemy nad integracją z Apple Health.");
+                    setTimeout(() => setHealthMsg(""), 4000);
+                  }
+                } else {
+                  setHealthMsg("Połączenie z Health dostępne w aplikacji mobilnej.");
+                  setTimeout(() => setHealthMsg(""), 4000);
+                }
+              }}
+              style={{
+                width: "100%", padding: "14px 16px", borderRadius: 14,
+                background: "rgba(239,68,68,0.06)", border: "1px solid rgba(239,68,68,0.15)",
+                color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer",
+                display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+              }}
+            >
+              <span>❤️</span>
+              <span>Połącz z Health żeby śledzić aktywność</span>
+            </button>
+            {healthMsg && (
+              <div style={{
+                marginTop: 8, padding: "10px 14px", borderRadius: 12,
+                background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)",
+                fontSize: 12, color: "rgba(255,255,255,0.7)", textAlign: "center",
+              }}>
+                {healthMsg}
+              </div>
+            )}
+          </div>
+        )}
+
+        {health.isConnected && (
+          <div style={{
+            marginBottom: 12, padding: "10px 16px", borderRadius: 14,
+            background: "rgba(110,252,180,0.06)", border: "1px solid rgba(110,252,180,0.12)",
+            display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+            fontSize: 13, fontWeight: 600, color: "rgba(110,252,180,0.8)",
+          }}>
+            <span>✅</span>
+            <span>Połączono z Health</span>
+          </div>
+        )}
+
         {/* ═══ TODAY VIEW ═══ */}
         {view === "today" && (<>
 
@@ -239,24 +292,6 @@ export default function DashboardPage() {
                   </div>
                 ))}
               </div>
-            </GlassCard>
-          )}
-
-          {/* Connect Health prompt — native but not connected */}
-          {health.isNative && !health.isConnected && !health.loading && (
-            <GlassCard>
-              <button
-                onClick={health.requestAccess}
-                style={{
-                  width: "100%", padding: 12, borderRadius: 12,
-                  background: "rgba(110,252,180,0.08)", border: "1px solid rgba(110,252,180,0.15)",
-                  color: "#6efcb4", fontSize: 13, fontWeight: 600, cursor: "pointer",
-                  display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-                }}
-              >
-                <span>❤️</span>
-                <span>Połącz z Health żeby śledzić aktywność</span>
-              </button>
             </GlassCard>
           )}
 
