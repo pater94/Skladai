@@ -16,7 +16,6 @@ import {
   getSavedMode,
   saveMode,
   updateStreak,
-  getStreak,
   getHistory,
 } from "@/lib/storage";
 import { compressImageSmall } from "@/lib/compress";
@@ -182,7 +181,6 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
   const [mode, setMode] = useState<ScanMode>("food");
   const [tipIndex, setTipIndex] = useState(0);
-  const [streak, setStreak] = useState(0);
   const [showSkinQuiz, setShowSkinQuiz] = useState(false);
   const [recentScans, setRecentScans] = useState<ScanHistoryItem[]>([]);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
@@ -201,7 +199,6 @@ export default function Home() {
 
   useEffect(() => {
     setMode(getSavedMode());
-    setStreak(getStreak());
   }, []);
 
   // Lock body scroll when PhotoPreview is open
@@ -469,21 +466,6 @@ export default function Home() {
             <span className="text-white">Skład</span>
             <span style={{ color: accent.hex, textShadow: `0 0 20px ${accent.hex}60` }} className="transition-colors duration-300">AI</span>
           </h1>
-          <div className="flex items-center gap-3">
-            {streak >= 1 && (
-              <div
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-bold text-white/80"
-                style={{
-                  background: "rgba(255,255,255,0.05)",
-                  border: "1px solid rgba(255,255,255,0.08)",
-                  backdropFilter: "blur(10px)",
-                }}
-              >
-                <span>&#128293;</span>
-                <span>{streak}</span>
-              </div>
-            )}
-          </div>
         </div>
 
         {/* ══ 2. HEADLINE ══ */}
