@@ -1,4 +1,13 @@
 import { ScanHistoryItem, AnalysisResult, ScanMode, UserProfile, DiaryEntry, DailyTotals, MealType } from "./types";
+import { schedulePush } from "./sync";
+
+/** Notify CloudSync that localStorage changed */
+function notifyChange(): void {
+  schedulePush();
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new Event("local-data-changed"));
+  }
+}
 
 const HISTORY_KEY = "skladai_history";
 const SCAN_COUNT_KEY = "skladai_scan_count";
@@ -39,6 +48,7 @@ export function addToHistory(
   history.unshift(item);
   if (history.length > MAX_HISTORY) history.pop();
   localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+  notifyChange();
   return item;
 }
 
@@ -50,10 +60,12 @@ export function getHistoryItem(id: string): ScanHistoryItem | null {
 export function removeHistoryItem(id: string): void {
   const history = getHistory().filter((item) => item.id !== id);
   localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+  notifyChange();
 }
 
 export function clearHistory(): void {
   localStorage.removeItem(HISTORY_KEY);
+  notifyChange();
 }
 
 export function getSavedMode(): ScanMode {
@@ -101,6 +113,7 @@ export function getProfile(): UserProfile | null {
 export function saveProfile(profile: UserProfile): void {
   profile.updated_at = new Date().toISOString();
   localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
+  notifyChange();
 }
 
 export function hasProfile(): boolean {
@@ -134,12 +147,14 @@ export function addDiaryEntry(entry: Omit<DiaryEntry, "id" | "timestamp">): Diar
   // Keep max 500 entries
   if (diary.length > 500) diary.splice(0, diary.length - 500);
   localStorage.setItem(DIARY_KEY, JSON.stringify(diary));
+  notifyChange();
   return full;
 }
 
 export function removeDiaryEntry(id: string): void {
   const diary = getDiary().filter((e) => e.id !== id);
   localStorage.setItem(DIARY_KEY, JSON.stringify(diary));
+  notifyChange();
 }
 
 export function getDiaryForDate(date: string): DiaryEntry[] {
@@ -288,6 +303,7 @@ export function updateStreak(): number {
 
   localStorage.setItem(STREAK_KEY, streak.toString());
   localStorage.setItem(LAST_SCAN_DATE_KEY, today);
+  notifyChange();
   return streak;
 }
 
@@ -319,6 +335,7 @@ export function addWeightEntry(weight: number, source: "manual" | "checkform" = 
   }
   history.sort((a, b) => a.date.localeCompare(b.date));
   localStorage.setItem(WEIGHT_HISTORY_KEY, JSON.stringify(history));
+  notifyChange();
   // Also update profile weight
   const p = getProfile();
   if (p) { p.weight_kg = weight; saveProfile(p); }

@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import OnboardingLogin from "./OnboardingLogin";
 import { createClient } from "@/lib/supabase";
+import { pullFromCloud } from "@/lib/sync";
 
 export default function OnboardingWrapper() {
   const [show, setShow] = useState(false);
@@ -15,9 +16,13 @@ export default function OnboardingWrapper() {
     const supabase = createClient();
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
-        // User is logged in (came back from Apple sign in)
-        localStorage.setItem("onboardingCompleted", "true");
-        window.scrollTo(0, 0);
+        // User is logged in (came back from OAuth redirect)
+        // Restore cloud data FIRST, then mark onboarding done
+        pullFromCloud().then(() => {
+          localStorage.setItem("onboardingCompleted", "true");
+          window.dispatchEvent(new Event("cloud-sync-done"));
+          window.scrollTo(0, 0);
+        });
       } else {
         setShow(true);
       }
