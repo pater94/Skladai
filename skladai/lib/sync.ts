@@ -127,14 +127,26 @@ export async function pushToCloud(): Promise<void> {
   try {
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    if (!user) {
+      console.log("[sync] pushToCloud: no user");
+      return;
+    }
 
     const payload = collectLocal();
-    await supabase.from("user_data").upsert({
+    const keys = Object.keys(payload);
+    console.log("[sync] pushToCloud: pushing", keys.length, "keys for user", user.id);
+
+    const { error } = await supabase.from("user_data").upsert({
       user_id: user.id,
       data: payload,
       updated_at: new Date().toISOString(),
     });
+
+    if (error) {
+      console.warn("[sync] pushToCloud error:", error.message, error.code);
+    } else {
+      console.log("[sync] pushToCloud: success");
+    }
   } catch (e) {
     console.warn("[sync] push failed:", e);
   } finally {
@@ -148,17 +160,31 @@ export async function pullFromCloud(): Promise<boolean> {
   try {
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return false;
+    if (!user) {
+      console.log("[sync] pullFromCloud: no user");
+      return false;
+    }
 
+    console.log("[sync] pullFromCloud: fetching for user", user.id);
     const { data, error } = await supabase
       .from("user_data")
       .select("data")
       .eq("user_id", user.id)
       .single();
 
-    if (error || !data?.data) return false;
+    if (error) {
+      console.log("[sync] pullFromCloud: query error:", error.message, error.code);
+      return false;
+    }
+    if (!data?.data) {
+      console.log("[sync] pullFromCloud: no cloud data found (first time user)");
+      return false;
+    }
 
     const cloud = data.data as Record<string, string>;
+    const cloudKeys = Object.keys(cloud).filter(k => cloud[k] !== null && cloud[k] !== undefined);
+    console.log("[sync] pullFromCloud: cloud has", cloudKeys.length, "keys:", cloudKeys.join(", "));
+
     let restored = false;
 
     for (const key of SYNC_KEYS) {
@@ -171,6 +197,7 @@ export async function pullFromCloud(): Promise<boolean> {
         // Local empty → restore from cloud
         const val = typeof cloudVal === "string" ? cloudVal : JSON.stringify(cloudVal);
         localStorage.setItem(key, val);
+        console.log("[sync] restored key:", key);
         restored = true;
       } else if (ARRAY_KEYS.has(key)) {
         // Both exist, merge arrays
@@ -181,11 +208,7 @@ export async function pullFromCloud(): Promise<boolean> {
       // For non-array keys where local exists — local wins (user may have edited)
     }
 
-    // After merging, push the combined state back to cloud
-    if (restored) {
-      await pushToCloud();
-    }
-
+    console.log("[sync] pullFromCloud: restored =", restored);
     return restored;
   } catch (e) {
     console.warn("[sync] pull failed:", e);

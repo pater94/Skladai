@@ -14,15 +14,29 @@ export default function OnboardingWrapper() {
 
     // Check if user just came back from OAuth redirect
     const supabase = createClient();
-    supabase.auth.getSession().then(({ data: { session } }) => {
+
+    // Use getSession first (synchronous from storage), then getUser (validates with server)
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (session) {
+        console.log("[Onboarding] Session found, restoring cloud data...");
         // User is logged in (came back from OAuth redirect)
-        // Restore cloud data FIRST, then mark onboarding done
-        pullFromCloud().then(() => {
-          localStorage.setItem("onboardingCompleted", "true");
-          window.dispatchEvent(new Event("cloud-sync-done"));
-          window.scrollTo(0, 0);
-        });
+        // Wait for session to be fully established
+        try {
+          // Validate the session with the server
+          const { data: { user } } = await supabase.auth.getUser();
+          if (user) {
+            console.log("[Onboarding] User validated:", user.id);
+            // Restore cloud data FIRST, then mark onboarding done
+            const restored = await pullFromCloud();
+            console.log("[Onboarding] Pull result:", restored);
+          }
+        } catch (e) {
+          console.warn("[Onboarding] Cloud restore failed:", e);
+        }
+
+        localStorage.setItem("onboardingCompleted", "true");
+        window.dispatchEvent(new Event("cloud-sync-done"));
+        window.scrollTo(0, 0);
       } else {
         setShow(true);
       }

@@ -1,7 +1,11 @@
-import { createClient as createSupabaseClient } from '@supabase/supabase-js';
+import { createClient as createSupabaseClient, SupabaseClient } from '@supabase/supabase-js';
 
-// Browser client for client components
-export function createClient() {
+// Singleton browser client — ensures OAuth session is shared across all callers
+let browserClient: SupabaseClient | null = null;
+
+export function createClient(): SupabaseClient {
+  if (browserClient) return browserClient;
+
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
@@ -11,12 +15,14 @@ export function createClient() {
     );
   }
 
-  return createSupabaseClient(supabaseUrl, supabaseAnonKey, {
+  browserClient = createSupabaseClient(supabaseUrl, supabaseAnonKey, {
     auth: {
       persistSession: true,
       autoRefreshToken: true,
     },
   });
+
+  return browserClient;
 }
 
 // Server-side admin client (bypasses RLS, uses service role key)
