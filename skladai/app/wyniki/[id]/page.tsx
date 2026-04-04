@@ -538,12 +538,12 @@ export default function WynikiPage() {
                 {/* Photo area */}
                 <div style={{
                   position: "relative", width: "100%", height: 170,
-                  background: "linear-gradient(135deg, #1a1208 0%, #0f1a0a 50%, #0a1210 100%)",
+                  background: "rgba(0,0,0,0.9)",
                   display: "flex", alignItems: "center", justifyContent: "center",
                   overflow: "hidden",
                 }}>
                   {thumbnailSrc ? (
-                    <img src={thumbnailSrc} alt="Sylwetka" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                    <img src={thumbnailSrc} alt="Sylwetka" style={{ width: "100%", height: "100%", objectFit: "contain" }} />
                   ) : (
                     <div style={{ textAlign: "center" }}>
                       <div style={{ fontSize: 60, opacity: 0.8, filter: "drop-shadow(0 4px 12px rgba(0,0,0,0.3))" }}>🏋️</div>
