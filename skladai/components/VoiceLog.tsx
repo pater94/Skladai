@@ -546,28 +546,26 @@ export default function VoiceLog({ mode, onComplete, onClose, initialOpen = fals
         </button>
       )}
 
-      {/* MODAL OVERLAY */}
+      {/* MODAL OVERLAY — fullscreen scrollable */}
       {open && (
-        <div className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center">
-          {/* Backdrop */}
-          <div
-            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-            onClick={handleClose}
-          />
-
+        <div
+          data-scrollable="true"
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 9999,
+            background: "#0a0e0c",
+            overflowY: "auto",
+            WebkitOverflowScrolling: "touch",
+            overscrollBehavior: "contain",
+          }}
+        >
           {/* Panel */}
           <div
-            data-scrollable="true"
             className={`
-              relative w-full max-w-lg max-h-[85vh] overflow-y-auto
-              rounded-t-2xl sm:rounded-2xl shadow-2xl p-5
-              ${bgOverlay} ${textMain}
+              relative w-full max-w-lg mx-auto p-5 min-h-full
+              ${textMain}
             `}
-            style={{
-              border: "1px solid rgba(255,255,255,0.06)",
-              WebkitOverflowScrolling: "touch",
-              overscrollBehavior: "contain",
-            }}
           >
             {/* Close */}
             <button
@@ -713,7 +711,7 @@ export default function VoiceLog({ mode, onComplete, onClose, initialOpen = fals
 
             {/* ===== RESULTS ===== */}
             {phase === "results" && (
-              <div className="flex flex-col gap-3" style={{ paddingBottom: 80 }}>
+              <div className="flex flex-col gap-3" style={{ paddingBottom: 100 }}>
                 {/* Transcript recap */}
                 <p className={`text-xs ${textSub} italic`}>
                   Rozpoznano: &ldquo;{transcript}&rdquo;
@@ -889,22 +887,26 @@ export default function VoiceLog({ mode, onComplete, onClose, initialOpen = fals
               </div>
             )}
 
-            {/* Sticky action buttons — always visible at bottom of modal */}
+            {/* Fixed action buttons — always visible at bottom */}
             {phase === "results" && (
               <div style={{
-                position: "sticky", bottom: -20, left: 0, right: 0,
-                padding: "12px 0 4px",
-                background: "linear-gradient(transparent, #0a0e0c 16px)",
-                zIndex: 10,
+                position: "fixed",
+                bottom: 0,
+                left: 0,
+                right: 0,
+                padding: "12px 20px",
+                paddingBottom: "calc(12px + env(safe-area-inset-bottom, 0px))",
+                background: "linear-gradient(transparent, #0a0e0c 20%, #0a0e0c)",
+                zIndex: 10000,
               }}>
-                <div className="flex gap-2">
+                <div className="flex gap-2 max-w-lg mx-auto">
                   <button
                     onClick={() => {
                       setPhase("idle");
                       setItems([]);
                       setError("");
                     }}
-                    className={`flex-1 py-2.5 rounded-xl text-sm font-semibold ${btnSecondary}`}
+                    className={`flex-1 py-3 rounded-xl text-sm font-semibold ${btnSecondary}`}
                   >
                     🔄 Ponownie
                   </button>
@@ -912,7 +914,7 @@ export default function VoiceLog({ mode, onComplete, onClose, initialOpen = fals
                     onClick={handleSubmit}
                     disabled={items.length === 0}
                     className={`
-                      flex-[1.5] py-2.5 rounded-xl text-sm font-bold shadow-lg
+                      flex-[1.5] py-3 rounded-xl text-sm font-bold shadow-lg
                       ${btnPrimary} disabled:opacity-40
                     `}
                   >
