@@ -1006,10 +1006,12 @@ export function VoiceMicButton({
   onClick,
   accent = "green",
   className = "",
+  hideNewBadge = false,
 }: {
   onClick: () => void;
   accent?: "green" | "indigo" | "blue";
   className?: string;
+  hideNewBadge?: boolean;
 }) {
   const [showUnsupported, setShowUnsupported] = useState(false);
   const [showTip, setShowTip] = useState(false);
@@ -1067,7 +1069,7 @@ export function VoiceMicButton({
   return (
     <div className="relative">
       {/* NEW badge */}
-      {showNew && (
+      {showNew && !hideNewBadge && (
         <span className="absolute -top-2 -right-1.5 bg-red-500 text-white text-[7px] font-bold px-1.5 py-0.5 rounded-full z-10 leading-none">
           NEW
         </span>

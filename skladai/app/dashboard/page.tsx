@@ -17,6 +17,25 @@ const MEAL_TYPES: { key: MealTypeKey; icon: string; label: string }[] = [
   { key: "dinner", icon: "🌙", label: "Kolacja" },
   { key: "snack", icon: "🍪", label: "Przekąska" },
 ];
+
+// IMPORTANT: Keep GlassCard and SectionTitle at module scope, NOT inside the
+// component function. Defining them inside DashboardPage would create a new
+// component reference on every render, causing React to unmount/remount every
+// GlassCard — which would blur the search input on every keystroke and
+// dismiss the mobile keyboard.
+function GlassCard({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) {
+  return (
+    <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 16, padding: "14px 16px", marginBottom: 12, ...style }}>
+      {children}
+    </div>
+  );
+}
+
+function SectionTitle({ children }: { children: React.ReactNode }) {
+  return (
+    <div style={{ fontSize: 12, fontWeight: 800, color: "rgba(255,255,255,0.6)", marginBottom: 12, letterSpacing: "0.03em", textTransform: "uppercase" as const }}>{children}</div>
+  );
+}
 const DAY_LABELS = ["Pn", "Wt", "Śr", "Cz", "Pt", "Sb", "Nd"];
 
 export default function DashboardPage() {
@@ -120,16 +139,6 @@ export default function DashboardPage() {
   const weekCosmeticsCount = weekHistory.filter(h => h.scanType === "cosmetics").length;
   const weekSupplementCount = weekHistory.filter(h => h.scanType === "suplement").length;
 
-  const GlassCard = ({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) => (
-    <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 16, padding: "14px 16px", marginBottom: 12, ...style }}>
-      {children}
-    </div>
-  );
-
-  const SectionTitle = ({ children }: { children: React.ReactNode }) => (
-    <div style={{ fontSize: 12, fontWeight: 800, color: "rgba(255,255,255,0.6)", marginBottom: 12, letterSpacing: "0.03em", textTransform: "uppercase" as const }}>{children}</div>
-  );
-
   return (
     <div style={{ minHeight: "100dvh", background: "#0a0e0c", paddingBottom: 100 }}>
       {/* Header */}
@@ -232,20 +241,20 @@ export default function DashboardPage() {
                   padding: "6px 0",
                 }}
               />
-              <VoiceMicButton onClick={() => setShowVoice(true)} accent="green" />
+              <VoiceMicButton onClick={() => setShowVoice(true)} accent="green" hideNewBadge />
             </div>
             <button
               onClick={() => { saveMode("food"); router.push("/"); }}
               style={{
                 width: "100%",
-                padding: "10px 12px",
+                padding: "10px 16px",
                 borderRadius: 10,
                 marginTop: 10,
-                background: "rgba(110,252,180,0.05)",
-                border: "1px solid rgba(110,252,180,0.1)",
-                color: "#6efcb4",
+                background: "rgba(110,252,180,0.04)",
+                border: "1px solid rgba(110,252,180,0.08)",
+                color: "rgba(110,252,180,0.85)",
                 fontSize: 13,
-                fontWeight: 700,
+                fontWeight: 600,
                 cursor: "pointer",
                 display: "flex",
                 alignItems: "center",
