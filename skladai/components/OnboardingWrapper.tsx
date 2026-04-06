@@ -7,6 +7,7 @@ import { pullFromCloud } from "@/lib/sync";
 import { nsGet, nsSet, nsSelfTest } from "@/lib/native-storage";
 
 const ONBOARDED_KEY = "onboardingCompleted";
+const SESSION_BACKUP_KEY = "skladai_session_backup_v1";
 
 async function isOnboarded(): Promise<boolean> {
   // Belt and suspenders: check Preferences (UserDefaults), localStorage, and cookie
@@ -60,9 +61,35 @@ export default function OnboardingWrapper() {
       const onboarded = await isOnboarded();
       console.log("[Onboarding] Has onboarded flag:", onboarded);
 
-      // Try to get current session (from storage — native Preferences on iOS)
-      const { data: { session } } = await supabase.auth.getSession();
+      // STEP 1: Try Supabase's normal getSession (uses our storage adapter)
+      let { data: { session } } = await supabase.auth.getSession();
       console.log("[Onboarding] getSession ->", session ? "EXISTS" : "EMPTY");
+
+      // STEP 2: If no session but we have a manual backup in Preferences, restore it.
+      // This is the bulletproof path: bypasses Supabase storage adapter entirely.
+      if (!session) {
+        const backup = await nsGet(SESSION_BACKUP_KEY);
+        if (backup) {
+          try {
+            const parsed = JSON.parse(backup);
+            if (parsed?.access_token && parsed?.refresh_token) {
+              console.log("[Onboarding] Restoring session from manual backup...");
+              const { data, error } = await supabase.auth.setSession({
+                access_token: parsed.access_token,
+                refresh_token: parsed.refresh_token,
+              });
+              if (error) {
+                console.warn("[Onboarding] setSession from backup failed:", error.message);
+              } else if (data.session) {
+                session = data.session;
+                console.log("[Onboarding] Session restored from backup ✅");
+              }
+            }
+          } catch (e) {
+            console.warn("[Onboarding] Backup parse failed:", e);
+          }
+        }
+      }
 
       if (session) {
         // Validate + restore cloud data
@@ -113,8 +140,27 @@ export default function OnboardingWrapper() {
     document.addEventListener("visibilitychange", onVis);
 
     // Auth state listener — auto-hide onboarding when sign-in completes
+    // and ALWAYS persist the full session JSON to Preferences as a manual backup.
     const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log("[Onboarding] Auth event:", event);
+      console.log("[Onboarding] Auth event:", event, "session:", session ? "yes" : "no");
+
+      // Manual session backup — independent of Supabase storage adapter.
+      // This is the bulletproof path: stores access_token + refresh_token in
+      // iOS UserDefaults via @capacitor/preferences. UserDefaults survives
+      // every WKWebView storage wipe.
+      if (session) {
+        const backup = {
+          access_token: session.access_token,
+          refresh_token: session.refresh_token,
+          expires_at: session.expires_at,
+        };
+        nsSet(SESSION_BACKUP_KEY, JSON.stringify(backup))
+          .then(() => console.log("[Onboarding] Session backup saved"))
+          .catch((e) => console.warn("[Onboarding] Session backup failed:", e));
+      } else if (event === "SIGNED_OUT") {
+        nsSet(SESSION_BACKUP_KEY, "").catch(() => {});
+      }
+
       if (session && (event === "SIGNED_IN" || event === "TOKEN_REFRESHED" || event === "INITIAL_SESSION")) {
         markOnboarded();
         pullFromCloud().catch((e) => console.warn("[Onboarding] Pull on auth event failed:", e));

@@ -8,16 +8,10 @@ const config: CapacitorConfig = {
     // Hybrid mode — native shell loads web content from Vercel
     url: "https://skladai.vercel.app",
     cleartext: true,
-    allowNavigation: [
-      "skladai.vercel.app",
-      "*.skladai.vercel.app",
-      "*.supabase.co",
-      "appleid.apple.com",
-      "*.apple.com",
-      "accounts.google.com",
-      "*.google.com",
-      "*.googleusercontent.com",
-    ],
+    // NOTE: do NOT add allowNavigation — when set, Capacitor opens any
+    // non-matching navigation in SFSafariViewController (which shows the
+    // iOS Safari URL bar at the bottom). Without it, all navigation
+    // happens inside the main WKWebView with no toolbar.
   },
   plugins: {
     Camera: {
