@@ -64,6 +64,9 @@ interface VoiceLogProps {
   onClose?: () => void;
   initialOpen?: boolean;
   hideButton?: boolean;
+  /** If provided, VoiceLog opens and immediately sends this text to the AI
+   *  analyzer (skipping the recording step). Used by the text search bars. */
+  initialText?: string;
 }
 
 // ======================== HELPERS ========================
@@ -155,7 +158,7 @@ function SineWave({ active }: { active: boolean }) {
 
 // ======================== VOICELOG COMPONENT ========================
 
-export default function VoiceLog({ mode, onComplete, onClose, initialOpen = false, hideButton = false }: VoiceLogProps) {
+export default function VoiceLog({ mode, onComplete, onClose, initialOpen = false, hideButton = false, initialText }: VoiceLogProps) {
   const [open, setOpen] = useState(initialOpen);
   const [phase, setPhase] = useState<"idle" | "recording" | "processing" | "results">("idle");
   const [transcript, setTranscript] = useState("");
@@ -485,6 +488,18 @@ export default function VoiceLog({ mode, onComplete, onClose, initialOpen = fals
       },
     ]);
   }, [mode]);
+
+  // ---- INITIAL TEXT (text search bars) ----
+  // If caller passed initialText, skip recording and go straight to AI parse.
+  const initialTextSentRef = useRef(false);
+  useEffect(() => {
+    if (!initialText || initialTextSentRef.current) return;
+    const trimmed = initialText.trim();
+    if (trimmed.length === 0) return;
+    initialTextSentRef.current = true;
+    setTranscript(trimmed);
+    sendToAPI(trimmed);
+  }, [initialText, sendToAPI]);
 
   // ---- OPEN / CLOSE ----
   const handleOpen = useCallback(() => {

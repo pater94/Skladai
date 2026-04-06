@@ -190,7 +190,17 @@ export default function Home() {
   const [photoSource, setPhotoSource] = useState<"camera" | "gallery">("camera");
   const [awaitingSecondPhoto, setAwaitingSecondPhoto] = useState(false);
   const [showVoice, setShowVoice] = useState(false);
+  const [foodSearchQuery, setFoodSearchQuery] = useState("");
+  const [voiceInitialText, setVoiceInitialText] = useState<string | undefined>(undefined);
   const router = useRouter();
+
+  const submitFoodSearch = () => {
+    const trimmed = foodSearchQuery.trim();
+    if (!trimmed) return;
+    setVoiceInitialText(trimmed);
+    setShowVoice(true);
+    setFoodSearchQuery("");
+  };
 
   const fridgeInputRef = useRef<HTMLInputElement>(null);
   const secondCameraInputRef = useRef<HTMLInputElement>(null);
@@ -860,13 +870,37 @@ export default function Home() {
                   <span className="text-white/50 text-[14px]">🔍</span>
                   <input
                     type="text"
+                    value={foodSearchQuery}
+                    onChange={(e) => setFoodSearchQuery(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        submitFoodSearch();
+                      }
+                    }}
                     placeholder="np. 2 jajka, kanapka z serem, kawa..."
                     className="flex-1 bg-transparent text-white/80 text-[13px] outline-none placeholder:text-white/40"
-                    onFocus={() => {
-                      // Navigate to a search-focused view or expand inline
-                    }}
                   />
-                  <MicButton accentRgb={accent.rgb} onPress={() => setShowVoice(true)} />
+                  {foodSearchQuery.trim().length > 0 ? (
+                    <button
+                      type="button"
+                      onClick={submitFoodSearch}
+                      aria-label="Szukaj"
+                      className="w-11 h-11 rounded-full flex items-center justify-center shrink-0 active:scale-95 transition-transform"
+                      style={{
+                        background: "#6efcb4",
+                        color: "#0a0f0d",
+                        fontSize: 18,
+                        fontWeight: 900,
+                        border: "none",
+                        boxShadow: "0 4px 12px rgba(110,252,180,0.25)",
+                      }}
+                    >
+                      →
+                    </button>
+                  ) : (
+                    <MicButton accentRgb={accent.rgb} onPress={() => { setVoiceInitialText(undefined); setShowVoice(true); }} />
+                  )}
                 </div>
               </div>
             )}
@@ -1000,10 +1034,15 @@ export default function Home() {
           mode="food"
           initialOpen={true}
           hideButton={true}
+          initialText={voiceInitialText}
           onComplete={() => {
             setShowVoice(false);
+            setVoiceInitialText(undefined);
           }}
-          onClose={() => setShowVoice(false)}
+          onClose={() => {
+            setShowVoice(false);
+            setVoiceInitialText(undefined);
+          }}
         />
       )}
     </div>

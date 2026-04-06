@@ -49,7 +49,16 @@ export default function DashboardPage() {
   const health = useHealthData();
   const [showVoice, setShowVoice] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [voiceInitialText, setVoiceInitialText] = useState<string | undefined>(undefined);
   const [searchMealType, setSearchMealType] = useState<MealTypeKey>("breakfast");
+
+  const submitSearch = () => {
+    const trimmed = searchQuery.trim();
+    if (!trimmed) return;
+    setVoiceInitialText(trimmed);
+    setShowVoice(true);
+    setSearchQuery("");
+  };
 
   const reload = () => {
     const p = getProfile();
@@ -226,7 +235,8 @@ export default function DashboardPage() {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {
-                    setShowVoice(true);
+                    e.preventDefault();
+                    submitSearch();
                   }
                 }}
                 placeholder="Wpisz lub powiedz co zjadłeś..."
@@ -241,7 +251,33 @@ export default function DashboardPage() {
                   padding: "6px 0",
                 }}
               />
-              <VoiceMicButton onClick={() => setShowVoice(true)} accent="green" hideNewBadge />
+              {searchQuery.trim().length > 0 ? (
+                <button
+                  type="button"
+                  onClick={submitSearch}
+                  aria-label="Szukaj"
+                  style={{
+                    width: 44,
+                    height: 44,
+                    borderRadius: "9999px",
+                    border: "none",
+                    background: "#6efcb4",
+                    color: "#0a0f0d",
+                    fontSize: 18,
+                    fontWeight: 900,
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    flexShrink: 0,
+                    boxShadow: "0 4px 12px rgba(110,252,180,0.25)",
+                  }}
+                >
+                  →
+                </button>
+              ) : (
+                <VoiceMicButton onClick={() => { setVoiceInitialText(undefined); setShowVoice(true); }} accent="green" hideNewBadge />
+              )}
             </div>
             <button
               onClick={() => { saveMode("food"); router.push("/"); }}
@@ -477,13 +513,16 @@ export default function DashboardPage() {
           mode="food"
           initialOpen={true}
           hideButton={true}
+          initialText={voiceInitialText}
           onComplete={() => {
             setShowVoice(false);
             setSearchQuery("");
+            setVoiceInitialText(undefined);
             reload();
           }}
           onClose={() => {
             setShowVoice(false);
+            setVoiceInitialText(undefined);
           }}
         />
       )}
