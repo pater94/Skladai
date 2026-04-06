@@ -16,14 +16,26 @@
 import { Capacitor } from "@capacitor/core";
 import { Camera, CameraResultType, CameraSource } from "@capacitor/camera";
 
-/** Check if running inside a native Capacitor shell */
+/** Check if running inside a native Capacitor shell AND Camera plugin is registered.
+ *  If Camera plugin isn't available (e.g. old iOS binary built before plugin was added),
+ *  we return false so the caller falls back to <input type="file"> which works in WKWebView. */
 export function isNative(): boolean {
-  return Capacitor.isNativePlatform();
+  if (!Capacitor.isNativePlatform()) return false;
+  if (!Capacitor.isPluginAvailable("Camera")) {
+    console.warn("[NativeCamera] Native platform detected but Camera plugin NOT available — falling back to file input. iOS app needs rebuild with `npx cap sync ios`.");
+    return false;
+  }
+  return true;
 }
 
 /** Check if Camera plugin is available */
 export function hasCameraPlugin(): boolean {
   return Capacitor.isPluginAvailable("Camera");
+}
+
+/** Check if running inside Capacitor (regardless of plugin availability) */
+export function isCapacitorShell(): boolean {
+  return Capacitor.isNativePlatform();
 }
 
 /**
@@ -85,6 +97,7 @@ export async function pickFromGallery(quality: number = 80): Promise<string | nu
 /**
  * Take photo with mode-specific settings
  * Cosmetics and supplements use smaller resolution for faster OCR
+ * Returns null on user cancel, throws on real errors (so caller can show feedback)
  */
 export async function takePhotoForMode(
   mode: string,
@@ -94,9 +107,11 @@ export async function takePhotoForMode(
   const maxDim = isLabelMode ? 1200 : 2000;
   const quality = isLabelMode ? 85 : 80;
 
-  try {
-    if (!hasCameraPlugin()) return null;
+  if (!hasCameraPlugin()) {
+    throw new Error("Camera plugin not available — rebuild iOS app");
+  }
 
+  try {
     const image = await Camera.getPhoto({
       quality,
       resultType: CameraResultType.Base64,
@@ -111,7 +126,14 @@ export async function takePhotoForMode(
     const mimeType = image.format === "png" ? "image/png" : "image/jpeg";
     return `data:${mimeType};base64,${image.base64String}`;
   } catch (err) {
-    console.warn("[NativeCamera] takePhotoForMode cancelled/failed:", err);
-    return null;
+    const msg = err instanceof Error ? err.message : String(err);
+    // User cancelled — return null silently
+    if (msg.toLowerCase().includes("cancel") || msg.toLowerCase().includes("user denied")) {
+      console.log("[NativeCamera] User cancelled");
+      return null;
+    }
+    // Real error — log and rethrow so UI can show feedback
+    console.error("[NativeCamera] takePhotoForMode failed:", err);
+    throw err;
   }
 }

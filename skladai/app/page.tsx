@@ -664,9 +664,9 @@ export default function Home() {
                     setIsScanning(true);
                     try {
                       const base64 = await takePhotoForMode(mode, "camera");
+                      scanLockRef.current = false;
+                      setIsScanning(false);
                       if (base64) {
-                        scanLockRef.current = false;
-                        setIsScanning(false);
                         if (showPhotoPreview) {
                           setPhotoSource("camera");
                           setPhotoPreview(base64);
@@ -674,8 +674,15 @@ export default function Home() {
                         } else {
                           handleScan(base64);
                         }
-                      } else { setIsScanning(false); scanLockRef.current = false; }
-                    } catch { setIsScanning(false); scanLockRef.current = false; }
+                      }
+                    } catch (err) {
+                      setIsScanning(false);
+                      scanLockRef.current = false;
+                      console.error("[Scan] Native camera failed, falling back to file input:", err);
+                      // Fallback: use file input (works in WKWebView)
+                      const inp = document.getElementById("main-camera-input") as HTMLInputElement;
+                      inp?.click();
+                    }
                   } else {
                     const inp = document.getElementById("main-camera-input") as HTMLInputElement;
                     inp?.click();
@@ -783,8 +790,13 @@ export default function Home() {
                     onClick={async () => {
                       if (isLoading || isScanning) return;
                       if (isNative()) {
-                        const base64 = await takePhotoForMode("food", "camera");
-                        if (base64) handleFridgeScan(base64);
+                        try {
+                          const base64 = await takePhotoForMode("food", "camera");
+                          if (base64) handleFridgeScan(base64);
+                        } catch (err) {
+                          console.error("[Fridge] Native camera failed, falling back:", err);
+                          fridgeInputRef.current?.click();
+                        }
                       } else { fridgeInputRef.current?.click(); }
                     }}
                     className="flex-[1.3] relative rounded-2xl py-3 px-3 text-center active:scale-[0.96] transition-all disabled:opacity-50"
@@ -805,9 +817,9 @@ export default function Home() {
                       setIsScanning(true);
                       try {
                         const base64 = await takePhotoForMode(mode, "gallery");
+                        scanLockRef.current = false;
+                        setIsScanning(false);
                         if (base64) {
-                          scanLockRef.current = false;
-                          setIsScanning(false);
                           if (showPhotoPreview) {
                             setPhotoSource("gallery");
                             setPhotoPreview(base64);
@@ -815,8 +827,13 @@ export default function Home() {
                           } else {
                             handleScan(base64);
                           }
-                        } else { setIsScanning(false); scanLockRef.current = false; }
-                      } catch { setIsScanning(false); scanLockRef.current = false; }
+                        }
+                      } catch (err) {
+                        setIsScanning(false);
+                        scanLockRef.current = false;
+                        console.error("[Gallery] Native gallery failed, falling back to file input:", err);
+                        (document.getElementById("gallery-input") as HTMLInputElement)?.click();
+                      }
                     } else { (document.getElementById("gallery-input") as HTMLInputElement)?.click(); }
                   }}
                   className={`${mode === "food" ? "flex-[0.7]" : "flex-1"} rounded-2xl py-3 px-3 text-center active:scale-[0.96] transition-all disabled:opacity-50`}
