@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase";
 
 interface OnboardingLoginProps {
   onSkip: () => void;
+  startSlide?: number;
 }
 
 const cards = [
@@ -37,8 +38,8 @@ function ScannerLogo({ size = 72, filterId = "glow" }: { size?: number; filterId
   );
 }
 
-export default function OnboardingLogin({ onSkip }: OnboardingLoginProps) {
-  const [slide, setSlide] = useState(0);
+export default function OnboardingLogin({ onSkip, startSlide = 0 }: OnboardingLoginProps) {
+  const [slide, setSlide] = useState(startSlide);
   const [activeCard, setActiveCard] = useState(0);
   const [touchStart, setTouchStart] = useState(0);
   const [activeQuote, setActiveQuote] = useState(0);
