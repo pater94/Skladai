@@ -3,12 +3,20 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { UserProfile, DailyTotals } from "@/lib/types";
-import { getProfile, getDailyTotals, getWeekTotals, todayStr, removeDiaryEntry, getStreak, getHistory } from "@/lib/storage";
+import { getProfile, getDailyTotals, getWeekTotals, todayStr, removeDiaryEntry, getStreak, getHistory, saveMode } from "@/lib/storage";
 import { useHealthData } from "@/lib/useHealthData";
+import VoiceLog, { VoiceMicButton } from "@/components/VoiceLog";
 
 type DashView = "today" | "week";
+type MealTypeKey = "breakfast" | "lunch" | "dinner" | "snack";
 
 const MEAL_ICONS: Record<string, string> = { breakfast: "🥣", lunch: "🥗", dinner: "🍽️", snack: "🍿" };
+const MEAL_TYPES: { key: MealTypeKey; icon: string; label: string }[] = [
+  { key: "breakfast", icon: "🌅", label: "Śniadanie" },
+  { key: "lunch", icon: "🌞", label: "Obiad" },
+  { key: "dinner", icon: "🌙", label: "Kolacja" },
+  { key: "snack", icon: "🍪", label: "Przekąska" },
+];
 const DAY_LABELS = ["Pn", "Wt", "Śr", "Cz", "Pt", "Sb", "Nd"];
 
 export default function DashboardPage() {
@@ -20,7 +28,9 @@ export default function DashboardPage() {
   const [loaded, setLoaded] = useState(false);
   const [view, setView] = useState<DashView>("today");
   const health = useHealthData();
-  const [healthMsg, setHealthMsg] = useState("");
+  const [showVoice, setShowVoice] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchMealType, setSearchMealType] = useState<MealTypeKey>("breakfast");
 
   const reload = () => {
     const p = getProfile();
@@ -155,58 +165,6 @@ export default function DashboardPage() {
 
       <div style={{ padding: "0 16px 24px" }}>
 
-        {/* Health connect button — always visible when not connected */}
-        {!health.loading && !health.isConnected && (
-          <div style={{ marginBottom: 12 }}>
-            <button
-              onClick={async () => {
-                if (health.isNative) {
-                  try {
-                    await health.requestAccess();
-                  } catch {
-                    localStorage.setItem("healthKitInterested", "true");
-                    setHealthMsg("Wkrótce dostępne! Pracujemy nad integracją z Apple Health.");
-                    setTimeout(() => setHealthMsg(""), 4000);
-                  }
-                } else {
-                  setHealthMsg("Połączenie z Health dostępne w aplikacji mobilnej.");
-                  setTimeout(() => setHealthMsg(""), 4000);
-                }
-              }}
-              style={{
-                width: "100%", padding: "14px 16px", borderRadius: 14,
-                background: "rgba(239,68,68,0.06)", border: "1px solid rgba(239,68,68,0.15)",
-                color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer",
-                display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-              }}
-            >
-              <span>❤️</span>
-              <span>Połącz z Health żeby śledzić aktywność</span>
-            </button>
-            {healthMsg && (
-              <div style={{
-                marginTop: 8, padding: "10px 14px", borderRadius: 12,
-                background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)",
-                fontSize: 12, color: "rgba(255,255,255,0.7)", textAlign: "center",
-              }}>
-                {healthMsg}
-              </div>
-            )}
-          </div>
-        )}
-
-        {health.isConnected && (
-          <div style={{
-            marginBottom: 12, padding: "10px 16px", borderRadius: 14,
-            background: "rgba(110,252,180,0.06)", border: "1px solid rgba(110,252,180,0.12)",
-            display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-            fontSize: 13, fontWeight: 600, color: "rgba(110,252,180,0.8)",
-          }}>
-            <span>✅</span>
-            <span>Połączono z Health</span>
-          </div>
-        )}
-
         {/* ═══ TODAY VIEW ═══ */}
         {view === "today" && (<>
 
@@ -249,25 +207,54 @@ export default function DashboardPage() {
             </div>
           </GlassCard>
 
-          {/* Critical nutrients */}
+          {/* Food search — opens VoiceLog for both text & mic */}
           <GlassCard>
-            <SectionTitle>Krytyczne składniki</SectionTitle>
-            <div style={{ display: "flex", gap: 12 }}>
-              {[
-                { icon: "🍬", label: "Cukier", value: t.sugar, max: n.sugar_max, color: "#FBBF24" },
-                { icon: "🧂", label: "Sól", value: t.salt, max: n.salt_max, color: "#f97316" },
-                { icon: "🥦", label: "Błonnik", value: t.fiber, max: n.fiber_min, color: "#6efcb4" },
-              ].map((nu, i) => (
-                <div key={i} style={{ flex: 1, textAlign: "center" }}>
-                  <div style={{ fontSize: 14, marginBottom: 4 }}>{nu.icon}</div>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.7)" }}>{nu.label}</div>
-                  <div style={{ fontSize: 10, color: nu.color, fontWeight: 600, marginTop: 2 }}>{Math.round(nu.value * 10) / 10}g / {nu.max}g</div>
-                  <div style={{ height: 3, background: "rgba(255,255,255,0.06)", borderRadius: 2, marginTop: 6 }}>
-                    <div style={{ height: "100%", width: `${Math.min((nu.value / nu.max) * 100, 100)}%`, background: nu.color, borderRadius: 2 }} />
-                  </div>
-                </div>
-              ))}
+            <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "2px 2px" }}>
+              <span style={{ fontSize: 14, color: "rgba(255,255,255,0.5)" }}>🔍</span>
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    setShowVoice(true);
+                  }
+                }}
+                placeholder="Wpisz lub powiedz co zjadłeś..."
+                style={{
+                  flex: 1,
+                  background: "transparent",
+                  border: "none",
+                  outline: "none",
+                  color: "rgba(255,255,255,0.85)",
+                  fontSize: 13,
+                  fontWeight: 500,
+                  padding: "6px 0",
+                }}
+              />
+              <VoiceMicButton onClick={() => setShowVoice(true)} accent="green" />
             </div>
+            <button
+              onClick={() => { saveMode("food"); router.push("/"); }}
+              style={{
+                width: "100%",
+                padding: "10px 12px",
+                borderRadius: 10,
+                marginTop: 10,
+                background: "rgba(110,252,180,0.05)",
+                border: "1px solid rgba(110,252,180,0.1)",
+                color: "#6efcb4",
+                fontSize: 13,
+                fontWeight: 700,
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 6,
+              }}
+            >
+              📷 Zeskanuj posiłek →
+            </button>
           </GlassCard>
 
           {/* Activity card — real data from Health */}
@@ -297,20 +284,49 @@ export default function DashboardPage() {
 
           {/* Meals today */}
           <GlassCard>
-            <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 12 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
               <span style={{ fontSize: 16 }}>🍽️</span>
               <span style={{ fontSize: 13, fontWeight: 800, color: "rgba(255,255,255,0.8)" }}>Posiłki dziś</span>
             </div>
 
+            {/* Compact meal type selector */}
+            <div style={{ display: "flex", gap: 4, marginBottom: 10, background: "rgba(255,255,255,0.02)", borderRadius: 10, padding: 3 }}>
+              {MEAL_TYPES.map((mt) => (
+                <div
+                  key={mt.key}
+                  onClick={() => setSearchMealType(mt.key)}
+                  style={{
+                    flex: 1,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: 4,
+                    padding: "6px 4px",
+                    borderRadius: 8,
+                    cursor: "pointer",
+                    background: searchMealType === mt.key ? "rgba(110,252,180,0.1)" : "transparent",
+                    border: searchMealType === mt.key ? "1px solid rgba(110,252,180,0.15)" : "1px solid transparent",
+                    fontSize: 10.5,
+                    fontWeight: 700,
+                    color: searchMealType === mt.key ? "#6efcb4" : "rgba(255,255,255,0.5)",
+                    whiteSpace: "nowrap" as const,
+                  }}
+                >
+                  <span style={{ fontSize: 11 }}>{mt.icon}</span>
+                  <span>{mt.label}</span>
+                </div>
+              ))}
+            </div>
+
             {t.entries.length === 0 ? (
-              <div style={{ textAlign: "center", padding: "20px 0" }}>
+              <div style={{ textAlign: "center", padding: "16px 0" }}>
                 <span style={{ fontSize: 28, display: "block", marginBottom: 8 }}>🍽️</span>
-                <div style={{ fontSize: 13, color: "rgba(255,255,255,0.55)", fontWeight: 500, marginBottom: 12 }}>
-                  Brak posiłków — zeskanuj pierwszy produkt
+                <div style={{ fontSize: 13, color: "rgba(255,255,255,0.55)", fontWeight: 500 }}>
+                  Brak posiłków — wpisz co zjadłeś wyżej ☝️
                 </div>
               </div>
             ) : (
-              t.entries.map((meal, i) => (
+              t.entries.map((meal) => (
                 <div key={meal.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 12px", marginBottom: 6, borderRadius: 12, background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.04)" }}>
                   <div style={{ width: 36, height: 36, borderRadius: 10, background: "rgba(110,252,180,0.06)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>
                     {MEAL_ICONS[meal.mealType] || "🍽️"}
@@ -324,10 +340,27 @@ export default function DashboardPage() {
                 </div>
               ))
             )}
+          </GlassCard>
 
-            <button onClick={() => router.push("/")} style={{ width: "100%", padding: 12, borderRadius: 12, marginTop: 8, background: "rgba(110,252,180,0.06)", border: "1px solid rgba(110,252,180,0.12)", color: "#6efcb4", fontSize: 13, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
-              Zeskanuj posiłek →
-            </button>
+          {/* Critical nutrients */}
+          <GlassCard>
+            <SectionTitle>Krytyczne składniki</SectionTitle>
+            <div style={{ display: "flex", gap: 12 }}>
+              {[
+                { icon: "🍬", label: "Cukier", value: t.sugar, max: n.sugar_max, color: "#FBBF24" },
+                { icon: "🧂", label: "Sól", value: t.salt, max: n.salt_max, color: "#f97316" },
+                { icon: "🥦", label: "Błonnik", value: t.fiber, max: n.fiber_min, color: "#6efcb4" },
+              ].map((nu, i) => (
+                <div key={i} style={{ flex: 1, textAlign: "center" }}>
+                  <div style={{ fontSize: 14, marginBottom: 4 }}>{nu.icon}</div>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.7)" }}>{nu.label}</div>
+                  <div style={{ fontSize: 10, color: nu.color, fontWeight: 600, marginTop: 2 }}>{Math.round(nu.value * 10) / 10}g / {nu.max}g</div>
+                  <div style={{ height: 3, background: "rgba(255,255,255,0.06)", borderRadius: 2, marginTop: 6 }}>
+                    <div style={{ height: "100%", width: `${Math.min((nu.value / nu.max) * 100, 100)}%`, background: nu.color, borderRadius: 2 }} />
+                  </div>
+                </div>
+              ))}
+            </div>
           </GlassCard>
         </>)}
 
@@ -428,6 +461,23 @@ export default function DashboardPage() {
           </span>
         </div>
       </div>
+
+      {/* Voice Log Modal — mic + text search for meals */}
+      {showVoice && (
+        <VoiceLog
+          mode="food"
+          initialOpen={true}
+          hideButton={true}
+          onComplete={() => {
+            setShowVoice(false);
+            setSearchQuery("");
+            reload();
+          }}
+          onClose={() => {
+            setShowVoice(false);
+          }}
+        />
+      )}
 
       <style>{`@keyframes spin { to { transform: rotate(360deg); } } @keyframes breathe { 0%, 100% { opacity: 0.4; transform: scale(0.95); } 50% { opacity: 0.7; transform: scale(1.05); } }`}</style>
     </div>

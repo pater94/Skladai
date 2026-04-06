@@ -296,6 +296,33 @@ export default function ProfilPage() {
           ))}
         </GlassCard>
 
+        {/* Apple Health connect (placeholder) */}
+        <GlassCard>
+          <button
+            onClick={() => {
+              alert("Wkrótce! Połączenie z Apple Health pojawi się w następnej aktualizacji.");
+            }}
+            style={{
+              width: "100%",
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+              padding: "4px 2px",
+              background: "transparent",
+              border: "none",
+              color: "rgba(255,255,255,0.85)",
+              fontSize: 13,
+              fontWeight: 700,
+              cursor: "pointer",
+              textAlign: "left" as const,
+            }}
+          >
+            <span style={{ fontSize: 16 }}>❤️</span>
+            <span style={{ flex: 1 }}>Połącz z Apple Health</span>
+            <span style={{ fontSize: 14, color: "rgba(255,255,255,0.4)" }}>→</span>
+          </button>
+        </GlassCard>
+
         {/* Health profile */}
         {hasHealthProfile && (
           <GlassCard>
