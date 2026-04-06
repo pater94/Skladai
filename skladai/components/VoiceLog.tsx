@@ -90,6 +90,71 @@ function sumField(items: VoiceItem[], field: "calories_per_100g" | "protein_per_
   return items.reduce((s, i) => s + calc(i[field], i.weight_g), 0);
 }
 
+// Parses /api/analyze response into VoiceItem[] (shared by voice + text + add-product flows).
+function parseApiResponseToItems(
+  data: Record<string, unknown>,
+  mode: "food" | "alcohol",
+  fallbackText: string
+): VoiceItem[] {
+  let parsed: VoiceItem[] = [];
+
+  if (mode === "food" && data.items && Array.isArray(data.items)) {
+    parsed = (data.items as Record<string, unknown>[]).map((it) => {
+      const portionG = (it.portion_grams as number) || (it.default_portion_g as number) || (it.estimated_weight_g as number) || 100;
+      const protPer100 = (it.protein_per_100g as number) || ((it.protein as number) && portionG ? Math.round(((it.protein as number) / portionG) * 1000) / 10 : 0);
+      const fatPer100 = (it.fat_per_100g as number) || ((it.fat as number) && portionG ? Math.round(((it.fat as number) / portionG) * 1000) / 10 : 0);
+      const carbsPer100 = (it.carbs_per_100g as number) || ((it.carbs as number) && portionG ? Math.round(((it.carbs as number) / portionG) * 1000) / 10 : 0);
+      const calPer100 = (it.calories_per_100g as number) || ((it.calories as number) && portionG ? Math.round(((it.calories as number) / portionG) * 1000) / 10 : 0);
+      return {
+        id: uid(),
+        emoji: (it.emoji as string) || "🍽️",
+        name: (it.name as string) || "Produkt",
+        weight_g: portionG,
+        min_g: (it.slider_min_grams as number) || (it.min_portion_g as number) || (it.min_reasonable_g as number) || 10,
+        max_g: (it.slider_max_grams as number) || (it.max_portion_g as number) || (it.max_reasonable_g as number) || 1000,
+        calories_per_100g: calPer100,
+        protein_per_100g: protPer100,
+        fat_per_100g: fatPer100,
+        carbs_per_100g: carbsPer100,
+      };
+    });
+  } else if (mode === "alcohol") {
+    const alcItems = (data.items as Record<string, unknown>[] | undefined) ?? [data];
+    parsed = alcItems.map((it) => ({
+      id: uid(),
+      emoji: (it.emoji as string) || "🍺",
+      name: (it.name as string) || "Alkohol",
+      weight_g: (it.ml as number) || (it.default_portion_g as number) || 100,
+      min_g: 10,
+      max_g: (it.ml as number) ? (it.ml as number) * 3 : 1000,
+      calories_per_100g: (it.calories_per_100g as number) ||
+        ((it.calories as number) && (it.ml as number) ? Math.round(((it.calories as number) / (it.ml as number)) * 100) : 40),
+      protein_per_100g: 0,
+      fat_per_100g: 0,
+      carbs_per_100g: (it.carbs_per_100g as number) || 0,
+      ml: (it.ml as number) || (it.volume_ml as number) || 500,
+      abv: (it.abv as number) || (it.alcohol_percent as number) || 5,
+    }));
+  }
+
+  if (parsed.length === 0) {
+    parsed = [{
+      id: uid(),
+      emoji: mode === "food" ? "🍽️" : "🍺",
+      name: (data.name as string) || fallbackText,
+      weight_g: 100,
+      min_g: 10,
+      max_g: 1000,
+      calories_per_100g: (data.calories_per_100g as number) || 0,
+      protein_per_100g: (data.protein_per_100g as number) || 0,
+      fat_per_100g: (data.fat_per_100g as number) || 0,
+      carbs_per_100g: (data.carbs_per_100g as number) || 0,
+    }];
+  }
+
+  return parsed;
+}
+
 function totalAlcoholGrams(items: VoiceItem[]): number {
   return items.reduce((s, i) => {
     if (i.ml && i.abv) return s + alcoholGrams(i.ml, i.abv);
@@ -167,6 +232,11 @@ export default function VoiceLog({ mode, onComplete, onClose, initialOpen = fals
   const [items, setItems] = useState<VoiceItem[]>([]);
   const [mealType, setMealType] = useState<MealTypeKey>("lunch");
   const [supported, setSupported] = useState(true);
+
+  // ── "+ Dodaj produkt" inline input ──
+  const [addProductName, setAddProductName] = useState("");
+  const [addProductLoading, setAddProductLoading] = useState(false);
+  const [addProductError, setAddProductError] = useState("");
 
   const recognitionRef = useRef<SpeechRecognitionInstance | null>(null);
   const silenceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -387,67 +457,7 @@ export default function VoiceLog({ mode, onComplete, onClose, initialOpen = fals
       }
 
       const data = await res.json();
-
-      // Parse results into VoiceItems
-      let parsed: VoiceItem[] = [];
-
-      if (mode === "food" && data.items && Array.isArray(data.items)) {
-        parsed = data.items.map((it: Record<string, unknown>) => {
-          const portionG = (it.portion_grams as number) || (it.default_portion_g as number) || (it.estimated_weight_g as number) || 100;
-          // API returns totals (protein, fat, carbs) for the portion — convert to per_100g
-          const protPer100 = (it.protein_per_100g as number) || ((it.protein as number) && portionG ? Math.round(((it.protein as number) / portionG) * 1000) / 10 : 0);
-          const fatPer100 = (it.fat_per_100g as number) || ((it.fat as number) && portionG ? Math.round(((it.fat as number) / portionG) * 1000) / 10 : 0);
-          const carbsPer100 = (it.carbs_per_100g as number) || ((it.carbs as number) && portionG ? Math.round(((it.carbs as number) / portionG) * 1000) / 10 : 0);
-          const calPer100 = (it.calories_per_100g as number) || ((it.calories as number) && portionG ? Math.round(((it.calories as number) / portionG) * 1000) / 10 : 0);
-          return {
-            id: uid(),
-            emoji: (it.emoji as string) || "🍽️",
-            name: (it.name as string) || "Produkt",
-            weight_g: portionG,
-            min_g: (it.slider_min_grams as number) || (it.min_portion_g as number) || (it.min_reasonable_g as number) || 10,
-            max_g: (it.slider_max_grams as number) || (it.max_portion_g as number) || (it.max_reasonable_g as number) || 1000,
-            calories_per_100g: calPer100,
-            protein_per_100g: protPer100,
-            fat_per_100g: fatPer100,
-            carbs_per_100g: carbsPer100,
-          };
-        });
-      } else if (mode === "alcohol") {
-        // Alcohol search returns single item or items array
-        const alcItems = data.items ? data.items : [data];
-        parsed = alcItems.map((it: Record<string, unknown>) => ({
-          id: uid(),
-          emoji: (it.emoji as string) || "🍺",
-          name: (it.name as string) || "Alkohol",
-          weight_g: (it.ml as number) || (it.default_portion_g as number) || 100,
-          min_g: 10,
-          max_g: (it.ml as number) ? (it.ml as number) * 3 : 1000,
-          calories_per_100g: (it.calories_per_100g as number) ||
-            ((it.calories as number) && (it.ml as number) ? Math.round(((it.calories as number) / (it.ml as number)) * 100) : 40),
-          protein_per_100g: 0,
-          fat_per_100g: 0,
-          carbs_per_100g: (it.carbs_per_100g as number) || 0,
-          ml: (it.ml as number) || (it.volume_ml as number) || 500,
-          abv: (it.abv as number) || (it.alcohol_percent as number) || 5,
-        }));
-      }
-
-      if (parsed.length === 0) {
-        // Fallback: create a single item from top-level data
-        parsed = [{
-          id: uid(),
-          emoji: mode === "food" ? "🍽️" : "🍺",
-          name: (data.name as string) || text,
-          weight_g: 100,
-          min_g: 10,
-          max_g: 1000,
-          calories_per_100g: (data.calories_per_100g as number) || 0,
-          protein_per_100g: (data.protein_per_100g as number) || 0,
-          fat_per_100g: (data.fat_per_100g as number) || 0,
-          carbs_per_100g: (data.carbs_per_100g as number) || 0,
-        }];
-      }
-
+      const parsed = parseApiResponseToItems(data, mode, text);
       setItems(parsed);
       setPhase("results");
     } catch (err) {
@@ -470,23 +480,50 @@ export default function VoiceLog({ mode, onComplete, onClose, initialOpen = fals
     setItems(prev => prev.filter(i => i.id !== id));
   }, []);
 
-  const addItem = useCallback(() => {
-    setItems(prev => [
-      ...prev,
-      {
-        id: uid(),
-        emoji: mode === "food" ? "🍽️" : "🍺",
-        name: "Nowy produkt",
-        weight_g: 100,
-        min_g: 10,
-        max_g: 1000,
-        calories_per_100g: 0,
-        protein_per_100g: 0,
-        fat_per_100g: 0,
-        carbs_per_100g: 0,
-        ...(mode === "alcohol" ? { ml: 500, abv: 5 } : {}),
-      },
-    ]);
+  // Asks AI for nutritional data for a single named product and appends it.
+  const addProductByName = useCallback(async (rawName: string) => {
+    const name = rawName.trim();
+    if (!name) return;
+    setAddProductLoading(true);
+    setAddProductError("");
+
+    const apiMode = mode === "food" ? "voice_food" : "voice_alcohol";
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 28000);
+
+    try {
+      const res = await fetch("/api/analyze", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: name, mode: apiMode }),
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
+
+      if (!res.ok) {
+        throw new Error("Nie rozpoznano produktu, spróbuj inną nazwę");
+      }
+
+      const data = await res.json();
+      const parsed = parseApiResponseToItems(data, mode, name);
+
+      // Reject if AI returned only an empty fallback (zero macros + no name match)
+      const valid = parsed.filter(p => p.calories_per_100g > 0 || p.protein_per_100g > 0 || p.fat_per_100g > 0 || p.carbs_per_100g > 0);
+      if (valid.length === 0) {
+        throw new Error("Nie rozpoznano produktu, spróbuj inną nazwę");
+      }
+
+      setItems(prev => [...prev, ...valid]);
+      setAddProductName("");
+    } catch (err) {
+      if (err instanceof DOMException && err.name === "AbortError") {
+        setAddProductError("Analiza trwa za długo. Spróbuj ponownie.");
+      } else {
+        setAddProductError(err instanceof Error ? err.message : "Nie rozpoznano produktu, spróbuj inną nazwę");
+      }
+    } finally {
+      setAddProductLoading(false);
+    }
   }, [mode]);
 
   // ---- INITIAL TEXT (text search bars) ----
@@ -900,13 +937,43 @@ export default function VoiceLog({ mode, onComplete, onClose, initialOpen = fals
                   </div>
                 ))}
 
-                {/* Add product button */}
-                <button
-                  onClick={addItem}
-                  className={`w-full py-2.5 rounded-xl text-sm font-semibold ${btnSecondary}`}
-                >
-                  + Dodaj produkt
-                </button>
+                {/* Add product — inline input + Dodaj */}
+                <div>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={addProductName}
+                      onChange={(e) => { setAddProductName(e.target.value); if (addProductError) setAddProductError(""); }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && !addProductLoading && addProductName.trim()) {
+                          e.preventDefault();
+                          addProductByName(addProductName);
+                        }
+                      }}
+                      placeholder="Wpisz nazwę produktu..."
+                      disabled={addProductLoading}
+                      className={`flex-1 px-3 py-2.5 rounded-xl text-sm ${cardBg} border border-white/10 outline-none focus:border-amber-500/50 disabled:opacity-50`}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => addProductByName(addProductName)}
+                      disabled={addProductLoading || !addProductName.trim()}
+                      className="px-4 py-2.5 rounded-xl text-sm font-semibold bg-amber-500 text-black disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1.5"
+                    >
+                      {addProductLoading ? (
+                        <>
+                          <span className="inline-block w-3 h-3 border-2 border-black/30 border-t-black rounded-full animate-spin" />
+                          <span>...</span>
+                        </>
+                      ) : (
+                        "+ Dodaj"
+                      )}
+                    </button>
+                  </div>
+                  {addProductError && (
+                    <p className="mt-2 text-xs text-red-400">{addProductError}</p>
+                  )}
+                </div>
 
                 {/* SUMA */}
                 <div className={`${cardBg} rounded-xl p-3 border-2 border-amber-500/30`}>
