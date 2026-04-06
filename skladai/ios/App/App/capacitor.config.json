@@ -4,7 +4,17 @@
 	"webDir": "www",
 	"server": {
 		"url": "https://skladai.vercel.app",
-		"cleartext": true
+		"cleartext": true,
+		"allowNavigation": [
+			"skladai.vercel.app",
+			"*.skladai.vercel.app",
+			"*.supabase.co",
+			"appleid.apple.com",
+			"*.apple.com",
+			"accounts.google.com",
+			"*.google.com",
+			"*.googleusercontent.com"
+		]
 	},
 	"plugins": {
 		"Camera": {
@@ -38,6 +48,7 @@
 		"SpeechRecognition",
 		"CAPCameraPlugin",
 		"HapticsPlugin",
+		"PreferencesPlugin",
 		"SplashScreenPlugin",
 		"StatusBarPlugin",
 		"HealthPlugin"

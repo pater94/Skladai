@@ -8,6 +8,16 @@ const config: CapacitorConfig = {
     // Hybrid mode — native shell loads web content from Vercel
     url: "https://skladai.vercel.app",
     cleartext: true,
+    allowNavigation: [
+      "skladai.vercel.app",
+      "*.skladai.vercel.app",
+      "*.supabase.co",
+      "appleid.apple.com",
+      "*.apple.com",
+      "accounts.google.com",
+      "*.google.com",
+      "*.googleusercontent.com",
+    ],
   },
   plugins: {
     Camera: {

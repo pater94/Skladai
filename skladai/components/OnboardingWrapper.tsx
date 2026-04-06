@@ -4,33 +4,23 @@ import { useState, useEffect } from "react";
 import OnboardingLogin from "./OnboardingLogin";
 import { createClient } from "@/lib/supabase";
 import { pullFromCloud } from "@/lib/sync";
+import { nsGet, nsSet } from "@/lib/native-storage";
 
-const COOKIE_KEY = "skladai_onboarded";
+const ONBOARDED_KEY = "onboardingCompleted";
 
-function getCookie(name: string): string | null {
-  if (typeof document === "undefined") return null;
-  const match = document.cookie.match(new RegExp("(^| )" + name + "=([^;]+)"));
-  return match ? decodeURIComponent(match[2]) : null;
-}
-
-function setCookie(name: string, value: string, days = 365) {
-  if (typeof document === "undefined") return;
-  const exp = new Date();
-  exp.setTime(exp.getTime() + days * 24 * 60 * 60 * 1000);
-  document.cookie = `${name}=${encodeURIComponent(value)};expires=${exp.toUTCString()};path=/;SameSite=Lax`;
-}
-
-function isOnboarded(): boolean {
+async function isOnboarded(): Promise<boolean> {
+  // Check native storage (Preferences/UserDefaults on iOS) first
+  const native = await nsGet(ONBOARDED_KEY);
+  if (native) return true;
+  // Fallback to localStorage (in case of older installs)
   try {
-    if (localStorage.getItem("onboardingCompleted")) return true;
+    if (localStorage.getItem(ONBOARDED_KEY)) return true;
   } catch {}
-  if (getCookie(COOKIE_KEY) === "1") return true;
   return false;
 }
 
-function markOnboarded() {
-  try { localStorage.setItem("onboardingCompleted", "true"); } catch {}
-  setCookie(COOKIE_KEY, "1", 365);
+async function markOnboarded() {
+  await nsSet(ONBOARDED_KEY, "true");
 }
 
 export default function OnboardingWrapper() {
@@ -45,9 +35,9 @@ export default function OnboardingWrapper() {
     const supabase = createClient();
 
     async function check() {
-      const onboarded = isOnboarded();
+      const onboarded = await isOnboarded();
 
-      // Try to get current session (from storage)
+      // Try to get current session (from storage — native Preferences on iOS)
       const { data: { session } } = await supabase.auth.getSession();
 
       if (session) {
@@ -62,7 +52,7 @@ export default function OnboardingWrapper() {
         } catch (e) {
           console.warn("[Onboarding] Cloud restore failed:", e);
         }
-        markOnboarded();
+        await markOnboarded();
         if (cancelled) return;
         setState("hidden");
         window.dispatchEvent(new Event("cloud-sync-done"));
@@ -72,7 +62,7 @@ export default function OnboardingWrapper() {
 
       // No session
       if (onboarded) {
-        // Returning user — session got wiped (WKWebView storage). Don't reset their data,
+        // Returning user — session got wiped. Don't reset their data,
         // just show a minimal login prompt so they can re-auth.
         if (cancelled) return;
         setState("login");
@@ -88,10 +78,9 @@ export default function OnboardingWrapper() {
     const onVis = () => {
       if (document.visibilityState === "visible") {
         supabase.auth.getSession().then(({ data: { session } }) => {
-          if (session && state !== "hidden") {
-            // Session restored — hide onboarding
+          if (session) {
             markOnboarded();
-            setState("hidden");
+            setState((prev) => (prev === "hidden" ? prev : "hidden"));
             window.dispatchEvent(new Event("cloud-sync-done"));
           }
         });
@@ -99,7 +88,7 @@ export default function OnboardingWrapper() {
     };
     document.addEventListener("visibilitychange", onVis);
 
-    // Also listen for auth state changes (OAuth callback completes)
+    // Auth state listener — auto-hide onboarding when sign-in completes
     const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
       console.log("[Onboarding] Auth event:", event);
       if (session && (event === "SIGNED_IN" || event === "TOKEN_REFRESHED" || event === "INITIAL_SESSION")) {

@@ -1,4 +1,5 @@
 import { createClient as createSupabaseClient, SupabaseClient } from '@supabase/supabase-js';
+import { supabaseAuthStorage } from './native-storage';
 
 // Singleton browser client — ensures OAuth session is shared across all callers
 let browserClient: SupabaseClient | null = null;
@@ -19,6 +20,12 @@ export function createClient(): SupabaseClient {
     auth: {
       persistSession: true,
       autoRefreshToken: true,
+      // Custom storage: uses Capacitor Preferences (UserDefaults) on iOS native,
+      // localStorage on web. UserDefaults survives app close/reopen on iOS,
+      // unlike WKWebView localStorage which gets wiped aggressively.
+      storage: supabaseAuthStorage,
+      storageKey: 'sb-skladai-auth-token',
+      detectSessionInUrl: true,
     },
   });
 
