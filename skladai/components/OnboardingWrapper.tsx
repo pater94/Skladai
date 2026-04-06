@@ -4,23 +4,41 @@ import { useState, useEffect } from "react";
 import OnboardingLogin from "./OnboardingLogin";
 import { createClient } from "@/lib/supabase";
 import { pullFromCloud } from "@/lib/sync";
-import { nsGet, nsSet } from "@/lib/native-storage";
+import { nsGet, nsSet, nsSelfTest } from "@/lib/native-storage";
 
 const ONBOARDED_KEY = "onboardingCompleted";
 
 async function isOnboarded(): Promise<boolean> {
-  // Check native storage (Preferences/UserDefaults on iOS) first
+  // Belt and suspenders: check Preferences (UserDefaults), localStorage, and cookie
   const native = await nsGet(ONBOARDED_KEY);
-  if (native) return true;
-  // Fallback to localStorage (in case of older installs)
+  if (native) {
+    console.log("[Onboarding] Flag found in nsGet (Preferences/localStorage)");
+    return true;
+  }
   try {
-    if (localStorage.getItem(ONBOARDED_KEY)) return true;
+    if (localStorage.getItem(ONBOARDED_KEY)) {
+      console.log("[Onboarding] Flag found in localStorage (fallback)");
+      return true;
+    }
+  } catch {}
+  try {
+    if (document.cookie.includes("skladai_onboarded=1")) {
+      console.log("[Onboarding] Flag found in cookie (fallback)");
+      return true;
+    }
   } catch {}
   return false;
 }
 
 async function markOnboarded() {
   await nsSet(ONBOARDED_KEY, "true");
+  // Also write a long-lived cookie as last-resort backup
+  try {
+    const exp = new Date();
+    exp.setFullYear(exp.getFullYear() + 1);
+    document.cookie = `skladai_onboarded=1;expires=${exp.toUTCString()};path=/;SameSite=Lax`;
+  } catch {}
+  console.log("[Onboarding] Flag marked in all stores");
 }
 
 export default function OnboardingWrapper() {
@@ -35,10 +53,16 @@ export default function OnboardingWrapper() {
     const supabase = createClient();
 
     async function check() {
+      // Run native storage self-test (visible in Xcode console)
+      const nsOk = await nsSelfTest();
+      console.log("[Onboarding] Native storage self-test:", nsOk ? "PASS" : "FAIL/web");
+
       const onboarded = await isOnboarded();
+      console.log("[Onboarding] Has onboarded flag:", onboarded);
 
       // Try to get current session (from storage — native Preferences on iOS)
       const { data: { session } } = await supabase.auth.getSession();
+      console.log("[Onboarding] getSession ->", session ? "EXISTS" : "EMPTY");
 
       if (session) {
         // Validate + restore cloud data

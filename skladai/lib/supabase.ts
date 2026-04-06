@@ -23,9 +23,11 @@ export function createClient(): SupabaseClient {
       // Custom storage: uses Capacitor Preferences (UserDefaults) on iOS native,
       // localStorage on web. UserDefaults survives app close/reopen on iOS,
       // unlike WKWebView localStorage which gets wiped aggressively.
+      // NOTE: do NOT override storageKey — Supabase derives it from the project URL
+      // and the OAuth callback hash references that default key.
       storage: supabaseAuthStorage,
-      storageKey: 'sb-skladai-auth-token',
       detectSessionInUrl: true,
+      flowType: 'pkce',
     },
   });
 

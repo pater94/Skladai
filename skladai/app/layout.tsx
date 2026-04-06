@@ -12,7 +12,7 @@ export const metadata: Metadata = {
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
-    statusBarStyle: "default",
+    statusBarStyle: "black-translucent",
     title: "SkładAI",
   },
 };
@@ -36,6 +36,11 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/icons/icon-192.svg" />
         <link rel="icon" href="/icons/icon-192.svg" type="image/svg+xml" />
         <meta name="theme-color" content="#84CC16" />
+        {/* Force iOS Safari "Add to Home Screen" PWA standalone mode (no URL bar) */}
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta name="apple-mobile-web-app-title" content="SkładAI" />
       </head>
       <body style={{ fontFamily: "-apple-system, 'SF Pro Display', 'Helvetica Neue', system-ui, sans-serif" }}>
         <div id="scroll-container" data-scrollable="true">
