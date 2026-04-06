@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase";
+import { signInWithProviderNative } from "@/lib/native-oauth";
 
 interface OnboardingLoginProps {
   onSkip: () => void;
@@ -46,13 +47,7 @@ export default function OnboardingLogin({ onSkip, startSlide = 0 }: OnboardingLo
   const handleAppleSignIn = async () => {
     try {
       const supabase = createClient();
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: "apple",
-        options: { redirectTo: window.location.origin },
-      });
-      if (error) {
-        console.error("Apple sign in error:", error.message);
-      }
+      await signInWithProviderNative(supabase, "apple");
     } catch (e) {
       console.error("Apple sign in failed:", e);
     }
@@ -61,13 +56,7 @@ export default function OnboardingLogin({ onSkip, startSlide = 0 }: OnboardingLo
   const handleGoogleSignIn = async () => {
     try {
       const supabase = createClient();
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: "google",
-        options: { redirectTo: window.location.origin },
-      });
-      if (error) {
-        console.error("Google sign in error:", error.message);
-      }
+      await signInWithProviderNative(supabase, "google");
     } catch (e) {
       console.error("Google sign in failed:", e);
     }

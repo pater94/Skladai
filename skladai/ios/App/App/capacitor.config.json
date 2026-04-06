@@ -36,6 +36,8 @@
 	},
 	"packageClassList": [
 		"SpeechRecognition",
+		"AppPlugin",
+		"CAPBrowserPlugin",
 		"CAPCameraPlugin",
 		"HapticsPlugin",
 		"PreferencesPlugin",

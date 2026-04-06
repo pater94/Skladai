@@ -5,6 +5,7 @@ import OnboardingLogin from "./OnboardingLogin";
 import { createClient } from "@/lib/supabase";
 import { pullFromCloud } from "@/lib/sync";
 import { nsGet, nsSet, nsSelfTest } from "@/lib/native-storage";
+import { registerOAuthCallbackListener } from "@/lib/native-oauth";
 
 const ONBOARDED_KEY = "onboardingCompleted";
 const SESSION_BACKUP_KEY = "skladai_session_backup_v1";
@@ -52,6 +53,17 @@ export default function OnboardingWrapper() {
   useEffect(() => {
     let cancelled = false;
     const supabase = createClient();
+
+    // Register the native OAuth callback listener (Capacitor only).
+    // Catches the com.skladai.app://oauth-callback URL fired after Apple/Google
+    // sign-in and exchanges the code for a session in the main WebView.
+    registerOAuthCallbackListener(supabase, () => {
+      console.log("[Onboarding] Native OAuth callback success");
+      markOnboarded();
+      pullFromCloud().catch(() => {});
+      setState("hidden");
+      window.dispatchEvent(new Event("cloud-sync-done"));
+    }).catch((e) => console.warn("[Onboarding] OAuth listener register failed:", e));
 
     async function check() {
       // Run native storage self-test (visible in Xcode console)
