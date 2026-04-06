@@ -560,22 +560,29 @@ export default function Home() {
               source={photoSource}
               photo1={photoPreview}
               photo2={secondPhotoPreview}
-              onAddSecondPhoto={() => {
+              onAddSecondPhoto={async () => {
+                console.log("[SecondPhoto] click — source:", photoSource, "mode:", mode, "isNative:", isNative());
                 setAwaitingSecondPhoto(true);
-                if (photoSource === "camera") {
+                const src: "camera" | "gallery" = photoSource;
+                const fallbackRef = src === "camera" ? secondCameraInputRef : secondGalleryInputRef;
+                try {
                   if (isNative()) {
-                    takePhotoForMode(mode, "camera").then(base64 => {
-                      if (base64) { setSecondPhotoPreview(base64); setAwaitingSecondPhoto(false); }
-                      else { setAwaitingSecondPhoto(false); }
-                    });
-                  } else { secondCameraInputRef.current?.click(); }
-                } else {
-                  if (isNative()) {
-                    takePhotoForMode(mode, "gallery").then(base64 => {
-                      if (base64) { setSecondPhotoPreview(base64); setAwaitingSecondPhoto(false); }
-                      else { setAwaitingSecondPhoto(false); }
-                    });
-                  } else { secondGalleryInputRef.current?.click(); }
+                    console.log("[SecondPhoto] trying native takePhotoForMode");
+                    const base64 = await takePhotoForMode(mode, src);
+                    console.log("[SecondPhoto] native result:", base64 ? `ok (${base64.length} chars)` : "null (user cancelled)");
+                    if (base64) {
+                      setSecondPhotoPreview(base64);
+                    }
+                    setAwaitingSecondPhoto(false);
+                  } else {
+                    console.log("[SecondPhoto] web — clicking hidden input");
+                    fallbackRef.current?.click();
+                  }
+                } catch (err) {
+                  console.error("[SecondPhoto] native camera failed, falling back to file input:", err);
+                  // Fallback: hidden file input works in WKWebView too
+                  fallbackRef.current?.click();
+                  // Don't reset awaitingSecondPhoto — the hidden input's onChange will handle it
                 }
               }}
               onAnalyzeSingle={() => {
@@ -598,23 +605,25 @@ export default function Home() {
                   (document.getElementById("gallery-input") as HTMLInputElement)?.click();
                 }
               }}
-              onRetakePhoto2={() => {
+              onRetakePhoto2={async () => {
+                console.log("[RetakePhoto2] click — source:", photoSource, "mode:", mode);
                 setSecondPhotoPreview(null);
                 setAwaitingSecondPhoto(true);
-                if (photoSource === "camera") {
+                const src: "camera" | "gallery" = photoSource;
+                const fallbackRef = src === "camera" ? secondCameraInputRef : secondGalleryInputRef;
+                try {
                   if (isNative()) {
-                    takePhotoForMode(mode, "camera").then(base64 => {
-                      if (base64) { setSecondPhotoPreview(base64); setAwaitingSecondPhoto(false); }
-                      else { setAwaitingSecondPhoto(false); }
-                    });
-                  } else { secondCameraInputRef.current?.click(); }
-                } else {
-                  if (isNative()) {
-                    takePhotoForMode(mode, "gallery").then(base64 => {
-                      if (base64) { setSecondPhotoPreview(base64); setAwaitingSecondPhoto(false); }
-                      else { setAwaitingSecondPhoto(false); }
-                    });
-                  } else { secondGalleryInputRef.current?.click(); }
+                    const base64 = await takePhotoForMode(mode, src);
+                    if (base64) {
+                      setSecondPhotoPreview(base64);
+                    }
+                    setAwaitingSecondPhoto(false);
+                  } else {
+                    fallbackRef.current?.click();
+                  }
+                } catch (err) {
+                  console.error("[RetakePhoto2] native camera failed, falling back to file input:", err);
+                  fallbackRef.current?.click();
                 }
               }}
               onBack={() => { setPhotoPreview(null); setSecondPhotoPreview(null); setAwaitingSecondPhoto(false); }}
