@@ -182,9 +182,22 @@ ZASADY KRYTYCZNE:
 - Nazwa produktu to NIGDY nie jest pierwszy składnik z listy składników
 - NIGDY nie zgaduj nazwy produktu na podstawie jednego składnika. Jeśli nie widzisz nazwy — napisz "NAZWA: niewidoczna"
 - Jeśli etykieta jest w wielu językach — szukaj POLSKIEJ wersji nazwy/składników najpierw, potem angielskiej
-- Jeśli zdjęcie jest obrócone lub pod kątem — odczytaj tekst mimo to (obrót nie zmienia liter)
 - WALIDACJA: sprawdź czy wartości odżywcze pasują do produktu. Sól ma 0g białka/węgli/tłuszczu. Jeśli widzisz białko 2.4g i węgle 9.4g — to NIE JEST sól, nawet jeśli chlorek sodu jest na liście składników
-- Tabela wartości odżywczych jest KLUCZOWA — jeśli ją widzisz, MUSISZ ją odczytać. Nie pisz "brak danych" jeśli tabela jest widoczna na zdjęciu`;
+- Tabela wartości odżywczych jest KLUCZOWA — jeśli ją widzisz, MUSISZ ją odczytać. Nie pisz "brak danych" jeśli tabela jest widoczna na zdjęciu
+
+OBRÓCONE / KRZYWE TABELE — OBOWIĄZKOWE:
+- Tabela wartości odżywczych BARDZO CZĘSTO jest obrócona o 90°, 180°, lub pod kątem (etykieta sfotografowana z ukosa, zmięta folia, opakowanie kątowe)
+- MUSISZ odczytać tekst niezależnie od orientacji. Mentalnie obróć obraz w głowie. Obrót NIE zmienia liter ani cyfr.
+- Skanuj obraz w 4 orientacjach: 0°, 90°, 180°, 270°. Jeśli w którejkolwiek widzisz tabelę z liczbami i jednostkami "g" / "kcal" / "kJ" — TO JEST tabela wartości odżywczych, odczytaj ją.
+- Tabela często znajduje się na BOKU lub TYŁCIE opakowania, w rogu, lub przy nadruku składu
+- Słowa kluczowe sygnalizujące tabelę: "Wartość odżywcza", "Wartość energetyczna", "100 g produktu", "kJ", "kcal", "Tłuszcz", "Węglowodany", "Białko", "Sól"
+- Jeśli widzisz JAKIEKOLWIEK z tych słów na zdjęciu — tabela TAM JEST i MUSISZ ją odczytać
+
+ZAKAZ HALUCYNACJI — ABSOLUTNIE KRYTYCZNE:
+- NIE używaj swojej wiedzy ogólnej o produktach. Jeśli widzisz "à la GYROS" — NIE pisz wartości typowych dla gyrosa, tylko TYLKO te które są na etykiecie
+- NIE zgaduj wartości na podstawie nazwy produktu, marki, ani składu
+- Jeśli NIE WIDZISZ tabeli wartości odżywczych — wpisz wszystkie pola jako "niewidoczne", NIE wymyślaj liczb
+- Lepsze "niewidoczne" niż błędne — od poprawności tych liczb zależy zdrowie użytkownika`;
 
 const READ_COSMETICS_LABEL = `Jesteś precyzyjnym czytnikiem tekstu. Odczytaj DOKŁADNIE cały tekst ze zdjęcia etykiety kosmetyku.
 
