@@ -843,24 +843,66 @@ function parseJsonResponse(text: string) {
   }
 }
 
-// Validate nutrition values make sense
+// Validate nutrition values make sense.
+// If macros are physically impossible OR fail the Atwater self-check
+// (kcal ≈ 4P + 4C + 9F ±25%), we treat the AI response as a hallucination,
+// blank out the nutrition fields, and mark the result as "Brak etykiety".
 function validateNutrition(result: Record<string, unknown>): void {
   if (!result.nutrition || !Array.isArray(result.nutrition)) return;
 
   const nutr = result.nutrition as Array<{ label: string; value: string }>;
-  let fat = 0, carbs = 0, protein = 0;
+  let fat = 0, carbs = 0, protein = 0, kcal = 0;
+  let hasAnyValue = false;
+
+  const isMissing = (v: string | undefined) =>
+    !v || /brak danych|niewidoczne|nieczytelne|null|n\/a/i.test(v);
 
   for (const n of nutr) {
+    if (isMissing(n.value)) continue;
     const val = parseFloat(n.value?.match?.(/[\d.]+/)?.[0] || "0");
-    if (n.label.toLowerCase().includes("tłuszcz") && !n.label.includes("nasycone")) fat = val;
-    if (n.label.toLowerCase().includes("węglo")) carbs = val;
-    if (n.label.toLowerCase().includes("biał")) protein = val;
+    if (Number.isNaN(val)) continue;
+    hasAnyValue = true;
+    const label = n.label.toLowerCase();
+    if (label.includes("tłuszcz") && !label.includes("nasycone")) fat = val;
+    else if (label.includes("węglo")) carbs = val;
+    else if (label.includes("biał")) protein = val;
+    else if (label.includes("energ") || label.includes("kalor")) kcal = val;
   }
 
-  // Basic sanity: macros per 100g can't exceed 100g total
-  if (fat + carbs + protein > 110) {
-    console.warn(`Nutrition validation warning: fat(${fat}) + carbs(${carbs}) + protein(${protein}) = ${fat + carbs + protein} > 100g`);
-    // Don't reject, but log — AI might have read per-package values
+  // Nothing to validate — already brak danych, leave it.
+  if (!hasAnyValue) return;
+
+  let invalid = false;
+  let reason = "";
+
+  // Sanity 1: macros per 100g cannot exceed ~100g (small slack for water/fiber rounding)
+  if (fat + carbs + protein > 105) {
+    invalid = true;
+    reason = `macros sum ${(fat + carbs + protein).toFixed(1)}g > 100g per 100g product`;
+  }
+
+  // Sanity 2: Atwater check — only if we have BOTH kcal and at least one macro
+  if (!invalid && kcal > 0 && (fat > 0 || carbs > 0 || protein > 0)) {
+    const expectedKcal = 4 * protein + 4 * carbs + 9 * fat;
+    // ±25% tolerance + 15kcal absolute (handles rounding on tiny values)
+    const tolerance = Math.max(expectedKcal * 0.25, 15);
+    if (Math.abs(expectedKcal - kcal) > tolerance) {
+      invalid = true;
+      reason = `Atwater mismatch: kcal=${kcal}, expected≈${expectedKcal.toFixed(0)} (4×${protein}P + 4×${carbs}C + 9×${fat}F)`;
+    }
+  }
+
+  if (invalid) {
+    console.warn(`[validateNutrition] Rejecting hallucinated macros — ${reason}`);
+    // Blank out the nutrition fields rather than show fabricated data
+    const blanked = nutr.map(n => ({ ...n, value: "brak danych" }));
+    (result as Record<string, unknown>).nutrition = blanked;
+    // Force the result into "no label" state so the UI surfaces an honest message
+    (result as Record<string, unknown>).verdict_short = "Brak etykiety";
+    (result as Record<string, unknown>).verdict =
+      "Nie udało się odczytać tabeli wartości odżywczych z tego zdjęcia. Zrób ostrzejsze zdjęcie tabeli na opakowaniu — najlepiej prosto, bez zagięć i odbić światła.";
+    (result as Record<string, unknown>).score = null;
+    (result as Record<string, unknown>).label_unreadable = true;
   }
 }
 
