@@ -7,11 +7,12 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "cap:sync": "npx cap sync",
+    "cap:sync": "npx cap sync && node scripts/fix-spm-paths.mjs",
     "cap:android": "npx cap open android",
     "cap:ios": "npx cap open ios",
     "build:android": "npx cap sync android",
-    "build:ios": "npx cap sync ios"
+    "build:ios": "npx cap sync ios && node scripts/fix-spm-paths.mjs",
+    "postinstall": "node scripts/fix-spm-paths.mjs"
   },
   "dependencies": {
     "@capacitor-community/speech-recognition": "^7.0.1",
