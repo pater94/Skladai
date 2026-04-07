@@ -8,6 +8,7 @@ import { getProfile, getStreak, getHistory } from "@/lib/storage";
 import { ACTIVITY_LEVELS, GOALS, COMMON_ALLERGENS, DIETS, DIABETES_TYPES, TRIMESTERS } from "@/lib/nutrition";
 import ProfileSetup from "@/components/ProfileSetup";
 import { createClient } from "@/lib/supabase";
+import { useHealthData } from "@/lib/useHealthData";
 
 const AreaChart = dynamic(() => import("recharts").then(m => m.AreaChart), { ssr: false });
 const Area = dynamic(() => import("recharts").then(m => m.Area), { ssr: false });
@@ -59,6 +60,7 @@ export default function ProfilPage() {
   const [newWeight, setNewWeight] = useState("");
   const [newWeightDate, setNewWeightDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [authEmail, setAuthEmail] = useState<string | null>(null);
+  const health = useHealthData();
 
   useEffect(() => {
     (document.getElementById("scroll-container") || window).scrollTo(0, 0);
@@ -296,32 +298,53 @@ export default function ProfilPage() {
           ))}
         </GlassCard>
 
-        {/* Apple Health connect (placeholder) */}
-        <GlassCard>
-          <button
-            onClick={() => {
-              alert("Wkrótce! Połączenie z Apple Health pojawi się w następnej aktualizacji.");
-            }}
-            style={{
-              width: "100%",
-              display: "flex",
-              alignItems: "center",
-              gap: 10,
-              padding: "4px 2px",
-              background: "transparent",
-              border: "none",
-              color: "rgba(255,255,255,0.85)",
-              fontSize: 13,
-              fontWeight: 700,
-              cursor: "pointer",
-              textAlign: "left" as const,
-            }}
-          >
-            <span style={{ fontSize: 16 }}>❤️</span>
-            <span style={{ flex: 1 }}>Połącz z Apple Health</span>
-            <span style={{ fontSize: 14, color: "rgba(255,255,255,0.4)" }}>→</span>
-          </button>
-        </GlassCard>
+        {/* Apple Health — iOS native only */}
+        {health.isNative && (
+          <GlassCard>
+            {health.isConnected ? (
+              <div
+                style={{
+                  width: "100%",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 10,
+                  padding: "4px 2px",
+                  fontSize: 13,
+                  fontWeight: 700,
+                  color: "rgba(110,252,180,0.85)",
+                }}
+              >
+                <span style={{ fontSize: 16 }}>✅</span>
+                <span style={{ flex: 1 }}>Apple Health — połączono</span>
+              </div>
+            ) : (
+              <button
+                onClick={() => {
+                  try { localStorage.setItem("healthKitAsked", "1"); } catch {}
+                  health.requestAccess();
+                }}
+                style={{
+                  width: "100%",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 10,
+                  padding: "4px 2px",
+                  background: "transparent",
+                  border: "none",
+                  color: "rgba(255,255,255,0.85)",
+                  fontSize: 13,
+                  fontWeight: 700,
+                  cursor: "pointer",
+                  textAlign: "left" as const,
+                }}
+              >
+                <span style={{ fontSize: 16 }}>🏃</span>
+                <span style={{ flex: 1 }}>Połącz z Apple Health</span>
+                <span style={{ fontSize: 14, color: "rgba(255,255,255,0.4)" }}>→</span>
+              </button>
+            )}
+          </GlassCard>
+        )}
 
         {/* Health profile */}
         {hasHealthProfile && (

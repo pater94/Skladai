@@ -47,6 +47,7 @@ export default function DashboardPage() {
   const [loaded, setLoaded] = useState(false);
   const [view, setView] = useState<DashView>("today");
   const health = useHealthData();
+  const [showHealthModal, setShowHealthModal] = useState(false);
   const [showVoice, setShowVoice] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [voiceInitialText, setVoiceInitialText] = useState<string | undefined>(undefined);
@@ -73,6 +74,21 @@ export default function DashboardPage() {
     (document.getElementById("scroll-container") || window).scrollTo(0, 0);
     reload();
   }, []);
+
+  // First-time HealthKit consent prompt — iOS native only, asked once.
+  useEffect(() => {
+    if (health.loading) return;
+    if (!health.isNative) return;
+    if (health.isConnected) return;
+    try {
+      if (localStorage.getItem("healthKitAsked") === "1") return;
+    } catch {
+      return;
+    }
+    // Defer to next tick to avoid cascading renders inside effect body.
+    const id = setTimeout(() => setShowHealthModal(true), 0);
+    return () => clearTimeout(id);
+  }, [health.loading, health.isNative, health.isConnected]);
 
   if (!loaded) {
     return (
@@ -324,6 +340,25 @@ export default function DashboardPage() {
                   </div>
                 ))}
               </div>
+
+              {/* Net calorie balance: zjedzone − spalone */}
+              {(() => {
+                const net = t.calories - health.kcalBurned;
+                const netColor = net > 0 ? "#f97316" : "#6efcb4";
+                return (
+                  <div style={{ marginTop: 12, paddingTop: 12, borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <span style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.6)" }}>Bilans netto</span>
+                      <span style={{ fontSize: 14, fontWeight: 900, color: netColor, letterSpacing: "-0.02em" }}>
+                        {net > 0 ? "+" : ""}{net} kcal
+                      </span>
+                    </div>
+                    <div style={{ fontSize: 9.5, color: "rgba(255,255,255,0.45)", marginTop: 3 }}>
+                      Zjedzone {t.calories} − Spalone {health.kcalBurned}
+                    </div>
+                  </div>
+                );
+              })()}
             </GlassCard>
           )}
 
@@ -525,6 +560,71 @@ export default function DashboardPage() {
             setVoiceInitialText(undefined);
           }}
         />
+      )}
+
+      {/* First-time HealthKit consent modal — iOS native only */}
+      {showHealthModal && (
+        <div
+          onClick={() => {
+            try { localStorage.setItem("healthKitAsked", "1"); } catch {}
+            setShowHealthModal(false);
+          }}
+          style={{
+            position: "fixed", inset: 0, zIndex: 100,
+            background: "rgba(0,0,0,0.7)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            padding: 24,
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              width: "100%", maxWidth: 340,
+              background: "#13191a",
+              border: "1px solid rgba(255,255,255,0.08)",
+              borderRadius: 20,
+              padding: 24,
+              textAlign: "center",
+            }}
+          >
+            <div style={{ fontSize: 38, marginBottom: 12 }}>🏃</div>
+            <div style={{ fontSize: 18, fontWeight: 900, color: "#fff", marginBottom: 8 }}>
+              Śledź swoją aktywność
+            </div>
+            <div style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", lineHeight: "19px", marginBottom: 22 }}>
+              Połącz z Apple Health aby zobaczyć kroki i spalone kalorie w Dashboard.
+            </div>
+            <button
+              onClick={async () => {
+                try { localStorage.setItem("healthKitAsked", "1"); } catch {}
+                setShowHealthModal(false);
+                await health.requestAccess();
+              }}
+              style={{
+                width: "100%", padding: 14, borderRadius: 14, border: "none",
+                background: "linear-gradient(135deg, #6efcb4, #3dd990)",
+                color: "#0a0f0d", fontWeight: 800, fontSize: 14, cursor: "pointer",
+                marginBottom: 8,
+              }}
+            >
+              Połącz
+            </button>
+            <button
+              onClick={() => {
+                try { localStorage.setItem("healthKitAsked", "1"); } catch {}
+                setShowHealthModal(false);
+              }}
+              style={{
+                width: "100%", padding: 14, borderRadius: 14,
+                background: "rgba(255,255,255,0.04)",
+                border: "1px solid rgba(255,255,255,0.08)",
+                color: "rgba(255,255,255,0.7)", fontWeight: 700, fontSize: 13, cursor: "pointer",
+              }}
+            >
+              Nie teraz
+            </button>
+          </div>
+        </div>
       )}
 
       <style>{`@keyframes spin { to { transform: rotate(360deg); } } @keyframes breathe { 0%, 100% { opacity: 0.4; transform: scale(0.95); } 50% { opacity: 0.7; transform: scale(1.05); } }`}</style>
