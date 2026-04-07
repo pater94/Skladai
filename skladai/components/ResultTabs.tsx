@@ -62,15 +62,12 @@ function fmtPrice(p: number): string {
 // `category` is kept for prop compatibility but not sent (server doesn't need it).
 function ShoppingLinks({ name }: { name: string; category?: "cosmetic" | "supplement" }) {
   const [data, setData] = useState<PriceSearchResponse | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
+  // Start as loading only when we actually have a name to query.
+  const [loading, setLoading] = useState<boolean>(() => !!name);
 
   useEffect(() => {
-    if (!name) {
-      setLoading(false);
-      return;
-    }
+    if (!name) return;
     let cancelled = false;
-    setLoading(true);
     fetch("/api/price-search", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -115,8 +112,10 @@ function ShoppingLinks({ name }: { name: string; category?: "cosmetic" | "supple
   const allegro = data?.allegro;
   const ceneoHref = ceneo?.found ? ceneo.url! : ceneo?.searchUrl || ceneoSearchUrl(name);
   const allegroHref = allegro?.found ? allegro.url! : allegro?.searchUrl || allegroSearchUrl(name);
+  const noPrices = !ceneo?.found && !allegro?.found;
 
   return (
+    <div>
     <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
       {/* Ceneo */}
       <a
@@ -173,6 +172,12 @@ function ShoppingLinks({ name }: { name: string; category?: "cosmetic" | "supple
           {allegro?.found && allegro.price ? `Allegro · ${fmtPrice(allegro.price)}` : "Allegro"}
         </span>
       </a>
+    </div>
+    {noPrices && (
+      <p style={{ fontSize: 11, color: "rgba(255,255,255,0.5)", textAlign: "center", margin: "6px 0 0" }}>
+        Sprawdź aktualną cenę
+      </p>
+    )}
     </div>
   );
 }
@@ -303,19 +308,6 @@ export default function ResultTabs({ result, scanType = "food", isCosmetics: isC
               <p style={{ color: "rgba(255,255,255,0.75)", fontSize: 12, textAlign: "center", margin: "0 0 14px" }}>
                 💸 AI znalazł lepsze opcje z tym samym składem
               </p>
-            )}
-            {/* Hook emocjonalny */}
-            {(cheaper || better) && (
-            <div className="rounded-[20px] p-5 relative overflow-hidden" style={{ background: "linear-gradient(135deg, rgba(139,92,246,0.15), rgba(192,132,252,0.08))", border: "1px solid rgba(139,92,246,0.2)" }}>
-              <div className="relative z-10">
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="text-xl">💰</span>
-                  <h3 className="text-[15px] font-black text-white">{cheaper ? "Nie przepłacaj za logo." : "Znaleźliśmy lepszy skład."}</h3>
-                </div>
-                <p className="text-[12px] text-white/55 leading-relaxed">{cheaper ? "AI znalazł produkty z tym samym składem. Sprawdź ile możesz zaoszczędzić." : "Produkt z lepszym składem w podobnej cenie."}</p>
-              </div>
-              <div className="absolute top-0 right-0 w-32 h-32 rounded-full bg-purple-500/10 blur-[40px]" />
-            </div>
             )}
 
             {/* Best choice card — when no alternatives needed */}
@@ -620,19 +612,6 @@ export default function ResultTabs({ result, scanType = "food", isCosmetics: isC
               <p style={{ color: "rgba(255,255,255,0.75)", fontSize: 12, textAlign: "center", margin: "0 0 14px" }}>
                 💸 AI znalazł lepsze opcje z tym samym składem
               </p>
-            )}
-            {/* Hook emocjonalny */}
-            {(cheaper || better) && (
-            <div className="rounded-[20px] p-5 relative overflow-hidden" style={{ background: "linear-gradient(135deg, rgba(59,130,246,0.15), rgba(96,165,250,0.08))", border: "1px solid rgba(59,130,246,0.2)" }}>
-              <div className="relative z-10">
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="text-xl">💸</span>
-                  <h3 className="text-[15px] font-black text-white">{cheaper ? "Ten sam skład w lepszej cenie." : "Znaleźliśmy lepszy skład."}</h3>
-                </div>
-                <p className="text-[12px] text-white/55 leading-relaxed">{cheaper ? "80% suplementów to marketing. Sprawdź tańsze alternatywy." : "Suplement z lepszym składem w podobnej cenie."}</p>
-              </div>
-              <div className="absolute top-0 right-0 w-32 h-32 rounded-full bg-blue-500/10 blur-[40px]" />
-            </div>
             )}
 
             {/* Best choice card — when no alternatives needed */}

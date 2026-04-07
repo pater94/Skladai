@@ -301,6 +301,7 @@ export default function WynikiPage() {
   const [quantity, setQuantity] = useState(1);
   const [mealWeights, setMealWeights] = useState<Record<number, number>>({});
   const [textWeights, setTextWeights] = useState<Record<number, number>>({});
+  const [allergensOpen, setAllergensOpen] = useState(false);
 
   useEffect(() => {
     const id = params.id as string;
@@ -1275,8 +1276,8 @@ export default function WynikiPage() {
 
         {/* Meal portion editor is now inline in the premium hero card above */}
 
-        {/* ─── PORTION & QUANTITY (food and suplement only, NOT cosmetics/meal/forma) ─── */}
-        {(scanType === "food" || isSuplement) && !isTextSearch && !isMeal && !isForma && (
+        {/* ─── PORTION & QUANTITY (food only — not suplement, cosmetics, meal, forma) ─── */}
+        {scanType === "food" && !isSuplement && !isTextSearch && !isMeal && !isForma && (
           <div className="anim-fade-up-1" style={{ margin: "0 16px 12px" }}>
             <div style={{ padding: 18, borderRadius: 16, background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.06)" }}>
               {/* Quantity row */}
@@ -1329,8 +1330,8 @@ export default function WynikiPage() {
           </div>
         )}
 
-        {/* ─── MACRO TABLE (food and suplement only, NOT cosmetics) ─── */}
-        {(scanType === "food" || isSuplement) && !isTextSearch && !isMeal && !isForma && (() => {
+        {/* ─── MACRO TABLE (food only — suplement is not a meal) ─── */}
+        {scanType === "food" && !isSuplement && !isTextSearch && !isMeal && !isForma && (() => {
           const n = foodResult
             ? extractFoodNutrition(foodResult)
             : { cal100: 0, prot100: 0, fat100: 0, carb100: 0, packageG: 100 };
@@ -1365,27 +1366,6 @@ export default function WynikiPage() {
             </div>
           );
         })()}
-
-        {/* ─── 2. ALLERGEN BANNER ─── */}
-        {!isCosmetics && !isMeal && !isForma && !isTextSearch && result.allergens && result.allergens.length > 0 && (
-          <div className="anim-fade-up-1" style={{ margin: "0 16px 12px" }}>
-            <div style={{ padding: 16, borderRadius: 16, background: "rgba(234,179,8,0.04)", border: "1px solid rgba(234,179,8,0.12)" }}>
-              <p style={{ fontSize: 13, fontWeight: 700, color: "#FBBF24", marginBottom: 10 }}>⚠️ Alergeny</p>
-              <div className="flex flex-wrap gap-2">
-                {result.allergens.map((a, i) => (
-                  <button
-                    key={i}
-                    onClick={() => setSelectedIngredient(a)}
-                    className="active:scale-95 transition-transform"
-                    style={{ fontSize: 11, fontWeight: 700, padding: "6px 12px", borderRadius: 999, background: "rgba(234,179,8,0.08)", color: "rgba(234,179,8,0.85)", border: "1px solid rgba(234,179,8,0.15)", cursor: "pointer" }}
-                  >
-                    {a} →
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* Health alerts (food only, when profile exists) */}
         {foodResult && !isTextSearch && !isForma && profile && profile.onboarding_complete && (
@@ -1624,6 +1604,37 @@ export default function WynikiPage() {
             </div>
           );
         })()}
+
+        {/* ─── ALLERGENS (collapsible, food + suplement, at the bottom) ─── */}
+        {!isCosmetics && !isMeal && !isForma && !isTextSearch && result.allergens && result.allergens.length > 0 && (
+          <div style={{ margin: "8px 16px 0" }}>
+            <div style={{ borderRadius: 14, background: "rgba(234,179,8,0.04)", border: "1px solid rgba(234,179,8,0.12)", overflow: "hidden" }}>
+              <button
+                onClick={() => setAllergensOpen(!allergensOpen)}
+                style={{ width: "100%", padding: "10px 14px", display: "flex", alignItems: "center", justifyContent: "space-between", background: "none", border: "none", cursor: "pointer" }}
+              >
+                <span style={{ fontSize: 13, fontWeight: 700, color: "#FBBF24" }}>
+                  ⚠️ Alergeny ({result.allergens.length})
+                </span>
+                <span style={{ fontSize: 11, color: "rgba(234,179,8,0.6)" }}>{allergensOpen ? "▲" : "▼"}</span>
+              </button>
+              {allergensOpen && (
+                <div className="flex flex-wrap gap-1.5" style={{ padding: "0 14px 12px" }}>
+                  {result.allergens.map((a, i) => (
+                    <button
+                      key={i}
+                      onClick={() => setSelectedIngredient(a)}
+                      className="active:scale-95 transition-transform"
+                      style={{ fontSize: 11, fontWeight: 600, padding: "4px 8px", borderRadius: 999, background: "rgba(234,179,8,0.08)", color: "rgba(234,179,8,0.85)", border: "1px solid rgba(234,179,8,0.15)", cursor: "pointer" }}
+                    >
+                      {a}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* ─── SHARE BUTTON ─── */}
         <div style={{ margin: "0 16px" }}>
