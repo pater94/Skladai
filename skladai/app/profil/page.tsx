@@ -298,53 +298,63 @@ export default function ProfilPage() {
           ))}
         </GlassCard>
 
-        {/* Apple Health — iOS native only */}
-        {health.isNative && (
-          <GlassCard>
-            {health.isConnected ? (
-              <div
-                style={{
-                  width: "100%",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 10,
-                  padding: "4px 2px",
-                  fontSize: 13,
-                  fontWeight: 700,
-                  color: "rgba(110,252,180,0.85)",
-                }}
-              >
-                <span style={{ fontSize: 16 }}>✅</span>
-                <span style={{ flex: 1 }}>Apple Health — połączono</span>
-              </div>
-            ) : (
-              <button
-                onClick={() => {
-                  try { localStorage.setItem("healthKitAsked", "1"); } catch {}
-                  health.requestAccess();
-                }}
-                style={{
-                  width: "100%",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 10,
-                  padding: "4px 2px",
-                  background: "transparent",
-                  border: "none",
-                  color: "rgba(255,255,255,0.85)",
-                  fontSize: 13,
-                  fontWeight: 700,
-                  cursor: "pointer",
-                  textAlign: "left" as const,
-                }}
-              >
-                <span style={{ fontSize: 16 }}>🏃</span>
-                <span style={{ flex: 1 }}>Połącz z Apple Health</span>
-                <span style={{ fontSize: 14, color: "rgba(255,255,255,0.4)" }}>→</span>
-              </button>
-            )}
-          </GlassCard>
-        )}
+        {/* Apple Health (iOS) / Health Connect (Android) — native only */}
+        {health.isNative && (() => {
+          const healthLabel = health.platform === "android" ? "Health Connect" : "Apple Health";
+          const needsInstall = health.platform === "android" && !health.loading && !health.isAvailable;
+          return (
+            <GlassCard>
+              {health.isConnected ? (
+                <div
+                  style={{
+                    width: "100%",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 10,
+                    padding: "4px 2px",
+                    fontSize: 13,
+                    fontWeight: 700,
+                    color: "rgba(110,252,180,0.85)",
+                  }}
+                >
+                  <span style={{ fontSize: 16 }}>✅</span>
+                  <span style={{ flex: 1 }}>{healthLabel} — połączono</span>
+                </div>
+              ) : (
+                <button
+                  onClick={() => {
+                    try { localStorage.setItem("healthKitAsked", "1"); } catch {}
+                    if (needsInstall) {
+                      health.openSettings();
+                    } else {
+                      health.requestAccess();
+                    }
+                  }}
+                  style={{
+                    width: "100%",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 10,
+                    padding: "4px 2px",
+                    background: "transparent",
+                    border: "none",
+                    color: "rgba(255,255,255,0.85)",
+                    fontSize: 13,
+                    fontWeight: 700,
+                    cursor: "pointer",
+                    textAlign: "left" as const,
+                  }}
+                >
+                  <span style={{ fontSize: 16 }}>🏃</span>
+                  <span style={{ flex: 1 }}>
+                    {needsInstall ? `Zainstaluj ${healthLabel}` : `Połącz z ${healthLabel}`}
+                  </span>
+                  <span style={{ fontSize: 14, color: "rgba(255,255,255,0.4)" }}>→</span>
+                </button>
+              )}
+            </GlassCard>
+          );
+        })()}
 
         {/* Health profile */}
         {hasHealthProfile && (

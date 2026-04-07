@@ -9,8 +9,14 @@ export interface HealthData {
   distanceKm: number;
   isConnected: boolean;
   isNative: boolean;
+  /** 'ios' | 'android' | 'web' — useful for platform-specific labels. */
+  platform: "ios" | "android" | "web";
+  /** Native SDK availability (e.g. false on Android when Health Connect is missing). */
+  isAvailable: boolean;
   loading: boolean;
   requestAccess: () => Promise<void>;
+  /** Opens Health Connect settings on Android (no-op on iOS). */
+  openSettings: () => Promise<void>;
 }
 
 const todayStart = (): string => {
@@ -24,8 +30,10 @@ export function useHealthData(): HealthData {
   const [kcalBurned, setKcalBurned] = useState(0);
   const [distanceKm, setDistanceKm] = useState(0);
   const [isConnected, setIsConnected] = useState(false);
+  const [isAvailable, setIsAvailable] = useState(false);
   const [loading, setLoading] = useState(true);
   const isNative = Capacitor.isNativePlatform();
+  const platform = Capacitor.getPlatform() as "ios" | "android" | "web";
 
   const fetchData = useCallback(async () => {
     if (!isNative) {
@@ -37,6 +45,7 @@ export function useHealthData(): HealthData {
       const { Health } = await import("@capgo/capacitor-health");
 
       const availability = await Health.isAvailable();
+      setIsAvailable(availability.available);
       if (!availability.available) {
         setLoading(false);
         return;
@@ -95,9 +104,30 @@ export function useHealthData(): HealthData {
     }
   }, [isNative, fetchData]);
 
+  const openSettings = useCallback(async () => {
+    if (!isNative) return;
+    try {
+      const { Health } = await import("@capgo/capacitor-health");
+      await Health.openHealthConnectSettings();
+    } catch (e) {
+      console.warn("[useHealthData] openSettings error:", e);
+    }
+  }, [isNative]);
+
   useEffect(() => {
     fetchData();
   }, [fetchData]);
 
-  return { steps, kcalBurned, distanceKm, isConnected, isNative, loading, requestAccess };
+  return {
+    steps,
+    kcalBurned,
+    distanceKm,
+    isConnected,
+    isNative,
+    platform,
+    isAvailable,
+    loading,
+    requestAccess,
+    openSettings,
+  };
 }

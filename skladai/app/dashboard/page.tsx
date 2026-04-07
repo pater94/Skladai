@@ -562,8 +562,12 @@ export default function DashboardPage() {
         />
       )}
 
-      {/* First-time HealthKit consent modal — iOS native only */}
-      {showHealthModal && (
+      {/* First-time Health consent modal — iOS HealthKit / Android Health Connect */}
+      {showHealthModal && (() => {
+        const healthLabel = health.platform === "android" ? "Health Connect" : "Apple Health";
+        // Android-specific: Health Connect not installed
+        const needsInstall = health.platform === "android" && !health.isAvailable;
+        return (
         <div
           onClick={() => {
             try { localStorage.setItem("healthKitAsked", "1"); } catch {}
@@ -592,13 +596,20 @@ export default function DashboardPage() {
               Śledź swoją aktywność
             </div>
             <div style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", lineHeight: "19px", marginBottom: 22 }}>
-              Połącz z Apple Health aby zobaczyć kroki i spalone kalorie w Dashboard.
+              {needsInstall
+                ? "Zainstaluj Google Health Connect z Play Store, żeby śledzić kroki i spalone kalorie w Dashboard."
+                : `Połącz z ${healthLabel} aby zobaczyć kroki i spalone kalorie w Dashboard.`}
             </div>
             <button
               onClick={async () => {
                 try { localStorage.setItem("healthKitAsked", "1"); } catch {}
                 setShowHealthModal(false);
-                await health.requestAccess();
+                if (needsInstall) {
+                  // Open Health Connect settings — routes user to install if missing.
+                  await health.openSettings();
+                } else {
+                  await health.requestAccess();
+                }
               }}
               style={{
                 width: "100%", padding: 14, borderRadius: 14, border: "none",
@@ -607,7 +618,7 @@ export default function DashboardPage() {
                 marginBottom: 8,
               }}
             >
-              Połącz
+              {needsInstall ? "Otwórz Health Connect" : "Połącz"}
             </button>
             <button
               onClick={() => {
@@ -625,7 +636,8 @@ export default function DashboardPage() {
             </button>
           </div>
         </div>
-      )}
+        );
+      })()}
 
       <style>{`@keyframes spin { to { transform: rotate(360deg); } } @keyframes breathe { 0%, 100% { opacity: 0.4; transform: scale(0.95); } 50% { opacity: 0.7; transform: scale(1.05); } }`}</style>
     </div>
