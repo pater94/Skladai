@@ -49,35 +49,72 @@ function allegroSearchUrl(name: string) {
 
 interface PriceSearchResponse {
   ceneo: { found: boolean; name?: string; price?: number; url?: string; searchUrl: string };
-  allegro: { found: boolean; url: string };
+  allegro: { found: boolean; name?: string; price?: number; url?: string; searchUrl: string };
 }
 
-// Shopping links — fetches Ceneo product link via /api/price-search,
-// always shows Allegro listing link.
-function ShoppingLinks({ name, category }: { name: string; category: "cosmetic" | "supplement" }) {
+// Format price as whole złoty if integer-ish, otherwise 2 decimals.
+function fmtPrice(p: number): string {
+  return Number.isInteger(p) ? `${p} zł` : `${p.toFixed(2)} zł`;
+}
+
+// Shopping links — fetches Ceneo + Allegro product/search links via /api/price-search.
+// Renders skeleton while loading, then real prices when API returns.
+// `category` is kept for prop compatibility but not sent (server doesn't need it).
+function ShoppingLinks({ name }: { name: string; category?: "cosmetic" | "supplement" }) {
   const [data, setData] = useState<PriceSearchResponse | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
-    if (!name) return;
+    if (!name) {
+      setLoading(false);
+      return;
+    }
     let cancelled = false;
+    setLoading(true);
     fetch("/api/price-search", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ productName: name, category }),
+      body: JSON.stringify({ productName: name }),
     })
       .then((r) => (r.ok ? r.json() : null))
       .then((json) => {
-        if (!cancelled && json) setData(json as PriceSearchResponse);
+        if (cancelled) return;
+        if (json) setData(json as PriceSearchResponse);
+        setLoading(false);
       })
-      .catch(() => {});
+      .catch(() => {
+        if (!cancelled) setLoading(false);
+      });
     return () => {
       cancelled = true;
     };
-  }, [name, category]);
+  }, [name]);
 
-  const ceneoHref = data?.ceneo?.url || data?.ceneo?.searchUrl || ceneoSearchUrl(name);
-  const allegroHref = data?.allegro?.url || allegroSearchUrl(name);
-  const price = data?.ceneo?.found ? data?.ceneo?.price : undefined;
+  // Skeleton state — pulsing placeholders while we wait for prices.
+  if (loading) {
+    return (
+      <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
+        {[0, 1].map((i) => (
+          <div
+            key={i}
+            className="animate-pulse"
+            style={{
+              flex: 1,
+              height: 38,
+              borderRadius: 10,
+              background: "rgba(255,255,255,0.05)",
+              border: "1px solid rgba(255,255,255,0.06)",
+            }}
+          />
+        ))}
+      </div>
+    );
+  }
+
+  const ceneo = data?.ceneo;
+  const allegro = data?.allegro;
+  const ceneoHref = ceneo?.found ? ceneo.url! : ceneo?.searchUrl || ceneoSearchUrl(name);
+  const allegroHref = allegro?.found ? allegro.url! : allegro?.searchUrl || allegroSearchUrl(name);
 
   return (
     <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
@@ -105,7 +142,7 @@ function ShoppingLinks({ name, category }: { name: string; category: "cosmetic" 
           <span style={{ color: "white", fontSize: 8, fontWeight: 700 }}>C</span>
         </div>
         <span style={{ color: "rgba(255,255,255,0.85)", fontSize: 12, fontWeight: 500 }}>
-          Ceneo{price ? ` · ${price.toFixed(2)} zł` : ""}
+          {ceneo?.found && ceneo.price ? `Ceneo · ${fmtPrice(ceneo.price)}` : "Ceneo"}
         </span>
       </a>
 
@@ -132,7 +169,9 @@ function ShoppingLinks({ name, category }: { name: string; category: "cosmetic" 
         <div style={{ width: 18, height: 18, borderRadius: 5, background: "#ff5a00", display: "flex", alignItems: "center", justifyContent: "center" }}>
           <span style={{ color: "white", fontSize: 8, fontWeight: 700 }}>A</span>
         </div>
-        <span style={{ color: "rgba(255,255,255,0.85)", fontSize: 12, fontWeight: 500 }}>Allegro</span>
+        <span style={{ color: "rgba(255,255,255,0.85)", fontSize: 12, fontWeight: 500 }}>
+          {allegro?.found && allegro.price ? `Allegro · ${fmtPrice(allegro.price)}` : "Allegro"}
+        </span>
       </a>
     </div>
   );

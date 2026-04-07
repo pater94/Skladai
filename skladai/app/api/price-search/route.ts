@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getAllegroToken } from "@/lib/allegro-auth";
 
 export const maxDuration = 15;
-
-type Category = "cosmetic" | "supplement";
 
 interface CeneoResult {
   found: boolean;
@@ -14,7 +13,10 @@ interface CeneoResult {
 
 interface AllegroResult {
   found: boolean;
-  url: string;
+  name?: string;
+  price?: number;
+  url?: string;
+  searchUrl: string;
 }
 
 interface PriceSearchResponse {
@@ -22,59 +24,54 @@ interface PriceSearchResponse {
   allegro: AllegroResult;
 }
 
-// Build a Ceneo human search URL (used as fallback and always available).
+// ──────────────────────────────────────────────────────────────────────
+// Helpers
+// ──────────────────────────────────────────────────────────────────────
+
 function buildCeneoSearchUrl(productName: string): string {
-  // Ceneo search slugs use dashes
   const slug = encodeURIComponent(productName).replace(/%20/g, "-");
   return `https://www.ceneo.pl/szukaj-${slug}`;
 }
 
-// Build an Allegro listing search URL.
 function buildAllegroSearchUrl(productName: string): string {
   return `https://allegro.pl/listing?string=${encodeURIComponent(productName)}`;
 }
 
-// Try to extract a numeric price from any of the common Ceneo shapes.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function extractPrice(p: any): number | undefined {
-  if (!p) return undefined;
+  if (p == null) return undefined;
   if (typeof p === "number") return p;
   if (typeof p === "string") {
     const n = parseFloat(p.replace(",", "."));
     return isNaN(n) ? undefined : n;
   }
   if (typeof p === "object") {
-    // Common shapes: { min, max } | { value } | { amount }
-    const candidate = p.min ?? p.value ?? p.amount ?? p.lowest ?? p.from;
+    const candidate = p.amount ?? p.min ?? p.value ?? p.lowest ?? p.from;
     if (candidate != null) return extractPrice(candidate);
   }
   return undefined;
 }
 
-// Try to extract product URL.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function extractUrl(item: any): string | undefined {
+function extractCeneoUrl(item: any): string | undefined {
   return item?.url || item?.productUrl || item?.shopUrl || item?.link || undefined;
 }
 
-// Try to extract product name.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function extractName(item: any): string | undefined {
   return item?.name || item?.title || item?.productName || undefined;
 }
 
-// Hit Ceneo Partner API and return the first reasonable match, or null on failure.
-async function searchCeneo(
-  productName: string,
-  category: Category
-): Promise<CeneoResult> {
+// ──────────────────────────────────────────────────────────────────────
+// Ceneo
+// ──────────────────────────────────────────────────────────────────────
+
+async function searchCeneo(productName: string): Promise<CeneoResult> {
   const apiKey = process.env.CENEO_API_KEY;
   const searchUrl = buildCeneoSearchUrl(productName);
   const fallback: CeneoResult = { found: false, searchUrl };
 
-  if (!apiKey) {
-    return fallback;
-  }
+  if (!apiKey) return fallback;
 
   try {
     const url = `https://api.ceneo.pl/api/v3/products?apiKey=${apiKey}&query=${encodeURIComponent(
@@ -91,13 +88,12 @@ async function searchCeneo(
     clearTimeout(timeout);
 
     if (!res.ok) {
-      console.warn(`[price-search] Ceneo API ${res.status} for "${productName}"`);
+      console.warn(`[price-search] Ceneo ${res.status} for "${productName}"`);
       return fallback;
     }
 
     const data = await res.json();
 
-    // Defensive extraction — Ceneo API has variants across versions.
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const items: any[] =
       data?.products ||
@@ -108,49 +104,100 @@ async function searchCeneo(
 
     if (!items.length) return fallback;
 
-    // Pick first item that loosely matches category keywords.
-    const categoryKeywords =
-      category === "cosmetic"
-        ? ["krem", "balsam", "serum", "tonik", "żel", "szampon", "maska", "olejek", "mleczko", "lotion", "cream"]
-        : ["suplement", "tabletki", "kapsuł", "witamin", "magnez", "cynk", "kwas", "omega", "białko", "protein"];
-
-    const lowerName = productName.toLowerCase();
-    const hasCategoryHint = categoryKeywords.some((k) => lowerName.includes(k));
-
-    // If product name itself already contains category hint, just take first.
-    // Otherwise, try to find an item whose name contains a category keyword.
-    let chosen = items[0];
-    if (!hasCategoryHint) {
-      const filtered = items.find((it) => {
-        const n = (extractName(it) || "").toLowerCase();
-        return categoryKeywords.some((k) => n.includes(k));
-      });
-      if (filtered) chosen = filtered;
-    }
-
+    const chosen = items[0];
     const name = extractName(chosen);
     const price = extractPrice(chosen?.price ?? chosen);
-    const productUrl = extractUrl(chosen);
+    const productUrl = extractCeneoUrl(chosen);
 
-    if (!name || !productUrl) {
-      return fallback;
-    }
+    if (!name || !productUrl) return fallback;
 
-    return {
-      found: true,
-      name,
-      price,
-      url: productUrl,
-      searchUrl,
-    };
+    return { found: true, name, price, url: productUrl, searchUrl };
   } catch (e) {
-    console.warn(`[price-search] Ceneo lookup failed for "${productName}":`, e);
+    console.warn(`[price-search] Ceneo failed for "${productName}":`, e);
     return fallback;
   }
 }
 
+// ──────────────────────────────────────────────────────────────────────
+// Allegro
+// ──────────────────────────────────────────────────────────────────────
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function buildAllegroOfferUrl(item: any): string | undefined {
+  const id = item?.id;
+  if (!id) return undefined;
+  // Allegro item URLs follow: https://allegro.pl/oferta/{slug}-{id}
+  // The slug is informational only — the id alone is enough to resolve.
+  // We still include a slug for cleaner-looking URLs when available.
+  const rawName = item?.name || "";
+  const slug = rawName
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 80);
+  return slug ? `https://allegro.pl/oferta/${slug}-${id}` : `https://allegro.pl/oferta/${id}`;
+}
+
+async function searchAllegro(productName: string): Promise<AllegroResult> {
+  const searchUrl = buildAllegroSearchUrl(productName);
+  const fallback: AllegroResult = { found: false, searchUrl };
+
+  try {
+    const token = await getAllegroToken();
+
+    const apiUrl = `https://api.allegro.pl/offers/listing?phrase=${encodeURIComponent(
+      productName
+    )}&limit=1&sort=relevance`;
+
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 8000);
+
+    const res = await fetch(apiUrl, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: "application/vnd.allegro.public.v1+json",
+        "User-Agent": "SkładAI/1.0 +https://skladai.com",
+      },
+      signal: controller.signal,
+    });
+    clearTimeout(timeout);
+
+    if (!res.ok) {
+      console.warn(`[price-search] Allegro ${res.status} for "${productName}"`);
+      return fallback;
+    }
+
+    const data = await res.json();
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const promoted: any[] = data?.items?.promoted || [];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const regular: any[] = data?.items?.regular || [];
+    const chosen = promoted[0] || regular[0];
+
+    if (!chosen) return fallback;
+
+    const name: string | undefined = chosen?.name;
+    const price = extractPrice(chosen?.sellingMode?.price?.amount ?? chosen?.sellingMode?.price);
+    const url = buildAllegroOfferUrl(chosen);
+
+    if (!name || !url) return fallback;
+
+    return { found: true, name, price, url, searchUrl };
+  } catch (e) {
+    console.warn(`[price-search] Allegro failed for "${productName}":`, e);
+    return fallback;
+  }
+}
+
+// ──────────────────────────────────────────────────────────────────────
+// Route handler
+// ──────────────────────────────────────────────────────────────────────
+
 export async function POST(request: NextRequest) {
-  let body: { productName?: string; category?: Category };
+  let body: { productName?: string };
   try {
     body = await request.json();
   } catch {
@@ -158,18 +205,16 @@ export async function POST(request: NextRequest) {
   }
 
   const productName = (body.productName || "").trim();
-  const category: Category = body.category === "supplement" ? "supplement" : "cosmetic";
 
   if (!productName || productName.length < 2) {
     return NextResponse.json({ error: "Missing productName" }, { status: 400 });
   }
 
-  const ceneo = await searchCeneo(productName, category);
-
-  const allegro: AllegroResult = {
-    found: true,
-    url: buildAllegroSearchUrl(productName),
-  };
+  // Run Ceneo and Allegro in parallel — independent failures.
+  const [ceneo, allegro] = await Promise.all([
+    searchCeneo(productName),
+    searchAllegro(productName),
+  ]);
 
   const response: PriceSearchResponse = { ceneo, allegro };
   return NextResponse.json(response);
