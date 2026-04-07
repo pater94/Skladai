@@ -884,12 +884,19 @@ function validateNutrition(result: Record<string, unknown>): void {
   // Sanity 2: Atwater check — only if we have BOTH kcal and at least one macro
   if (!invalid && kcal > 0 && (fat > 0 || carbs > 0 || protein > 0)) {
     const expectedKcal = 4 * protein + 4 * carbs + 9 * fat;
-    // ±25% tolerance + 15kcal absolute (handles rounding on tiny values)
-    const tolerance = Math.max(expectedKcal * 0.25, 15);
+    // ±20% tolerance + 15kcal absolute (handles rounding on tiny values)
+    const tolerance = Math.max(expectedKcal * 0.20, 15);
     if (Math.abs(expectedKcal - kcal) > tolerance) {
       invalid = true;
       reason = `Atwater mismatch: kcal=${kcal}, expected≈${expectedKcal.toFixed(0)} (4×${protein}P + 4×${carbs}C + 9×${fat}F)`;
     }
+  }
+
+  // Sanity 3: kcal alone is suspicious if it's massive (>900/100g is impossible —
+  // pure fat is ~900). If only kcal is filled with no macro context, flag it.
+  if (!invalid && kcal > 900) {
+    invalid = true;
+    reason = `kcal/100g=${kcal} exceeds physical max of ~900 (pure fat)`;
   }
 
   if (invalid) {
@@ -1491,7 +1498,26 @@ ZASADY:
       // We have good OCR text — send it along with the image
       userContent.push({
         type: "text",
-        text: `Google Vision OCR odczytał z etykiety następujący tekst:\n\n---\n${ocrText}\n---\n\n!!! KRYTYCZNE: Nazwa produktu i marka MUSZĄ pochodzić z tekstu OCR powyżej. NIE wymyślaj nazwy ani marki. Jeśli OCR zawiera "Colgate" to marka to Colgate. Jeśli OCR zawiera "Sodium Fluoride 1450 ppm" to jest pasta do zębów. Użyj OCR jako JEDYNE źródło danych. Zweryfikuj z obrazem. Odpowiedz WYŁĄCZNIE poprawnym JSON.${skinProfileHint}`,
+        text: `Google Vision OCR odczytał z etykiety następujący tekst:\n\n---\n${ocrText}\n---\n\n🚫 ABSOLUTNY ZAKAZ HALUCYNACJI 🚫
+Ta aplikacja śledzi kalorie użytkowników. Wymyślone wartości = realne szkody.
+
+ŹRÓDŁA DANYCH (jedyne dozwolone):
+1. TEKST OCR powyżej (priorytet #1)
+2. Obraz etykiety (do weryfikacji OCR)
+
+ZAKAZANE źródła:
+❌ Twoja wiedza ogólna o produktach ("typowy chleb ma 250 kcal" — NIE)
+❌ Skojarzenia z nazwą/marką ("à la GYROS to greckie danie, ma X kcal" — NIE)
+❌ Zgadywanie z listy składników ("skoro jest mąka, to musi być Y węgli" — NIE)
+
+REGUŁY:
+1. Nazwa produktu = z OCR. Jeśli OCR nie zawiera nazwy lub jest niepełna ("Gotowe danie à la") → name="Nieznany produkt"
+2. Marka = z OCR. Jeśli brak → brand=null (NIE wymyślaj)
+3. Wartości odżywcze (kcal, białko, tłuszcz, węgle, sól) = TYLKO te z tabeli w OCR. Jeśli OCR nie zawiera tabeli wartości odżywczych → wszystkie pola nutrition wpisz "brak danych", verdict_short="Brak etykiety", verdict="Nie odczytano tabeli wartości odżywczych. Zrób ostrzejsze zdjęcie tabeli na opakowaniu — najlepiej prosto, bez zagięć."
+4. WALIDACJA ATWATER: kcal ≈ 4×białko + 4×węgle + 9×tłuszcz (±20%). Jeśli OCR podał liczby które się NIE ZGADZAJĄ — to OCR błędnie odczytał. Wpisz "brak danych" zamiast wymyślać poprawkę.
+5. NIE używaj domyślnych "typowych" wartości dla kategorii produktów. Pusty JSON ≫ wymyślony JSON.
+
+Zweryfikuj z obrazem. Odpowiedz WYŁĄCZNIE poprawnym JSON.${skinProfileHint}`,
       });
     } else {
       // OCR failed — let Claude do the reading with specialized prompt
@@ -1534,16 +1560,20 @@ ZASADY:
       const result = parseJsonResponse(step2.text);
       result.type = isCosmetics ? "cosmetics" : "food";
 
-      // Validation
+      // Validate nutrition FIRST so the macro-rejection path can set
+      // label_unreadable / score=null without being overwritten by the
+      // generic normalization below.
+      if (!isCosmetics) validateNutrition(result);
+
+      // Validation / normalization
       if (!result.name || result.name.length < 2) result.name = "Nieznany produkt";
-      if (typeof result.score !== "number" || result.score < 1 || result.score > 10) result.score = 5;
+      if (!result.label_unreadable) {
+        if (typeof result.score !== "number" || result.score < 1 || result.score > 10) result.score = 5;
+      } // else: keep score=null so the UI can render the "Brak etykiety" state
       if (!result.pros) result.pros = [];
       if (!result.cons) result.cons = [];
       if (!result.allergens) result.allergens = [];
       if (!result.fun_comparisons) result.fun_comparisons = [];
-
-      // Validate nutrition
-      if (!isCosmetics) validateNutrition(result);
 
       await logScanToSupabase({ mode: isCosmetics ? "cosmetics" : "food", base64Image: image, image2Base64: image2 || undefined, result, startTime });
       return NextResponse.json(result);
