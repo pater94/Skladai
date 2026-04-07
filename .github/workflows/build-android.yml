@@ -6,8 +6,38 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Auto-bump versionCode and versionName
+        working-directory: skladai/android/app
+        run: |
+          CURRENT_CODE=$(grep -oP 'versionCode \K[0-9]+' build.gradle)
+          NEW_CODE=$((CURRENT_CODE + 1))
+          CURRENT_NAME=$(grep -oP 'versionName "\K[^"]+' build.gradle)
+          PATCH=$(echo "$CURRENT_NAME" | awk -F. '{print $NF}')
+          MAJOR_MINOR=$(echo "$CURRENT_NAME" | awk -F. '{print $1"."$2}')
+          NEW_PATCH=$((PATCH + 1))
+          NEW_NAME="${MAJOR_MINOR}.${NEW_PATCH}"
+          echo "Bumping versionCode: $CURRENT_CODE -> $NEW_CODE"
+          echo "Bumping versionName: $CURRENT_NAME -> $NEW_NAME"
+          sed -i "s/versionCode $CURRENT_CODE/versionCode $NEW_CODE/" build.gradle
+          sed -i "s/versionName \"$CURRENT_NAME\"/versionName \"$NEW_NAME\"/" build.gradle
+          echo "NEW_VERSION_CODE=$NEW_CODE" >> $GITHUB_ENV
+          echo "NEW_VERSION_NAME=$NEW_NAME" >> $GITHUB_ENV
+
+      - name: Commit and push version bump
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add skladai/android/app/build.gradle
+          git commit -m "chore(android): bump versionCode to ${{ env.NEW_VERSION_CODE }} / ${{ env.NEW_VERSION_NAME }} [skip ci]"
+          git push origin HEAD:main
 
       - name: Setup Node
         uses: actions/setup-node@v4
