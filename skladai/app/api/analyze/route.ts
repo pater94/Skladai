@@ -246,9 +246,31 @@ KRYTYCZNE ZASADY:
 - Jeśli wartość jest "nieczytelne" lub "niewidoczne" — WTEDY wpisz "brak danych"
 - Zweryfikuj z obrazem: czy nazwa się zgadza? Czy wartości wyglądają poprawnie?
 - WALIDACJA: suma tłuszcz + węgle + białko (w gramach) NIE MOŻE przekroczyć 100g na 100g produktu
+- WALIDACJA ATWATER: kcal ≈ 4×białko + 4×węgle + 9×tłuszcz (±25%). Jeśli się NIE ZGADZA — odczyt jest błędny, oznacz wartości jako "brak danych" zamiast wpisywać wymyślone liczby
 - NIE ZGADUJ produktu na podstawie jednego składnika! Jeśli widzisz chlorek sodu ale wartości to białko 2.4g, węgle 9.4g — to NIE JEST sól. Porównaj SKŁAD z WARTOŚCIAMI ODŻYWCZYMI żeby prawidłowo zidentyfikować produkt
 - Jeśli OCR odczytał temperaturę przechowywania (-18°C) — to jest mrożonka, nie sól
 - PRIORYTET: nazwa z etykiety > zgadywanie. Jeśli nie widzisz nazwy — napisz "Nieznany produkt" i analizuj skład który MASZ
+
+🚫 ABSOLUTNY ZAKAZ HALUCYNACJI WARTOŚCI ODŻYWCZYCH 🚫
+Ta aplikacja śledzi kalorie i makro użytkowników — błędne dane = uszkodzone zdrowie.
+- NIE WOLNO Ci wymyślać kalorii, białka, tłuszczu, węgli na podstawie:
+  ❌ Nazwy produktu ("gyros zwykle ma X kcal" — ZAKAZANE)
+  ❌ Marki ("typowe wartości dla tej marki" — ZAKAZANE)
+  ❌ Listy składników ("skoro jest mąka i olej, to musi być Y kcal" — ZAKAZANE)
+  ❌ Twojej wiedzy ogólnej ("klasyczny produkt piekarniczy ma Z" — ZAKAZANE)
+- Jedyne dozwolone źródło wartości odżywczych = TABELA ODCZYTANA przez OCR z etykiety
+- Jeśli OCR nie odczytał tabeli (wszystkie pola "niewidoczne") — wszystkie pola nutrition WPISZ jako "brak danych" i ZWRÓĆ verdict_short: "Brak etykiety", verdict: "Nie udało się odczytać tabeli wartości odżywczych. Zrób ostrzejsze zdjęcie tabeli na opakowaniu."
+- Pole "score" w takim przypadku ustaw na null
+- NIE wolno wymyślać żadnej liczby tylko po to żeby JSON nie miał pustych pól. Pusty JSON ≫ wymyślony JSON.
+
+PRZYKŁADY KATASTROFALNYCH BŁĘDÓW (NIGDY tego nie rób):
+❌ OCR: "NAZWA: niewidoczna, WARTOŚCI: niewidoczne" + zdjęcie z napisem "à la GYROS"
+   AI: name="Gyros", calories=558kcal, fat=32g  ← HALUCYNACJA, NIEDOPUSZCZALNE
+✅ Poprawnie: name="Nieznany produkt", verdict_short="Brak etykiety", nutrition pola "brak danych", score=null
+
+❌ OCR: "Składniki: warzywa, ryż, kurczak. Tabela: niewidoczna"
+   AI: kalorie=350kcal (zgadnięte z mojej wiedzy o gotowych daniach)  ← ZAKAZANE
+✅ Poprawnie: nutrition wszystkie "brak danych", verdict_short="Brak etykiety"
 
 Odpowiedz WYŁĄCZNIE poprawnym JSON (bez markdown):
 {
