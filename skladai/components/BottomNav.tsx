@@ -24,7 +24,7 @@ function getThemeColors(pathname: string) {
 
 export default function BottomNav() {
   const pathname = usePathname();
-  const hidden = pathname.startsWith("/wyniki") || pathname.startsWith("/admin");
+  const hidden = pathname.startsWith("/wyniki") || pathname.startsWith("/admin") || pathname.startsWith("/privacy");
 
   // Track onboarding-active class on body to hide nav during onboarding
   const [onboarding, setOnboarding] = useState(false);

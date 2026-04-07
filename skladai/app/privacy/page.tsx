@@ -1,73 +1,224 @@
-export default function PrivacyPolicy() {
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Polityka Prywatności — SkładAI",
+  description: "Polityka prywatności aplikacji SkładAI.",
+};
+
+const ACCENT = "#6efcb4";
+const BG = "#0a0e0c";
+const TEXT = "#e6efe9";
+const MUTED = "#8a948f";
+
+const sectionTitle: React.CSSProperties = {
+  fontSize: 17,
+  fontWeight: 800,
+  color: ACCENT,
+  marginTop: 36,
+  marginBottom: 12,
+  letterSpacing: 0.2,
+  textTransform: "uppercase",
+};
+
+const paragraph: React.CSSProperties = {
+  fontSize: 14.5,
+  color: TEXT,
+  lineHeight: 1.75,
+  marginBottom: 10,
+};
+
+const list: React.CSSProperties = {
+  fontSize: 14.5,
+  color: TEXT,
+  lineHeight: 1.8,
+  paddingLeft: 22,
+  marginTop: 6,
+  marginBottom: 10,
+};
+
+const link: React.CSSProperties = {
+  color: ACCENT,
+  textDecoration: "underline",
+  textUnderlineOffset: 2,
+};
+
+export default function PrivacyPolicyPage() {
   return (
-    <div style={{ background: "#0a0f0d", color: "#e0e0e0", minHeight: "100vh", padding: "24px 20px", fontFamily: "system-ui, sans-serif", lineHeight: 1.7 }}>
-      <div style={{ maxWidth: 680, margin: "0 auto" }}>
-        <h1 style={{ fontSize: 28, fontWeight: 800, color: "#fff", marginBottom: 8 }}>Polityka Prywatności</h1>
-        <p style={{ fontSize: 13, color: "#888", marginBottom: 32 }}>Ostatnia aktualizacja: kwiecień 2026</p>
+    <div
+      style={{
+        minHeight: "100vh",
+        background: BG,
+        color: TEXT,
+        fontFamily: "system-ui, -apple-system, 'Segoe UI', sans-serif",
+        padding: "40px 20px 80px",
+      }}
+    >
+      <div style={{ maxWidth: 720, margin: "0 auto" }}>
+        {/* Header */}
+        <header style={{ marginBottom: 36 }}>
+          <p
+            style={{
+              fontSize: 12,
+              fontWeight: 800,
+              letterSpacing: 3,
+              color: ACCENT,
+              textTransform: "uppercase",
+              marginBottom: 6,
+            }}
+          >
+            SkładAI
+          </p>
+          <h1
+            style={{
+              fontSize: 32,
+              fontWeight: 900,
+              color: "#ffffff",
+              lineHeight: 1.2,
+              margin: 0,
+            }}
+          >
+            Polityka Prywatności
+          </h1>
+        </header>
 
-        <h2 style={{ fontSize: 18, fontWeight: 700, color: "#84CC16", marginTop: 32, marginBottom: 12 }}>1. Administrator danych</h2>
-        <p style={{ fontSize: 14 }}>
-          Administratorem aplikacji SkładAI jest jej twórca. Kontakt: <a href="mailto:skladai.app@gmail.com" style={{ color: "#84CC16" }}>skladai.app@gmail.com</a>
+        {/* 1. Administrator */}
+        <h2 style={sectionTitle}>1. Administrator danych</h2>
+        <p style={paragraph}>
+          Administratorem danych osobowych przetwarzanych w aplikacji SkładAI jest:
+        </p>
+        <p style={paragraph}>
+          <strong>Patryk Rękas</strong>
+          <br />
+          Tarnobrzeg, Polska
+          <br />
+          Kontakt:{" "}
+          <a href="mailto:skladai.app@gmail.com" style={link}>
+            skladai.app@gmail.com
+          </a>
         </p>
 
-        <h2 style={{ fontSize: 18, fontWeight: 700, color: "#84CC16", marginTop: 32, marginBottom: 12 }}>2. Jakie dane zbieramy</h2>
-        <p style={{ fontSize: 14 }}>SkładAI przetwarza wyłącznie dane niezbędne do działania aplikacji:</p>
-        <ul style={{ fontSize: 14, paddingLeft: 20, marginTop: 8 }}>
-          <li><strong>Zdjęcia produktów</strong> — robione aparatem lub wybierane z galerii. Są przesyłane do serwera w celu analizy składu przez AI. Nie są przechowywane na serwerze po zakończeniu analizy.</li>
-          <li><strong>Historia skanów</strong> — przechowywana lokalnie na urządzeniu użytkownika (localStorage). Nie jest wysyłana na serwer.</li>
-          <li><strong>Profil użytkownika</strong> — dane takie jak waga, wzrost, wiek, alergie (jeśli podane) są przechowywane lokalnie na urządzeniu oraz w Supabase (serwer Frankfurt, UE).</li>
-          <li><strong>Dane logowania</strong> — logowanie odbywa się przez Google OAuth lub Apple Sign In. Nie przechowujemy haseł — uwierzytelnianie obsługuje Supabase Auth.</li>
+        {/* 2. Jakie dane zbieramy */}
+        <h2 style={sectionTitle}>2. Jakie dane zbieramy</h2>
+        <ul style={list}>
+          <li>
+            <strong>Dane konta</strong> — imię i adres e-mail uzyskane podczas logowania przez Apple Sign In lub
+            Google Sign In.
+          </li>
+          <li>
+            <strong>Dane profilu</strong> — waga, wzrost, wiek, cel (odchudzanie / utrzymanie / masa), poziom
+            aktywności, alergie, typ skóry.
+          </li>
+          <li>
+            <strong>Zdjęcia</strong> — zdjęcia etykiet produktów, dań oraz sylwetki (CheckForm). Są przetwarzane
+            przez AI w celu analizy i nie są trwale przechowywane na naszym serwerze.
+          </li>
+          <li>
+            <strong>Historia skanów</strong> — wyniki dotychczasowych analiz produktów.
+          </li>
+          <li>
+            <strong>Dane z dziennika posiłków</strong> — wpisane posiłki, kalorie, makroskładniki.
+          </li>
+          <li>
+            <strong>Dane aktywności</strong> — kroki i spalone kalorie pobierane z Apple Health lub Google Fit
+            wyłącznie za zgodą użytkownika.
+          </li>
         </ul>
 
-        <h2 style={{ fontSize: 18, fontWeight: 700, color: "#84CC16", marginTop: 32, marginBottom: 12 }}>3. Uprawnienia aplikacji</h2>
-        <ul style={{ fontSize: 14, paddingLeft: 20 }}>
-          <li><strong>Aparat (Camera)</strong> — do robienia zdjęć etykiet produktów, dań i suplementów w celu analizy składu.</li>
-          <li><strong>Galeria (Storage)</strong> — do wybierania istniejących zdjęć z biblioteki urządzenia.</li>
-          <li><strong>Mikrofon</strong> — do rozpoznawania mowy (dyktowanie nazw produktów).</li>
-          <li><strong>Internet</strong> — do przesyłania zdjęć do API analizy i pobierania wyników.</li>
+        {/* 3. Cel przetwarzania */}
+        <h2 style={sectionTitle}>3. Cel przetwarzania</h2>
+        <ul style={list}>
+          <li>Personalizacja wyników skanów oraz rekomendacji.</li>
+          <li>Śledzenie progresu — wagi, pomiarów i bilansu kalorycznego.</li>
+          <li>Poprawa jakości i rozwoju usługi.</li>
         </ul>
 
-        <h2 style={{ fontSize: 18, fontWeight: 700, color: "#84CC16", marginTop: 32, marginBottom: 12 }}>4. Przetwarzanie zdjęć</h2>
-        <p style={{ fontSize: 14 }}>
-          Zdjęcia przesyłane do analizy są przetwarzane przez zewnętrzne usługi AI (Anthropic Claude API, Google Cloud Vision) wyłącznie w celu rozpoznania tekstu i analizy składu. Zdjęcia nie są przechowywane na serwerach po zakończeniu analizy. Nie są wykorzystywane do trenowania modeli AI.
+        {/* 4. Podmioty trzecie */}
+        <h2 style={sectionTitle}>4. Przetwarzanie przez podmioty trzecie</h2>
+        <p style={paragraph}>
+          W celu realizacji funkcji aplikacji niektóre dane są przekazywane do następujących dostawców:
+        </p>
+        <ul style={list}>
+          <li>
+            <strong>Anthropic API (Claude AI)</strong> — analiza składu produktów oraz zdjęć.
+          </li>
+          <li>
+            <strong>Google Cloud Vision</strong> — OCR rozpoznający tekst z etykiet.
+          </li>
+          <li>
+            <strong>Supabase</strong> — przechowywanie danych użytkownika.
+          </li>
+          <li>
+            <strong>Apple / Google</strong> — uwierzytelnianie (Sign In).
+          </li>
+        </ul>
+        <p style={paragraph}>
+          Zdjęcia są wysyłane do API jedynie w celu analizy i nie są trwale przechowywane przez wymienione
+          usługi.
         </p>
 
-        <h2 style={{ fontSize: 18, fontWeight: 700, color: "#84CC16", marginTop: 32, marginBottom: 12 }}>5. Przechowywanie danych</h2>
-        <p style={{ fontSize: 14 }}>
-          Historia skanów i preferencje są przechowywane lokalnie na urządzeniu (localStorage). Logi skanów i dane konta przechowywane są w Supabase (region Frankfurt, Unia Europejska). Użytkownik może usunąć dane lokalne czyszcząc dane aplikacji, a konto usunąć kontaktując się z nami.
-        </p>
-
-        <h2 style={{ fontSize: 18, fontWeight: 700, color: "#84CC16", marginTop: 32, marginBottom: 12 }}>6. Udostępnianie danych</h2>
-        <p style={{ fontSize: 14 }}>
-          Nie sprzedajemy, nie udostępniamy i nie przekazujemy danych osobowych użytkowników podmiotom trzecim w celach reklamowych. Zdjęcia są przesyłane wyłącznie do Google Cloud Vision API (OCR tekstu) i Anthropic Claude API (analiza składników) w celu jednorazowego przetworzenia.
-        </p>
-
-        <h2 style={{ fontSize: 18, fontWeight: 700, color: "#84CC16", marginTop: 32, marginBottom: 12 }}>7. Bezpieczeństwo</h2>
-        <p style={{ fontSize: 14 }}>
-          Komunikacja między aplikacją a serwerem odbywa się przez szyfrowane połączenie HTTPS. Zdjęcia są kompresowane przed wysłaniem i usuwane z pamięci serwera natychmiast po przetworzeniu.
-        </p>
-
-        <h2 style={{ fontSize: 18, fontWeight: 700, color: "#84CC16", marginTop: 32, marginBottom: 12 }}>8. Prawa użytkownika</h2>
-        <p style={{ fontSize: 14 }}>Użytkownik ma prawo do:</p>
-        <ul style={{ fontSize: 14, paddingLeft: 20, marginTop: 8 }}>
-          <li>Usunięcia wszystkich swoich danych lokalnych (Ustawienia &rarr; Wyczyść dane)</li>
-          <li>Odmowy udzielenia uprawnień (aparat, mikrofon) — aplikacja będzie działać z ograniczoną funkcjonalnością</li>
-          <li>Kontaktu w sprawie danych: <a href="mailto:skladai.app@gmail.com" style={{ color: "#84CC16" }}>skladai.app@gmail.com</a></li>
+        {/* 5. Przechowywanie */}
+        <h2 style={sectionTitle}>5. Przechowywanie danych</h2>
+        <ul style={list}>
+          <li>Dane przechowywane są na serwerach Supabase zlokalizowanych w Unii Europejskiej.</li>
+          <li>Dane lokalne (preferencje, sesja) zapisywane są w localStorage przeglądarki / aplikacji.</li>
+          <li>Użytkownik może w dowolnym momencie usunąć konto i powiązane z nim dane.</li>
         </ul>
 
-        <h2 style={{ fontSize: 18, fontWeight: 700, color: "#84CC16", marginTop: 32, marginBottom: 12 }}>9. Dzieci</h2>
-        <p style={{ fontSize: 14 }}>
-          Aplikacja nie jest przeznaczona dla dzieci poniżej 13 roku życia. Nie zbieramy świadomie danych od dzieci.
-        </p>
+        {/* 6. Prawa użytkownika */}
+        <h2 style={sectionTitle}>6. Prawa użytkownika</h2>
+        <ul style={list}>
+          <li>Prawo dostępu do swoich danych.</li>
+          <li>
+            Prawo do usunięcia danych — wyślij wiadomość na{" "}
+            <a href="mailto:skladai.app@gmail.com" style={link}>
+              skladai.app@gmail.com
+            </a>
+            .
+          </li>
+          <li>Prawo do sprzeciwu wobec przetwarzania.</li>
+        </ul>
 
-        <h2 style={{ fontSize: 18, fontWeight: 700, color: "#84CC16", marginTop: 32, marginBottom: 12 }}>10. Zmiany w polityce</h2>
-        <p style={{ fontSize: 14 }}>
-          Zastrzegamy sobie prawo do aktualizacji niniejszej polityki prywatności. O istotnych zmianach poinformujemy w aplikacji.
-        </p>
+        {/* 7. Cookies */}
+        <h2 style={sectionTitle}>7. Pliki cookies</h2>
+        <ul style={list}>
+          <li>Aplikacja nie wykorzystuje plików cookies do śledzenia użytkowników.</li>
+          <li>localStorage służy wyłącznie do przechowywania preferencji oraz danych sesji.</li>
+        </ul>
 
-        <div style={{ marginTop: 48, paddingTop: 24, borderTop: "1px solid rgba(255,255,255,0.08)", textAlign: "center" }}>
-          <p style={{ fontSize: 12, color: "#555" }}>SkładAI &copy; 2026. Wszystkie prawa zastrzeżone.</p>
-        </div>
+        {/* 8. Zmiany */}
+        <h2 style={sectionTitle}>8. Zmiany w polityce</h2>
+        <ul style={list}>
+          <li>O zmianach informujemy bezpośrednio w aplikacji.</li>
+          <li>Dalsze korzystanie z aplikacji po wprowadzeniu zmian oznacza ich akceptację.</li>
+        </ul>
+
+        {/* 9. Informacja medyczna */}
+        <h2 style={sectionTitle}>9. Informacja medyczna</h2>
+        <ul style={list}>
+          <li>SkładAI nie jest wyrobem medycznym.</li>
+          <li>Wyniki analizy mają charakter wyłącznie orientacyjny.</li>
+          <li>W razie wątpliwości skonsultuj się z dietetykiem lub lekarzem.</li>
+        </ul>
+
+        {/* Footer */}
+        <footer
+          style={{
+            marginTop: 56,
+            paddingTop: 24,
+            borderTop: "1px solid rgba(255,255,255,0.08)",
+            fontSize: 12,
+            color: MUTED,
+            lineHeight: 1.7,
+          }}
+        >
+          <p style={{ margin: 0 }}>Ostatnia aktualizacja: kwiecień 2026</p>
+          <p style={{ margin: "6px 0 0" }}>
+            Pytania i wnioski:{" "}
+            <a href="mailto:skladai.app@gmail.com" style={link}>
+              skladai.app@gmail.com
+            </a>
+          </p>
+        </footer>
       </div>
     </div>
   );
