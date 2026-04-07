@@ -1331,8 +1331,15 @@ export default function WynikiPage() {
 
         {/* ─── MACRO TABLE (food and suplement only, NOT cosmetics) ─── */}
         {(scanType === "food" || isSuplement) && !isTextSearch && !isMeal && !isForma && (() => {
-          const n = foodResult ? extractFoodNutrition(foodResult) : { cal100: 0, prot100: 0, fat100: 0, carb100: 0 };
-          const multiplier = quantity * portion / 100;
+          const n = foodResult
+            ? extractFoodNutrition(foodResult)
+            : { cal100: 0, prot100: 0, fat100: 0, carb100: 0, packageG: 100 };
+          // Macro table reflects the actual amount eaten:
+          //   quantity × packageG × (portion%/100). So at 1 piece × 100%
+          //   it equals the calories for the whole package — matching the
+          //   top "⚡ X kcal" header. Sliders/quantity scale linearly from there.
+          const packageG = (n as { packageG: number }).packageG ?? 100;
+          const multiplier = quantity * (packageG / 100) * (portion / 100);
           const kcal = Math.round(n.cal100 * multiplier);
           const prot = Math.round(n.prot100 * multiplier * 10) / 10;
           const fat = Math.round(n.fat100 * multiplier * 10) / 10;
