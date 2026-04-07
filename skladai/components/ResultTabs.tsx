@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AnalysisResult, FoodAnalysisResult, CosmeticsAnalysisResult, CosmeticWarning, ScanMode, SupplementAnalysisResult } from "@/lib/types";
 import IngredientCard from "./IngredientCard";
 import CosmeticIngredientCard from "./CosmeticIngredientCard";
@@ -39,24 +39,100 @@ function normalizeWarning(w: CosmeticWarning | string): CosmeticWarning {
   return w;
 }
 
-// Helper: build Ceneo URL
-function ceneoUrl(name: string) {
+// Fallback URL builders (used while loading or if API fails)
+function ceneoSearchUrl(name: string) {
   return `https://www.ceneo.pl/szukaj-${encodeURIComponent(name).replace(/%20/g, "-")}`;
 }
-// Helper: build Allegro URL
-function allegroUrl(name: string) {
+function allegroSearchUrl(name: string) {
   return `https://allegro.pl/listing?string=${encodeURIComponent(name)}`;
 }
 
-// Shopping links component
-function ShoppingLinks({ name, color }: { name: string; color: string }) {
+interface PriceSearchResponse {
+  ceneo: { found: boolean; name?: string; price?: number; url?: string; searchUrl: string };
+  allegro: { found: boolean; url: string };
+}
+
+// Shopping links — fetches Ceneo product link via /api/price-search,
+// always shows Allegro listing link.
+function ShoppingLinks({ name, category }: { name: string; category: "cosmetic" | "supplement" }) {
+  const [data, setData] = useState<PriceSearchResponse | null>(null);
+
+  useEffect(() => {
+    if (!name) return;
+    let cancelled = false;
+    fetch("/api/price-search", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ productName: name, category }),
+    })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((json) => {
+        if (!cancelled && json) setData(json as PriceSearchResponse);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [name, category]);
+
+  const ceneoHref = data?.ceneo?.url || data?.ceneo?.searchUrl || ceneoSearchUrl(name);
+  const allegroHref = data?.allegro?.url || allegroSearchUrl(name);
+  const price = data?.ceneo?.found ? data?.ceneo?.price : undefined;
+
   return (
-    <div className="flex gap-2 mt-3">
-      <a href={ceneoUrl(name)} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-[12px] text-[12px] font-bold active:scale-95 transition-all" style={{ background: `${color}15`, color, border: `1px solid ${color}30` }}>
-        🛒 Ceneo
+    <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
+      {/* Ceneo */}
+      <a
+        href={ceneoHref}
+        target="_blank"
+        rel="noopener noreferrer"
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          flex: 1,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 6,
+          padding: 10,
+          borderRadius: 10,
+          background: "rgba(232,56,13,0.08)",
+          border: "1px solid rgba(232,56,13,0.2)",
+          textDecoration: "none",
+          cursor: "pointer",
+        }}
+      >
+        <div style={{ width: 18, height: 18, borderRadius: 5, background: "#e8380d", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <span style={{ color: "white", fontSize: 8, fontWeight: 700 }}>C</span>
+        </div>
+        <span style={{ color: "rgba(255,255,255,0.85)", fontSize: 12, fontWeight: 500 }}>
+          Ceneo{price ? ` · ${price.toFixed(2)} zł` : ""}
+        </span>
       </a>
-      <a href={allegroUrl(name)} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-[12px] text-[12px] font-bold active:scale-95 transition-all" style={{ background: "rgba(255,255,255,0.04)", color: "rgba(255,255,255,0.6)", border: "1px solid rgba(255,255,255,0.08)" }}>
-        🛍️ Allegro
+
+      {/* Allegro */}
+      <a
+        href={allegroHref}
+        target="_blank"
+        rel="noopener noreferrer"
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          flex: 1,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 6,
+          padding: 10,
+          borderRadius: 10,
+          background: "rgba(255,90,0,0.08)",
+          border: "1px solid rgba(255,90,0,0.2)",
+          textDecoration: "none",
+          cursor: "pointer",
+        }}
+      >
+        <div style={{ width: 18, height: 18, borderRadius: 5, background: "#ff5a00", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <span style={{ color: "white", fontSize: 8, fontWeight: 700 }}>A</span>
+        </div>
+        <span style={{ color: "rgba(255,255,255,0.85)", fontSize: 12, fontWeight: 500 }}>Allegro</span>
       </a>
     </div>
   );
@@ -183,6 +259,12 @@ export default function ResultTabs({ result, scanType = "food", isCosmetics: isC
           const tip = alt?.tip || alt?.savings_tip || "";
           return (
           <div className="space-y-3">
+            {/* Mini hook */}
+            {(cheaper || better) && (
+              <p style={{ color: "rgba(255,255,255,0.75)", fontSize: 12, textAlign: "center", margin: "0 0 14px" }}>
+                💸 AI znalazł lepsze opcje z tym samym składem
+              </p>
+            )}
             {/* Hook emocjonalny */}
             {(cheaper || better) && (
             <div className="rounded-[20px] p-5 relative overflow-hidden" style={{ background: "linear-gradient(135deg, rgba(139,92,246,0.15), rgba(192,132,252,0.08))", border: "1px solid rgba(139,92,246,0.2)" }}>
@@ -213,7 +295,7 @@ export default function ResultTabs({ result, scanType = "food", isCosmetics: isC
                 )}
                 <div className="mt-4 pt-4" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
                   <p className="text-[11px] font-bold text-white/55 uppercase tracking-widest mb-2">🛒 Gdzie kupić najtaniej</p>
-                  <ShoppingLinks name={cosResult.name || ""} color="#C084FC" />
+                  <ShoppingLinks name={cosResult.name || ""} category="cosmetic" />
                 </div>
               </div>
             )}
@@ -236,7 +318,7 @@ export default function ResultTabs({ result, scanType = "food", isCosmetics: isC
                     <p className="text-[11px] text-white/55 mt-0.5">{cheaper.reason}</p>
                   </div>
                 </div>
-                <ShoppingLinks name={cheaper.search_query || cheaper.name} color="#22c55e" />
+                <ShoppingLinks name={cheaper.search_query || cheaper.name} category="cosmetic" />
               </div>
             )}
 
@@ -268,7 +350,7 @@ export default function ResultTabs({ result, scanType = "food", isCosmetics: isC
                     ))}
                   </div>
                 )}
-                <ShoppingLinks name={better.search_query || better.name} color="#a855f7" />
+                <ShoppingLinks name={better.search_query || better.name} category="cosmetic" />
               </div>
             )}
 
@@ -494,6 +576,12 @@ export default function ResultTabs({ result, scanType = "food", isCosmetics: isC
           const tip = alt?.tip || suppResult.tip || "";
           return (
           <div className="space-y-3">
+            {/* Mini hook */}
+            {(cheaper || better) && (
+              <p style={{ color: "rgba(255,255,255,0.75)", fontSize: 12, textAlign: "center", margin: "0 0 14px" }}>
+                💸 AI znalazł lepsze opcje z tym samym składem
+              </p>
+            )}
             {/* Hook emocjonalny */}
             {(cheaper || better) && (
             <div className="rounded-[20px] p-5 relative overflow-hidden" style={{ background: "linear-gradient(135deg, rgba(59,130,246,0.15), rgba(96,165,250,0.08))", border: "1px solid rgba(59,130,246,0.2)" }}>
@@ -524,7 +612,7 @@ export default function ResultTabs({ result, scanType = "food", isCosmetics: isC
                 )}
                 <div className="mt-4 pt-4" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
                   <p className="text-[11px] font-bold text-white/55 uppercase tracking-widest mb-2">🛒 Gdzie kupić najtaniej</p>
-                  <ShoppingLinks name={suppResult.name || ""} color="#3b82f6" />
+                  <ShoppingLinks name={suppResult.name || ""} category="supplement" />
                 </div>
               </div>
             )}
@@ -547,7 +635,7 @@ export default function ResultTabs({ result, scanType = "food", isCosmetics: isC
                     <p className="text-[11px] text-white/55 mt-0.5">{cheaper.reason}</p>
                   </div>
                 </div>
-                <ShoppingLinks name={cheaper.search_query || cheaper.name} color="#22c55e" />
+                <ShoppingLinks name={cheaper.search_query || cheaper.name} category="supplement" />
               </div>
             )}
 
@@ -579,7 +667,7 @@ export default function ResultTabs({ result, scanType = "food", isCosmetics: isC
                     ))}
                   </div>
                 )}
-                <ShoppingLinks name={better.search_query || better.name} color="#3b82f6" />
+                <ShoppingLinks name={better.search_query || better.name} category="supplement" />
               </div>
             )}
 
