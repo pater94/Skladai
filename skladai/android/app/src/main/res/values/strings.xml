@@ -4,5 +4,5 @@
     <string name="title_activity_main">SkładAI</string>
     <string name="package_name">com.skladai.app</string>
     <string name="custom_url_scheme">com.skladai.app</string>
-    <string name="health_connect_privacy_policy_url">https://skladai.vercel.app/privacy</string>
+    <string name="health_connect_privacy_policy_url">https://skladai.com/privacy</string>
 </resources>

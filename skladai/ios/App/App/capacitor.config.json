@@ -3,7 +3,7 @@
 	"appName": "SkładAI",
 	"webDir": "www",
 	"server": {
-		"url": "https://skladai.vercel.app",
+		"url": "https://skladai.com",
 		"cleartext": true
 	},
 	"plugins": {

@@ -279,7 +279,7 @@ function ShareCard({ name, score, verdict, isForma }: { name: string; score: num
       </div>
       {verdict && <p style={{ fontSize: 13, color: "rgba(255,255,255,0.55)", lineHeight: 1.6, marginBottom: 20 }}>{verdict.slice(0, 120)}{verdict.length > 120 ? "..." : ""}</p>}
       <div style={{ borderTop: "1px solid rgba(255,255,255,0.08)", paddingTop: 16 }}>
-        <p style={{ fontSize: 11, color: "rgba(255,255,255,0.55)" }}>Sprawdź skład swoich produktów → skladai.vercel.app</p>
+        <p style={{ fontSize: 11, color: "rgba(255,255,255,0.55)" }}>Sprawdź skład swoich produktów → skladai.com</p>
       </div>
     </div>
   );
@@ -393,7 +393,7 @@ export default function WynikiPage() {
           files: [file],
         });
       } else {
-        await navigator.clipboard.writeText(`${result.name} — ocena ${result.score}/10\nSprawdź: skladai.vercel.app`);
+        await navigator.clipboard.writeText(`${result.name} — ocena ${result.score}/10\nSprawdź: skladai.com`);
         setShareCopied(true);
         setTimeout(() => setShareCopied(false), 2000);
       }

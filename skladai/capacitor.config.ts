@@ -5,8 +5,8 @@ const config: CapacitorConfig = {
   appName: "SkładAI",
   webDir: "www",
   server: {
-    // Hybrid mode — native shell loads web content from Vercel
-    url: "https://skladai.vercel.app",
+    // Hybrid mode — native shell loads web content from the custom domain
+    url: "https://skladai.com",
     cleartext: true,
     // NOTE: do NOT add allowNavigation — when set, Capacitor opens any
     // non-matching navigation in SFSafariViewController (which shows the

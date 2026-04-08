@@ -181,7 +181,7 @@ export default function WrappedPage() {
 
             {/* Footer branding */}
             <div className="text-center pt-4">
-              <p className="text-white/20 text-[10px]">📱 skladai.vercel.app</p>
+              <p className="text-white/20 text-[10px]">📱 skladai.com</p>
               <p className="text-white/15 text-[9px] mt-0.5">Sprawdź co naprawdę jesz.</p>
             </div>
           </div>
