@@ -7,7 +7,7 @@ import { useState, useEffect } from "react";
 export interface SkinProfile {
   skin_type: "dry" | "oily" | "combination" | "normal" | "unknown";
   sensitivity: "sensitive" | "normal" | "resistant";
-  skin_age: "under25" | "25-35" | "35-45" | "over45";
+  skin_age: "under25" | "25-35" | "35-45" | "45-54" | "55-64" | "65+";
   skin_problems: string[];
   hair_type?: "straight" | "wavy" | "curly" | "afro";
   hair_problems?: string[];
@@ -57,8 +57,15 @@ const SKIN_AGE: { value: SkinProfile["skin_age"]; label: string; desc: string }[
   { value: "under25", label: "<25", desc: "młoda" },
   { value: "25-35", label: "25-35", desc: "anti-aging start" },
   { value: "35-45", label: "35-45", desc: "aktywny anti-aging" },
-  { value: "over45", label: "45+", desc: "dojrzała" },
+  { value: "45-54", label: "45-54", desc: "dojrzała" },
+  { value: "55-64", label: "55-64", desc: "regeneracja" },
+  { value: "65+", label: "65+", desc: "ochrona i odżywienie" },
 ];
+
+// Sentinel string used in BOTH skin & hair problem lists to mean
+// "user has no problems in this category". Selecting it clears all
+// other selections, and selecting any real problem clears it.
+const NO_PROBLEMS = "Brak problemów";
 
 const SKIN_PROBLEMS = [
   "Trądzik/wypryski",
@@ -71,7 +78,7 @@ const SKIN_PROBLEMS = [
   "Cienie pod oczami",
   "Atopowe zapalenie skóry",
   "Łuszczyca",
-  "Nic z powyższych",
+  NO_PROBLEMS,
 ];
 
 const HAIR_TYPES: { value: NonNullable<SkinProfile["hair_type"]>; label: string }[] = [
@@ -88,6 +95,7 @@ const HAIR_PROBLEMS = [
   "Łupież",
   "Farbowane",
   "Brak objętości",
+  NO_PROBLEMS,
 ];
 
 // ── Component ──────────────────────────────────────────────────────────────
@@ -118,20 +126,25 @@ export default function SkinProfileSetup({ onComplete, onSkip }: Props) {
   }, []);
 
   const toggleSkinProblem = (p: string) => {
-    if (p === "Nic z powyższych") {
+    if (p === NO_PROBLEMS) {
       setSkinProblems((prev) => (prev.includes(p) ? [] : [p]));
       return;
     }
     setSkinProblems((prev) => {
-      const filtered = prev.filter((x) => x !== "Nic z powyższych");
+      const filtered = prev.filter((x) => x !== NO_PROBLEMS);
       return filtered.includes(p) ? filtered.filter((x) => x !== p) : [...filtered, p];
     });
   };
 
   const toggleHairProblem = (p: string) => {
-    setHairProblems((prev) =>
-      prev.includes(p) ? prev.filter((x) => x !== p) : [...prev, p]
-    );
+    if (p === NO_PROBLEMS) {
+      setHairProblems((prev) => (prev.includes(p) ? [] : [p]));
+      return;
+    }
+    setHairProblems((prev) => {
+      const filtered = prev.filter((x) => x !== NO_PROBLEMS);
+      return filtered.includes(p) ? filtered.filter((x) => x !== p) : [...filtered, p];
+    });
   };
 
   // Step 0 always has defaults so it's always valid
@@ -154,9 +167,11 @@ export default function SkinProfileSetup({ onComplete, onSkip }: Props) {
       skin_type: skinType,
       sensitivity,
       skin_age: skinAge,
-      skin_problems: skinProblems.filter((p) => p !== "Nic z powyższych"),
+      skin_problems: skinProblems.filter((p) => p !== NO_PROBLEMS),
       ...(hairType ? { hair_type: hairType } : {}),
-      ...(hairProblems.length > 0 ? { hair_problems: hairProblems } : {}),
+      ...(hairProblems.filter((p) => p !== NO_PROBLEMS).length > 0
+        ? { hair_problems: hairProblems.filter((p) => p !== NO_PROBLEMS) }
+        : {}),
     };
     saveSkinProfile(profile);
     onComplete(profile);
@@ -214,22 +229,35 @@ export default function SkinProfileSetup({ onComplete, onSkip }: Props) {
     label,
     checked,
     onToggle,
+    muted = false,
   }: {
     label: string;
     checked: boolean;
     onToggle: () => void;
+    /** Slightly de-emphasized look for "no problems" sentinel options. */
+    muted?: boolean;
   }) {
     return (
       <button
         onClick={onToggle}
         style={{
           width: "100%", textAlign: "left", padding: "14px 16px", borderRadius: 16, cursor: "pointer", transition: "all 0.2s",
-          background: checked ? "rgba(192,132,252,0.1)" : "rgba(255,255,255,0.04)",
-          border: checked ? "1.5px solid #C084FC" : "1px solid rgba(255,255,255,0.06)",
+          background: checked
+            ? "rgba(192,132,252,0.1)"
+            : muted ? "rgba(255,255,255,0.02)" : "rgba(255,255,255,0.04)",
+          border: checked
+            ? "1.5px solid #C084FC"
+            : muted ? "1px dashed rgba(255,255,255,0.10)" : "1px solid rgba(255,255,255,0.06)",
+          marginTop: muted ? 4 : 0,
         }}
       >
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <p style={{ fontWeight: 600, fontSize: 13, color: checked ? "#fff" : "rgba(255,255,255,0.7)", margin: 0 }}>{label}</p>
+          <p style={{
+            fontWeight: 600, fontSize: 13,
+            color: checked ? "#fff" : muted ? "rgba(255,255,255,0.45)" : "rgba(255,255,255,0.7)",
+            fontStyle: muted && !checked ? "italic" : "normal",
+            margin: 0,
+          }}>{label}</p>
           <div style={{
             width: 20, height: 20, borderRadius: 6, display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.2s",
             border: checked ? "2px solid #C084FC" : "2px solid rgba(255,255,255,0.15)",
@@ -347,7 +375,7 @@ export default function SkinProfileSetup({ onComplete, onSkip }: Props) {
             </p>
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               {SKIN_PROBLEMS.map((p) => (
-                <CheckCard key={p} label={p} checked={skinProblems.includes(p)} onToggle={() => toggleSkinProblem(p)} />
+                <CheckCard key={p} label={p} checked={skinProblems.includes(p)} onToggle={() => toggleSkinProblem(p)} muted={p === NO_PROBLEMS} />
               ))}
             </div>
           </div>
@@ -377,7 +405,7 @@ export default function SkinProfileSetup({ onComplete, onSkip }: Props) {
               </label>
               <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 8 }}>
                 {HAIR_PROBLEMS.map((p) => (
-                  <CheckCard key={p} label={p} checked={hairProblems.includes(p)} onToggle={() => toggleHairProblem(p)} />
+                  <CheckCard key={p} label={p} checked={hairProblems.includes(p)} onToggle={() => toggleHairProblem(p)} muted={p === NO_PROBLEMS} />
                 ))}
               </div>
             </div>
