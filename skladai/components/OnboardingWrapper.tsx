@@ -202,9 +202,18 @@ export default function OnboardingWrapper() {
 
   if (state === "checking" || state === "hidden") return null;
 
+  // ALWAYS start from slide 0, regardless of whether this is a brand new
+  // user or a returning one whose session got wiped. Earlier we used
+  // `state === "login" ? 2 : 0` to shortcut returning users straight to
+  // the login screen, but that caused every shared link (Messenger /
+  // WhatsApp in-app browser, Safari, Chrome, Capacitor WebView) to land
+  // on slide 3 as soon as the onboardingCompleted flag existed anywhere
+  // — Preferences, localStorage or cookie. The correct UX is: every
+  // fresh entry to skladai.com starts from the first slide. Users can
+  // swipe / tap the dots to reach the login.
   return (
     <OnboardingLogin
-      startSlide={state === "login" ? 2 : 0}
+      startSlide={0}
       onSkip={() => {
         markOnboarded();
         setState("hidden");
