@@ -131,6 +131,50 @@ interface SearchResultDisplay {
   tip: string;
 }
 
+// === Product-search suggestion shape (mirrors /api/product-search) ===
+interface ProductSuggestion {
+  name: string;
+  brand: string;
+  emoji: string;
+  package_g: number;
+  calories_per_100g: number;
+  protein_per_100g: number;
+  fat_per_100g: number;
+  carbs_per_100g: number;
+  sugar_per_100g?: number;
+  fiber_per_100g?: number;
+  score: number;
+}
+
+/** Convert a Claude product suggestion into the TextSearchItem shape used
+ *  by the existing result-card UI, so we don't have to duplicate the card. */
+function suggestionToItem(s: ProductSuggestion): TextSearchItem {
+  const ratio = s.package_g / 100;
+  return {
+    name: s.brand ? `${s.name} — ${s.brand}` : s.name,
+    portion: `${s.package_g}g (opakowanie)`,
+    calories: Math.round(s.calories_per_100g * ratio),
+    protein: Math.round(s.protein_per_100g * ratio * 10) / 10,
+    fat: Math.round(s.fat_per_100g * ratio * 10) / 10,
+    carbs: Math.round(s.carbs_per_100g * ratio * 10) / 10,
+    sugar: s.sugar_per_100g !== undefined ? Math.round(s.sugar_per_100g * ratio * 10) / 10 : 0,
+    fiber: s.fiber_per_100g !== undefined ? Math.round(s.fiber_per_100g * ratio * 10) / 10 : 0,
+    score: s.score,
+    emoji: s.emoji,
+    verdict: "",
+    fun_comparison: "",
+    calories_per_100g: s.calories_per_100g,
+    protein_per_100g: s.protein_per_100g,
+    fat_per_100g: s.fat_per_100g,
+    carbs_per_100g: s.carbs_per_100g,
+    default_portion_g: s.package_g,
+    min_portion_g: 1,
+    // Slider hard cap: 500g for normal items, 1000g for heavy ones
+    // (still capped — manual input below allows up to 2000g).
+    max_portion_g: s.package_g > 500 ? 1000 : 500,
+  };
+}
+
 // === Component ===
 export default function FoodSearch({ mode, onAddToDiary }: FoodSearchProps) {
   const [mealType, setMealType] = useState<MealTypeKey>("breakfast");
@@ -142,8 +186,13 @@ export default function FoodSearch({ mode, onAddToDiary }: FoodSearchProps) {
   const [favorites, setFavorites] = useState<FavoriteItem[]>([]);
   const [searchResult, setSearchResult] = useState<SearchResultDisplay | null>(null);
   const [portions, setPortions] = useState<Record<number, number>>({});
+  const [portionInputs, setPortionInputs] = useState<Record<number, string>>({});
   const [sectionExpanded, setSectionExpandedState] = useState(false);
+  const [suggestions, setSuggestions] = useState<ProductSuggestion[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [suggestionsLoading, setSuggestionsLoading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const suggestionsBoxRef = useRef<HTMLDivElement>(null);
 
   // Only render in food mode
   if (mode !== "food") return null;
@@ -168,33 +217,97 @@ export default function FoodSearch({ mode, onAddToDiary }: FoodSearchProps) {
     setSectionExpanded("content", newVal);
   };
 
-  // === Auto-search with debounce (500ms after 3+ chars) ===
+  // === Suggestions dropdown — debounced fetch from /api/product-search ===
+  // Fires on every query change (≥2 chars) and shows the dropdown so the
+  // user can pick a specific brand/gramatura instead of getting a single
+  // auto-picked result.
   // eslint-disable-next-line react-hooks/rules-of-hooks
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const suggestDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  const suggestSeqRef = useRef(0);
   // eslint-disable-next-line react-hooks/rules-of-hooks
   useEffect(() => {
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    if (query.trim().length >= 3 && !searchResult && !isLoading) {
-      debounceRef.current = setTimeout(() => {
-        handleSearchAuto();
-      }, 500);
-    }
-    return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
-  }, [query]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const handleSearchAuto = useCallback(async () => {
+    if (suggestDebounceRef.current) clearTimeout(suggestDebounceRef.current);
     const trimmed = query.trim();
-    if (trimmed.length < 3 || isLoading) return;
-    handleSearch();
-  }, [query, isLoading]); // eslint-disable-line react-hooks/exhaustive-deps
+    if (trimmed.length < 2 || searchResult) {
+      setSuggestions([]);
+      setShowSuggestions(false);
+      setSuggestionsLoading(false);
+      return;
+    }
+    setSuggestionsLoading(true);
+    setShowSuggestions(true);
+    const seq = ++suggestSeqRef.current;
+    suggestDebounceRef.current = setTimeout(async () => {
+      try {
+        const res = await fetch("/api/product-search", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ query: trimmed }),
+        });
+        const data = await res.json();
+        // Drop the response if a newer query came in while we were waiting.
+        if (seq !== suggestSeqRef.current) return;
+        setSuggestions(Array.isArray(data.suggestions) ? data.suggestions : []);
+      } catch {
+        if (seq !== suggestSeqRef.current) return;
+        setSuggestions([]);
+      } finally {
+        if (seq === suggestSeqRef.current) setSuggestionsLoading(false);
+      }
+    }, 350);
+    return () => { if (suggestDebounceRef.current) clearTimeout(suggestDebounceRef.current); };
+  }, [query, searchResult]);
 
-  // === Search handler ===
+  // Click-outside / Escape closes the suggestion dropdown.
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  useEffect(() => {
+    if (!showSuggestions) return;
+    const onClick = (e: MouseEvent) => {
+      const target = e.target as Node;
+      if (
+        suggestionsBoxRef.current &&
+        !suggestionsBoxRef.current.contains(target) &&
+        inputRef.current &&
+        !inputRef.current.contains(target)
+      ) {
+        setShowSuggestions(false);
+      }
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setShowSuggestions(false);
+    };
+    document.addEventListener("mousedown", onClick);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onClick);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [showSuggestions]);
+
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  const pickSuggestion = useCallback(
+    (s: ProductSuggestion) => {
+      const item = suggestionToItem(s);
+      addRecentSearch(query.trim() || s.name);
+      refreshLists();
+      setSearchResult({ items: [item], verdict: "", tip: "" });
+      setPortions({ 0: item.default_portion_g });
+      setPortionInputs({ 0: String(item.default_portion_g) });
+      setShowSuggestions(false);
+      setSuggestions([]);
+    },
+    [query, refreshLists]
+  );
+
+  // === Search handler (fallback when AI doesn't have a matching brand) ===
   const handleSearch = useCallback(async () => {
     const trimmed = query.trim();
     if (!trimmed || isLoading) return;
 
     setIsLoading(true);
     setSearchResult(null);
+    setShowSuggestions(false);
     addRecentSearch(trimmed);
     refreshLists();
 
@@ -216,10 +329,14 @@ export default function FoodSearch({ mode, onAddToDiary }: FoodSearchProps) {
         });
         // Initialize portions from default
         const initPortions: Record<number, number> = {};
+        const initInputs: Record<number, string> = {};
         data.items.forEach((item: TextSearchItem, idx: number) => {
-          initPortions[idx] = item.default_portion_g || 100;
+          const p = item.default_portion_g || 100;
+          initPortions[idx] = p;
+          initInputs[idx] = String(p);
         });
         setPortions(initPortions);
+        setPortionInputs(initInputs);
       }
     } catch (err) {
       console.error("Search error:", err);
@@ -235,6 +352,8 @@ export default function FoodSearch({ mode, onAddToDiary }: FoodSearchProps) {
   const clearQuery = () => {
     setQuery("");
     setSearchResult(null);
+    setSuggestions([]);
+    setShowSuggestions(false);
     inputRef.current?.focus();
   };
 
@@ -392,6 +511,62 @@ export default function FoodSearch({ mode, onAddToDiary }: FoodSearchProps) {
             )}
             <VoiceMicButton onClick={() => setShowVoice(true)} accent="green" />
           </div>
+
+          {/* === Suggestions dropdown === */}
+          {showSuggestions && !searchResult && !isLoading && (
+            <div
+              ref={suggestionsBoxRef}
+              className="absolute left-0 right-0 top-[calc(100%+6px)] z-30 rounded-[14px] bg-white border border-[#E8E4DC] shadow-lg overflow-hidden"
+            >
+              {suggestionsLoading && suggestions.length === 0 && (
+                <div className="px-4 py-3 text-center text-[12px] text-[#8B8574]">
+                  <span className="inline-block w-3 h-3 mr-2 align-middle rounded-full border-2 border-[#4A8C26] border-t-transparent animate-spin" />
+                  Szukam propozycji...
+                </div>
+              )}
+
+              {!suggestionsLoading && suggestions.length === 0 && query.trim().length >= 2 && (
+                <div className="px-4 py-3 text-center text-[12px] text-[#8B8574]">
+                  Brak gotowych propozycji dla &quot;{query.trim()}&quot;
+                </div>
+              )}
+
+              {suggestions.length > 0 && (
+                <div className="max-h-[55vh] overflow-y-auto divide-y divide-[#E8E4DC]" data-scrollable="true">
+                  {suggestions.map((s, i) => (
+                    <button
+                      key={`${s.name}-${s.brand}-${i}`}
+                      onClick={() => pickSuggestion(s)}
+                      className="w-full flex items-center gap-3 px-3 py-2.5 text-left active:bg-[#F5F2EB] transition-colors"
+                    >
+                      <span className="text-xl flex-shrink-0">{s.emoji}</span>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[13px] font-semibold text-[#1A3A0A] truncate">
+                          {s.name}
+                        </p>
+                        <p className="text-[11px] text-[#8B8574] truncate">
+                          {s.brand && <span>{s.brand} · </span>}
+                          {s.package_g}g · {s.calories_per_100g} kcal/100g
+                        </p>
+                      </div>
+                      <span className="text-[18px] text-[#4A8C26] font-semibold flex-shrink-0">+</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* Fallback: full text_search analyze when no AI match
+                  or user wants to add a custom product. */}
+              {!suggestionsLoading && (
+                <button
+                  onClick={() => handleSearch()}
+                  className="w-full px-3 py-2.5 text-center text-[12px] font-semibold text-[#4A8C26] bg-[#4A8C26]/5 border-t border-[#E8E4DC] active:bg-[#4A8C26]/10 transition-colors"
+                >
+                  + Dodaj jako własny produkt
+                </button>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
@@ -467,28 +642,67 @@ export default function FoodSearch({ mode, onAddToDiary }: FoodSearchProps) {
                   </p>
                 )}
 
-                {/* Portion slider */}
-                <div className="space-y-1">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[12px] font-medium text-[#1A3A0A]">Porcja</span>
-                    <span className="text-[13px] font-semibold text-[#4A8C26]">{portionG}g</span>
-                  </div>
-                  <input
-                    type="range"
-                    min={item.min_portion_g || 10}
-                    max={item.max_portion_g || 500}
-                    step={5}
-                    value={portionG}
-                    onChange={(e) =>
-                      setPortions((prev) => ({ ...prev, [idx]: Number(e.target.value) }))
-                    }
-                    className="w-full h-2 rounded-full appearance-none bg-[#E8E4DC] accent-[#4A8C26] cursor-pointer"
-                  />
-                  <div className="flex justify-between text-[10px] text-[#8B8574]">
-                    <span>{item.min_portion_g || 10}g</span>
-                    <span>{item.max_portion_g || 500}g</span>
-                  </div>
-                </div>
+                {/* Portion slider + manual input.
+                    Slider hard cap = item.max_portion_g (defaults: 500g normal,
+                    1000g for heavy items). Manual input allows up to 2000g
+                    so e.g. catering trays / large packaging still fit. */}
+                {(() => {
+                  const sliderMin = Math.max(1, item.min_portion_g || 1);
+                  const sliderMax = Math.max(sliderMin + 1, item.max_portion_g || 500);
+                  const inputVal = portionInputs[idx] ?? String(portionG);
+                  return (
+                    <div className="space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[12px] font-medium text-[#1A3A0A]">Porcja</span>
+                        <div className="flex items-center gap-1.5">
+                          <input
+                            type="number"
+                            inputMode="numeric"
+                            min={1}
+                            max={2000}
+                            value={inputVal}
+                            onChange={(e) => {
+                              const raw = e.target.value;
+                              setPortionInputs((prev) => ({ ...prev, [idx]: raw }));
+                              if (raw === "") return;
+                              const n = parseInt(raw, 10);
+                              if (Number.isFinite(n) && n >= 1 && n <= 2000) {
+                                setPortions((prev) => ({ ...prev, [idx]: n }));
+                              }
+                            }}
+                            onBlur={() => {
+                              const n = parseInt(portionInputs[idx] ?? "", 10);
+                              const clamped = Number.isFinite(n)
+                                ? Math.max(1, Math.min(2000, n))
+                                : portionG;
+                              setPortions((prev) => ({ ...prev, [idx]: clamped }));
+                              setPortionInputs((prev) => ({ ...prev, [idx]: String(clamped) }));
+                            }}
+                            className="w-14 px-1.5 py-0.5 text-right text-[13px] font-semibold text-[#4A8C26] bg-[#4A8C26]/5 border border-[#4A8C26]/20 rounded-md focus:outline-none focus:border-[#4A8C26]"
+                          />
+                          <span className="text-[12px] font-semibold text-[#4A8C26]">g</span>
+                        </div>
+                      </div>
+                      <input
+                        type="range"
+                        min={sliderMin}
+                        max={sliderMax}
+                        step={5}
+                        value={Math.min(portionG, sliderMax)}
+                        onChange={(e) => {
+                          const n = Number(e.target.value);
+                          setPortions((prev) => ({ ...prev, [idx]: n }));
+                          setPortionInputs((prev) => ({ ...prev, [idx]: String(n) }));
+                        }}
+                        className="w-full h-2 rounded-full appearance-none bg-[#E8E4DC] accent-[#4A8C26] cursor-pointer"
+                      />
+                      <div className="flex justify-between text-[10px] text-[#8B8574]">
+                        <span>{sliderMin}g</span>
+                        <span>{sliderMax}g{portionG > sliderMax ? " (powyżej — wpisz ręcznie)" : ""}</span>
+                      </div>
+                    </div>
+                  );
+                })()}
 
                 {/* Action buttons */}
                 <div className="flex gap-2">
