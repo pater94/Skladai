@@ -19,7 +19,13 @@ import {
   updateStreak,
   getHistory,
 } from "@/lib/storage";
-import { compressImageSmall } from "@/lib/compress";
+import { compressImageSmall, clampBase64Size } from "@/lib/compress";
+
+// For 2-photo modes (cosmetics, suplement) the combined body must stay
+// well under Vercel's 4.5 MB request limit. Native Capacitor Camera
+// quality=85 can emit 1.2-2 MB JPEGs which is too big when doubled up.
+const CAMERA_CLAMP_KB = (mode: string) =>
+  mode === "cosmetics" || mode === "suplement" ? 900 : 1500;
 import { isNative, takePhotoForMode } from "@/lib/native-camera";
 import type { ScanMode, ScanHistoryItem } from "@/lib/types";
 import Link from "next/link";
@@ -591,7 +597,8 @@ export default function Home() {
                     const base64 = await takePhotoForMode(mode, src);
                     console.log("[SecondPhoto] native result:", base64 ? `ok (${base64.length} chars)` : "null (user cancelled)");
                     if (base64) {
-                      setSecondPhotoPreview(base64);
+                      const clamped = await clampBase64Size(base64, CAMERA_CLAMP_KB(mode));
+                      setSecondPhotoPreview(clamped);
                     }
                     setAwaitingSecondPhoto(false);
                   } else {
@@ -635,7 +642,8 @@ export default function Home() {
                   if (isNative()) {
                     const base64 = await takePhotoForMode(mode, src);
                     if (base64) {
-                      setSecondPhotoPreview(base64);
+                      const clamped = await clampBase64Size(base64, CAMERA_CLAMP_KB(mode));
+                      setSecondPhotoPreview(clamped);
                     }
                     setAwaitingSecondPhoto(false);
                   } else {
@@ -658,7 +666,8 @@ export default function Home() {
                 const { compressImage } = await import("@/lib/compress");
                 const maxDim = (mode === "cosmetics" || mode === "suplement") ? 1200 : 2000;
                 const compressed = await compressImage(fileClone, maxDim);
-                setSecondPhotoPreview(compressed);
+                const clamped = await clampBase64Size(compressed, CAMERA_CLAMP_KB(mode));
+                setSecondPhotoPreview(clamped);
                 setAwaitingSecondPhoto(false);
               } catch { setAwaitingSecondPhoto(false); }
             }} className="hidden" />
@@ -671,7 +680,8 @@ export default function Home() {
                 const { compressImage } = await import("@/lib/compress");
                 const maxDim = (mode === "cosmetics" || mode === "suplement") ? 1200 : 2000;
                 const compressed = await compressImage(fileClone, maxDim);
-                setSecondPhotoPreview(compressed);
+                const clamped = await clampBase64Size(compressed, CAMERA_CLAMP_KB(mode));
+                setSecondPhotoPreview(clamped);
                 setAwaitingSecondPhoto(false);
               } catch { setAwaitingSecondPhoto(false); }
             }} className="hidden" />
@@ -693,15 +703,16 @@ export default function Home() {
                     setIsScanning(true);
                     try {
                       const base64 = await takePhotoForMode(mode, "camera");
+                      const clamped = base64 ? await clampBase64Size(base64, CAMERA_CLAMP_KB(mode)) : null;
                       scanLockRef.current = false;
                       setIsScanning(false);
-                      if (base64) {
+                      if (clamped) {
                         if (showPhotoPreview) {
                           setPhotoSource("camera");
-                          setPhotoPreview(base64);
+                          setPhotoPreview(clamped);
                           setSecondPhotoPreview(null);
                         } else {
-                          handleScan(base64);
+                          handleScan(clamped);
                         }
                       }
                     } catch (err) {
@@ -770,17 +781,18 @@ export default function Home() {
                   const { compressImage } = await import("@/lib/compress");
                   const maxDim = (mode === "cosmetics" || mode === "suplement") ? 1200 : 2000;
                   const compressed = await compressImage(fileClone, maxDim);
+                  const clamped = await clampBase64Size(compressed, CAMERA_CLAMP_KB(mode));
                   scanLockRef.current = false;
                   setIsScanning(false);
                   if (awaitingSecondPhoto && showPhotoPreview) {
-                    setSecondPhotoPreview(compressed);
+                    setSecondPhotoPreview(clamped);
                     setAwaitingSecondPhoto(false);
                   } else if (showPhotoPreview) {
                     setPhotoSource("camera");
-                    setPhotoPreview(compressed);
+                    setPhotoPreview(clamped);
                     setSecondPhotoPreview(null);
                   } else {
-                    handleScan(compressed);
+                    handleScan(clamped);
                   }
                 } catch { setIsScanning(false); scanLockRef.current = false; }
               }} className="hidden" />
@@ -796,17 +808,18 @@ export default function Home() {
                   const { compressImage } = await import("@/lib/compress");
                   const maxDim = (mode === "cosmetics" || mode === "suplement") ? 1200 : 2000;
                   const compressed = await compressImage(fileClone, maxDim);
+                  const clamped = await clampBase64Size(compressed, CAMERA_CLAMP_KB(mode));
                   scanLockRef.current = false;
                   setIsScanning(false);
                   if (awaitingSecondPhoto && showPhotoPreview) {
-                    setSecondPhotoPreview(compressed);
+                    setSecondPhotoPreview(clamped);
                     setAwaitingSecondPhoto(false);
                   } else if (showPhotoPreview) {
                     setPhotoSource("gallery");
-                    setPhotoPreview(compressed);
+                    setPhotoPreview(clamped);
                     setSecondPhotoPreview(null);
                   } else {
-                    handleScan(compressed);
+                    handleScan(clamped);
                   }
                 } catch { setIsScanning(false); scanLockRef.current = false; }
               }} className="hidden" />
@@ -846,15 +859,16 @@ export default function Home() {
                       setIsScanning(true);
                       try {
                         const base64 = await takePhotoForMode(mode, "gallery");
+                        const clamped = base64 ? await clampBase64Size(base64, CAMERA_CLAMP_KB(mode)) : null;
                         scanLockRef.current = false;
                         setIsScanning(false);
-                        if (base64) {
+                        if (clamped) {
                           if (showPhotoPreview) {
                             setPhotoSource("gallery");
-                            setPhotoPreview(base64);
+                            setPhotoPreview(clamped);
                             setSecondPhotoPreview(null);
                           } else {
-                            handleScan(base64);
+                            handleScan(clamped);
                           }
                         }
                       } catch (err) {

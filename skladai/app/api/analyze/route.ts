@@ -1366,18 +1366,25 @@ ZASADY:
 
       async function callSupplVisionOCR(b64: string): Promise<string> {
         if (!gvKey) return "";
+        const ctl = new AbortController();
+        const t = setTimeout(() => ctl.abort(), 12000);
         try {
           const gvRes = await fetch(`https://vision.googleapis.com/v1/images:annotate?key=${gvKey}`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ requests: [{ image: { content: b64 }, features: [{ type: "DOCUMENT_TEXT_DETECTION", maxResults: 1 }] }] }),
+            signal: ctl.signal,
           });
+          clearTimeout(t);
           if (gvRes.ok) {
             const gvData = await gvRes.json();
             const ann = gvData.responses?.[0];
             return ann?.fullTextAnnotation?.text || ann?.textAnnotations?.[0]?.description || "";
           }
-        } catch { /* ignore OCR failure */ }
+        } catch {
+          clearTimeout(t);
+          /* Vision OCR hung or errored — suplement falls back to Claude-only reading */
+        }
         return "";
       }
 
@@ -1401,14 +1408,12 @@ ZASADY:
         source: { type: "base64" as const, media_type: mediaType, data: base64Data },
       };
 
+      // Only send the FIRST image to Claude. The second image is fed to Claude
+      // exclusively via its Google Vision OCR text (concatenated into supplOcrText
+      // above). Sending two full-resolution base64 images to Claude nearly
+      // doubles the upload + inference cost and was a major contributor to the
+      // "analiza bez końca" hang on 2-photo scans.
       const supplUserContent: unknown[] = [supplImgContent];
-      // Add second image to Claude if available
-      if (secondBase64Data) {
-        supplUserContent.push({
-          type: "image" as const,
-          source: { type: "base64" as const, media_type: mediaType, data: secondBase64Data },
-        });
-      }
       if (supplOcrText.length > 20) {
         supplUserContent.push({
           type: "text",
@@ -1421,12 +1426,14 @@ ZASADY:
         });
       }
 
-      // Timeout budget: Vercel maxDuration is 60s. Suplement with 2 images
-      // runs 2x Vision OCR (~5s) before this call, and scan logging is now
-      // fire-and-forget so we don't need headroom after. 40s for Claude
-      // leaves ~15s for everything else — enough to avoid the "analiza bez
-      // konca" hang where Vercel would kill the function mid-request.
-      const res = await callClaude(apiKey, supplementAnalysisPrompt, supplUserContent, 5120, 40000);
+      // Budget-aware Claude timeout: same principle as cosmetics/food below.
+      // Vercel cap 60s, Vision OCR already burned some of it, leave 5s for
+      // JSON serialization and the return trip. Floor 20s so a slow Vision
+      // never starves Claude.
+      const supplElapsed = Date.now() - startTime;
+      const supplTimeout = Math.max(20000, Math.min(40000, 55000 - supplElapsed));
+      console.log(`[analyze] mode=suplement elapsed=${supplElapsed}ms claudeTimeout=${supplTimeout}ms`);
+      const res = await callClaude(apiKey, supplementAnalysisPrompt, supplUserContent, 5120, supplTimeout);
       if (res.error) return NextResponse.json({ error: "Nie udało się przeanalizować. Spróbuj ponownie." }, { status: res.status ?? 500});
       try {
         const result = parseJsonResponse(res.text);
@@ -1457,9 +1464,15 @@ ZASADY:
     let ocrText = "";
     const googleVisionKey = process.env.GOOGLE_VISION_API_KEY;
 
-    // Helper to call Vision API
+    // Helper to call Vision API. Hard 12s timeout per image — without this
+    // a hung Google Vision response would block the whole pipeline until
+    // Vercel's 60s function kill, which manifests to users as "analiza bez
+    // końca". OCR is non-critical (we can fall back to Claude-only reading),
+    // so we eat the failure quietly and continue.
     async function callVisionOCR(b64: string): Promise<string> {
       if (!googleVisionKey) return "";
+      const ctl = new AbortController();
+      const t = setTimeout(() => ctl.abort(), 12000);
       try {
         const resp = await fetch(
           `https://vision.googleapis.com/v1/images:annotate?key=${googleVisionKey}`,
@@ -1469,14 +1482,21 @@ ZASADY:
             body: JSON.stringify({
               requests: [{ image: { content: b64 }, features: [{ type: "DOCUMENT_TEXT_DETECTION", maxResults: 1 }] }],
             }),
+            signal: ctl.signal,
           }
         );
+        clearTimeout(t);
         if (resp.ok) {
           const data = await resp.json();
           const ann = data.responses?.[0];
           return ann?.fullTextAnnotation?.text || ann?.textAnnotations?.[0]?.description || "";
         }
-      } catch (err) { console.error("Vision OCR error:", err); }
+      } catch (err) {
+        clearTimeout(t);
+        const name = err instanceof Error ? err.name : "";
+        if (name === "AbortError") console.warn("[Vision OCR] Timeout — continuing without OCR");
+        else console.error("Vision OCR error:", err);
+      }
       return "";
     }
 
@@ -1557,13 +1577,18 @@ Zweryfikuj z obrazem. Odpowiedz WYŁĄCZNIE poprawnym JSON.${skinProfileHint}`,
     }
 
     // Sonnet for labels (Google Vision does the OCR heavy lifting).
-    // Timeout budget: Vercel maxDuration=60s. Cosmetics with 2 photos
-    // runs 2x Vision OCR (~5s) + request upload latency on mobile. A 45s
-    // Claude timeout was too close to the 60s cap and caused the
-    // "analysis never ends" hang on cosmetics scans. 38s gives enough
-    // headroom for slow mobile networks. Scan logging is fire-and-forget
-    // so nothing blocks the response.
-    const result1 = await callClaude(apiKey, analysisPrompt, userContent, isCosmetics ? 7168 : 5120, isCosmetics ? 38000 : 30000);
+    // Budget-aware timeout: Vercel maxDuration=60s. We've already burned
+    // some of that on body parsing + Vision OCR. Compute how much is left
+    // and hand Claude the remainder minus a 5s safety margin for the JSON
+    // serialization and network return. Floor at 20s so a slow Vision
+    // doesn't starve Claude entirely. Scan logging is fire-and-forget.
+    const elapsed = Date.now() - startTime;
+    const hardBudget = isCosmetics ? 40000 : 32000;
+    const claudeTimeout = Math.max(20000, Math.min(hardBudget, 55000 - elapsed));
+    console.log(`[analyze] mode=${mode} elapsed=${elapsed}ms claudeTimeout=${claudeTimeout}ms`);
+    // 5120 tokens is plenty for the cosmetics/food JSON payloads. 7168 was
+    // excessive and slowed inference without improving results.
+    const result1 = await callClaude(apiKey, analysisPrompt, userContent, 5120, claudeTimeout);
 
     if (result1.error) {
       if (result1.status === 429) return NextResponse.json({ error: "Zbyt wiele zapytań. Poczekaj chwilę." }, { status: 429 });
