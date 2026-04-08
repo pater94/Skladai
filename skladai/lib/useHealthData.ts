@@ -29,6 +29,26 @@ const todayStart = (): string => {
   return d.toISOString();
 };
 
+/**
+ * Robust platform detection.
+ *
+ * Capacitor.getPlatform() is authoritative inside a native shell, but we've
+ * seen cases where it returns "web" while the user is actually on a native
+ * device (e.g. the Capacitor bridge not being ready yet on first render,
+ * remote-URL shells, or a stale cached runtime). Fall back to a user-agent
+ * sniff so Android users never see "Apple Health" labels.
+ */
+function detectPlatform(): "ios" | "android" | "web" {
+  const cap = Capacitor.getPlatform();
+  if (cap === "ios" || cap === "android") return cap;
+  if (typeof navigator !== "undefined") {
+    const ua = navigator.userAgent || "";
+    if (/android/i.test(ua)) return "android";
+    if (/iphone|ipad|ipod/i.test(ua)) return "ios";
+  }
+  return "web";
+}
+
 export function useHealthData(): HealthData {
   const [steps, setSteps] = useState(0);
   const [kcalBurned, setKcalBurned] = useState(0);
@@ -40,7 +60,7 @@ export function useHealthData(): HealthData {
   const [isAvailable, setIsAvailable] = useState(false);
   const [loading, setLoading] = useState(true);
   const isNative = Capacitor.isNativePlatform();
-  const platform = Capacitor.getPlatform() as "ios" | "android" | "web";
+  const platform = detectPlatform();
 
   const fetchData = useCallback(async () => {
     if (!isNative) {
