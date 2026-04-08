@@ -334,12 +334,18 @@ export default function VoiceLog({ mode, onComplete, onClose, initialOpen = fals
       if (errCode === "not-allowed" || errCode === "service-not-allowed") {
         const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
         const isChrome = /CriOS/.test(navigator.userAgent);
+        const isAndroid = /android/i.test(navigator.userAgent);
         if (isIOS && isChrome) {
           setError("🍎 Nagrywanie głosu działa tylko w Safari na iPhone.");
         } else if (isIOS) {
           setError("Zezwól na dostęp do mikrofonu: Ustawienia → Safari → Mikrofon");
+        } else if (isAndroid) {
+          // Native Capacitor shell on Android — point user to APP settings,
+          // not browser settings. The "Otwórz ustawienia" button below uses
+          // the AndroidApp JS interface exposed by MainActivity.java.
+          setError("Brak uprawnień do mikrofonu. Zezwól na mikrofon w ustawieniach aplikacji.");
         } else {
-          setError("Brak uprawnień do mikrofonu. Zezwól w ustawieniach przeglądarki.");
+          setError("Brak uprawnień do mikrofonu. Zezwól na mikrofon w ustawieniach aplikacji.");
         }
         setPhase("idle");
       } else if (errCode === "no-speech") {
@@ -712,7 +718,29 @@ export default function VoiceLog({ mode, onComplete, onClose, initialOpen = fals
                   Kliknij i mów
                 </p>
                 {error && (
-                  <p className="text-sm text-red-500 text-center px-4">{error}</p>
+                  <div className="flex flex-col items-center gap-2 px-4">
+                    <p className="text-sm text-red-500 text-center">{error}</p>
+                    {/* Show "Open Settings" deep-link only on the native
+                        Android shell when the failure is a permission denial. */}
+                    {/android/i.test(navigator.userAgent) && /uprawnień|mikrofon/i.test(error) && (
+                      <button
+                        onClick={() => {
+                          const w = window as unknown as { AndroidApp?: { openAppSettings?: () => void } };
+                          if (w.AndroidApp?.openAppSettings) {
+                            w.AndroidApp.openAppSettings();
+                          }
+                        }}
+                        className="px-4 py-2 rounded-xl text-xs font-semibold"
+                        style={{
+                          background: "rgba(110,252,180,0.12)",
+                          border: "1px solid rgba(110,252,180,0.35)",
+                          color: "#6efcb4",
+                        }}
+                      >
+                        Otwórz ustawienia
+                      </button>
+                    )}
+                  </div>
                 )}
 
                 {/* Hints grid */}
