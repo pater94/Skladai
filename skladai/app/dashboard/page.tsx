@@ -541,23 +541,61 @@ export default function DashboardPage() {
             </GlassCard>
           )}
 
-          {/* Weekly activity */}
-          <GlassCard>
-            <SectionTitle>Aktywność w tym tygodniu</SectionTitle>
-            <div style={{ display: "flex", gap: 10 }}>
-              {[
-                { value: "47 894", label: "Kroki", icon: "👟", color: "#6efcb4" },
-                { value: "2 009", label: "kcal spalone", icon: "🔥", color: "#f97316" },
-                { value: "29.4 km", label: "Dystans", icon: "📍", color: "#3b82f6" },
-              ].map((a, i) => (
-                <div key={i} style={{ flex: 1, padding: "12px 8px", borderRadius: 14, textAlign: "center", background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)" }}>
-                  <div style={{ fontSize: 13, marginBottom: 4 }}>{a.icon}</div>
-                  <div style={{ fontSize: 16, fontWeight: 900, color: a.color, letterSpacing: "-0.02em" }}>{a.value}</div>
-                  <div style={{ fontSize: 9.5, color: "rgba(255,255,255,0.7)", marginTop: 2 }}>{a.label}</div>
+          {/* Weekly activity — real data from HealthKit / Health Connect */}
+          {health.isNative && (
+            <GlassCard>
+              <SectionTitle>Aktywność w tym tygodniu</SectionTitle>
+              {health.isConnected ? (
+                <div style={{ display: "flex", gap: 10 }}>
+                  {[
+                    { value: health.weekSteps.toLocaleString("pl-PL"), label: "Kroki", icon: "👟", color: "#6efcb4" },
+                    { value: String(health.weekKcalBurned), label: "kcal spalone", icon: "🔥", color: "#f97316" },
+                    { value: `${health.weekDistanceKm.toFixed(1)} km`, label: "Dystans", icon: "📍", color: "#3b82f6" },
+                  ].map((a, i) => (
+                    <div key={i} style={{ flex: 1, padding: "12px 8px", borderRadius: 14, textAlign: "center", background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)" }}>
+                      <div style={{ fontSize: 13, marginBottom: 4 }}>{a.icon}</div>
+                      <div style={{ fontSize: 16, fontWeight: 900, color: a.color, letterSpacing: "-0.02em" }}>{a.value}</div>
+                      <div style={{ fontSize: 9.5, color: "rgba(255,255,255,0.7)", marginTop: 2 }}>{a.label}</div>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          </GlassCard>
+              ) : (() => {
+                const healthLabel = health.platform === "android" ? "Health Connect" : "Apple Health";
+                const needsInstall = health.platform === "android" && !health.loading && !health.isAvailable;
+                return (
+                  <div style={{ textAlign: "center", padding: "4px 0 2px" }}>
+                    <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", margin: "0 0 12px" }}>
+                      Połącz z {healthLabel} żeby zobaczyć historię
+                    </div>
+                    <button
+                      onClick={() => {
+                        try { localStorage.setItem("healthKitAsked", "1"); } catch {}
+                        if (needsInstall) {
+                          health.openSettings();
+                        } else {
+                          health.requestAccess();
+                        }
+                      }}
+                      style={{
+                        width: "100%",
+                        padding: 12,
+                        borderRadius: 12,
+                        background: "linear-gradient(135deg, #34d399 0%, #10b981 100%)",
+                        color: "#fff",
+                        fontSize: 13.5,
+                        fontWeight: 800,
+                        border: "none",
+                        cursor: "pointer",
+                        boxShadow: "0 4px 15px rgba(52,211,153,0.2)",
+                      }}
+                    >
+                      🏃 {needsInstall ? `Zainstaluj ${healthLabel}` : `Połącz z ${healthLabel}`}
+                    </button>
+                  </div>
+                );
+              })()}
+            </GlassCard>
+          )}
 
           {/* Scan count */}
           <GlassCard>

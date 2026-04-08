@@ -7,6 +7,10 @@ export interface HealthData {
   steps: number;
   kcalBurned: number;
   distanceKm: number;
+  /** Aggregated totals for the last 7 days (today inclusive). */
+  weekSteps: number;
+  weekKcalBurned: number;
+  weekDistanceKm: number;
   isConnected: boolean;
   isNative: boolean;
   /** 'ios' | 'android' | 'web' — useful for platform-specific labels. */
@@ -29,6 +33,9 @@ export function useHealthData(): HealthData {
   const [steps, setSteps] = useState(0);
   const [kcalBurned, setKcalBurned] = useState(0);
   const [distanceKm, setDistanceKm] = useState(0);
+  const [weekSteps, setWeekSteps] = useState(0);
+  const [weekKcalBurned, setWeekKcalBurned] = useState(0);
+  const [weekDistanceKm, setWeekDistanceKm] = useState(0);
   const [isConnected, setIsConnected] = useState(false);
   const [isAvailable, setIsAvailable] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -67,16 +74,39 @@ export function useHealthData(): HealthData {
       const startDate = todayStart();
       const endDate = new Date().toISOString();
 
-      // Query today's aggregated data
-      const [stepsRes, calRes, distRes] = await Promise.all([
+      // Last 7 days inclusive (today minus 6 days, midnight).
+      const weekStartDate = new Date();
+      weekStartDate.setHours(0, 0, 0, 0);
+      weekStartDate.setDate(weekStartDate.getDate() - 6);
+      const weekStart = weekStartDate.toISOString();
+
+      // Query today's + last-7-days aggregated data in parallel.
+      const [
+        stepsRes,
+        calRes,
+        distRes,
+        weekStepsRes,
+        weekCalRes,
+        weekDistRes,
+      ] = await Promise.all([
         Health.queryAggregated({ dataType: "steps", startDate, endDate, bucket: "day", aggregation: "sum" }),
         Health.queryAggregated({ dataType: "calories", startDate, endDate, bucket: "day", aggregation: "sum" }),
         Health.queryAggregated({ dataType: "distance", startDate, endDate, bucket: "day", aggregation: "sum" }),
+        Health.queryAggregated({ dataType: "steps", startDate: weekStart, endDate, bucket: "day", aggregation: "sum" }),
+        Health.queryAggregated({ dataType: "calories", startDate: weekStart, endDate, bucket: "day", aggregation: "sum" }),
+        Health.queryAggregated({ dataType: "distance", startDate: weekStart, endDate, bucket: "day", aggregation: "sum" }),
       ]);
 
       if (stepsRes.samples.length > 0) setSteps(Math.round(stepsRes.samples[0].value));
       if (calRes.samples.length > 0) setKcalBurned(Math.round(calRes.samples[0].value));
       if (distRes.samples.length > 0) setDistanceKm(Math.round((distRes.samples[0].value / 1000) * 10) / 10); // meters → km
+
+      // Sum daily buckets into a week total.
+      const sumSamples = (samples: { value: number }[]): number =>
+        samples.reduce((acc, s) => acc + (s.value || 0), 0);
+      setWeekSteps(Math.round(sumSamples(weekStepsRes.samples)));
+      setWeekKcalBurned(Math.round(sumSamples(weekCalRes.samples)));
+      setWeekDistanceKm(Math.round((sumSamples(weekDistRes.samples) / 1000) * 10) / 10); // meters → km
     } catch (e) {
       console.warn("[useHealthData] Error:", e);
     } finally {
@@ -122,6 +152,9 @@ export function useHealthData(): HealthData {
     steps,
     kcalBurned,
     distanceKm,
+    weekSteps,
+    weekKcalBurned,
+    weekDistanceKm,
     isConnected,
     isNative,
     platform,
