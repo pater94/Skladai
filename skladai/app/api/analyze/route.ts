@@ -951,7 +951,7 @@ export async function POST(request: NextRequest) {
       try {
         const result = parseJsonResponse(res.text);
         result.mode = "alcohol_search";
-        await logScanToSupabase({ mode: "alcohol_search", result, startTime });
+        void logScanToSupabase({ mode: "alcohol_search", result, startTime });
         return NextResponse.json(result);
       } catch {
         return NextResponse.json({ error: "Nie znaleziono tego alkoholu." }, { status: 422 });
@@ -973,7 +973,7 @@ export async function POST(request: NextRequest) {
       try {
         const result = parseJsonResponse(res.text);
         result.mode = "alcohol_scan";
-        await logScanToSupabase({ mode: "alcohol_scan", base64Image: image, result, startTime });
+        void logScanToSupabase({ mode: "alcohol_scan", base64Image: image, result, startTime });
         return NextResponse.json(result);
       } catch {
         return NextResponse.json({ error: "Nie udało się rozpoznać alkoholu." }, { status: 422 });
@@ -1234,10 +1234,10 @@ Odpowiedz WYŁĄCZNIE poprawnym JSON (bez markdown, bez komentarzy):
             { label: "Węglowodany", value: `${result.total.carbs} g`, icon: "🍞" },
           ];
         }
-        await logScanToSupabase({ mode: "meal", base64Image: image, result, aiModel: "claude-opus-4-20250514", startTime });
+        void logScanToSupabase({ mode: "meal", base64Image: image, result, aiModel: "claude-opus-4-20250514", startTime });
         return NextResponse.json(result);
       } catch {
-        await logFailedScan({ mode: "meal", base64Image: image, error: "Meal parse failed", startTime });
+        void logFailedScan({ mode: "meal", base64Image: image, error: "Meal parse failed", startTime });
         return NextResponse.json({ error: "Nie udało się rozpoznać dania. Spróbuj z lepszym zdjęciem." }, { status: 422 });
       }
     }
@@ -1256,10 +1256,10 @@ Odpowiedz WYŁĄCZNIE poprawnym JSON (bez markdown, bez komentarzy):
         if (!result.name) result.name = "Skan lodówki";
         if (!result.brand) result.brand = "";
         if (!result.score && result.fridge_score) result.score = Math.round(result.fridge_score);
-        await logScanToSupabase({ mode: "fridge_scan", base64Image: image, result, aiModel: "claude-opus-4-20250514", startTime });
+        void logScanToSupabase({ mode: "fridge_scan", base64Image: image, result, aiModel: "claude-opus-4-20250514", startTime });
         return NextResponse.json(result);
       } catch {
-        await logFailedScan({ mode: "fridge_scan", base64Image: image, error: "Fridge parse failed", startTime });
+        void logFailedScan({ mode: "fridge_scan", base64Image: image, error: "Fridge parse failed", startTime });
         return NextResponse.json({ error: "Nie udało się przeanalizować lodówki." }, { status: 422 });
       }
     }
@@ -1285,10 +1285,10 @@ Odpowiedz WYŁĄCZNIE poprawnym JSON (bez markdown, bez komentarzy):
         result.name = "CheckForm";
         result.brand = "";
         if (!result.score && result.overall_score) result.score = result.overall_score;
-        await logScanToSupabase({ mode: "forma", base64Image: image, image2Base64: image2 || undefined, result, aiModel: "claude-opus-4-20250514", startTime });
+        void logScanToSupabase({ mode: "forma", base64Image: image, image2Base64: image2 || undefined, result, aiModel: "claude-opus-4-20250514", startTime });
         return NextResponse.json(result);
       } catch {
-        await logFailedScan({ mode: "forma", base64Image: image, error: "Forma parse failed", startTime });
+        void logFailedScan({ mode: "forma", base64Image: image, error: "Forma parse failed", startTime });
         return NextResponse.json({ error: "Nie udało się przeanalizować zdjęcia. Spróbuj z lepszym oświetleniem." }, { status: 422 });
       }
     }
@@ -1421,7 +1421,12 @@ ZASADY:
         });
       }
 
-      const res = await callClaude(apiKey, supplementAnalysisPrompt, supplUserContent, 5120, 45000);
+      // Timeout budget: Vercel maxDuration is 60s. Suplement with 2 images
+      // runs 2x Vision OCR (~5s) before this call, and scan logging is now
+      // fire-and-forget so we don't need headroom after. 40s for Claude
+      // leaves ~15s for everything else — enough to avoid the "analiza bez
+      // konca" hang where Vercel would kill the function mid-request.
+      const res = await callClaude(apiKey, supplementAnalysisPrompt, supplUserContent, 5120, 40000);
       if (res.error) return NextResponse.json({ error: "Nie udało się przeanalizować. Spróbuj ponownie." }, { status: res.status ?? 500});
       try {
         const result = parseJsonResponse(res.text);
@@ -1435,10 +1440,10 @@ ZASADY:
         if (!result.interactions) result.interactions = [];
         if (!result.who_for) result.who_for = [];
         if (!result.who_avoid) result.who_avoid = [];
-        await logScanToSupabase({ mode: "suplement", base64Image: image, image2Base64: image2 || undefined, result, startTime });
+        void logScanToSupabase({ mode: "suplement", base64Image: image, image2Base64: image2 || undefined, result, startTime });
         return NextResponse.json(result);
       } catch {
-        await logFailedScan({ mode: "suplement", base64Image: image, error: "Suplement parse failed", startTime });
+        void logFailedScan({ mode: "suplement", base64Image: image, error: "Suplement parse failed", startTime });
         return NextResponse.json({ error: "Nie udało się przeanalizować suplementu." }, { status: 422 });
       }
     }
@@ -1551,9 +1556,14 @@ Zweryfikuj z obrazem. Odpowiedz WYŁĄCZNIE poprawnym JSON.${skinProfileHint}`,
       }
     }
 
-    // Sonnet for labels (Google Vision does the OCR heavy lifting)
-    // Cosmetics needs more time — complex INCI analysis with many fields
-    const result1 = await callClaude(apiKey, analysisPrompt, userContent, isCosmetics ? 7168 : 5120, isCosmetics ? 45000 : 30000);
+    // Sonnet for labels (Google Vision does the OCR heavy lifting).
+    // Timeout budget: Vercel maxDuration=60s. Cosmetics with 2 photos
+    // runs 2x Vision OCR (~5s) + request upload latency on mobile. A 45s
+    // Claude timeout was too close to the 60s cap and caused the
+    // "analysis never ends" hang on cosmetics scans. 38s gives enough
+    // headroom for slow mobile networks. Scan logging is fire-and-forget
+    // so nothing blocks the response.
+    const result1 = await callClaude(apiKey, analysisPrompt, userContent, isCosmetics ? 7168 : 5120, isCosmetics ? 38000 : 30000);
 
     if (result1.error) {
       if (result1.status === 429) return NextResponse.json({ error: "Zbyt wiele zapytań. Poczekaj chwilę." }, { status: 429 });
@@ -1583,16 +1593,16 @@ Zweryfikuj z obrazem. Odpowiedz WYŁĄCZNIE poprawnym JSON.${skinProfileHint}`,
       if (!result.allergens) result.allergens = [];
       if (!result.fun_comparisons) result.fun_comparisons = [];
 
-      await logScanToSupabase({ mode: isCosmetics ? "cosmetics" : "food", base64Image: image, image2Base64: image2 || undefined, result, startTime });
+      void logScanToSupabase({ mode: isCosmetics ? "cosmetics" : "food", base64Image: image, image2Base64: image2 || undefined, result, startTime });
       return NextResponse.json(result);
     } catch {
       console.error("Failed to parse AI response:", step2.text?.substring(0, 500));
-      await logFailedScan({ mode: isCosmetics ? "cosmetics" : "food", base64Image: image, error: "Parse failed: " + (step2.text?.substring(0, 200) || "empty"), startTime });
+      void logFailedScan({ mode: isCosmetics ? "cosmetics" : "food", base64Image: image, error: "Parse failed: " + (step2.text?.substring(0, 200) || "empty"), startTime });
       return NextResponse.json({ error: "Nie udało się przeanalizować. Spróbuj wyraźniejsze zdjęcie." }, { status: 422 });
     }
   } catch (error) {
     console.error("Analysis error:", error);
-    await logFailedScan({ mode: body?.mode || "unknown", base64Image: body?.image, error: String(error).substring(0, 300), startTime });
+    void logFailedScan({ mode: body?.mode || "unknown", base64Image: body?.image, error: String(error).substring(0, 300), startTime });
     return NextResponse.json({ error: "Wystąpił błąd. Spróbuj ponownie." }, { status: 500 });
   }
 }

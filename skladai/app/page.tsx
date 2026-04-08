@@ -290,7 +290,11 @@ export default function Home() {
         }
 
         const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 90000);
+        // Vercel serverless functions are capped at maxDuration=60s. Giving
+        // the client a 70s budget leaves ~10s for the server to send a 504
+        // if it dies, without making the user stare at a spinner for 90+
+        // seconds per attempt when the network is bad.
+        const timeout = setTimeout(() => controller.abort(), 70000);
         try {
           const res = await fetch("/api/analyze", {
             method: "POST",
