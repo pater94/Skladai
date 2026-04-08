@@ -318,8 +318,8 @@ export default function DashboardPage() {
             </button>
           </GlassCard>
 
-          {/* Activity card — real data from Health */}
-          {health.isNative && health.isConnected && (
+          {/* Activity card — data when connected, CTA otherwise */}
+          {health.isNative && (
             <GlassCard>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
@@ -327,35 +327,75 @@ export default function DashboardPage() {
                   <span style={{ fontSize: 13, fontWeight: 800, color: "rgba(255,255,255,0.8)" }}>Aktywność dziś</span>
                 </div>
               </div>
-              <div style={{ display: "flex", gap: 10 }}>
-                {[
-                  { value: health.steps.toLocaleString("pl-PL"), label: "Kroki", icon: "👟", color: "#6efcb4" },
-                  { value: String(health.kcalBurned), label: "kcal spalone", icon: "🔥", color: "#f97316" },
-                  { value: `${health.distanceKm.toFixed(1)} km`, label: "Dystans", icon: "📍", color: "#3b82f6" },
-                ].map((a, i) => (
-                  <div key={i} style={{ flex: 1, padding: "12px 8px", borderRadius: 14, textAlign: "center", background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)" }}>
-                    <div style={{ fontSize: 13, marginBottom: 4 }}>{a.icon}</div>
-                    <div style={{ fontSize: 16, fontWeight: 900, color: a.color, letterSpacing: "-0.02em" }}>{a.value}</div>
-                    <div style={{ fontSize: 9.5, color: "rgba(255,255,255,0.7)", marginTop: 2 }}>{a.label}</div>
-                  </div>
-                ))}
-              </div>
 
-              {/* Net calorie balance: zjedzone − spalone */}
-              {(() => {
-                const net = t.calories - health.kcalBurned;
-                const netColor = net > 0 ? "#f97316" : "#6efcb4";
+              {health.isConnected ? (
+                <>
+                  <div style={{ display: "flex", gap: 10 }}>
+                    {[
+                      { value: health.steps.toLocaleString("pl-PL"), label: "Kroki", icon: "👟", color: "#6efcb4" },
+                      { value: String(health.kcalBurned), label: "kcal spalone", icon: "🔥", color: "#f97316" },
+                      { value: `${health.distanceKm.toFixed(1)} km`, label: "Dystans", icon: "📍", color: "#3b82f6" },
+                    ].map((a, i) => (
+                      <div key={i} style={{ flex: 1, padding: "12px 8px", borderRadius: 14, textAlign: "center", background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)" }}>
+                        <div style={{ fontSize: 13, marginBottom: 4 }}>{a.icon}</div>
+                        <div style={{ fontSize: 16, fontWeight: 900, color: a.color, letterSpacing: "-0.02em" }}>{a.value}</div>
+                        <div style={{ fontSize: 9.5, color: "rgba(255,255,255,0.7)", marginTop: 2 }}>{a.label}</div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Net calorie balance: zjedzone − spalone */}
+                  {(() => {
+                    const net = t.calories - health.kcalBurned;
+                    const netColor = net > 0 ? "#f97316" : "#6efcb4";
+                    return (
+                      <div style={{ marginTop: 12, paddingTop: 12, borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                          <span style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.6)" }}>Bilans netto</span>
+                          <span style={{ fontSize: 14, fontWeight: 900, color: netColor, letterSpacing: "-0.02em" }}>
+                            {net > 0 ? "+" : ""}{net} kcal
+                          </span>
+                        </div>
+                        <div style={{ fontSize: 9.5, color: "rgba(255,255,255,0.45)", marginTop: 3 }}>
+                          Zjedzone {t.calories} − Spalone {health.kcalBurned}
+                        </div>
+                      </div>
+                    );
+                  })()}
+                </>
+              ) : (() => {
+                // Not connected — inline CTA inside the Aktywność card.
+                const healthLabel = health.platform === "android" ? "Health Connect" : "Apple Health";
+                const needsInstall = health.platform === "android" && !health.loading && !health.isAvailable;
                 return (
-                  <div style={{ marginTop: 12, paddingTop: 12, borderTop: "1px solid rgba(255,255,255,0.06)" }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                      <span style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.6)" }}>Bilans netto</span>
-                      <span style={{ fontSize: 14, fontWeight: 900, color: netColor, letterSpacing: "-0.02em" }}>
-                        {net > 0 ? "+" : ""}{net} kcal
-                      </span>
+                  <div style={{ textAlign: "center", padding: "4px 0 2px" }}>
+                    <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", margin: "0 0 12px" }}>
+                      Śledź aktywność i bilans kaloryczny
                     </div>
-                    <div style={{ fontSize: 9.5, color: "rgba(255,255,255,0.45)", marginTop: 3 }}>
-                      Zjedzone {t.calories} − Spalone {health.kcalBurned}
-                    </div>
+                    <button
+                      onClick={() => {
+                        try { localStorage.setItem("healthKitAsked", "1"); } catch {}
+                        if (needsInstall) {
+                          health.openSettings();
+                        } else {
+                          health.requestAccess();
+                        }
+                      }}
+                      style={{
+                        width: "100%",
+                        padding: 12,
+                        borderRadius: 12,
+                        background: "linear-gradient(135deg, #34d399 0%, #10b981 100%)",
+                        color: "#fff",
+                        fontSize: 13.5,
+                        fontWeight: 800,
+                        border: "none",
+                        cursor: "pointer",
+                        boxShadow: "0 4px 15px rgba(52,211,153,0.2)",
+                      }}
+                    >
+                      🏃 {needsInstall ? `Zainstaluj ${healthLabel}` : `Połącz z ${healthLabel}`}
+                    </button>
                   </div>
                 );
               })()}

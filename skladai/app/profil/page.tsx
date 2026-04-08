@@ -321,36 +321,61 @@ export default function ProfilPage() {
                   <span style={{ flex: 1 }}>{healthLabel} — połączono</span>
                 </div>
               ) : (
-                <button
-                  onClick={() => {
-                    try { localStorage.setItem("healthKitAsked", "1"); } catch {}
-                    if (needsInstall) {
-                      health.openSettings();
-                    } else {
-                      health.requestAccess();
-                    }
-                  }}
+                <div
                   style={{
-                    width: "100%",
                     display: "flex",
                     alignItems: "center",
-                    gap: 10,
-                    padding: "4px 2px",
-                    background: "transparent",
-                    border: "none",
-                    color: "rgba(255,255,255,0.85)",
-                    fontSize: 13,
-                    fontWeight: 700,
-                    cursor: "pointer",
-                    textAlign: "left" as const,
+                    gap: 14,
+                    padding: "2px 0",
                   }}
                 >
-                  <span style={{ fontSize: 16 }}>🏃</span>
-                  <span style={{ flex: 1 }}>
-                    {needsInstall ? `Zainstaluj ${healthLabel}` : `Połącz z ${healthLabel}`}
-                  </span>
-                  <span style={{ fontSize: 14, color: "rgba(255,255,255,0.4)" }}>→</span>
-                </button>
+                  <div
+                    style={{
+                      width: 42,
+                      height: 42,
+                      borderRadius: 12,
+                      background: "rgba(52,211,153,0.1)",
+                      border: "1px solid rgba(52,211,153,0.15)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      flexShrink: 0,
+                    }}
+                  >
+                    <span style={{ fontSize: 18 }}>❤️</span>
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 13.5, fontWeight: 700, color: "#fff" }}>
+                      {healthLabel}
+                    </div>
+                    <div style={{ fontSize: 11, color: "rgba(255,255,255,0.5)", marginTop: 2 }}>
+                      Śledź aktywność i bilans kaloryczny
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => {
+                      try { localStorage.setItem("healthKitAsked", "1"); } catch {}
+                      if (needsInstall) {
+                        health.openSettings();
+                      } else {
+                        health.requestAccess();
+                      }
+                    }}
+                    style={{
+                      padding: "8px 16px",
+                      borderRadius: 10,
+                      background: "linear-gradient(135deg, #34d399 0%, #10b981 100%)",
+                      color: "#fff",
+                      fontSize: 12,
+                      fontWeight: 800,
+                      border: "none",
+                      cursor: "pointer",
+                      flexShrink: 0,
+                    }}
+                  >
+                    {needsInstall ? "Zainstaluj" : "Połącz"}
+                  </button>
+                </div>
               )}
             </GlassCard>
           );
