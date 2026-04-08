@@ -308,7 +308,11 @@ export default function Home() {
           try { data = await res.json(); } catch {
             throw new Error(`server_${res.status}`);
           }
-          if (!res.ok) throw new Error(data.error || `error_${res.status}`);
+          // Include the HTTP status code in the message so the retry logic
+          // below (which matches on "504"/"413"/"500"/"422" substrings) can
+          // correctly detect transient errors even when the server returned
+          // a localized Polish error string.
+          if (!res.ok) throw new Error(`error_${res.status}: ${data.error || ""}`);
           return data;
         } catch (err) {
           clearTimeout(timeout);
@@ -354,10 +358,12 @@ export default function Home() {
         router.push(`/wyniki/${historyItem.id}`);
       } catch (err) {
         const msg = err instanceof Error ? err.message : "";
+        // Strip internal "error_NNN: " / "server_NNN" prefixes before showing to user.
+        const cleanMsg = msg.replace(/^(error_\d+:\s*|server_\d+\s*:?\s*|timeout_\d+\s*:?\s*)/, "").trim();
         if (msg.includes("504") || msg.includes("timeout")) {
           setError("Nie udało się przeanalizować produktu. Spróbuj ponownie — upewnij się, że etykieta ze składem jest dobrze widoczna.");
         } else {
-          setError(msg || "Wystąpił błąd. Spróbuj ponownie.");
+          setError(cleanMsg || "Wystąpił błąd. Spróbuj ponownie.");
         }
       } finally { setIsLoading(false); setIsScanning(false); scanLockRef.current = false; }
     },

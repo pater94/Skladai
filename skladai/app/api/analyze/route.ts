@@ -767,9 +767,17 @@ async function callClaude(
   timeoutMs: number,
   model: string = "claude-sonnet-4-20250514"
 ): Promise<{ error: boolean; text: string; status?: number }> {
-  const MAX_RETRIES = 1;
+  // IMPORTANT: We intentionally do NOT retry on local AbortError timeouts.
+  // Vercel's `maxDuration` caps the entire function at 60s — retrying a 45s
+  // Claude call after it already burned 45s would exceed that limit, causing
+  // the serverless function to be killed mid-request. The client then hangs
+  // until its own 90s AbortController fires, producing the "analysis runs
+  // forever" bug reported after 2-photo uploads.
+  // We still retry on transient HTTP errors (5xx, 429) since those return
+  // fast and can't cause timeline doubling.
+  const MAX_HTTP_RETRIES = 1;
 
-  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+  for (let attempt = 0; attempt <= MAX_HTTP_RETRIES; attempt++) {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), timeoutMs);
     try {
@@ -794,8 +802,8 @@ async function callClaude(
       if (!response.ok) {
         const errText = await response.text();
         console.error(`Anthropic API error (attempt ${attempt}):`, response.status, errText);
-        // Retry on transient errors (500, 529 overloaded)
-        if (attempt < MAX_RETRIES && (response.status >= 500 || response.status === 429)) {
+        // Retry on transient errors (500, 529 overloaded) — these return fast.
+        if (attempt < MAX_HTTP_RETRIES && (response.status >= 500 || response.status === 429)) {
           await new Promise(r => setTimeout(r, 1500));
           continue;
         }
@@ -806,12 +814,12 @@ async function callClaude(
     } catch (err: unknown) {
       clearTimeout(timeout);
       if (err instanceof Error && err.name === "AbortError") {
-        if (attempt < MAX_RETRIES) {
-          continue; // Retry on timeout
-        }
+        // Local timeout — DO NOT retry (would blow past Vercel maxDuration).
+        // Return 504 so the client can decide (e.g. retry with smaller image).
+        console.warn(`[callClaude] Local timeout after ${timeoutMs}ms — no retry`);
         return { error: true, text: "", status: 504 };
       }
-      if (attempt < MAX_RETRIES) {
+      if (attempt < MAX_HTTP_RETRIES) {
         await new Promise(r => setTimeout(r, 1000));
         continue;
       }
@@ -939,7 +947,7 @@ export async function POST(request: NextRequest) {
       const res = await callClaude(apiKey, ALCOHOL_SEARCH_PROMPT, [
         { type: "text", text: `Użytkownik szuka: "${text.trim()}"` },
       ], 1536, 15000);
-      if (res.error) return NextResponse.json({ error: "Nie udało się przetworzyć. Spróbuj ponownie." }, { status: res.status! });
+      if (res.error) return NextResponse.json({ error: "Nie udało się przetworzyć. Spróbuj ponownie." }, { status: res.status ?? 500});
       try {
         const result = parseJsonResponse(res.text);
         result.mode = "alcohol_search";
@@ -961,7 +969,7 @@ export async function POST(request: NextRequest) {
         imgContent,
         { type: "text", text: "Rozpoznaj ten alkohol — markę, objętość, % alkoholu. Odpowiedz JSON." },
       ], 1536, 30000); // Sonnet — etykieta alkoholu (tekst)
-      if (res.error) return NextResponse.json({ error: "Nie udało się przetworzyć. Spróbuj ponownie." }, { status: res.status! });
+      if (res.error) return NextResponse.json({ error: "Nie udało się przetworzyć. Spróbuj ponownie." }, { status: res.status ?? 500});
       try {
         const result = parseJsonResponse(res.text);
         result.mode = "alcohol_scan";
@@ -980,7 +988,7 @@ export async function POST(request: NextRequest) {
       const res = await callClaude(apiKey, INCI_SEARCH_PROMPT, [
         { type: "text", text: `Użytkownik szuka składnika kosmetycznego: "${text.trim()}"` },
       ], 2048, 15000);
-      if (res.error) return NextResponse.json({ error: "Nie udało się przetworzyć. Spróbuj ponownie." }, { status: res.status! });
+      if (res.error) return NextResponse.json({ error: "Nie udało się przetworzyć. Spróbuj ponownie." }, { status: res.status ?? 500});
       try {
         return NextResponse.json(parseJsonResponse(res.text));
       } catch {
@@ -996,7 +1004,7 @@ export async function POST(request: NextRequest) {
       const res = await callClaude(apiKey, BEAUTY_ACADEMY_PROMPT, [
         { type: "text", text: `Temat/pytanie: "${text.trim()}"` },
       ], 2048, 15000);
-      if (res.error) return NextResponse.json({ error: "Nie udało się przetworzyć. Spróbuj ponownie." }, { status: res.status! });
+      if (res.error) return NextResponse.json({ error: "Nie udało się przetworzyć. Spróbuj ponownie." }, { status: res.status ?? 500});
       try {
         return NextResponse.json(parseJsonResponse(res.text));
       } catch {
@@ -1030,7 +1038,7 @@ export async function POST(request: NextRequest) {
         { type: "text", text: `Wyjaśnij składnik/alergen: "${text.trim()}"` },
       ], 1024, 15000);
 
-      if (res.error) return NextResponse.json({ error: "Nie udało się przetworzyć. Spróbuj ponownie." }, { status: res.status! });
+      if (res.error) return NextResponse.json({ error: "Nie udało się przetworzyć. Spróbuj ponownie." }, { status: res.status ?? 500});
       try {
         const result = parseJsonResponse(res.text);
         return NextResponse.json(result);
@@ -1049,7 +1057,7 @@ export async function POST(request: NextRequest) {
       ], 1500, 20000);
 
       if (res.error) {
-        return NextResponse.json({ error: "Nie udało się przetworzyć. Spróbuj ponownie." }, { status: res.status! });
+        return NextResponse.json({ error: "Nie udało się przetworzyć. Spróbuj ponownie." }, { status: res.status ?? 500});
       }
       try {
         const result = parseJsonResponse(res.text);
@@ -1072,7 +1080,7 @@ Odpowiedz WYŁĄCZNIE JSON:
 {"interpreted_text":"...","confidence":"high","items":[{"name":"Jajko na twardo","emoji":"🥚","quantity":2,"unit":"szt","portion_label":"2 sztuki","portion_grams":120,"calories_per_100g":130,"calories":156,"protein":12.6,"fat":10.6,"carbs":1.2,"slider_min_qty":1,"slider_max_qty":6,"slider_min_grams":30,"slider_max_grams":360,"measures":[{"name":"sztuka","grams":60}]}],"total":{"calories":156,"protein":12.6,"fat":10.6,"carbs":1.2},"verdict":"Komentarz z osobowością","needs_clarification":false,"clarification_question":null}
 Podaj calories_per_100g i measures dla KAŻDEGO produktu. Po polsku.`;
       const res = await callClaude(apiKey, voiceFoodPrompt, [{ type: "text", text: `Transkrypcja: "${text.trim()}"` }], 2048, 25000);
-      if (res.error) return NextResponse.json({ error: "Nie udało się przetworzyć. Spróbuj ponownie." }, { status: res.status! });
+      if (res.error) return NextResponse.json({ error: "Nie udało się przetworzyć. Spróbuj ponownie." }, { status: res.status ?? 500});
       try { return NextResponse.json(parseJsonResponse(res.text)); } catch { return NextResponse.json({ error: "Nie udało się rozpoznać." }, { status: 422 }); }
     }
 
@@ -1085,7 +1093,7 @@ Odpowiedz WYŁĄCZNIE JSON:
 {"interpreted_text":"...","items":[{"name":"Tyskie","emoji":"🍺","type":"piwo","quantity":2,"unit":"szt","default_ml":500,"abv_percent":5.2,"alcohol_grams":20.5,"total_alcohol_grams":41.0,"calories_per_unit":215,"total_calories":430,"flavor_profile":"Opis smaku 2-3 zdania","fun_fact":"Ciekawostka 1-2 zdania","slider_min_qty":1,"slider_max_qty":10,"slider_min_ml":330,"slider_max_ml":1000}],"total_alcohol_grams":41,"total_calories":430,"fun_comparison":"porównanie kaloryczne"}
 Po polsku. Styl: jak sommelier z humorem.`;
       const res = await callClaude(apiKey, voiceAlcPrompt, [{ type: "text", text: `Transkrypcja: "${text.trim()}"` }], 2048, 25000);
-      if (res.error) return NextResponse.json({ error: "Nie udało się przetworzyć. Spróbuj ponownie." }, { status: res.status! });
+      if (res.error) return NextResponse.json({ error: "Nie udało się przetworzyć. Spróbuj ponownie." }, { status: res.status ?? 500});
       try { return NextResponse.json(parseJsonResponse(res.text)); } catch { return NextResponse.json({ error: "Nie udało się rozpoznać." }, { status: 422 }); }
     }
 
@@ -1101,7 +1109,7 @@ Odpowiedz WYŁĄCZNIE JSON:
 {"recipes":[{"name":"nazwa","emoji":"🥗","calories":420,"protein":38,"fat":16,"carbs":28,"fiber":6,"prep_time_min":15,"difficulty":"łatwy","difficulty_emoji":"🟢","uses_ingredients":["kurczak","ryż"],"missing_ingredients":["awokado (opcjonalne)"],"short_description":"Szybki i sycący","why_good_for_goal":"Idealny stosunek białko/kalorie","tags":["high-protein"]}]}
 Styl: APETYCZNY i MOTYWUJĄCY. Po polsku.`;
       const res = await callClaude(apiKey, fridgePrompt, [{ type: "text", text: "Zaproponuj przepisy." }], 4096, 25000);
-      if (res.error) return NextResponse.json({ error: "Nie udało się przetworzyć. Spróbuj ponownie." }, { status: res.status! });
+      if (res.error) return NextResponse.json({ error: "Nie udało się przetworzyć. Spróbuj ponownie." }, { status: res.status ?? 500});
       try { return NextResponse.json(parseJsonResponse(res.text)); } catch { return NextResponse.json({ error: "Nie udało się wygenerować przepisów." }, { status: 422 }); }
     }
 
@@ -1117,7 +1125,7 @@ Odpowiedz WYŁĄCZNIE JSON:
 {"name":"...","subtitle":"...","emoji":"🥗","servings":1,"prep_time_min":15,"difficulty":"łatwy","nutrition":{"calories":420,"protein":38,"fat":16,"carbs":28,"fiber":6,"sugar":5},"percent_of_daily":20,"goal_comment":"Komentarz do celu","ingredients":[{"name":"Pierś z kurczaka","amount":"150g","in_fridge":true,"calories":248,"note":null}],"seasonings":"sól, pieprz, papryka","steps":[{"number":1,"title":"NAZWA KROKU","time_min":10,"instruction":"Szczegółowa instrukcja","tip":"Pro tip"}],"pro_tips":["tip1","tip2"],"verdict":"Zabawny komentarz końcowy"}
 Język: jak kumpel w kuchni. Kroki KRÓTKIE (max 3 zdania). Po polsku.`;
       const res = await callClaude(apiKey, recipePrompt, [{ type: "text", text: "Wygeneruj przepis." }], 6144, 30000);
-      if (res.error) return NextResponse.json({ error: "Nie udało się przetworzyć. Spróbuj ponownie." }, { status: res.status! });
+      if (res.error) return NextResponse.json({ error: "Nie udało się przetworzyć. Spróbuj ponownie." }, { status: res.status ?? 500});
       try { return NextResponse.json(parseJsonResponse(res.text)); } catch { return NextResponse.json({ error: "Nie udało się wygenerować przepisu." }, { status: 422 }); }
     }
 
@@ -1134,7 +1142,7 @@ Odpowiedz WYŁĄCZNIE poprawnym JSON (bez markdown, bez komentarzy):
       const res = await callClaude(apiKey, supplementAcademyPrompt, [
         { type: "text", text: `Napisz artykuł na temat: "${text.trim()}". Odpowiedz WYŁĄCZNIE JSON.` },
       ], 3072, 25000);
-      if (res.error) return NextResponse.json({ error: "Nie udało się przetworzyć. Spróbuj ponownie." }, { status: res.status! });
+      if (res.error) return NextResponse.json({ error: "Nie udało się przetworzyć. Spróbuj ponownie." }, { status: res.status ?? 500});
       try {
         return NextResponse.json(parseJsonResponse(res.text));
       } catch {
@@ -1183,7 +1191,7 @@ Odpowiedz WYŁĄCZNIE poprawnym JSON (bez markdown, bez komentarzy):
       ], 4096, 45000, "claude-opus-4-20250514");
 
       if (res.error) {
-        return NextResponse.json({ error: "Nie udało się przeanalizować. Spróbuj ponownie." }, { status: res.status! });
+        return NextResponse.json({ error: "Nie udało się przeanalizować. Spróbuj ponownie." }, { status: res.status ?? 500});
       }
 
       try {
@@ -1241,7 +1249,7 @@ Odpowiedz WYŁĄCZNIE poprawnym JSON (bez markdown, bez komentarzy):
         { type: "text", text: "Przeanalizuj zawartość tej lodówki. Rozpoznaj produkty, oceń każdy 1-10, daj średnią. Odpowiedz JSON." },
       ], 4096, 45000, "claude-opus-4-20250514");
 
-      if (res.error) return NextResponse.json({ error: "Nie udało się przeanalizować. Spróbuj ponownie." }, { status: res.status! });
+      if (res.error) return NextResponse.json({ error: "Nie udało się przeanalizować. Spróbuj ponownie." }, { status: res.status ?? 500});
       try {
         const result = parseJsonResponse(res.text);
         result.type = "fridge_scan";
@@ -1269,7 +1277,7 @@ Odpowiedz WYŁĄCZNIE poprawnym JSON (bez markdown, bez komentarzy):
       ], 4096, 45000, "claude-opus-4-20250514");
 
       if (res.error) {
-        return NextResponse.json({ error: "Nie udało się przeanalizować. Spróbuj ponownie." }, { status: res.status! });
+        return NextResponse.json({ error: "Nie udało się przeanalizować. Spróbuj ponownie." }, { status: res.status ?? 500});
       }
       try {
         const result = parseJsonResponse(res.text);
@@ -1414,7 +1422,7 @@ ZASADY:
       }
 
       const res = await callClaude(apiKey, supplementAnalysisPrompt, supplUserContent, 5120, 45000);
-      if (res.error) return NextResponse.json({ error: "Nie udało się przeanalizować. Spróbuj ponownie." }, { status: res.status! });
+      if (res.error) return NextResponse.json({ error: "Nie udało się przeanalizować. Spróbuj ponownie." }, { status: res.status ?? 500});
       try {
         const result = parseJsonResponse(res.text);
         result.type = "suplement";
