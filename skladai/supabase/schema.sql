@@ -24,15 +24,20 @@ create table public.profiles (
   updated_at timestamptz default now()
 );
 
--- Scan logs (the KEY table for improving AI)
+-- Scan logs (the KEY table for improving AI and future recommendations)
 create table public.scan_logs (
   id uuid default gen_random_uuid() primary key,
   user_id uuid references auth.users on delete set null,
   mode text not null,
+  scan_type text,                -- normalized: food/cosmetics/suplement/meal/fridge_scan/alcohol_scan/forma
+  product_category text,         -- AI-detected: szampon/krem/serum/witamina D/białko serwatkowe/etc.
+  brand text,                    -- product brand from AI result
   image_url text,
   image2_url text,
-  ocr_text text,
-  ai_result jsonb,
+  ocr_text text,                 -- raw OCR text from Google Vision
+  ingredients_raw text,          -- same as ocr_text (kept for clarity in recommendation queries)
+  ingredients_parsed jsonb,      -- structured JSON array of ingredients from AI
+  ai_result jsonb,               -- full AI response
   ai_model text,
   score integer,
   product_name text,
