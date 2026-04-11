@@ -302,6 +302,9 @@ export default function WynikiPage() {
   const [mealWeights, setMealWeights] = useState<Record<number, number>>({});
   const [textWeights, setTextWeights] = useState<Record<number, number>>({});
   const [allergensOpen, setAllergensOpen] = useState(false);
+  // TODO: Replace demo unlock with RevenueCat premium check
+  const [altUnlocked, setAltUnlocked] = useState(false);
+  const [altQuery, setAltQuery] = useState("");
 
   useEffect(() => {
     const id = params.id as string;
@@ -1633,6 +1636,138 @@ export default function WynikiPage() {
                 </div>
               )}
             </div>
+          </div>
+        )}
+
+        {/* ─── PREMIUM: FIND ALTERNATIVE (cosmetics + suplement only) ─── */}
+        {(isCosmetics || isSuplement) && (
+          <div style={{ margin: "8px 16px 0" }} className="anim-fade-up-3">
+            {/* TODO: Replace demo unlock with RevenueCat premium check */}
+            <button
+              onClick={() => !altUnlocked && setAltUnlocked(true)}
+              style={{
+                width: "100%",
+                position: "relative",
+                borderRadius: 16,
+                overflow: "hidden",
+                background: altUnlocked
+                  ? `rgba(${accentRgb},0.04)`
+                  : "rgba(255,255,255,0.025)",
+                border: `1px solid ${altUnlocked ? `rgba(${accentRgb},0.15)` : "rgba(255,255,255,0.06)"}`,
+                padding: 0,
+                cursor: altUnlocked ? "default" : "pointer",
+                textAlign: "left",
+                transition: "all 0.4s ease",
+              }}
+            >
+              {/* Locked state */}
+              {!altUnlocked && (
+                <div style={{ padding: 20 }}>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+                    <span style={{ fontSize: 15, fontWeight: 700, color: "rgba(255,255,255,0.85)" }}>
+                      🔍 Znajdź lepszą alternatywę
+                    </span>
+                    <span style={{
+                      fontSize: 10,
+                      fontWeight: 800,
+                      color: "#000",
+                      background: "linear-gradient(135deg, #FFD700, #FFA500)",
+                      padding: "3px 8px",
+                      borderRadius: 6,
+                      letterSpacing: 0.5,
+                      textTransform: "uppercase" as const,
+                    }}>
+                      PREMIUM (Demo)
+                    </span>
+                  </div>
+                  <p style={{ fontSize: 12, color: "rgba(255,255,255,0.45)", lineHeight: 1.5, margin: 0 }}>
+                    Porównaj ceny i znajdź produkt z lepszym składem
+                  </p>
+                  {/* Lock overlay */}
+                  <div style={{
+                    position: "absolute",
+                    inset: 0,
+                    background: "rgba(0,0,0,0.15)",
+                    borderRadius: 16,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    pointerEvents: "none",
+                  }}>
+                    <span style={{ fontSize: 28, opacity: 0.5 }}>🔒</span>
+                  </div>
+                </div>
+              )}
+
+              {/* Unlocked state */}
+              {altUnlocked && (
+                <div style={{ padding: 20 }} onClick={(e) => e.stopPropagation()}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
+                    <span style={{ fontSize: 20 }}>🔓</span>
+                    <span style={{ fontSize: 14, fontWeight: 700, color: "rgba(255,255,255,0.85)" }}>
+                      Znajdź lepszą alternatywę
+                    </span>
+                  </div>
+
+                  {/* Search input */}
+                  <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
+                    <input
+                      type="text"
+                      value={altQuery}
+                      onChange={(e) => setAltQuery(e.target.value)}
+                      placeholder="Wpisz nazwę produktu"
+                      style={{
+                        flex: 1,
+                        padding: "10px 14px",
+                        borderRadius: 10,
+                        background: "rgba(255,255,255,0.06)",
+                        border: "1px solid rgba(255,255,255,0.1)",
+                        color: "#fff",
+                        fontSize: 13,
+                        outline: "none",
+                      }}
+                    />
+                    <button
+                      style={{
+                        padding: "10px 16px",
+                        borderRadius: 10,
+                        background: accentColor,
+                        color: "#000",
+                        fontWeight: 700,
+                        fontSize: 13,
+                        border: "none",
+                        cursor: "pointer",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      Szukaj
+                    </button>
+                  </div>
+
+                  {/* Photo button */}
+                  <button
+                    style={{
+                      width: "100%",
+                      padding: "10px 14px",
+                      borderRadius: 10,
+                      background: "rgba(255,255,255,0.04)",
+                      border: "1px dashed rgba(255,255,255,0.12)",
+                      color: "rgba(255,255,255,0.6)",
+                      fontSize: 13,
+                      fontWeight: 600,
+                      cursor: "pointer",
+                      marginBottom: 10,
+                    }}
+                  >
+                    📸 Zrób zdjęcie frontu opakowania
+                  </button>
+
+                  <p style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", margin: 0, textAlign: "center", lineHeight: 1.4 }}>
+                    Podaj nazwę żeby znaleźć tańsze alternatywy na Ceneo i Allegro
+                  </p>
+                </div>
+              )}
+            </button>
           </div>
         )}
 
