@@ -305,6 +305,14 @@ export default function WynikiPage() {
   // TODO: Replace demo unlock with RevenueCat premium check
   const [altUnlocked, setAltUnlocked] = useState(false);
   const [altQuery, setAltQuery] = useState("");
+  const [altSearching, setAltSearching] = useState(false);
+  const [altResults, setAltResults] = useState<{
+    ceneo: { found: boolean; name?: string; price?: number; url?: string; searchUrl: string };
+    allegro: { found: boolean; name?: string; price?: number; url?: string; searchUrl: string };
+  } | null>(null);
+  const [altProductName, setAltProductName] = useState("");
+  const [altOcrLoading, setAltOcrLoading] = useState(false);
+  const altCameraRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const id = params.id as string;
@@ -375,6 +383,49 @@ export default function WynikiPage() {
 
   const accentColor = isCosmetics ? "#C084FC" : isSuplement ? "#3b82f6" : "#6efcb4";
   const accentRgb = isCosmetics ? "192,132,252" : isSuplement ? "59,130,246" : "110,252,180";
+
+  // ─── Premium alternative search ───
+  const handleAltSearch = async (productName: string) => {
+    if (!productName.trim()) return;
+    setAltSearching(true);
+    setAltProductName(productName.trim());
+    setAltResults(null);
+    try {
+      const res = await fetch("/api/price-search", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ productName: productName.trim() }),
+      });
+      if (res.ok) {
+        setAltResults(await res.json());
+      }
+    } catch { /* network error — results stay null */ }
+    setAltSearching(false);
+  };
+
+  const handleAltCamera = async (file: File) => {
+    if (!file || !file.type.startsWith("image/")) return;
+    setAltOcrLoading(true);
+    try {
+      const { compressImage } = await import("@/lib/compress");
+      const base64 = await compressImage(file, 1000);
+      const res = await fetch("/api/ocr-name", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ image: base64 }),
+      });
+      if (res.ok) {
+        const { query } = await res.json();
+        if (query) {
+          setAltQuery(query);
+          setAltOcrLoading(false);
+          handleAltSearch(query);
+          return;
+        }
+      }
+    } catch { /* OCR failed */ }
+    setAltOcrLoading(false);
+  };
 
   const handleShare = async () => {
     if (!shareRef.current) return;
@@ -1643,7 +1694,7 @@ export default function WynikiPage() {
         {(isCosmetics || isSuplement) && (
           <div style={{ margin: "8px 16px 0" }} className="anim-fade-up-3">
             {/* TODO: Replace demo unlock with RevenueCat premium check */}
-            <button
+            <div
               onClick={() => !altUnlocked && setAltUnlocked(true)}
               style={{
                 width: "100%",
@@ -1654,7 +1705,6 @@ export default function WynikiPage() {
                   ? `rgba(${accentRgb},0.04)`
                   : "rgba(255,255,255,0.025)",
                 border: `1px solid ${altUnlocked ? `rgba(${accentRgb},0.15)` : "rgba(255,255,255,0.06)"}`,
-                padding: 0,
                 cursor: altUnlocked ? "default" : "pointer",
                 textAlign: "left",
                 transition: "all 0.4s ease",
@@ -1683,7 +1733,6 @@ export default function WynikiPage() {
                   <p style={{ fontSize: 12, color: "rgba(255,255,255,0.45)", lineHeight: 1.5, margin: 0 }}>
                     Porównaj ceny i znajdź produkt z lepszym składem
                   </p>
-                  {/* Lock overlay */}
                   <div style={{
                     position: "absolute",
                     inset: 0,
@@ -1701,7 +1750,7 @@ export default function WynikiPage() {
 
               {/* Unlocked state */}
               {altUnlocked && (
-                <div style={{ padding: 20 }} onClick={(e) => e.stopPropagation()}>
+                <div style={{ padding: 20 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
                     <span style={{ fontSize: 20 }}>🔓</span>
                     <span style={{ fontSize: 14, fontWeight: 700, color: "rgba(255,255,255,0.85)" }}>
@@ -1710,7 +1759,10 @@ export default function WynikiPage() {
                   </div>
 
                   {/* Search input */}
-                  <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
+                  <form
+                    onSubmit={(e) => { e.preventDefault(); handleAltSearch(altQuery); }}
+                    style={{ display: "flex", gap: 8, marginBottom: 10 }}
+                  >
                     <input
                       type="text"
                       value={altQuery}
@@ -1728,46 +1780,156 @@ export default function WynikiPage() {
                       }}
                     />
                     <button
+                      type="submit"
+                      disabled={altSearching || !altQuery.trim()}
                       style={{
                         padding: "10px 16px",
                         borderRadius: 10,
-                        background: accentColor,
-                        color: "#000",
+                        background: !altQuery.trim() ? "rgba(255,255,255,0.1)" : accentColor,
+                        color: !altQuery.trim() ? "rgba(255,255,255,0.3)" : "#000",
                         fontWeight: 700,
                         fontSize: 13,
                         border: "none",
-                        cursor: "pointer",
+                        cursor: !altQuery.trim() ? "default" : "pointer",
                         whiteSpace: "nowrap",
+                        transition: "all 0.2s",
                       }}
                     >
-                      Szukaj
+                      {altSearching ? "..." : "Szukaj"}
                     </button>
-                  </div>
+                  </form>
 
-                  {/* Photo button */}
+                  {/* Photo button + hidden file input */}
+                  <input
+                    ref={altCameraRef}
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      e.target.value = "";
+                      if (f) handleAltCamera(f);
+                    }}
+                    style={{ display: "none" }}
+                  />
                   <button
+                    type="button"
+                    disabled={altOcrLoading}
+                    onClick={() => altCameraRef.current?.click()}
                     style={{
                       width: "100%",
                       padding: "10px 14px",
                       borderRadius: 10,
                       background: "rgba(255,255,255,0.04)",
                       border: "1px dashed rgba(255,255,255,0.12)",
-                      color: "rgba(255,255,255,0.6)",
+                      color: altOcrLoading ? accentColor : "rgba(255,255,255,0.6)",
                       fontSize: 13,
                       fontWeight: 600,
                       cursor: "pointer",
                       marginBottom: 10,
                     }}
                   >
-                    📸 Zrób zdjęcie frontu opakowania
+                    {altOcrLoading ? "Odczytuję nazwę..." : "📸 Zrób zdjęcie frontu opakowania"}
                   </button>
 
-                  <p style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", margin: 0, textAlign: "center", lineHeight: 1.4 }}>
-                    Podaj nazwę żeby znaleźć tańsze alternatywy na Ceneo i Allegro
-                  </p>
+                  {/* ── Results ── */}
+                  {altSearching && (
+                    <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
+                      {[0, 1].map((i) => (
+                        <div
+                          key={i}
+                          className="animate-pulse"
+                          style={{
+                            flex: 1,
+                            height: 42,
+                            borderRadius: 10,
+                            background: "rgba(255,255,255,0.05)",
+                            border: "1px solid rgba(255,255,255,0.06)",
+                          }}
+                        />
+                      ))}
+                    </div>
+                  )}
+
+                  {!altSearching && altResults && (
+                    <div style={{ marginTop: 4 }}>
+                      <p style={{ fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.65)", marginBottom: 8 }}>
+                        Alternatywy dla <span style={{ color: accentColor }}>{altProductName}</span>
+                      </p>
+                      <div style={{ display: "flex", gap: 8 }}>
+                        {/* Ceneo */}
+                        <a
+                          href={altResults.ceneo.found && altResults.ceneo.url ? altResults.ceneo.url : altResults.ceneo.searchUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{
+                            flex: 1,
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            gap: 6,
+                            padding: 10,
+                            borderRadius: 10,
+                            background: "rgba(232,56,13,0.08)",
+                            border: "1px solid rgba(232,56,13,0.2)",
+                            textDecoration: "none",
+                            cursor: "pointer",
+                          }}
+                        >
+                          <div style={{ width: 18, height: 18, borderRadius: 5, background: "#e8380d", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                            <span style={{ color: "white", fontSize: 8, fontWeight: 700 }}>C</span>
+                          </div>
+                          <span style={{ color: "rgba(255,255,255,0.85)", fontSize: 12, fontWeight: 500 }}>
+                            {altResults.ceneo.found && altResults.ceneo.price
+                              ? `Ceneo · ${Number.isInteger(altResults.ceneo.price) ? `${altResults.ceneo.price} zł` : `${altResults.ceneo.price.toFixed(2)} zł`}`
+                              : "Ceneo"}
+                          </span>
+                        </a>
+                        {/* Allegro */}
+                        <a
+                          href={altResults.allegro.found && altResults.allegro.url ? altResults.allegro.url : altResults.allegro.searchUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{
+                            flex: 1,
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            gap: 6,
+                            padding: 10,
+                            borderRadius: 10,
+                            background: "rgba(255,90,0,0.08)",
+                            border: "1px solid rgba(255,90,0,0.2)",
+                            textDecoration: "none",
+                            cursor: "pointer",
+                          }}
+                        >
+                          <div style={{ width: 18, height: 18, borderRadius: 5, background: "#ff5a00", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                            <span style={{ color: "white", fontSize: 8, fontWeight: 700 }}>A</span>
+                          </div>
+                          <span style={{ color: "rgba(255,255,255,0.85)", fontSize: 12, fontWeight: 500 }}>
+                            {altResults.allegro.found && altResults.allegro.price
+                              ? `Allegro · ${Number.isInteger(altResults.allegro.price) ? `${altResults.allegro.price} zł` : `${altResults.allegro.price.toFixed(2)} zł`}`
+                              : "Allegro"}
+                          </span>
+                        </a>
+                      </div>
+                      {!altResults.ceneo.found && !altResults.allegro.found && (
+                        <p style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", textAlign: "center", marginTop: 6 }}>
+                          Kliknij żeby wyszukać na Ceneo / Allegro
+                        </p>
+                      )}
+                    </div>
+                  )}
+
+                  {!altSearching && !altResults && (
+                    <p style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", margin: 0, textAlign: "center", lineHeight: 1.4 }}>
+                      Podaj nazwę żeby znaleźć tańsze alternatywy na Ceneo i Allegro
+                    </p>
+                  )}
                 </div>
               )}
-            </button>
+            </div>
           </div>
         )}
 
