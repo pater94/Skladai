@@ -11,7 +11,7 @@ interface OnboardingLoginProps {
 }
 
 const cards = [
-  { icon: "💰", title: "Oszczędzaj na zakupach", desc: "Znajdź tańsze produkty z tym samym składem. Nie przepłacaj za logo.", color: "#FBBF24", bg: "rgba(251,191,36,0.06)" },
+  { icon: "💰", title: "Oszczędzaj na zakupach", desc: "Sprawdź skład. Znajdź taniej. Jedz i dbaj o siebie mądrzej.", color: "#FBBF24", bg: "rgba(251,191,36,0.06)" },
   { icon: "🛡️", title: "Chroń swoje zdrowie", desc: "AI ostrzeże Cię przed alergenami i szkodliwymi składnikami zanim kupisz.", color: "#6efcb4", bg: "rgba(110,252,180,0.06)" },
   { icon: "📈", title: "Kontroluj formę", desc: "Śledź kalorie, makro i postępy. Lepsza forma zaczyna się od etykiety.", color: "#3b82f6", bg: "rgba(59,130,246,0.06)" },
 ];
@@ -184,7 +184,7 @@ export default function OnboardingLogin({ onSkip, startSlide = 0 }: OnboardingLo
           <div style={{ display: "flex", gap: 6, marginBottom: 20 }}>
             {[
               { num: "2 min", desc: "Wystarczą żeby sprawdzić produkt", color: "#6efcb4" },
-              { num: "~340 zł", desc: "Oszczędzasz rocznie na lepszych wyborach", color: "#FBBF24" },
+              { num: "~340 zł", desc: "Oszczędzasz rocznie wybierając mądrzej", color: "#FBBF24" },
               { num: "100%", desc: "Darmowe skanowanie bez limitów", color: "#3b82f6" },
             ].map((s, i) => (
               <div key={i} style={{ flex: 1, padding: "16px 8px", borderRadius: 14, textAlign: "center", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
@@ -198,7 +198,7 @@ export default function OnboardingLogin({ onSkip, startSlide = 0 }: OnboardingLo
             <div style={{ position: "absolute", top: -6, left: 16, fontSize: 28, color: "rgba(110,252,180,0.35)", fontWeight: 900 }}>&ldquo;</div>
             {[
               { text: "Dzięki SkładAI wybieram suplementy mądrzej — znalazłem tańsze zamienniki i odstawiłem te, które nie działają.", author: "— Paweł, użytkownik SkładAI" },
-              { text: "Dzięki SkładAI przestałam przepłacać za kosmetyki. Znalazłam zamienniki z lepszym składem.", author: "— Kasia, użytkowniczka SkładAI" },
+              { text: "Dzięki SkładAI wiem co nakładam na skórę. Znalazłam te same produkty dużo taniej.", author: "— Kasia, użytkowniczka SkładAI" },
             ].map((q, i) => (
               <div key={i} style={{ position: i === 0 ? "relative" : "absolute", top: i === 0 ? undefined : 16, left: i === 0 ? undefined : 18, right: i === 0 ? undefined : 18, opacity: activeQuote === i ? 1 : 0, transition: "opacity 0.4s ease" }}>
                 <div style={{ fontSize: 13.5, color: "rgba(255,255,255,0.55)", lineHeight: "20px", fontStyle: "italic", padding: "4px 0" }}>

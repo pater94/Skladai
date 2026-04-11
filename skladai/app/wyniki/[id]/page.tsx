@@ -1715,7 +1715,7 @@ export default function WynikiPage() {
                 <div style={{ padding: 20 }}>
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
                     <span style={{ fontSize: 15, fontWeight: 700, color: "rgba(255,255,255,0.85)" }}>
-                      🔍 Znajdź lepszą alternatywę
+                      🔍 Znajdź taniej lub bez szkodliwych składników
                     </span>
                     <span style={{
                       fontSize: 10,
@@ -1731,7 +1731,7 @@ export default function WynikiPage() {
                     </span>
                   </div>
                   <p style={{ fontSize: 12, color: "rgba(255,255,255,0.45)", lineHeight: 1.5, margin: 0 }}>
-                    Porównaj ceny i znajdź produkt z lepszym składem
+                    Sprawdź cenę i szukaj produktów bez problematycznych składników
                   </p>
                   <div style={{
                     position: "absolute",
@@ -1754,7 +1754,7 @@ export default function WynikiPage() {
                   <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
                     <span style={{ fontSize: 20 }}>🔓</span>
                     <span style={{ fontSize: 14, fontWeight: 700, color: "rgba(255,255,255,0.85)" }}>
-                      Znajdź lepszą alternatywę
+                      Szukaj lepszego
                     </span>
                   </div>
 
@@ -1854,7 +1854,7 @@ export default function WynikiPage() {
                   {!altSearching && altResults && (
                     <div style={{ marginTop: 4 }}>
                       <p style={{ fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.65)", marginBottom: 8 }}>
-                        Alternatywy dla <span style={{ color: accentColor }}>{altProductName}</span>
+                        Wyniki dla <span style={{ color: accentColor }}>{altProductName}</span>
                       </p>
                       <div style={{ display: "flex", gap: 8 }}>
                         {/* Ceneo */}
@@ -1924,7 +1924,7 @@ export default function WynikiPage() {
 
                   {!altSearching && !altResults && (
                     <p style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", margin: 0, textAlign: "center", lineHeight: 1.4 }}>
-                      Podaj nazwę żeby znaleźć tańsze alternatywy na Ceneo i Allegro
+                      Podaj nazwę żeby sprawdzić cenę na Ceneo i Allegro
                     </p>
                   )}
                 </div>

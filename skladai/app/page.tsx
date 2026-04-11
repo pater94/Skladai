@@ -944,8 +944,8 @@ export default function Home() {
             <div className="flex items-start gap-3">
               <span className="text-lg mt-0.5">💰</span>
               <div>
-                <p className="text-[13px] font-bold text-white/80">{isCosmetics ? "Nie przepłacaj za logo." : "Ten sam skład, ułamek ceny."}</p>
-                <p className="text-[11px] text-white/55 mt-0.5 leading-relaxed">{isCosmetics ? "AI porówna skład i znajdzie tańsze produkty o tym samym działaniu." : "80% suplementów to marketing. AI znajdzie te same formy i dawki w lepszej cenie."}</p>
+                <p className="text-[13px] font-bold text-white/80">{isCosmetics ? "Nie przepłacaj." : "Sprawdź gdzie kupisz taniej."}</p>
+                <p className="text-[11px] text-white/55 mt-0.5 leading-relaxed">{isCosmetics ? "AI sprawdzi skład i pomoże znaleźć ten produkt w najlepszej cenie." : "AI oceni skład i dawki. Porównaj ceny na Ceneo i Allegro."}</p>
               </div>
             </div>
           </div>
