@@ -212,7 +212,10 @@ export default function Home() {
   const secondCameraInputRef = useRef<HTMLInputElement>(null);
   const secondGalleryInputRef = useRef<HTMLInputElement>(null);
 
-  const showPhotoPreview = (mode === "food" || mode === "cosmetics" || mode === "suplement");
+  // Only food keeps the 2-photo preview flow. Cosmetics and suplement go
+  // straight to OCR → AI analysis after a single photo, matching the user
+  // expectation of "take one photo of the ingredients and get a result".
+  const showPhotoPreview = mode === "food";
 
   const accent = ACCENT_MAP[mode] || ACCENT_MAP.food;
 
@@ -514,8 +517,8 @@ export default function Home() {
           const headlines: Record<string, { line1: string; accent: string; line2: string; sub: string }> = {
             food:      { line1: "Sprawdź co", accent: "naprawdę", line2: "jesz",              sub: "Zrób zdjęcie etykiety. AI przeanalizuje skład." },
             meal:      { line1: "Sprawdź co", accent: "naprawdę", line2: "jesz",              sub: "Zrób zdjęcie dania. AI oszacuje kalorie." },
-            cosmetics: { line1: "Sprawdź co", accent: "nakładasz", line2: "na skórę",         sub: "Zrób zdjęcie składu INCI. AI oceni bezpieczeństwo." },
-            suplement: { line1: "Sprawdź swój", accent: "suplement", line2: "witaminowy",      sub: "Zrób zdjęcie etykiety. AI oceni skład i dawkowanie." },
+            cosmetics: { line1: "Sprawdź co", accent: "nakładasz", line2: "na skórę",         sub: "Zrób zdjęcie składu (tył opakowania)" },
+            suplement: { line1: "Sprawdź swój", accent: "suplement", line2: "witaminowy",      sub: "Zrób zdjęcie składu (tył opakowania)" },
           };
           const h = headlines[mode] || headlines.food;
           return (
@@ -657,6 +660,7 @@ export default function Home() {
               onBack={() => { setPhotoPreview(null); setSecondPhotoPreview(null); setAwaitingSecondPhoto(false); }}
             />
             {/* Hidden inputs for second photo */}
+            {/* Hidden inputs for second photo — only used for food (showPhotoPreview guard) */}
             <input ref={secondCameraInputRef} type="file" accept="image/*" capture="environment" onChange={async (e) => {
               const file = e.target.files?.[0];
               if (!file || !file.type.startsWith("image/")) return;
@@ -664,8 +668,7 @@ export default function Home() {
               e.target.value = "";
               try {
                 const { compressImage } = await import("@/lib/compress");
-                const maxDim = (mode === "cosmetics" || mode === "suplement") ? 1200 : 2000;
-                const compressed = await compressImage(fileClone, maxDim);
+                const compressed = await compressImage(fileClone, 2000);
                 const clamped = await clampBase64Size(compressed, CAMERA_CLAMP_KB(mode));
                 setSecondPhotoPreview(clamped);
                 setAwaitingSecondPhoto(false);
@@ -678,8 +681,7 @@ export default function Home() {
               e.target.value = "";
               try {
                 const { compressImage } = await import("@/lib/compress");
-                const maxDim = (mode === "cosmetics" || mode === "suplement") ? 1200 : 2000;
-                const compressed = await compressImage(fileClone, maxDim);
+                const compressed = await compressImage(fileClone, 2000);
                 const clamped = await clampBase64Size(compressed, CAMERA_CLAMP_KB(mode));
                 setSecondPhotoPreview(clamped);
                 setAwaitingSecondPhoto(false);
