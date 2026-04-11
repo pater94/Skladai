@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import OnboardingLogin from "./OnboardingLogin";
 import { createClient } from "@/lib/supabase";
+import { devLog } from "@/lib/dev-log";
 import { pullFromCloud } from "@/lib/sync";
 import { nsGet, nsSet, nsSelfTest } from "@/lib/native-storage";
 import { registerOAuthCallbackListener } from "@/lib/native-oauth";
@@ -14,18 +15,18 @@ async function isOnboarded(): Promise<boolean> {
   // Belt and suspenders: check Preferences (UserDefaults), localStorage, and cookie
   const native = await nsGet(ONBOARDED_KEY);
   if (native) {
-    console.log("[Onboarding] Flag found in nsGet (Preferences/localStorage)");
+    devLog("[Onboarding] Flag found in nsGet (Preferences/localStorage)");
     return true;
   }
   try {
     if (localStorage.getItem(ONBOARDED_KEY)) {
-      console.log("[Onboarding] Flag found in localStorage (fallback)");
+      devLog("[Onboarding] Flag found in localStorage (fallback)");
       return true;
     }
   } catch {}
   try {
     if (document.cookie.includes("skladai_onboarded=1")) {
-      console.log("[Onboarding] Flag found in cookie (fallback)");
+      devLog("[Onboarding] Flag found in cookie (fallback)");
       return true;
     }
   } catch {}
@@ -40,7 +41,7 @@ async function markOnboarded() {
     exp.setFullYear(exp.getFullYear() + 1);
     document.cookie = `skladai_onboarded=1;expires=${exp.toUTCString()};path=/;SameSite=Lax`;
   } catch {}
-  console.log("[Onboarding] Flag marked in all stores");
+  devLog("[Onboarding] Flag marked in all stores");
 }
 
 export default function OnboardingWrapper() {
@@ -58,7 +59,7 @@ export default function OnboardingWrapper() {
     // Catches the com.skladai.app://oauth-callback URL fired after Apple/Google
     // sign-in and exchanges the code for a session in the main WebView.
     registerOAuthCallbackListener(supabase, () => {
-      console.log("[Onboarding] Native OAuth callback success");
+      devLog("[Onboarding] Native OAuth callback success");
       markOnboarded();
       pullFromCloud().catch(() => {});
       setState("hidden");
@@ -68,14 +69,14 @@ export default function OnboardingWrapper() {
     async function check() {
       // Run native storage self-test (visible in Xcode console)
       const nsOk = await nsSelfTest();
-      console.log("[Onboarding] Native storage self-test:", nsOk ? "PASS" : "FAIL/web");
+      devLog("[Onboarding] Native storage self-test:", nsOk ? "PASS" : "FAIL/web");
 
       const onboarded = await isOnboarded();
-      console.log("[Onboarding] Has onboarded flag:", onboarded);
+      devLog("[Onboarding] Has onboarded flag:", onboarded);
 
       // STEP 1: Try Supabase's normal getSession (uses our storage adapter)
       let { data: { session } } = await supabase.auth.getSession();
-      console.log("[Onboarding] getSession ->", session ? "EXISTS" : "EMPTY");
+      devLog("[Onboarding] getSession ->", session ? "EXISTS" : "EMPTY");
 
       // STEP 2: If no session but we have a manual backup in Preferences, restore it.
       // This is the bulletproof path: bypasses Supabase storage adapter entirely.
@@ -85,7 +86,7 @@ export default function OnboardingWrapper() {
           try {
             const parsed = JSON.parse(backup);
             if (parsed?.access_token && parsed?.refresh_token) {
-              console.log("[Onboarding] Restoring session from manual backup...");
+              devLog("[Onboarding] Restoring session from manual backup...");
               const { data, error } = await supabase.auth.setSession({
                 access_token: parsed.access_token,
                 refresh_token: parsed.refresh_token,
@@ -94,7 +95,7 @@ export default function OnboardingWrapper() {
                 console.warn("[Onboarding] setSession from backup failed:", error.message);
               } else if (data.session) {
                 session = data.session;
-                console.log("[Onboarding] Session restored from backup ✅");
+                devLog("[Onboarding] Session restored from backup ✅");
               }
             }
           } catch (e) {
@@ -108,9 +109,9 @@ export default function OnboardingWrapper() {
         try {
           const { data: { user } } = await supabase.auth.getUser();
           if (user) {
-            console.log("[Onboarding] User validated:", user.id);
+            devLog("[Onboarding] User validated:", user.id);
             const restored = await pullFromCloud();
-            console.log("[Onboarding] Pull result:", restored);
+            devLog("[Onboarding] Pull result:", restored);
           }
         } catch (e) {
           console.warn("[Onboarding] Cloud restore failed:", e);
@@ -154,7 +155,7 @@ export default function OnboardingWrapper() {
     // Auth state listener — auto-hide onboarding when sign-in completes
     // and ALWAYS persist the full session JSON to Preferences as a manual backup.
     const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log("[Onboarding] Auth event:", event, "session:", session ? "yes" : "no");
+      devLog("[Onboarding] Auth event:", event, "session:", session ? "yes" : "no");
 
       // Manual session backup — independent of Supabase storage adapter.
       // This is the bulletproof path: stores access_token + refresh_token in
@@ -167,7 +168,7 @@ export default function OnboardingWrapper() {
           expires_at: session.expires_at,
         };
         nsSet(SESSION_BACKUP_KEY, JSON.stringify(backup))
-          .then(() => console.log("[Onboarding] Session backup saved"))
+          .then(() => devLog("[Onboarding] Session backup saved"))
           .catch((e) => console.warn("[Onboarding] Session backup failed:", e));
       } else if (event === "SIGNED_OUT") {
         nsSet(SESSION_BACKUP_KEY, "").catch(() => {});

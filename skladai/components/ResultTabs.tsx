@@ -186,8 +186,6 @@ export default function ResultTabs({ result, scanType = "food", isCosmetics: isC
   const isInitCosmetics = isCosProp ?? scanType === "cosmetics";
   const isInitSuplement = scanType === "suplement";
   const [active, setActive] = useState<TabId>(isInitCosmetics || isInitSuplement ? "alternatives" : "ingredients");
-  const [selectedAlt, setSelectedAlt] = useState<"cheaper" | "better" | null>(null);
-  const [showComparison, setShowComparison] = useState(false);
   const isCosmetics = isCosProp ?? scanType === "cosmetics";
   const isSuplement = scanType === "suplement" || result.type === "suplement";
   const tabs = isSuplement ? supplementTabs : isCosmetics ? cosmeticsTabs : foodTabs;

@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import { pullFromCloud, pushToCloud, schedulePush } from "@/lib/sync";
 import { createClient } from "@/lib/supabase";
+import { devLog } from "@/lib/dev-log";
 
 /**
  * Invisible component mounted in root layout.
@@ -22,19 +23,19 @@ export default function CloudSync() {
         const supabase = createClient();
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) {
-          console.log("[CloudSync] No user logged in, skipping sync");
+          devLog("[CloudSync] No user logged in, skipping sync");
           return;
         }
 
-        console.log("[CloudSync] User found, pulling from cloud...");
+        devLog("[CloudSync] User found, pulling from cloud...");
         const restored = await pullFromCloud();
-        console.log("[CloudSync] Pull result: restored =", restored);
+        devLog("[CloudSync] Pull result: restored =", restored);
 
         // Always push after pull — ensures existing localStorage data reaches the cloud
         // (covers the case where sync was added after user already had data)
-        console.log("[CloudSync] Pushing local data to cloud...");
+        devLog("[CloudSync] Pushing local data to cloud...");
         await pushToCloud();
-        console.log("[CloudSync] Push complete");
+        devLog("[CloudSync] Push complete");
 
         // Notify all components to re-read localStorage
         window.dispatchEvent(new Event("cloud-sync-done"));

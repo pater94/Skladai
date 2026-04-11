@@ -62,15 +62,6 @@ function collectLocal(): Record<string, string> {
   return bag;
 }
 
-function restoreLocal(cloud: Record<string, string>): void {
-  for (const key of SYNC_KEYS) {
-    if (cloud[key] !== undefined && cloud[key] !== null) {
-      const val = typeof cloud[key] === "string" ? cloud[key] : JSON.stringify(cloud[key]);
-      localStorage.setItem(key, val);
-    }
-  }
-}
-
 /** Merge array-type keys (history, diary, weight) by unique id/date */
 function mergeArrayKey(localRaw: string | null, cloudRaw: string | unknown): string {
   try {

@@ -6,7 +6,6 @@ import Scanner from "@/components/Scanner";
 import PhotoPreview from "@/components/PhotoPreview";
 import HistoryList from "@/components/HistoryList";
 import MorningAfter from "@/components/MorningAfter";
-import FoodSearch from "@/components/FoodSearch";
 import SkinProfileSetup, { hasSkinProfile } from "@/components/SkinProfileSetup";
 import InciSearch from "@/components/InciSearch";
 import VoiceLog from "@/components/VoiceLog";
@@ -27,8 +26,8 @@ import { compressImageSmall, clampBase64Size } from "@/lib/compress";
 const CAMERA_CLAMP_KB = (mode: string) =>
   mode === "cosmetics" || mode === "suplement" ? 900 : 1500;
 import { isNative, takePhotoForMode } from "@/lib/native-camera";
+import { devLog } from "@/lib/dev-log";
 import type { ScanMode, ScanHistoryItem } from "@/lib/types";
-import Link from "next/link";
 import { Apple, UtensilsCrossed, Sparkles, Pill } from "lucide-react";
 
 /* ── tip arrays ── */
@@ -118,7 +117,7 @@ function MicButton({ accentRgb, onPress }: { accentRgb: string; onPress?: () => 
   }, []);
 
   const handleMicClick = () => {
-    console.log("[MicButton] clicked");
+    devLog("[MicButton] clicked");
     setShowTooltip(false);
     localStorage.setItem("micTooltipShown", "1");
     if (!localStorage.getItem("voiceUsed")) {
@@ -590,22 +589,22 @@ export default function Home() {
               photo1={photoPreview}
               photo2={secondPhotoPreview}
               onAddSecondPhoto={async () => {
-                console.log("[SecondPhoto] click — source:", photoSource, "mode:", mode, "isNative:", isNative());
+                devLog("[SecondPhoto] click — source:", photoSource, "mode:", mode, "isNative:", isNative());
                 setAwaitingSecondPhoto(true);
                 const src: "camera" | "gallery" = photoSource;
                 const fallbackRef = src === "camera" ? secondCameraInputRef : secondGalleryInputRef;
                 try {
                   if (isNative()) {
-                    console.log("[SecondPhoto] trying native takePhotoForMode");
+                    devLog("[SecondPhoto] trying native takePhotoForMode");
                     const base64 = await takePhotoForMode(mode, src);
-                    console.log("[SecondPhoto] native result:", base64 ? `ok (${base64.length} chars)` : "null (user cancelled)");
+                    devLog("[SecondPhoto] native result:", base64 ? `ok (${base64.length} chars)` : "null (user cancelled)");
                     if (base64) {
                       const clamped = await clampBase64Size(base64, CAMERA_CLAMP_KB(mode));
                       setSecondPhotoPreview(clamped);
                     }
                     setAwaitingSecondPhoto(false);
                   } else {
-                    console.log("[SecondPhoto] web — clicking hidden input");
+                    devLog("[SecondPhoto] web — clicking hidden input");
                     fallbackRef.current?.click();
                   }
                 } catch (err) {
@@ -636,7 +635,7 @@ export default function Home() {
                 }
               }}
               onRetakePhoto2={async () => {
-                console.log("[RetakePhoto2] click — source:", photoSource, "mode:", mode);
+                devLog("[RetakePhoto2] click — source:", photoSource, "mode:", mode);
                 setSecondPhotoPreview(null);
                 setAwaitingSecondPhoto(true);
                 const src: "camera" | "gallery" = photoSource;

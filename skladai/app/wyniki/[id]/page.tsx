@@ -1,16 +1,15 @@
 // @ts-nocheck
 "use client";
 
-import React, { useEffect, useState, useRef, useCallback } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import html2canvas from "html2canvas";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { ScanHistoryItem, CosmeticsAnalysisResult, FoodAnalysisResult, MealAnalysisResult, TextSearchResult, CheckFormResult, UserProfile, MealType } from "@/lib/types";
 import { getHistoryItem, getProfile, addDiaryEntry, todayStr } from "@/lib/storage";
-import ScoreRing, { getScoreColor } from "@/components/ScoreRing";
+import { getScoreColor } from "@/components/ScoreRing";
 import ResultTabs from "@/components/ResultTabs";
 import HealthAlerts from "@/components/HealthAlerts";
-import MealPortionEditor from "@/components/MealPortionEditor";
 import IngredientPopup from "@/components/IngredientPopup";
 
 function FunComparisons({ items, isDark }: { items: string[]; isDark: boolean }): React.JSX.Element {

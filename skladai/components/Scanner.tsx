@@ -69,23 +69,6 @@ export default function Scanner({ onScan, isLoading, mode = "food", loadingMessa
     [onScan, mode, awaitingSecond, preview, showSecondPhotoOption]
   );
 
-  const handleScanSingle = () => {
-    if (preview) {
-      if (secondPreview) {
-        // Two images — send with separator
-        onScan(preview + "|||SECOND|||" + secondPreview);
-      } else {
-        onScan(preview);
-      }
-      setPreview(null);
-      setSecondPreview(null);
-    }
-  };
-
-  const handleAddSecond = () => {
-    setAwaitingSecond(true);
-  };
-
   const handleCancelPreview = () => {
     setPreview(null);
     setSecondPreview(null);

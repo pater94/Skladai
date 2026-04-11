@@ -26,6 +26,7 @@ import { Capacitor } from "@capacitor/core";
 import { Browser } from "@capacitor/browser";
 import { App } from "@capacitor/app";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { devLog } from "@/lib/dev-log";
 
 export const NATIVE_OAUTH_REDIRECT = "com.skladai.app://oauth-callback";
 
@@ -51,13 +52,13 @@ export async function registerOAuthCallbackListener(
   if (!isCapacitorNative()) return;
   listenerRegistered = true;
 
-  console.log("[NativeOAuth] Registering app URL listener");
+  devLog("[NativeOAuth] Registering app URL listener");
 
   await App.addListener("appUrlOpen", async (event) => {
-    console.log("[NativeOAuth] appUrlOpen fired:", event.url);
+    devLog("[NativeOAuth] appUrlOpen fired:", event.url);
 
     if (!event.url || !event.url.startsWith("com.skladai.app://")) {
-      console.log("[NativeOAuth] Not an OAuth callback URL, ignoring");
+      devLog("[NativeOAuth] Not an OAuth callback URL, ignoring");
       return;
     }
 
@@ -78,15 +79,15 @@ export async function registerOAuthCallbackListener(
       const refreshToken = hashParams?.get("refresh_token");
 
       if (code) {
-        console.log("[NativeOAuth] Exchanging code for session...");
+        devLog("[NativeOAuth] Exchanging code for session...");
         const { data, error } = await supabase.auth.exchangeCodeForSession(code);
         if (error) {
           console.error("[NativeOAuth] exchangeCodeForSession failed:", error.message);
           return;
         }
-        console.log("[NativeOAuth] Session set via code exchange ✅", data.session?.user?.id);
+        devLog("[NativeOAuth] Session set via code exchange ✅", data.session?.user?.id);
       } else if (accessToken && refreshToken) {
-        console.log("[NativeOAuth] Setting session from hash tokens...");
+        devLog("[NativeOAuth] Setting session from hash tokens...");
         const { error } = await supabase.auth.setSession({
           access_token: accessToken,
           refresh_token: refreshToken,
@@ -95,7 +96,7 @@ export async function registerOAuthCallbackListener(
           console.error("[NativeOAuth] setSession failed:", error.message);
           return;
         }
-        console.log("[NativeOAuth] Session set via implicit tokens ✅");
+        devLog("[NativeOAuth] Session set via implicit tokens ✅");
       } else {
         console.warn("[NativeOAuth] No code or tokens found in callback URL");
         return;
@@ -125,7 +126,7 @@ export async function signInWithProviderNative(
     return;
   }
 
-  console.log(`[NativeOAuth] Starting ${provider} sign-in via Capacitor Browser...`);
+  devLog(`[NativeOAuth] Starting ${provider} sign-in via Capacitor Browser...`);
 
   // Get the OAuth URL without auto-navigating the WebView
   const { data, error } = await supabase.auth.signInWithOAuth({
@@ -141,7 +142,7 @@ export async function signInWithProviderNative(
     throw error || new Error("No OAuth URL returned");
   }
 
-  console.log(`[NativeOAuth] Opening OAuth URL in Capacitor Browser:`, data.url);
+  devLog(`[NativeOAuth] Opening OAuth URL in Capacitor Browser:`, data.url);
 
   // Open in in-app SFSafariViewController; iOS will auto-dismiss when redirect
   // hits the custom URL scheme registered in Info.plist

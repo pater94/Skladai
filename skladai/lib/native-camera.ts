@@ -15,6 +15,7 @@
 
 import { Capacitor } from "@capacitor/core";
 import { Camera, CameraResultType, CameraSource } from "@capacitor/camera";
+import { devLog } from "@/lib/dev-log";
 
 /** Check if running inside a native Capacitor shell AND Camera plugin is registered.
  *  If Camera plugin isn't available (e.g. old iOS binary built before plugin was added),
@@ -129,7 +130,7 @@ export async function takePhotoForMode(
     const msg = err instanceof Error ? err.message : String(err);
     // User cancelled — return null silently
     if (msg.toLowerCase().includes("cancel") || msg.toLowerCase().includes("user denied")) {
-      console.log("[NativeCamera] User cancelled");
+      devLog("[NativeCamera] User cancelled");
       return null;
     }
     // Real error — log and rethrow so UI can show feedback
