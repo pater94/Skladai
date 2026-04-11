@@ -13,13 +13,13 @@ const foodTabs = [
 ] as const;
 
 const cosmeticsTabs = [
-  { id: "alternatives", icon: "💰", label: "Alternatywy" },
+  { id: "alternatives", icon: "🔍", label: "Szukaj lepszego" },
   { id: "review", icon: "⚕️", label: "Ocena" },
   { id: "ingredients", icon: "🧪", label: "Skład" },
 ] as const;
 
 const supplementTabs = [
-  { id: "alternatives", icon: "💰", label: "Alternatywy" },
+  { id: "alternatives", icon: "🔍", label: "Szukaj lepszego" },
   { id: "review", icon: "⚖️", label: "Ocena" },
   { id: "ingredients", icon: "💊", label: "Skład" },
 ] as const;
@@ -292,127 +292,64 @@ export default function ResultTabs({ result, scanType = "food", isCosmetics: isC
           <NutritionTable items={(result as FoodAnalysisResult).nutrition} />
         )}
 
-        {/* ══ TAB: ALTERNATYWY (cosmetics) ══ */}
+        {/* ══ TAB: SZUKAJ LEPSZEGO (cosmetics) ══ */}
         {active === "alternatives" && isCosmetics && cosResult && (() => {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const alt = (cosResult as any).alternatives || cosResult.price_comparison;
-          const cheaper = alt?.cheaper || null;
-          const better = alt?.better || null;
-          const comparison = alt?.comparison || [];
-          const altVerdict = alt?.verdict || "";
-          const tip = alt?.tip || alt?.savings_tip || "";
+          const r = cosResult as any;
+          const avoidIngredients: string[] = Array.isArray(r.avoid_ingredients) ? r.avoid_ingredients : [];
+          const searchQueries: string[] = Array.isArray(r.search_queries) ? r.search_queries : [];
+          const purpose: string = r.product_purpose || "";
+          const isClean = avoidIngredients.length === 0 && searchQueries.length === 0;
           return (
           <div className="space-y-3">
-            {/* Mini hook */}
-            {(cheaper || better) && (
-              <p style={{ color: "rgba(255,255,255,0.75)", fontSize: 12, textAlign: "center", margin: "0 0 14px" }}>
-                💸 AI znalazł lepsze opcje z tym samym składem
-              </p>
-            )}
-
-            {/* Best choice card — when no alternatives needed */}
-            {!cheaper && !better && (
+            {isClean ? (
               <div className="rounded-[20px] p-5" style={{ background: "rgba(34,197,94,0.08)", border: "1px solid rgba(34,197,94,0.2)" }}>
                 <div className="flex items-center gap-2 mb-1">
                   <span className="text-2xl">🏆</span>
-                  <h3 className="text-[18px] font-black" style={{ color: "#22c55e" }}>Najlepszy wybór!</h3>
+                  <h3 className="text-[18px] font-black" style={{ color: "#22c55e" }}>Czysty skład!</h3>
                 </div>
-                <p className="text-[12px] text-white/55 leading-relaxed mt-2">{altVerdict || "Świetny wybór! Ten produkt ma dobry skład. Nie znaleźliśmy lepszej opcji."}</p>
-                {tip && (
-                  <div className="flex items-start gap-2 mt-3 pt-3" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
-                    <span className="text-sm">💡</span>
-                    <p className="text-[11px] text-white/55 leading-relaxed">{tip}</p>
-                  </div>
-                )}
+                <p className="text-[12px] text-white/55 leading-relaxed mt-2">Nie wykryto problematycznych składników. Ten produkt ma dobry skład — nie musisz szukać alternatywy.</p>
                 <div className="mt-4 pt-4" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
-                  <p className="text-[11px] font-bold text-white/55 uppercase tracking-widest mb-2">🛒 Gdzie kupić najtaniej</p>
+                  <p className="text-[11px] font-bold text-white/55 uppercase tracking-widest mb-2">🛒 Kup taniej</p>
                   <ShoppingLinks name={cosResult.name || ""} category="cosmetic" />
                 </div>
               </div>
-            )}
-
-            {/* Karta Tańsza opcja */}
-            {cheaper && (
-              <div onClick={() => setSelectedAlt(selectedAlt === "cheaper" ? null : "cheaper")} className={`rounded-[20px] p-5 transition-all cursor-pointer ${selectedAlt === "cheaper" ? "ring-2 ring-emerald-400/50" : ""}`} style={{ background: "rgba(34,197,94,0.06)", border: "1px solid rgba(34,197,94,0.15)" }}>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-[11px] font-bold text-emerald-400 uppercase tracking-widest">🟢 Tańsza opcja</span>
-                  {selectedAlt === "cheaper" && <span className="text-emerald-400">✅</span>}
-                </div>
-                <div className="flex items-center gap-3">
-                  {cheaper.score && (
-                    <div className="w-10 h-10 rounded-full flex items-center justify-center text-[12px] font-bold text-white shrink-0" style={{ background: cheaper.score >= 7 ? "#22c55e" : cheaper.score >= 4 ? "#f59e0b" : "#ef4444" }}>
-                      {cheaper.score}
+            ) : (
+              <>
+                {avoidIngredients.length > 0 && (
+                  <div className="rounded-[16px] p-4" style={{ background: "rgba(239,68,68,0.06)", border: "1px solid rgba(239,68,68,0.15)" }}>
+                    <p className="text-[11px] font-bold text-red-400 uppercase tracking-widest mb-2">⚠️ Składniki do unikania</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {avoidIngredients.map((ing: string, i: number) => (
+                        <span key={i} className="text-[11px] font-bold px-2.5 py-1 rounded-full" style={{ background: "rgba(239,68,68,0.12)", color: "rgba(248,113,113,0.9)" }}>{ing}</span>
+                      ))}
                     </div>
-                  )}
-                  <div className="flex-1">
-                    <p className="text-[14px] font-bold text-white/90">{cheaper.name}</p>
-                    <p className="text-[11px] text-white/55 mt-0.5">{cheaper.reason}</p>
-                  </div>
-                </div>
-                <ShoppingLinks name={cheaper.search_query || cheaper.name} category="cosmetic" />
-              </div>
-            )}
-
-            {/* Karta Lepszy skład */}
-            {better && (
-              <div onClick={() => setSelectedAlt(selectedAlt === "better" ? null : "better")} className={`rounded-[20px] p-5 transition-all cursor-pointer ${selectedAlt === "better" ? "ring-2 ring-purple-400/50" : ""}`} style={{ background: "rgba(139,92,246,0.06)", border: "1px solid rgba(139,92,246,0.15)" }}>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-[11px] font-bold text-purple-400 uppercase tracking-widest">⭐ Lepszy skład</span>
-                  <div className="flex items-center gap-1.5">
-                    {better.score && <span className="text-[12px] font-bold text-purple-400">{better.score}/10</span>}
-                    {selectedAlt === "better" && <span className="text-purple-400">✅</span>}
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  {better.score && (
-                    <div className="w-10 h-10 rounded-full flex items-center justify-center text-[12px] font-bold text-white shrink-0" style={{ background: better.score >= 7 ? "#22c55e" : better.score >= 4 ? "#f59e0b" : "#ef4444" }}>
-                      {better.score}
-                    </div>
-                  )}
-                  <div className="flex-1">
-                    <p className="text-[14px] font-bold text-white/90">{better.name}</p>
-                    <p className="text-[11px] text-white/55 mt-0.5">{better.reason}</p>
-                  </div>
-                </div>
-                {better.advantages && better.advantages.length > 0 && (
-                  <div className="flex flex-wrap gap-1.5 mt-3 pt-3" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
-                    {better.advantages.map((a: string, i: number) => (
-                      <span key={i} className="text-[10px] font-bold px-2 py-1 rounded-full bg-purple-500/10 text-purple-300">{a}</span>
-                    ))}
                   </div>
                 )}
-                <ShoppingLinks name={better.search_query || better.name} category="cosmetic" />
-              </div>
-            )}
 
-            {/* Porównanie składników (akordeon) */}
-            {comparison.length > 0 && (
-              <div className="velvet-card rounded-[20px] overflow-hidden">
-                <button onClick={() => setShowComparison(!showComparison)} className="w-full flex items-center justify-between p-4 text-left">
-                  <span className="text-[12px] font-bold text-white/60">🔬 Porównanie składników</span>
-                  <span className="text-white/30 text-[12px]">{showComparison ? "▲" : "▼"}</span>
-                </button>
-                {showComparison && (
-                  <div className="px-4 pb-4 space-y-1.5">
-                    {comparison.map((c: { ingredient: string; yours: string; alternative: string }, i: number) => (
-                      <div key={i} className="flex items-center gap-2 text-[11px] py-1.5" style={{ borderTop: i > 0 ? "1px solid rgba(255,255,255,0.04)" : "none" }}>
-                        <span className="text-white/55 flex-1">{c.ingredient}</span>
-                        <span className="text-red-400/70 flex-1 text-right">{c.yours}</span>
-                        <span className="text-white/20">→</span>
-                        <span className="text-emerald-400/70 flex-1">{c.alternative}</span>
-                      </div>
-                    ))}
+                {searchQueries.length > 0 && (
+                  <div className="rounded-[16px] p-4" style={{ background: "rgba(192,132,252,0.04)", border: "1px solid rgba(192,132,252,0.12)" }}>
+                    <p className="text-[11px] font-bold text-purple-400 uppercase tracking-widest mb-3">🔍 Szukaj lepszego{purpose ? ` (${purpose})` : ""}</p>
+                    <div className="space-y-2">
+                      {searchQueries.map((q: string, i: number) => (
+                        <a key={i} href={`https://www.google.com/search?q=${encodeURIComponent(q)}`} target="_blank" rel="noopener noreferrer"
+                          className="flex items-center gap-3 p-3 rounded-[12px] transition-all"
+                          style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
+                          <span className="text-[16px]">🔎</span>
+                          <span className="text-[12px] text-white/75 leading-snug flex-1">{q}</span>
+                          <span className="text-[10px] text-white/30">→</span>
+                        </a>
+                      ))}
+                    </div>
+                    <p className="text-[10px] text-white/30 text-center mt-3">Wyniki z Google — prawdziwe sklepy z filtrami składników</p>
                   </div>
                 )}
-              </div>
-            )}
 
-            {/* Tip */}
-            {tip && (cheaper || better) && (
-              <div className="flex items-start gap-3 px-4 py-3 rounded-[16px] bg-white/[0.02] border border-white/[0.06]">
-                <span className="text-base mt-0.5">💡</span>
-                <p className="text-[12px] text-white/55 leading-relaxed">{tip}</p>
-              </div>
+                <div className="rounded-[16px] p-4" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)" }}>
+                  <p className="text-[11px] font-bold text-white/55 uppercase tracking-widest mb-2">🛒 Kup ten produkt taniej</p>
+                  <ShoppingLinks name={cosResult.name || ""} category="cosmetic" />
+                </div>
+              </>
             )}
           </div>
           );
@@ -596,127 +533,65 @@ export default function ResultTabs({ result, scanType = "food", isCosmetics: isC
           </div>
         )}
 
-        {/* ══ TAB: ALTERNATYWY (suplement) ══ */}
+        {/* ══ TAB: SZUKAJ LEPSZEGO (suplement) ══ */}
         {active === "alternatives" && isSuplement && suppResult && (() => {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const alt = (suppResult as any).alternatives;
-          const cheaper = alt?.cheaper || null;
-          const better = alt?.better || null;
-          const comparison = alt?.comparison || [];
-          const altVerdict = alt?.verdict || "";
-          const tip = alt?.tip || suppResult.tip || "";
+          const r = suppResult as any;
+          const avoidIngredients: string[] = Array.isArray(r.avoid_ingredients) ? r.avoid_ingredients : [];
+          const searchQueries: string[] = Array.isArray(r.search_queries) ? r.search_queries : [];
+          const purpose: string = r.product_purpose || "";
+          const isClean = avoidIngredients.length === 0 && searchQueries.length === 0;
+
           return (
           <div className="space-y-3">
-            {/* Mini hook */}
-            {(cheaper || better) && (
-              <p style={{ color: "rgba(255,255,255,0.75)", fontSize: 12, textAlign: "center", margin: "0 0 14px" }}>
-                💸 AI znalazł lepsze opcje z tym samym składem
-              </p>
-            )}
-
-            {/* Best choice card — when no alternatives needed */}
-            {!cheaper && !better && (
+            {isClean ? (
               <div className="rounded-[20px] p-5" style={{ background: "rgba(34,197,94,0.08)", border: "1px solid rgba(34,197,94,0.2)" }}>
                 <div className="flex items-center gap-2 mb-1">
                   <span className="text-2xl">🏆</span>
-                  <h3 className="text-[18px] font-black" style={{ color: "#22c55e" }}>Najlepszy wybór!</h3>
+                  <h3 className="text-[18px] font-black" style={{ color: "#22c55e" }}>Dobry skład!</h3>
                 </div>
-                <p className="text-[12px] text-white/55 leading-relaxed mt-2">{altVerdict || "Świetny wybór! Ten suplement ma dobry skład w odpowiednich dawkach. Nie znaleźliśmy lepszej opcji."}</p>
-                {tip && (
-                  <div className="flex items-start gap-2 mt-3 pt-3" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
-                    <span className="text-sm">💡</span>
-                    <p className="text-[11px] text-white/55 leading-relaxed">{tip}</p>
-                  </div>
-                )}
+                <p className="text-[12px] text-white/55 leading-relaxed mt-2">Nie wykryto problematycznych składników ani słabych form. Ten suplement ma dobry skład w odpowiednich dawkach.</p>
                 <div className="mt-4 pt-4" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
-                  <p className="text-[11px] font-bold text-white/55 uppercase tracking-widest mb-2">🛒 Gdzie kupić najtaniej</p>
+                  <p className="text-[11px] font-bold text-white/55 uppercase tracking-widest mb-2">🛒 Kup taniej</p>
                   <ShoppingLinks name={suppResult.name || ""} category="supplement" />
                 </div>
               </div>
-            )}
-
-            {/* Karta Tańsza opcja */}
-            {cheaper && (
-              <div onClick={() => setSelectedAlt(selectedAlt === "cheaper" ? null : "cheaper")} className={`rounded-[20px] p-5 transition-all cursor-pointer ${selectedAlt === "cheaper" ? "ring-2 ring-emerald-400/50" : ""}`} style={{ background: "rgba(34,197,94,0.06)", border: "1px solid rgba(34,197,94,0.15)" }}>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-[11px] font-bold text-emerald-400 uppercase tracking-widest">🟢 Tańsza opcja</span>
-                  {selectedAlt === "cheaper" && <span className="text-emerald-400">✅</span>}
-                </div>
-                <div className="flex items-center gap-3">
-                  {cheaper.score && (
-                    <div className="w-10 h-10 rounded-full flex items-center justify-center text-[12px] font-bold text-white shrink-0" style={{ background: cheaper.score >= 7 ? "#22c55e" : cheaper.score >= 4 ? "#f59e0b" : "#ef4444" }}>
-                      {cheaper.score}
+            ) : (
+              <>
+                {avoidIngredients.length > 0 && (
+                  <div className="rounded-[16px] p-4" style={{ background: "rgba(239,68,68,0.06)", border: "1px solid rgba(239,68,68,0.15)" }}>
+                    <p className="text-[11px] font-bold text-red-400 uppercase tracking-widest mb-2">⚠️ Składniki do unikania</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {avoidIngredients.map((ing: string, i: number) => (
+                        <span key={i} className="text-[11px] font-bold px-2.5 py-1 rounded-full" style={{ background: "rgba(239,68,68,0.12)", color: "rgba(248,113,113,0.9)" }}>{ing}</span>
+                      ))}
                     </div>
-                  )}
-                  <div className="flex-1">
-                    <p className="text-[14px] font-bold text-white/90">{cheaper.name}</p>
-                    <p className="text-[11px] text-white/55 mt-0.5">{cheaper.reason}</p>
-                  </div>
-                </div>
-                <ShoppingLinks name={cheaper.search_query || cheaper.name} category="supplement" />
-              </div>
-            )}
-
-            {/* Karta Lepszy skład */}
-            {better && (
-              <div onClick={() => setSelectedAlt(selectedAlt === "better" ? null : "better")} className={`rounded-[20px] p-5 transition-all cursor-pointer ${selectedAlt === "better" ? "ring-2 ring-blue-400/50" : ""}`} style={{ background: "rgba(59,130,246,0.06)", border: "1px solid rgba(59,130,246,0.15)" }}>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-[11px] font-bold text-blue-400 uppercase tracking-widest">⭐ Lepszy skład</span>
-                  <div className="flex items-center gap-1.5">
-                    {better.score && <span className="text-[12px] font-bold text-blue-400">{better.score}/10</span>}
-                    {selectedAlt === "better" && <span className="text-blue-400">✅</span>}
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  {better.score && (
-                    <div className="w-10 h-10 rounded-full flex items-center justify-center text-[12px] font-bold text-white shrink-0" style={{ background: better.score >= 7 ? "#22c55e" : better.score >= 4 ? "#f59e0b" : "#ef4444" }}>
-                      {better.score}
-                    </div>
-                  )}
-                  <div className="flex-1">
-                    <p className="text-[14px] font-bold text-white/90">{better.name}</p>
-                    <p className="text-[11px] text-white/55 mt-0.5">{better.reason}</p>
-                  </div>
-                </div>
-                {better.advantages && better.advantages.length > 0 && (
-                  <div className="flex flex-wrap gap-1.5 mt-3 pt-3" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
-                    {better.advantages.map((a: string, i: number) => (
-                      <span key={i} className="text-[10px] font-bold px-2 py-1 rounded-full bg-blue-500/10 text-blue-300">{a}</span>
-                    ))}
                   </div>
                 )}
-                <ShoppingLinks name={better.search_query || better.name} category="supplement" />
-              </div>
-            )}
 
-            {/* Porównanie składników (akordeon) */}
-            {comparison.length > 0 && (
-              <div className="velvet-card rounded-[20px] overflow-hidden">
-                <button onClick={() => setShowComparison(!showComparison)} className="w-full flex items-center justify-between p-4 text-left">
-                  <span className="text-[12px] font-bold text-white/60">🔬 Porównanie składników</span>
-                  <span className="text-white/30 text-[12px]">{showComparison ? "▲" : "▼"}</span>
-                </button>
-                {showComparison && (
-                  <div className="px-4 pb-4 space-y-1.5">
-                    {comparison.map((c: { ingredient: string; yours: string; alternative: string }, i: number) => (
-                      <div key={i} className="flex items-center gap-2 text-[11px] py-1.5" style={{ borderTop: i > 0 ? "1px solid rgba(255,255,255,0.04)" : "none" }}>
-                        <span className="text-white/55 flex-1">{c.ingredient}</span>
-                        <span className="text-red-400/70 flex-1 text-right">{c.yours}</span>
-                        <span className="text-white/20">→</span>
-                        <span className="text-emerald-400/70 flex-1">{c.alternative}</span>
-                      </div>
-                    ))}
+                {searchQueries.length > 0 && (
+                  <div className="rounded-[16px] p-4" style={{ background: "rgba(59,130,246,0.04)", border: "1px solid rgba(59,130,246,0.12)" }}>
+                    <p className="text-[11px] font-bold text-blue-400 uppercase tracking-widest mb-3">🔍 Szukaj lepszego{purpose ? ` (${purpose})` : ""}</p>
+                    <div className="space-y-2">
+                      {searchQueries.map((q: string, i: number) => (
+                        <a key={i} href={`https://www.google.com/search?q=${encodeURIComponent(q)}`} target="_blank" rel="noopener noreferrer"
+                          className="flex items-center gap-3 p-3 rounded-[12px] transition-all"
+                          style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
+                          <span className="text-[16px]">🔎</span>
+                          <span className="text-[12px] text-white/75 leading-snug flex-1">{q}</span>
+                          <span className="text-[10px] text-white/30">→</span>
+                        </a>
+                      ))}
+                    </div>
+                    <p className="text-[10px] text-white/30 text-center mt-3">Wyniki z Google — prawdziwe sklepy z lepszymi formami składników</p>
                   </div>
                 )}
-              </div>
-            )}
 
-            {/* Tip */}
-            {tip && (cheaper || better) && (
-              <div className="flex items-start gap-3 px-4 py-3 rounded-[16px] bg-white/[0.02] border border-white/[0.06]">
-                <span className="text-base mt-0.5">💡</span>
-                <p className="text-[12px] text-white/55 leading-relaxed">{tip}</p>
-              </div>
+                <div className="rounded-[16px] p-4" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)" }}>
+                  <p className="text-[11px] font-bold text-white/55 uppercase tracking-widest mb-2">🛒 Kup ten suplement taniej</p>
+                  <ShoppingLinks name={suppResult.name || ""} category="supplement" />
+                </div>
+              </>
             )}
           </div>
           );

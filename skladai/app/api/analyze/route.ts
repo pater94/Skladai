@@ -450,30 +450,12 @@ Odpowiedz WYŁĄCZNIE JSON (bez markdown):
   "caution_count": 1,
   "harmful_count": 1,
   "fun_comparisons": ["Ciekawostka o składzie"],
-  "alternatives": {
-    "cheaper": {
-      "name": "CeraVe Krem nawilżający 50ml",
-      "brand": "CeraVe",
-      "score": 7,
-      "reason": "Ceramidy + kwas hialuronowy. Skład zbliżony.",
-      "key_ingredients_match": ["Kwas hialuronowy", "Gliceryna"],
-      "search_query": "CeraVe Krem nawilżający 50ml"
-    },
-    "better": {
-      "name": "The Ordinary Niacynamid 10% + Zinc 1% 30ml",
-      "brand": "The Ordinary",
-      "score": 9,
-      "reason": "Wyższe stężenia składników aktywnych. Bez perfum.",
-      "advantages": ["10% niacynamid vs śladowe", "Brak perfum"],
-      "search_query": "The Ordinary Niacynamid 10% + Zinc 1% 30ml"
-    },
-    "comparison": [
-      {"ingredient": "Kwas hialuronowy", "yours": "Nisko w składzie", "alternative": "2% ✅"},
-      {"ingredient": "Perfumy", "yours": "Obecne ⚠️", "alternative": "Brak ✅"}
-    ],
-    "verdict": "Znaleźliśmy tańszą i lepszą opcję z podobnym składem.",
-    "tip": "Drogerie często mają promocje 2+1 na CeraVe i The Ordinary."
-  },
+  "avoid_ingredients": ["SLS", "MI/MCI"],
+  "product_purpose": "nawilżający|przeciwzmarszczkowy|matujący|przeciwłupieżowy|regenerujący|...",
+  "search_queries": [
+    "krem nawilżający do skóry wrażliwej bez SLS bez parabenów",
+    "krem nawilżający bez perfum hipoalergiczny"
+  ],
   "compatibility": {
     "works_well_with": ["Kwas hialuronowy", "Ceramidy"],
     "avoid_with": ["Retinol (jednoczesne stosowanie)"],
@@ -489,15 +471,19 @@ SCORING (1-10):
 PERSONALIZACJA: Jeśli jest profil skóry — oceniaj pod kątem TEGO profilu i w verdict odnoś się do niego.
 KOMPATYBILNOŚĆ: Retinol+AHA/BHA → nie łącz wieczorem, Wit.C+Niacynamid → można łączyć (mit obalony).
 PAO: null jeśli nie widzisz symbolu słoiczka z miesiącami na zdjęciu.
-ALTERNATIVES — KRYTYCZNE ZASADY:
-- NIGDY nie podawaj cen (price, original_price, savings) — nie masz dostępu do aktualnych danych cenowych
-- Podawaj PEŁNĄ nazwę produktu z marką, wariantem i gramaturą (np. "CeraVe Krem nawilżający 50ml")
-- search_query: pełna nazwa produktu do wyszukania w sklepie
-- Jeśli produkt jest DOBRY (8+/10): cheaper=null, better=null, verdict="Świetny wybór! [dlaczego]"
-- Jeśli produkt PRZECIĘTNY (5-7): podaj alternatywy ALE TYLKO jeśli jesteś PEWIEN że istnieją. Możesz podać jedną (druga null)
-- Jeśli produkt SŁABY (1-4): podaj obie alternatywy
-- NIGDY nie wymyślaj produktów. Polecaj TYLKO znane, popularne marki (CeraVe, The Ordinary, La Roche-Posay, Bioderma, Cerave, Neutrogena)
-- Bądź życzliwym doradcą — dobry produkt POCHWAL, słaby POMÓŻ znaleźć lepszy`
+
+SZUKAJ LEPSZEGO (search_queries) — KLUCZOWE:
+- avoid_ingredients: lista KONKRETNYCH problematycznych składników INCI wykrytych w tym produkcie (alergeny, irytanty, kontrowersyjne). Pusta lista [] jeśli skład jest czysty.
+- product_purpose: przeznaczenie produktu odczytane ze składu/etykiety (nawilżający, przeciwłupieżowy, matujący, regenerujący, wygładzający, przeciwzmarszczkowy, ochronny, rozświetlający itp.)
+- search_queries: 2-3 PRECYZYJNE zapytania do wyszukiwarki sklepowej. Każde MUSI zawierać:
+  1. Kategorię produktu (szampon / krem / serum / żel pod prysznic / odżywka)
+  2. Przeznaczenie (nawilżający / przeciwłupieżowy / matujący — z product_purpose)
+  3. Jeśli profil skóry podany: typ skóry ("do skóry wrażliwej", "do skóry suchej")
+  4. Składniki do wykluczenia: "bez SLS", "bez parabenów", "bez perfum" (z avoid_ingredients)
+  Przykład: zamiast "krem bez SLS" → "krem nawilżający do skóry wrażliwej bez SLS bez parabenów bez perfum"
+- Jeśli produkt DOBRY (8+/10) i brak składników do wykluczenia: search_queries = [], avoid_ingredients = []
+- NIE polecaj konkretnych produktów ani marek — podaj TYLKO zapytania do wyszukiwania
+- Bądź życzliwym doradcą — dobry produkt POCHWAL`
 
 
 const MEAL_ANALYSIS = `Analizujesz ZDJĘCIE DANIA (nie etykiety!). Rozpoznaj co jest na talerzu i oszacuj wartości.
@@ -1382,13 +1368,12 @@ ODPOWIEDZ WYŁĄCZNIE JSON (bez markdown):
   "who_for": ["Osoby z niedoborem X", "Sportowcy"],
   "who_avoid": ["Osoby z chorobą X", "Kobiety w ciąży (powyżej dawki Y)"],
   "fun_comparisons": ["Ciekawostka 1", "Ciekawostka 2"],
-  "alternatives": {
-    "cheaper": {"name": "Now Foods Magnez Cytrynian 250mg 120 kapsułek", "brand": "Now Foods", "score": 7, "reason": "Te same formy składników, popularna marka.", "key_ingredients_match": ["Magnez (cytrynian)", "Witamina B6"], "search_query": "Now Foods Magnez Cytrynian 250mg 120 kapsułek"},
-    "better": {"name": "Naturell Magnez Chelat + B6 P5P 60 tabletek", "brand": "Naturell", "score": 9, "reason": "Chelat — najlepsza przyswajalność. B6 w formie P5P.", "advantages": ["Chelat magnezu", "400mg dawka", "P5P forma B6"], "search_query": "Naturell Magnez Chelat + B6 P5P 60 tabletek"},
-    "comparison": [{"ingredient": "Magnez", "yours": "Tlenek (4% przyswajalność)", "alternative": "Cytrynian (40%) ✅"}],
-    "verdict": "Znaleźliśmy lepsze opcje z bardziej przyswajalnymi formami.",
-    "tip": "Porada zakupowa"
-  }
+  "avoid_ingredients": ["Tlenek magnezu", "Stearynian magnezu"],
+  "product_purpose": "magnez na stres|witamina D na odporność|omega-3 na serce|...",
+  "search_queries": [
+    "magnez chelat lub cytrynian bez tlenku magnezu kapsułki",
+    "magnez chelat B6 P5P bez stearynów"
+  ]
 }
 
 KATEGORIE składników:
@@ -1405,16 +1390,20 @@ ZASADY:
 - interactions: TYLKO jeśli są realne interakcje lekowe lub medyczne (nie wymyślaj)
 - Bądź rzetelny — nie chwal jeśli produkt jest przesycony marketingiem
 - Odpowiadaj PO POLSKU
-- ALTERNATIVES: porównuj FORMY PRZYSWAJALNE i mg/dawkę (cytrynian > tlenek, chelat > siarczan). NIE polecaj tańszego z gorszymi formami.
-- NIGDY nie podawaj cen (price, original_price, savings) — nie masz dostępu do aktualnych danych cenowych
-- Podawaj PEŁNĄ nazwę produktu z marką, wariantem i gramaturą (np. "OstroVit 100% Creatine Monohydrate 500g")
-- search_query: pełna nazwa produktu do wyszukania w sklepie
-- Jeśli produkt DOBRY (8+/10): cheaper=null, better=null, verdict="Świetny wybór! [dlaczego]"
-- Jeśli produkt PRZECIĘTNY (5-7): podaj alternatywy ALE TYLKO jeśli jesteś PEWIEN że istnieją
-- Jeśli produkt SŁABY (1-4): podaj obie alternatywy
-- NIGDY nie wymyślaj produktów. Polecaj TYLKO znane marki (OstroVit, Now Foods, Naturell, Swanson, Doctor's Best, Olimp)
-- Bądź życzliwym doradcą — dobry produkt POCHWAL
-- ZASADA #0: NAZWA i MARKA muszą pochodzić z tekstu OCR/zdjęcia. NIGDY nie wymyślaj.`;
+- ZASADA #0: NAZWA i MARKA muszą pochodzić z tekstu OCR/zdjęcia. NIGDY nie wymyślaj.
+
+SZUKAJ LEPSZEGO (search_queries) — KLUCZOWE:
+- avoid_ingredients: składniki niskiej jakości wykryte w tym suplemencie (tlenek magnezu, stearynian magnezu, barwniki, słabe formy witamin, zbędne wypełniacze). Pusta lista [] jeśli skład jest czysty.
+- product_purpose: przeznaczenie suplementu (magnez na stres, witamina D na odporność, omega-3 na serce, kreatyna na siłę, kolagen na stawy itp.)
+- search_queries: 2-3 PRECYZYJNE zapytania do wyszukiwarki. Każde MUSI zawierać:
+  1. Typ suplementu (magnez / witamina D / omega-3 / kreatyna)
+  2. Przeznaczenie (z product_purpose)
+  3. LEPSZE FORMY do szukania: "chelat" zamiast tlenku, "D3" zamiast D2, "metylowana B12" zamiast cyjanokobalaminy
+  4. Składniki do wykluczenia: "bez tlenku magnezu", "bez sztucznych barwników"
+  Przykład: zamiast "magnez suplement" → "magnez chelat lub cytrynian bez tlenku magnezu kapsułki"
+- Jeśli produkt DOBRY (8+/10) i formy przyswajalne: search_queries = [], avoid_ingredients = []
+- NIE polecaj konkretnych produktów ani marek — podaj TYLKO zapytania do wyszukiwania
+- Bądź życzliwym doradcą — dobry produkt POCHWAL`;
 
       // Run OCR for supplement label (supports dual images)
       let supplOcrText = "";
