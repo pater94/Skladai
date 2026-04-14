@@ -77,6 +77,29 @@ async function logScanToSupabase(opts: {
       ingredientsParsed = r.nutrition;
     }
 
+    // ── Analytics fields (queryable without jsonb parsing) ──
+    const ingredientCount = Array.isArray(r.ingredients) ? r.ingredients.length : null;
+    let harmfulCount: number | null = null;
+    if (Array.isArray(r.ingredients)) {
+      harmfulCount = (r.ingredients as Array<Record<string, unknown>>).filter(
+        (i) => i.category === "harmful" || i.category === "controversial" || i.risk === "warning"
+      ).length;
+    }
+
+    // Pregnancy warning — cosmetics use warnings[].pregnancy_risk, food uses pregnancy_info.alerts
+    let hasPregnancyWarning = false;
+    if (Array.isArray(r.warnings)) {
+      hasPregnancyWarning = (r.warnings as Array<Record<string, unknown>>).some(
+        (w) => w.pregnancy_risk === true
+      );
+    }
+    if (!hasPregnancyWarning && r.pregnancy_info && typeof r.pregnancy_info === "object") {
+      const pi = r.pregnancy_info as Record<string, unknown>;
+      if (Array.isArray(pi.alerts) && pi.alerts.length > 0) {
+        hasPregnancyWarning = true;
+      }
+    }
+
     // Extract user_id inside the fire-and-forget log — never blocks scan
     const userId = opts.request ? await extractUserId(opts.request) : null;
 
@@ -97,6 +120,14 @@ async function logScanToSupabase(opts: {
       product_category: category,
       processing_time_ms: Date.now() - opts.startTime,
       prompt_version: "v1",
+      // Analytics columns
+      risk_level: typeof r.risk_level === "string" ? r.risk_level : null,
+      has_pregnancy_warning: hasPregnancyWarning,
+      ocr_succeeded: opts.ocrText != null ? opts.ocrText.length > 20 : null,
+      is_two_photo: !!opts.image2Base64,
+      ingredient_count: ingredientCount,
+      harmful_count: harmfulCount,
+      verdict_short: typeof r.verdict_short === "string" ? r.verdict_short : null,
     });
   } catch (e) {
     console.error("[ScanLog] Failed to log scan:", e);
@@ -135,8 +166,15 @@ async function logFailedScan(opts: {
       }
     }
 
+    // Normalize error string to a queryable category
+    const errLower = opts.error.toLowerCase();
+    const errorType = errLower.includes("parse") ? "parse_failed"
+      : errLower.includes("timeout") || errLower.includes("504") ? "timeout"
+      : "api_error";
+
     await supaAdmin.from("scan_logs").insert({
       mode: opts.mode,
+      scan_type: opts.mode,
       image_url: imageUrl,
       ai_result: { error: opts.error, failed: true },
       ai_model: "error",
@@ -144,6 +182,7 @@ async function logFailedScan(opts: {
       product_name: null,
       processing_time_ms: Date.now() - opts.startTime,
       prompt_version: "v1",
+      error_type: errorType,
     });
   } catch (e) {
     console.error("[ScanLog] Failed to log error scan:", e);

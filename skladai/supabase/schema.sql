@@ -45,6 +45,15 @@ create table public.scan_logs (
   feedback_note text,
   prompt_version text,
   processing_time_ms integer,
+  -- Analytics columns (queryable without jsonb parsing)
+  risk_level text,               -- cosmetics: LOW/MED/HIGH
+  has_pregnancy_warning boolean default false,
+  ocr_succeeded boolean,         -- Vision OCR success (null for non-OCR modes)
+  is_two_photo boolean default false,
+  ingredient_count integer,      -- number of ingredients detected
+  harmful_count integer,         -- ingredients flagged harmful/controversial
+  verdict_short text,            -- AI verdict label (Dobry/Słaby/Unikaj/etc.)
+  error_type text,               -- null=success, parse_failed/timeout/api_error
   created_at timestamptz default now()
 );
 
