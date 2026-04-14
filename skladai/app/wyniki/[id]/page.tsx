@@ -11,6 +11,7 @@ import { getScoreColor } from "@/components/ScoreRing";
 import ResultTabs from "@/components/ResultTabs";
 import HealthAlerts from "@/components/HealthAlerts";
 import IngredientPopup from "@/components/IngredientPopup";
+import ScanLimitBanner from "@/components/ScanLimitBanner";
 
 function FunComparisons({ items, isDark }: { items: string[]; isDark: boolean }): React.JSX.Element {
   if (!items || items.length === 0) return <></>;
@@ -1634,6 +1635,9 @@ export default function WynikiPage() {
             </div>
           </div>
         )}
+
+        {/* ─── SOFT PAYWALL BANNER (15-19 scans used) ─── */}
+        <ScanLimitBanner />
 
         {/* ─── SHARE BUTTON ─── */}
         <div style={{ margin: "0 16px" }}>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { addDiaryEntry } from "@/lib/storage";
+import { addDiaryEntry, checkFreeTierLimit, incrementScanCount } from "@/lib/storage";
 import { useRouter } from "next/navigation";
 
 // Web Speech API type declarations
@@ -224,6 +224,7 @@ function SineWave({ active }: { active: boolean }) {
 // ======================== VOICELOG COMPONENT ========================
 
 export default function VoiceLog({ mode, onComplete, onClose, initialOpen = false, hideButton = false, initialText }: VoiceLogProps) {
+  const router = useRouter();
   const [open, setOpen] = useState(initialOpen);
   const [phase, setPhase] = useState<"idle" | "recording" | "processing" | "results">("idle");
   const [transcript, setTranscript] = useState("");
@@ -435,6 +436,14 @@ export default function VoiceLog({ mode, onComplete, onClose, initialOpen = fals
 
   // ---- SEND TO API ----
   const sendToAPI = useCallback(async (text: string) => {
+    // Voice meals count as scans — gate on the 20-scan free limit.
+    const { allowed } = checkFreeTierLimit();
+    if (!allowed) {
+      setOpen(false);
+      router.push("/premium?reason=limit");
+      return;
+    }
+
     setPhase("processing");
     setError("");
 
@@ -464,6 +473,7 @@ export default function VoiceLog({ mode, onComplete, onClose, initialOpen = fals
 
       const data = await res.json();
       const parsed = parseApiResponseToItems(data, mode, text);
+      incrementScanCount();
       setItems(parsed);
       setPhase("results");
     } catch (err) {
@@ -475,7 +485,7 @@ export default function VoiceLog({ mode, onComplete, onClose, initialOpen = fals
       }
       setPhase("idle");
     }
-  }, [mode]);
+  }, [mode, router]);
 
   // ---- ITEM HANDLERS ----
   const updateItem = useCallback((id: string, updates: Partial<VoiceItem>) => {
@@ -561,7 +571,6 @@ export default function VoiceLog({ mode, onComplete, onClose, initialOpen = fals
     onClose?.();
   }, [stopRecording, onClose]);
 
-  const router = useRouter();
   const [toast, setToast] = useState("");
 
   // ---- SUBMIT ----

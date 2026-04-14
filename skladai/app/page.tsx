@@ -273,10 +273,10 @@ export default function Home() {
       if (scanLockRef.current) return;
       scanLockRef.current = true;
       setError(null);
-      const { allowed, isPremium: isPrem } = checkFreeTierLimit();
+      const { allowed } = checkFreeTierLimit();
       if (!allowed) {
-        setError(isPrem ? "Osiągnięto limit. Spróbuj jutro." : "Limit 5 skanów/dzień w wersji Free. Odblokuj Premium!");
         scanLockRef.current = false;
+        router.push("/premium?reason=limit");
         return;
       }
       if (!navigator.onLine) { setError("Brak połączenia z internetem."); scanLockRef.current = false; return; }
@@ -389,7 +389,7 @@ export default function Home() {
       scanLockRef.current = true;
       setError(null);
       const { allowed } = checkFreeTierLimit();
-      if (!allowed) { setError("Limit skanów wyczerpany."); scanLockRef.current = false; return; }
+      if (!allowed) { scanLockRef.current = false; router.push("/premium?reason=limit"); return; }
       if (!navigator.onLine) { setError("Brak połączenia z internetem."); scanLockRef.current = false; return; }
       setIsLoading(true);
       setLoadingMessage("Skanuję lodówkę...");

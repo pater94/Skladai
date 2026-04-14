@@ -43,6 +43,7 @@ const SYNC_KEYS = [
   "skladai_favorites",
   "skladai_battle_stats",
   "skladai_max_streak",
+  "skladai_scan_count_global",
   "skladai_checkforms",
   "skladai_achievements_earned",
   "onboardingCompleted",

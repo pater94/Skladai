@@ -1,15 +1,16 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Capacitor } from "@capacitor/core";
 import type { PurchasesPackage } from "@revenuecat/purchases-capacitor";
 import { getOfferings, purchasePackage, restorePurchases } from "@/lib/revenuecat";
 import { usePremium } from "@/lib/hooks/usePremium";
+import { getGlobalScanCount, FREE_TOTAL_SCANS } from "@/lib/storage";
 
 const FEATURES = [
-  { icon: "📸", title: "Skan etykiet", free: "5 dziennie", premium: "Bez limitu" },
-  { icon: "🍽️", title: "Skan dań", free: "2 dziennie", premium: "Bez limitu" },
+  { icon: "📸", title: "Skany AI", free: "20 łącznie", premium: "Bez limitu" },
+  { icon: "🎙️", title: "Voice meal", free: "Wliczane do 20", premium: "Bez limitu" },
   { icon: "📊", title: "Dashboard zdrowotny", free: "—", premium: "✓" },
   { icon: "🩸", title: "Panel cukrzyka", free: "—", premium: "✓" },
   { icon: "🤰", title: "Panel ciąży", free: "—", premium: "✓" },
@@ -41,9 +42,25 @@ function sortPackages(pkgs: PurchasesPackage[]): PurchasesPackage[] {
 }
 
 export default function PremiumPage() {
+  return (
+    <Suspense fallback={null}>
+      <PremiumPageInner />
+    </Suspense>
+  );
+}
+
+function PremiumPageInner() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const reason = searchParams.get("reason");
   const { isPremium: premium, loading: premiumLoading, refresh } = usePremium();
   const isNative = Capacitor.isNativePlatform();
+
+  // Live count of used free scans (refreshed on mount)
+  const [scansUsed, setScansUsed] = useState(0);
+  useEffect(() => {
+    setScansUsed(getGlobalScanCount());
+  }, []);
 
   const [packages, setPackages] = useState<PurchasesPackage[]>([]);
   const [selectedPkg, setSelectedPkg] = useState<PurchasesPackage | null>(null);
@@ -135,6 +152,38 @@ export default function PremiumPage() {
       </div>
 
       <div className="max-w-md mx-auto px-5 -mt-14 pb-24 relative z-20">
+        {/* Paywall reason banner — shown when redirected from a hit limit */}
+        {!premium && reason === "limit" && (
+          <div className="rounded-[20px] p-5 mb-4 text-center" style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.25)" }}>
+            <p className="text-[15px] font-bold" style={{ color: "#dc2626" }}>⏳ Wykorzystałeś {FREE_TOTAL_SCANS} darmowych skanów</p>
+            <p className="text-[12px] mt-1" style={{ color: "rgba(153,27,27,0.8)" }}>Odblokuj nielimitowane skanowanie żeby sprawdzać dalej.</p>
+          </div>
+        )}
+
+        {/* Usage counter + progress bar — visible to non-premium users */}
+        {!premium && (
+          <div className="card-elevated rounded-[20px] p-4 mb-4">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[12px] font-bold text-gray-600">Darmowe skany AI</span>
+              <span className="text-[12px] font-bold" style={{ color: scansUsed >= FREE_TOTAL_SCANS ? "#dc2626" : scansUsed >= FREE_TOTAL_SCANS - 5 ? "#f59e0b" : "#22c55e" }}>
+                {Math.min(scansUsed, FREE_TOTAL_SCANS)} / {FREE_TOTAL_SCANS}
+              </span>
+            </div>
+            <div style={{ height: 8, borderRadius: 4, background: "rgba(0,0,0,0.06)", overflow: "hidden" }}>
+              <div style={{
+                height: "100%",
+                width: `${Math.min(100, (scansUsed / FREE_TOTAL_SCANS) * 100)}%`,
+                background: scansUsed >= FREE_TOTAL_SCANS
+                  ? "linear-gradient(90deg,#ef4444,#dc2626)"
+                  : scansUsed >= FREE_TOTAL_SCANS - 5
+                  ? "linear-gradient(90deg,#f59e0b,#f97316)"
+                  : "linear-gradient(90deg,#22c55e,#16a34a)",
+                transition: "width 0.4s ease",
+              }} />
+            </div>
+          </div>
+        )}
+
         {/* Active premium status */}
         {premium && (
           <div className="bg-emerald-50 border border-emerald-200 rounded-[20px] p-5 mb-4 text-center">

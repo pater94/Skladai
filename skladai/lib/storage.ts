@@ -10,11 +10,15 @@ function notifyChange(): void {
 }
 
 const HISTORY_KEY = "skladai_history";
-const SCAN_COUNT_KEY = "skladai_scan_count";
-const SCAN_DATE_KEY = "skladai_scan_date";
+const SCAN_COUNT_KEY = "skladai_scan_count"; // legacy daily counter (unused)
+const SCAN_DATE_KEY = "skladai_scan_date";   // legacy daily date (unused)
+const GLOBAL_SCAN_COUNT_KEY = "skladai_scan_count_global";
 const MODE_KEY = "skladai_mode";
 const MAX_HISTORY = 50;
-const MAX_DAILY_SCANS = 30;
+const MAX_DAILY_SCANS = 30; // legacy, unused
+
+/** Free tier total scans (global, not daily). After this → paywall. */
+export const FREE_TOTAL_SCANS = 20;
 
 export function getHistory(): ScanHistoryItem[] {
   if (typeof window === "undefined") return [];
@@ -91,9 +95,22 @@ export function checkRateLimit(): { allowed: boolean; remaining: number } {
   return { allowed: count < MAX_DAILY_SCANS, remaining: MAX_DAILY_SCANS - count };
 }
 
+/**
+ * Global lifetime scan count (not daily). Premium users bypass this.
+ * Increments on each billable scan: food/cosmetics/suplement/meal
+ * label scans, fridge multi-scan, and voice meals. Does NOT count:
+ * CheckForm, manual text search, water/weight logs, history browsing.
+ */
+export function getGlobalScanCount(): number {
+  if (typeof window === "undefined") return 0;
+  return parseInt(localStorage.getItem(GLOBAL_SCAN_COUNT_KEY) || "0", 10);
+}
+
 export function incrementScanCount(): void {
-  const count = parseInt(localStorage.getItem(SCAN_COUNT_KEY) || "0", 10);
-  localStorage.setItem(SCAN_COUNT_KEY, (count + 1).toString());
+  if (typeof window === "undefined") return;
+  const used = getGlobalScanCount() + 1;
+  localStorage.setItem(GLOBAL_SCAN_COUNT_KEY, String(used));
+  notifyChange();
 }
 
 // === PROFIL ===
@@ -259,18 +276,19 @@ export function deactivatePremium(): void {
   localStorage.removeItem(PREMIUM_KEY);
 }
 
-// Free tier limits
-const FREE_DAILY_SCANS = 5;
-
-export function checkFreeTierLimit(): { allowed: boolean; remaining: number; isPremium: boolean } {
-  if (isPremium()) return { allowed: true, remaining: 999, isPremium: true };
-  const today = new Date().toDateString();
-  const savedDate = localStorage.getItem(SCAN_DATE_KEY);
-  if (savedDate !== today) {
-    return { allowed: true, remaining: FREE_DAILY_SCANS, isPremium: false };
-  }
-  const count = parseInt(localStorage.getItem(SCAN_COUNT_KEY) || "0", 10);
-  return { allowed: count < FREE_DAILY_SCANS, remaining: FREE_DAILY_SCANS - count, isPremium: false };
+/**
+ * Check the global free-tier scan limit.
+ * Premium → always allowed. Free → allowed while used < FREE_TOTAL_SCANS.
+ */
+export function checkFreeTierLimit(): { allowed: boolean; used: number; remaining: number; isPremium: boolean } {
+  if (isPremium()) return { allowed: true, used: 0, remaining: 999, isPremium: true };
+  const used = getGlobalScanCount();
+  return {
+    allowed: used < FREE_TOTAL_SCANS,
+    used,
+    remaining: Math.max(0, FREE_TOTAL_SCANS - used),
+    isPremium: false,
+  };
 }
 
 // === STREAK ===

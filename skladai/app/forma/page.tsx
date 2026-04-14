@@ -22,7 +22,7 @@ import ActivityBadges from "@/components/ActivityBadges";
 import dynamic from "next/dynamic";
 
 const ProgressChart = dynamic(() => import("@/components/ProgressChart"), { ssr: false });
-import { addToHistory, checkFreeTierLimit, incrementScanCount, updateStreak, removeHistoryItem, getProfile as getStorageProfile } from "@/lib/storage";
+import { addToHistory, updateStreak, removeHistoryItem, getProfile as getStorageProfile } from "@/lib/storage";
 import { isNative, takePhotoForMode } from "@/lib/native-camera";
 import type { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
 
@@ -2061,15 +2061,7 @@ function CheckFormView({
   const handleScan = useCallback(
     async (base64: string) => {
       setError(null);
-      const { allowed, isPremium } = checkFreeTierLimit();
-      if (!allowed) {
-        setError(
-          isPremium
-            ? "Osiągnięto limit. Spróbuj jutro."
-            : "Limit 5 skanów/dzień w wersji Free. Odblokuj Premium!"
-        );
-        return;
-      }
+      // CheckForm scans do NOT count toward the 20-scan free limit.
       if (!navigator.onLine) {
         setError("Brak połączenia z internetem.");
         return;
@@ -2099,7 +2091,7 @@ function CheckFormView({
         }
         if (!res.ok) throw new Error(data.error || `error_${res.status}`);
 
-        incrementScanCount();
+        // CheckForm doesn't increment the 20-scan free limit.
         updateStreak();
 
         // Create thumbnail — keep high res for hero card display
