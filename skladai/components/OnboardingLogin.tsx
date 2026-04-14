@@ -169,14 +169,14 @@ export default function OnboardingLogin({ onSkip, startSlide = 0 }: OnboardingLo
         <div style={slideBase(1)} data-scrollable="true">
           <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 280, background: "linear-gradient(180deg, rgba(110,252,180,0.06) 0%, transparent 100%)", pointerEvents: "none" }} />
 
-          <div style={{ textAlign: "center", marginBottom: 20, position: "relative" }}>
-            <div style={{ marginBottom: 14 }}>
-              <ScannerLogo size={72} filterId="glowB" />
+          <div style={{ textAlign: "center", marginBottom: 18, position: "relative" }}>
+            <div style={{ marginBottom: 12 }}>
+              <ScannerLogo size={68} filterId="glowB" />
             </div>
             <div style={{ fontSize: 22, fontWeight: 900, color: "#fff", letterSpacing: "-0.03em", marginBottom: 6 }}>
               Sprawdzone przez tysiące
             </div>
-            <div style={{ fontSize: 13, color: "rgba(255,255,255,0.45)" }}>
+            <div style={{ fontSize: 13, color: "rgba(255,255,255,0.6)" }}>
               Dołącz do społeczności świadomych konsumentów
             </div>
           </div>
@@ -185,11 +185,11 @@ export default function OnboardingLogin({ onSkip, startSlide = 0 }: OnboardingLo
             {[
               { num: "2 min", desc: "Wystarczą żeby sprawdzić produkt", color: "#6efcb4" },
               { num: "~340 zł", desc: "Oszczędzasz rocznie wybierając mądrzej", color: "#FBBF24" },
-              { num: "100%", desc: "Darmowe skanowanie bez limitów", color: "#3b82f6" },
+              { num: "4 tryby", desc: "Żywność, danie, kosmetyk, suplement", color: "#6efcb4" },
             ].map((s, i) => (
               <div key={i} style={{ flex: 1, padding: "16px 8px", borderRadius: 14, textAlign: "center", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
                 <div style={{ fontSize: 22, fontWeight: 900, color: s.color, marginBottom: 5, letterSpacing: "-0.02em" }}>{s.num}</div>
-                <div style={{ fontSize: 10.5, color: "rgba(255,255,255,0.55)", lineHeight: "14px" }}>{s.desc}</div>
+                <div style={{ fontSize: 10.5, color: "rgba(255,255,255,0.7)", lineHeight: "14px" }}>{s.desc}</div>
               </div>
             ))}
           </div>
@@ -201,10 +201,10 @@ export default function OnboardingLogin({ onSkip, startSlide = 0 }: OnboardingLo
               { text: "Dzięki SkładAI wiem co nakładam na skórę. Znalazłam te same produkty dużo taniej.", author: "— Kasia, użytkowniczka SkładAI" },
             ].map((q, i) => (
               <div key={i} style={{ position: i === 0 ? "relative" : "absolute", top: i === 0 ? undefined : 16, left: i === 0 ? undefined : 18, right: i === 0 ? undefined : 18, opacity: activeQuote === i ? 1 : 0, transition: "opacity 0.4s ease" }}>
-                <div style={{ fontSize: 13.5, color: "rgba(255,255,255,0.55)", lineHeight: "20px", fontStyle: "italic", padding: "4px 0" }}>
+                <div style={{ fontSize: 13.5, color: "rgba(255,255,255,0.75)", lineHeight: "20px", fontStyle: "italic", padding: "4px 0" }}>
                   {q.text}
                 </div>
-                <div style={{ fontSize: 11.5, color: "rgba(255,255,255,0.55)", marginTop: 8, fontStyle: "normal" }}>
+                <div style={{ fontSize: 11.5, color: "rgba(255,255,255,0.6)", marginTop: 8, fontStyle: "normal" }}>
                   {q.author}
                 </div>
               </div>
@@ -216,20 +216,20 @@ export default function OnboardingLogin({ onSkip, startSlide = 0 }: OnboardingLo
         <div style={slideBase(2)} data-scrollable="true">
           <div style={{ position: "absolute", top: -20, left: "50%", transform: "translateX(-50%)", width: 300, height: 180, background: "radial-gradient(ellipse, rgba(110,252,180,0.1), transparent 70%)", animation: "breathe 3s ease-in-out infinite", pointerEvents: "none" }} />
 
-          <div style={{ textAlign: "center", marginBottom: 20, position: "relative" }}>
-            <div style={{ marginBottom: 16 }}>
-              <ScannerLogo size={76} filterId="glowC" />
+          <div style={{ textAlign: "center", marginBottom: 16, position: "relative" }}>
+            <div style={{ marginBottom: 12 }}>
+              <ScannerLogo size={68} filterId="glowC" />
             </div>
-            <div style={{ fontSize: 26, fontWeight: 900, color: "#fff", letterSpacing: "-0.03em", lineHeight: "32px", marginBottom: 8 }}>
+            <div style={{ fontSize: 24, fontWeight: 900, color: "#fff", letterSpacing: "-0.03em", lineHeight: "30px", marginBottom: 6 }}>
               Jedz mądrzej.{" "}
               <span style={{ background: "linear-gradient(135deg, #6efcb4, #3b82f6)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Oszczędzaj więcej.</span>
             </div>
-            <div style={{ fontSize: 14, color: "rgba(255,255,255,0.45)" }}>
+            <div style={{ fontSize: 14, color: "rgba(255,255,255,0.6)" }}>
               Buduj formę świadomie.
             </div>
           </div>
 
-          <div style={{ display: "flex", gap: 6, justifyContent: "center", marginBottom: 22, flexWrap: "wrap" }}>
+          <div style={{ display: "flex", gap: 6, justifyContent: "center", marginBottom: 18, flexWrap: "wrap" }}>
             {[
               { emoji: "💰", text: "Oszczędzaj", color: "#FBBF24" },
               { emoji: "🛡️", text: "Chroń zdrowie", color: "#6efcb4" },
@@ -240,11 +240,6 @@ export default function OnboardingLogin({ onSkip, startSlide = 0 }: OnboardingLo
                 <span style={{ fontSize: 11.5, fontWeight: 700, color: p.color }}>{p.text}</span>
               </div>
             ))}
-          </div>
-
-          <div style={{ textAlign: "center", marginBottom: 22, padding: 18, borderRadius: 18, background: "rgba(251,191,36,0.04)", border: "1px solid rgba(251,191,36,0.1)" }}>
-            <div style={{ fontSize: 34, fontWeight: 900, color: "#FBBF24", marginBottom: 4, letterSpacing: "-0.03em" }}>~340 zł</div>
-            <div style={{ fontSize: 13, color: "rgba(255,255,255,0.45)" }}>tyle oszczędzasz rocznie wybierając mądrzej</div>
           </div>
 
           {/* Error banner */}
@@ -280,11 +275,11 @@ export default function OnboardingLogin({ onSkip, startSlide = 0 }: OnboardingLo
 
           {/* Skip */}
           <div style={{ textAlign: "center" }}>
-            <button onClick={onSkip} style={{ background: "none", border: "none", fontSize: 12.5, color: "rgba(255,255,255,0.55)", cursor: "pointer" }}>Pomiń — korzystaj bez konta</button>
+            <button onClick={onSkip} style={{ background: "none", border: "none", fontSize: 12.5, color: "rgba(255,255,255,0.7)", cursor: "pointer" }}>Pomiń — korzystaj bez konta</button>
           </div>
 
           {/* Privacy */}
-          <div style={{ textAlign: "center", marginTop: 10, fontSize: 10, color: "rgba(255,255,255,0.45)" }}>
+          <div style={{ textAlign: "center", marginTop: 10, fontSize: 10, color: "rgba(255,255,255,0.6)" }}>
             Logując się akceptujesz{" "}
             <Link href="/privacy" style={{ textDecoration: "underline", color: "inherit" }}>Politykę prywatności</Link>
           </div>
