@@ -5,6 +5,7 @@ import SWUpdateBanner from "@/components/SWUpdateBanner";
 import OnboardingWrapper from "@/components/OnboardingWrapper";
 import CloudSync from "@/components/CloudSync";
 import AppInit from "@/components/AppInit";
+import AgentFAB from "@/components/AgentFAB";
 
 export const metadata: Metadata = {
   title: "SkładAI — Sprawdź co naprawdę jesz",
@@ -52,6 +53,7 @@ export default function RootLayout({
         <OnboardingWrapper />
         <CloudSync />
         <AppInit />
+        <AgentFAB />
         {/* Block iOS rubber-band bounce on non-scrollable areas */}
         <script dangerouslySetInnerHTML={{ __html: `
           document.body.addEventListener('touchmove', function(e) {
