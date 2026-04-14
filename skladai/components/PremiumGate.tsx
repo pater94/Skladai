@@ -43,7 +43,7 @@ export default function PremiumGate({ feature, children, isPremium }: Props) {
 
         <button onClick={() => router.push("/premium")}
           className="w-full py-4 bg-gradient-to-r from-amber-400 via-orange-500 to-amber-500 text-white font-bold rounded-[18px] active:scale-[0.97] transition-all text-[15px] shadow-xl shadow-orange-500/25">
-          👑 Odblokuj Premium — 19 zł/mies.
+          👑 Odblokuj Premium
         </button>
         <button onClick={() => router.back()}
           className="w-full mt-3 py-2 text-[12px] text-gray-400 font-semibold">
