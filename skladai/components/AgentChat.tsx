@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 interface Props {
   open: boolean;
   onClose: () => void;
+  isPremium: boolean;
 }
 
 interface ChatMessage {
@@ -13,27 +14,43 @@ interface ChatMessage {
   content: string;
 }
 
-// ── Daily message counter (localStorage, resets at midnight) ──
-const COUNT_KEY = "skladai_chat_count";
-const DATE_KEY = "skladai_chat_date";
-const DAILY_LIMIT = 100;
+// ── Message counters (localStorage) ──
+// Free users: lifetime counter, no reset, hard limit 5.
+// Premium users: daily counter, resets at midnight.
+const FREE_COUNT_KEY = "agent_free_msgs";
+const PAID_COUNT_KEY = "agent_daily_msgs";
+const PAID_DATE_KEY = "agent_daily_date";
+const FREE_LIFETIME_LIMIT = 5;
+const PAID_DAILY_LIMIT = 100;
 const EXPERT_COST = 5;
 
-function getTodayCount(): number {
+function getFreeUsed(): number {
   if (typeof window === "undefined") return 0;
-  const today = new Date().toDateString();
-  const date = localStorage.getItem(DATE_KEY);
-  if (date !== today) return 0;
-  return parseInt(localStorage.getItem(COUNT_KEY) || "0", 10);
+  return parseInt(localStorage.getItem(FREE_COUNT_KEY) || "0", 10);
 }
 
-function bumpCount(amount: number) {
+function bumpFreeUsed(amount: number) {
+  if (typeof window === "undefined") return;
+  localStorage.setItem(FREE_COUNT_KEY, String(getFreeUsed() + amount));
+}
+
+function getPaidUsedToday(): number {
+  if (typeof window === "undefined") return 0;
+  const today = new Date().toDateString();
+  const date = localStorage.getItem(PAID_DATE_KEY);
+  if (date !== today) return 0;
+  return parseInt(localStorage.getItem(PAID_COUNT_KEY) || "0", 10);
+}
+
+function bumpPaidUsed(amount: number) {
   if (typeof window === "undefined") return;
   const today = new Date().toDateString();
-  const cur = getTodayCount();
-  localStorage.setItem(DATE_KEY, today);
-  localStorage.setItem(COUNT_KEY, String(cur + amount));
+  const cur = getPaidUsedToday();
+  localStorage.setItem(PAID_DATE_KEY, today);
+  localStorage.setItem(PAID_COUNT_KEY, String(cur + amount));
 }
+
+const WELCOME_MESSAGE = "Cześć! Jestem Twoim Agentem AI. Znam Twój profil i historię skanów. Zapytaj mnie o dietę, trening, suplementy — cokolwiek związanego ze zdrowiem. 💪";
 
 // ── Logo (rounded square + scanner brackets + S) — inline SVG ──
 function ScannerLogo({ size = 40, expert = false }: { size?: number; expert?: boolean }) {
@@ -73,27 +90,42 @@ const SUGGESTIONS = [
   "Co jeść przed treningiem?",
 ];
 
-export default function AgentChat({ open, onClose }: Props) {
+export default function AgentChat({ open, onClose, isPremium }: Props) {
   const router = useRouter();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [expertMode, setExpertMode] = useState(false);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [todayCount, setTodayCount] = useState(0);
+  const [usedCount, setUsedCount] = useState(0);
   const [showInfoTooltip, setShowInfoTooltip] = useState(false);
+  const [showExpertLocked, setShowExpertLocked] = useState(false);
   const [contextPills, setContextPills] = useState<{ label: string; value: string }[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
+  // Free users can't use expert mode — lock it visually
   const accent = expertMode ? "#FBBF24" : "#6efcb4";
   const accentRgb = expertMode ? "251,191,36" : "110,252,180";
 
-  // Reset count + load context pills when chat opens
+  // Tier-specific counter helpers
+  const limit = isPremium ? PAID_DAILY_LIMIT : FREE_LIFETIME_LIMIT;
+  const freeLimitReached = !isPremium && usedCount >= FREE_LIFETIME_LIMIT;
+
+  // Refresh counter + welcome + context pills whenever the chat opens
   useEffect(() => {
     if (!open) return;
-    setTodayCount(getTodayCount());
+    setUsedCount(isPremium ? getPaidUsedToday() : getFreeUsed());
     setError(null);
+
+    // Inject the welcome message once if the chat has no prior messages
+    setMessages((prev) => {
+      if (prev.length > 0) return prev;
+      return [{ role: "assistant", content: WELCOME_MESSAGE }];
+    });
+
+    // Free users can't enter expert mode — force it off when chat opens
+    if (!isPremium) setExpertMode(false);
 
     // Load context pills from profile
     try {
@@ -116,7 +148,7 @@ export default function AgentChat({ open, onClose }: Props) {
     } catch {
       setContextPills([]);
     }
-  }, [open]);
+  }, [open, isPremium]);
 
   // Lock body scroll while open
   useEffect(() => {
@@ -138,9 +170,15 @@ export default function AgentChat({ open, onClose }: Props) {
     const text = (textOverride ?? input).trim();
     if (!text || sending) return;
 
-    const cost = expertMode ? EXPERT_COST : 1;
-    if (todayCount + cost > DAILY_LIMIT) {
-      setError(`Wykorzystałeś dzienny limit (${DAILY_LIMIT}). Wróć jutro.`);
+    // Free users: hard lifetime cap at 5. The paywall banner is already
+    // rendered inline; we simply refuse to call the API.
+    if (!isPremium && usedCount >= FREE_LIFETIME_LIMIT) {
+      return;
+    }
+
+    const cost = isPremium && expertMode ? EXPERT_COST : 1;
+    if (isPremium && usedCount + cost > PAID_DAILY_LIMIT) {
+      setError(`Wykorzystałeś dzienny limit (${PAID_DAILY_LIMIT}). Wróć jutro.`);
       return;
     }
 
@@ -178,15 +216,22 @@ export default function AgentChat({ open, onClose }: Props) {
       const data = await res.json();
       const reply: string = data.reply || "(brak odpowiedzi)";
       setMessages((prev) => [...prev, { role: "assistant", content: reply }]);
-      bumpCount(cost);
-      setTodayCount(getTodayCount());
+      if (isPremium) bumpPaidUsed(cost);
+      else bumpFreeUsed(1);
+      setUsedCount(isPremium ? getPaidUsedToday() : getFreeUsed());
     } catch {
       setError("Nie udało się połączyć. Spróbuj ponownie.");
     }
     setSending(false);
-  }, [input, sending, todayCount, expertMode, messages]);
+  }, [input, sending, usedCount, expertMode, messages, isPremium]);
 
   const handleExpertToggle = () => {
+    // Free users can see the toggle but can't flip it — tapping shows a tooltip.
+    if (!isPremium) {
+      setShowExpertLocked(true);
+      setTimeout(() => setShowExpertLocked(false), 2500);
+      return;
+    }
     const next = !expertMode;
     setExpertMode(next);
     setMessages((prev) => [
@@ -199,8 +244,8 @@ export default function AgentChat({ open, onClose }: Props) {
     alert("📎 Załączanie zdjęć — wkrótce dostępne");
   };
 
-  const counterPercent = Math.min(100, (todayCount / DAILY_LIMIT) * 100);
-  const counterColor = todayCount >= DAILY_LIMIT ? "#ef4444" : todayCount >= DAILY_LIMIT * 0.8 ? "#f59e0b" : accent;
+  const counterPercent = Math.min(100, (usedCount / limit) * 100);
+  const counterColor = usedCount >= limit ? "#ef4444" : usedCount >= limit * 0.8 ? "#f59e0b" : accent;
 
   return (
     <>
@@ -268,13 +313,16 @@ export default function AgentChat({ open, onClose }: Props) {
           </div>
 
           {/* Expert toggle row */}
-          <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 12, paddingLeft: 60 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 12, paddingLeft: 60, position: "relative" }}>
             <button
               onClick={handleExpertToggle}
               style={{
                 display: "inline-flex", alignItems: "center", gap: 8, padding: "5px 10px",
-                borderRadius: 999, background: `rgba(${accentRgb},0.08)`,
-                border: `1px solid rgba(${accentRgb},0.2)`, cursor: "pointer",
+                borderRadius: 999,
+                background: isPremium ? `rgba(${accentRgb},0.08)` : "rgba(255,255,255,0.04)",
+                border: isPremium ? `1px solid rgba(${accentRgb},0.2)` : "1px solid rgba(255,255,255,0.08)",
+                cursor: "pointer",
+                opacity: isPremium ? 1 : 0.7,
               }}
             >
               <span style={{
@@ -290,7 +338,23 @@ export default function AgentChat({ open, onClose }: Props) {
               <span style={{ fontSize: 11, fontWeight: 700, color: expertMode ? accent : "rgba(255,255,255,0.7)" }}>
                 Tryb ekspercki
               </span>
+              {!isPremium && <span style={{ fontSize: 10, marginLeft: 2 }}>🔒</span>}
             </button>
+
+            {/* Locked tooltip for free users */}
+            {showExpertLocked && (
+              <div
+                style={{
+                  position: "absolute", top: "100%", left: 60, marginTop: 6,
+                  padding: "6px 10px", borderRadius: 8,
+                  background: "rgba(251,191,36,0.12)", border: "1px solid rgba(251,191,36,0.28)",
+                  fontSize: 11, fontWeight: 700, color: "#FBBF24",
+                  whiteSpace: "nowrap", zIndex: 10,
+                }}
+              >
+                👑 Dostępne w Pro+
+              </div>
+            )}
 
             <button
               onClick={() => setShowInfoTooltip((v) => !v)}
@@ -460,6 +524,36 @@ export default function AgentChat({ open, onClose }: Props) {
             </div>
           )}
 
+          {/* Free-trial exhausted paywall (inline, not redirect) */}
+          {freeLimitReached && (
+            <div
+              style={{
+                marginTop: 8,
+                padding: 16,
+                borderRadius: 16,
+                background: "linear-gradient(135deg, rgba(251,191,36,0.1), rgba(249,115,22,0.08))",
+                border: "1px solid rgba(251,191,36,0.28)",
+              }}
+            >
+              <p style={{ fontSize: 13, fontWeight: 800, color: "#FBBF24", margin: 0, marginBottom: 6 }}>
+                ⚡ Wykorzystałeś 5 darmowych wiadomości
+              </p>
+              <p style={{ fontSize: 12, color: "rgba(255,255,255,0.75)", margin: 0, marginBottom: 12, lineHeight: 1.5 }}>
+                Odblokuj Agenta AI bez limitów — plan dietetyczny, trening, analiza skanów i więcej.
+              </p>
+              <button
+                onClick={() => router.push("/premium")}
+                style={{
+                  width: "100%", padding: 12, borderRadius: 12, border: "none",
+                  background: "linear-gradient(135deg,#FBBF24,#F59E0B)",
+                  color: "#000", fontWeight: 800, fontSize: 13, cursor: "pointer",
+                }}
+              >
+                👑 Odblokuj Premium
+              </button>
+            </div>
+          )}
+
           <div ref={messagesEndRef} />
         </div>
 
@@ -467,10 +561,12 @@ export default function AgentChat({ open, onClose }: Props) {
         <div style={{ padding: "8px 18px 4px", flexShrink: 0 }}>
           <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
             <span style={{ fontSize: 10, color: "rgba(255,255,255,0.45)", fontWeight: 600 }}>
-              Wiadomości{expertMode ? " (×5 w trybie eksperckim)" : ""}
+              {isPremium
+                ? `Wiadomości${expertMode ? " (×5 w trybie eksperckim)" : ""}`
+                : "Darmowe wiadomości"}
             </span>
             <span style={{ fontSize: 10, fontWeight: 700, color: counterColor }}>
-              {todayCount} / {DAILY_LIMIT} dziś
+              {usedCount} / {limit}{isPremium ? " dziś" : ""}
             </span>
           </div>
           <div style={{ height: 4, borderRadius: 2, background: "rgba(255,255,255,0.06)", overflow: "hidden" }}>
@@ -499,27 +595,29 @@ export default function AgentChat({ open, onClose }: Props) {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
-              placeholder={expertMode ? "Zapytaj eksperta..." : "Zapytaj Agenta AI..."}
+              placeholder={freeLimitReached ? "Odblokuj Premium żeby kontynuować" : expertMode ? "Zapytaj eksperta..." : "Zapytaj Agenta AI..."}
               rows={1}
+              disabled={freeLimitReached}
               style={{
                 flex: 1, resize: "none", maxHeight: 120, minHeight: 40,
                 padding: "10px 14px", borderRadius: 12,
                 background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)",
                 color: "#fff", fontSize: 14, lineHeight: 1.4, outline: "none",
                 fontFamily: "inherit",
+                opacity: freeLimitReached ? 0.5 : 1,
               }}
             />
             <button
               onClick={() => handleSend()}
-              disabled={!input.trim() || sending}
+              disabled={!input.trim() || sending || freeLimitReached}
               aria-label="Wyślij wiadomość"
               style={{
                 width: 40, height: 40, borderRadius: 12, flexShrink: 0, border: "none",
-                background: input.trim() && !sending
+                background: input.trim() && !sending && !freeLimitReached
                   ? `linear-gradient(135deg, ${accent}, ${expertMode ? "#F59E0B" : "#3dd990"})`
                   : "rgba(255,255,255,0.06)",
-                color: input.trim() && !sending ? "#000" : "rgba(255,255,255,0.3)",
-                fontSize: 18, cursor: input.trim() && !sending ? "pointer" : "default",
+                color: input.trim() && !sending && !freeLimitReached ? "#000" : "rgba(255,255,255,0.3)",
+                fontSize: 18, cursor: input.trim() && !sending && !freeLimitReached ? "pointer" : "default",
                 transition: "all 0.2s",
               }}
             >
