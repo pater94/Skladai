@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import BottomNav from "@/components/BottomNav";
 import Scanner from "@/components/Scanner";
+import ActivityBadges from "@/components/ActivityBadges";
 import dynamic from "next/dynamic";
 
 const ProgressChart = dynamic(() => import("@/components/ProgressChart"), { ssr: false });
@@ -648,17 +649,20 @@ function MainView({
               Śledź siłę, pomiary i progres
             </p>
           </div>
-          <button
-            onClick={() => onTimerOpen?.()}
-            className="flex items-center justify-center transition-all active:scale-95"
-            style={{
-              width: "42px", height: "42px", borderRadius: "50%",
-              background: "rgba(249,115,22,0.1)",
-              border: "1px solid rgba(249,115,22,0.15)",
-            }}
-          >
-            <Timer size={20} style={{ color: "#f97316" }} />
-          </button>
+          <div className="flex items-center gap-2">
+            <ActivityBadges theme="dark" />
+            <button
+              onClick={() => onTimerOpen?.()}
+              className="flex items-center justify-center transition-all active:scale-95"
+              style={{
+                width: "42px", height: "42px", borderRadius: "50%",
+                background: "rgba(249,115,22,0.1)",
+                border: "1px solid rgba(249,115,22,0.15)",
+              }}
+            >
+              <Timer size={20} style={{ color: "#f97316" }} />
+            </button>
+          </div>
         </div>
       </div>
 

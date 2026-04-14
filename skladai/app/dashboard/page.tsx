@@ -6,6 +6,7 @@ import { UserProfile, DailyTotals } from "@/lib/types";
 import { getProfile, getDailyTotals, getWeekTotals, todayStr, removeDiaryEntry, getStreak, getHistory, saveMode } from "@/lib/storage";
 import { useHealthData } from "@/lib/useHealthData";
 import VoiceLog, { VoiceMicButton } from "@/components/VoiceLog";
+import ActivityBadges from "@/components/ActivityBadges";
 
 type DashView = "today" | "week";
 type MealTypeKey = "breakfast" | "lunch" | "dinner" | "snack";
@@ -74,6 +75,25 @@ export default function DashboardPage() {
     (document.getElementById("scroll-container") || window).scrollTo(0, 0);
     reload();
   }, []);
+
+  // Smooth-scroll to Aktywność card when navigated with #aktywnosc-dzis.
+  // Runs after loaded=true so the target div is mounted, and also listens
+  // for hashchange in case the user re-enters this page with a new hash.
+  useEffect(() => {
+    if (!loaded) return;
+    const maybeScroll = () => {
+      if (typeof window === "undefined") return;
+      if (window.location.hash !== "#aktywnosc-dzis") return;
+      setView("today");
+      requestAnimationFrame(() => {
+        const el = document.getElementById("aktywnosc-dzis");
+        el?.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+    };
+    maybeScroll();
+    window.addEventListener("hashchange", maybeScroll);
+    return () => window.removeEventListener("hashchange", maybeScroll);
+  }, [loaded]);
 
   // First-time HealthKit consent prompt — iOS native only, asked once.
   useEffect(() => {
@@ -173,12 +193,15 @@ export default function DashboardPage() {
             <div style={{ fontSize: 22, fontWeight: 900, color: "#fff", letterSpacing: "-0.03em" }}>Dashboard</div>
             <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", marginTop: 2 }}>{dateStr}</div>
           </div>
-          {streak > 0 && (
-            <div style={{ padding: "6px 14px", borderRadius: 20, background: "rgba(110,252,180,0.08)", border: "1px solid rgba(110,252,180,0.15)", display: "flex", alignItems: "center", gap: 4 }}>
-              <span style={{ fontSize: 12 }}>🔥</span>
-              <span style={{ fontSize: 12, fontWeight: 800, color: "#6efcb4" }}>{streak} {streak === 1 ? "dzień" : "dni"}</span>
-            </div>
-          )}
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <ActivityBadges theme="light" />
+            {streak > 0 && (
+              <div style={{ padding: "6px 14px", borderRadius: 20, background: "rgba(110,252,180,0.08)", border: "1px solid rgba(110,252,180,0.15)", display: "flex", alignItems: "center", gap: 4 }}>
+                <span style={{ fontSize: 12 }}>🔥</span>
+                <span style={{ fontSize: 12, fontWeight: 800, color: "#6efcb4" }}>{streak} {streak === 1 ? "dzień" : "dni"}</span>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Toggle */}
@@ -320,6 +343,7 @@ export default function DashboardPage() {
 
           {/* Activity card — data when connected, CTA otherwise */}
           {health.isNative && (
+            <div id="aktywnosc-dzis" style={{ scrollMarginTop: 16 }}>
             <GlassCard>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
@@ -400,6 +424,7 @@ export default function DashboardPage() {
                 );
               })()}
             </GlassCard>
+            </div>
           )}
 
           {/* Meals today */}

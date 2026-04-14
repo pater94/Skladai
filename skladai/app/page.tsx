@@ -27,6 +27,7 @@ const CAMERA_CLAMP_KB = (mode: string) =>
   mode === "cosmetics" || mode === "suplement" ? 900 : 1500;
 import { isNative, takePhotoForMode } from "@/lib/native-camera";
 import { devLog } from "@/lib/dev-log";
+import ActivityBadges from "@/components/ActivityBadges";
 import type { ScanMode, ScanHistoryItem } from "@/lib/types";
 import { Apple, UtensilsCrossed, Sparkles, Pill } from "lucide-react";
 
@@ -509,6 +510,7 @@ export default function Home() {
             <span className="text-white">Skład</span>
             <span style={{ color: accent.hex, textShadow: `0 0 20px ${accent.hex}60` }} className="transition-colors duration-300">AI</span>
           </h1>
+          <ActivityBadges theme="dark" />
         </div>
 
         {/* ══ 2. HEADLINE ══ */}
