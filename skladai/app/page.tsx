@@ -198,6 +198,8 @@ export default function Home() {
   const [showVoice, setShowVoice] = useState(false);
   const [foodSearchQuery, setFoodSearchQuery] = useState("");
   const [voiceInitialText, setVoiceInitialText] = useState<string | undefined>(undefined);
+  // Remember the last attempted scan so the error banner can offer "Ponów skan"
+  const [lastScanArgs, setLastScanArgs] = useState<{ kind: "scan" | "fridge"; base64: string } | null>(null);
   const router = useRouter();
 
   const submitFoodSearch = () => {
@@ -273,6 +275,7 @@ export default function Home() {
       if (scanLockRef.current) return;
       scanLockRef.current = true;
       setError(null);
+      setLastScanArgs({ kind: "scan", base64 });
       const { allowed } = checkFreeTierLimit();
       if (!allowed) {
         scanLockRef.current = false;
@@ -388,6 +391,7 @@ export default function Home() {
       if (scanLockRef.current) return;
       scanLockRef.current = true;
       setError(null);
+      setLastScanArgs({ kind: "fridge", base64 });
       const { allowed } = checkFreeTierLimit();
       if (!allowed) { scanLockRef.current = false; router.push("/premium?reason=limit"); return; }
       if (!navigator.onLine) { setError("Brak połączenia z internetem."); scanLockRef.current = false; return; }
@@ -1003,13 +1007,31 @@ export default function Home() {
         {/* ══ Error ══ */}
         {error && (
           <div
-            className="mt-4 p-4 rounded-2xl text-sm text-center font-semibold text-red-400"
+            className="mt-4 p-4 rounded-2xl"
             style={{
               background: "rgba(239,68,68,0.08)",
               border: "1px solid rgba(239,68,68,0.15)",
             }}
           >
-            {error}
+            <p className="text-sm text-center font-semibold text-red-400">{error}</p>
+            {lastScanArgs && !error.toLowerCase().includes("brak po\u0142\u0105czenia") && (
+              <button
+                onClick={() => {
+                  const args = lastScanArgs;
+                  setError(null);
+                  if (args.kind === "fridge") handleFridgeScan(args.base64);
+                  else handleScan(args.base64);
+                }}
+                className="mt-3 w-full py-2.5 rounded-xl font-bold text-[13px] active:scale-[0.97] transition-all"
+                style={{
+                  background: "rgba(239,68,68,0.12)",
+                  border: "1px solid rgba(239,68,68,0.25)",
+                  color: "#fca5a5",
+                }}
+              >
+                🔄 Ponów skan
+              </button>
+            )}
           </div>
         )}
 

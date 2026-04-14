@@ -24,16 +24,30 @@ export async function GET(request: NextRequest) {
   const dateFrom = searchParams.get("date_from");
   const dateTo = searchParams.get("date_to");
   const page = parseInt(searchParams.get("page") || "1", 10);
-  const limit = 50;
+  // Allow caller to override page size (used by ?mode=error which defaults to 10)
+  const requestedLimit = parseInt(searchParams.get("limit") || "0", 10);
+  const isErrorView = mode === "error";
+  const limit = requestedLimit > 0
+    ? Math.min(requestedLimit, 200)
+    : isErrorView ? 10 : 50;
   const offset = (page - 1) * limit;
+
+  // Error view: only return columns needed for failure analysis
+  const selectCols = isErrorView
+    ? "id,mode,scan_type,error_type,ai_result,ai_model,processing_time_ms,is_two_photo,ocr_succeeded,created_at"
+    : "*";
 
   let query = supabase
     .from("scan_logs")
-    .select("*", { count: "exact" })
+    .select(selectCols, { count: "exact" })
     .order("created_at", { ascending: false })
     .range(offset, offset + limit - 1);
 
-  if (mode && mode !== "all") {
+  if (isErrorView) {
+    // Show all failed scans (logged via logFailedScan with ai_model="error"
+    // OR populated error_type column).
+    query = query.or("error_type.not.is.null,ai_model.eq.error");
+  } else if (mode && mode !== "all") {
     query = query.eq("mode", mode);
   }
   if (dateFrom) {
