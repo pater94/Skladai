@@ -5,8 +5,11 @@ import { usePathname, useRouter } from "next/navigation";
 import { usePremium } from "@/lib/hooks/usePremium";
 import AgentChat from "./AgentChat";
 
-// Routes where the FAB is visible. Profil intentionally excluded.
+// Routes where the FAB is visible. Profil, /premium and /wyniki/*
+// intentionally excluded. Native camera UI on iOS/Android overlays
+// the WebView entirely, so no extra scan-active gate is needed.
 const ALLOWED_PATHS = new Set(["/", "/forma", "/dashboard"]);
+const HIDDEN_PREFIXES = ["/premium", "/wyniki", "/admin", "/privacy"];
 
 // Inline scanner logo for the FAB itself (small, emerald, no expert glow)
 function FabLogo({ size = 32 }: { size?: number }) {
@@ -56,7 +59,9 @@ export default function AgentFAB() {
   if (!mounted) return null;
   if (loading) return null;
   if (onboarding) return null;
-  if (!ALLOWED_PATHS.has(pathname || "")) return null;
+  const path = pathname || "";
+  if (HIDDEN_PREFIXES.some((p) => path === p || path.startsWith(p + "/"))) return null;
+  if (!ALLOWED_PATHS.has(path)) return null;
   if (open) return <AgentChat open={open} onClose={() => setOpen(false)} />;
 
   const handleClick = () => {
@@ -75,8 +80,8 @@ export default function AgentFAB() {
         aria-label="Otwórz Agenta AI"
         style={{
           position: "fixed",
-          right: 18,
-          bottom: 88, // BottomNav is ~64px + safe area; 88 keeps clear gap
+          right: 16,
+          bottom: 80, // sits above BottomNav (~64px tall)
           width: 56,
           height: 56,
           borderRadius: 18,
