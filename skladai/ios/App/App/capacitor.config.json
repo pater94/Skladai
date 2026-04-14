@@ -43,6 +43,7 @@
 		"PreferencesPlugin",
 		"SplashScreenPlugin",
 		"StatusBarPlugin",
-		"HealthPlugin"
+		"HealthPlugin",
+		"PurchasesPlugin"
 	]
 }

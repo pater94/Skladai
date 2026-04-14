@@ -34,5 +34,9 @@
 	{
 		"pkg": "@capgo/capacitor-health",
 		"classpath": "app.capgo.plugin.health.HealthPlugin"
+	},
+	{
+		"pkg": "@revenuecat/purchases-capacitor",
+		"classpath": "com.revenuecat.purchases.capacitor.PurchasesPlugin"
 	}
 ]

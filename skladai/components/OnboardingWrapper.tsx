@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import OnboardingLogin from "./OnboardingLogin";
 import { createClient } from "@/lib/supabase";
 import { devLog } from "@/lib/dev-log";
+import { identifyUser, resetUser } from "@/lib/revenuecat";
 import { pullFromCloud } from "@/lib/sync";
 import { nsGet, nsSet, nsSelfTest } from "@/lib/native-storage";
 import { registerOAuthCallbackListener } from "@/lib/native-oauth";
@@ -172,11 +173,15 @@ export default function OnboardingWrapper() {
           .catch((e) => console.warn("[Onboarding] Session backup failed:", e));
       } else if (event === "SIGNED_OUT") {
         nsSet(SESSION_BACKUP_KEY, "").catch(() => {});
+        // Disconnect user from RevenueCat on sign-out
+        resetUser().catch(() => {});
       }
 
       if (session && (event === "SIGNED_IN" || event === "TOKEN_REFRESHED" || event === "INITIAL_SESSION")) {
         markOnboarded();
         pullFromCloud().catch((e) => console.warn("[Onboarding] Pull on auth event failed:", e));
+        // Link Supabase user to RevenueCat for premium entitlement tracking
+        identifyUser(session.user.id).catch(() => {});
         setState("hidden");
         window.dispatchEvent(new Event("cloud-sync-done"));
       }
