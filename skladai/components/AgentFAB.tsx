@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { usePremium } from "@/lib/hooks/usePremium";
 import AgentChat from "./AgentChat";
 
@@ -35,7 +35,6 @@ function FabLogo({ size = 32 }: { size?: number }) {
 }
 
 export default function AgentFAB() {
-  const router = useRouter();
   const pathname = usePathname();
   const { isPremium, loading } = usePremium();
   const [open, setOpen] = useState(false);
@@ -62,15 +61,11 @@ export default function AgentFAB() {
   const path = pathname || "";
   if (HIDDEN_PREFIXES.some((p) => path === p || path.startsWith(p + "/"))) return null;
   if (!ALLOWED_PATHS.has(path)) return null;
-  if (open) return <AgentChat open={open} onClose={() => setOpen(false)} />;
+  if (open) return <AgentChat open={open} onClose={() => setOpen(false)} isPremium={isPremium} />;
 
-  const handleClick = () => {
-    if (!isPremium) {
-      router.push("/premium?reason=chat");
-      return;
-    }
-    setOpen(true);
-  };
+  // Chat is always accessible. Free users get 5 lifetime trial messages;
+  // the paywall prompt lives inside the chat UI, not here.
+  const handleClick = () => setOpen(true);
 
   return (
     <>
@@ -100,7 +95,7 @@ export default function AgentFAB() {
         <FabLogo size={36} />
       </button>
 
-      <AgentChat open={open} onClose={() => setOpen(false)} />
+      <AgentChat open={open} onClose={() => setOpen(false)} isPremium={isPremium} />
 
       <style jsx>{`
         @keyframes agentFabPulse {
