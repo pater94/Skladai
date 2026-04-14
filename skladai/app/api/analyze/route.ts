@@ -15,7 +15,7 @@ async function logScanToSupabase(opts: {
   aiModel?: string;
   startTime: number;
   ocrText?: string;
-  userId?: string;
+  request?: NextRequest;
 }): Promise<void> {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -77,10 +77,13 @@ async function logScanToSupabase(opts: {
       ingredientsParsed = r.nutrition;
     }
 
+    // Extract user_id inside the fire-and-forget log — never blocks scan
+    const userId = opts.request ? await extractUserId(opts.request) : null;
+
     await supaAdmin.from("scan_logs").insert({
       mode: opts.mode,
       scan_type: opts.scanType || opts.mode,
-      user_id: opts.userId || null,
+      user_id: userId,
       image_url: imageUrl,
       image2_url: image2Url,
       ocr_text: opts.ocrText || null,
@@ -948,14 +951,13 @@ function validateNutrition(result: Record<string, unknown>): void {
 
 // Try to extract user_id from Supabase auth cookies. Non-blocking —
 // returns null when the user isn't logged in or the token is invalid.
+// Hard 3s timeout — this must NEVER block the scan pipeline.
 async function extractUserId(request: NextRequest): Promise<string | null> {
   try {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
     if (!supabaseUrl || !serviceKey) return null;
 
-    // Supabase stores the session in a cookie whose name contains the project ref.
-    // The cookie value is a JSON string with access_token + refresh_token.
     const cookieStore = request.cookies;
     let accessToken: string | null = null;
 
@@ -970,9 +972,15 @@ async function extractUserId(request: NextRequest): Promise<string | null> {
     }
     if (!accessToken) return null;
 
+    // Race getUser against a 3s timeout so a slow Supabase Auth response
+    // can never stall the scan. User ID is nice-to-have, not critical.
     const supaAdmin = createSupabaseClient(supabaseUrl, serviceKey);
-    const { data } = await supaAdmin.auth.getUser(accessToken);
-    return data?.user?.id || null;
+    const result = await Promise.race([
+      supaAdmin.auth.getUser(accessToken),
+      new Promise<null>((resolve) => setTimeout(() => resolve(null), 3000)),
+    ]);
+    if (!result || !("data" in result)) return null;
+    return result.data?.user?.id || null;
   } catch {
     return null;
   }
@@ -990,8 +998,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Brak klucza API." }, { status: 500 });
     }
 
-    // Extract user_id from Supabase session cookie (non-blocking, null if anon)
-    const userId = await extractUserId(request);
+    // User ID extraction moved into logScanToSupabase (fire-and-forget)
+    // so it NEVER blocks the scan pipeline. We just pass the request ref.
 
     try { body = await request.json(); } catch {
       return NextResponse.json({ error: "Nieprawidłowe dane." }, { status: 400 });
@@ -1011,7 +1019,7 @@ export async function POST(request: NextRequest) {
       try {
         const result = parseJsonResponse(res.text);
         result.mode = "alcohol_search";
-        void logScanToSupabase({ mode: "alcohol_search", scanType: "alcohol_search", result, startTime, userId: userId || undefined });
+        void logScanToSupabase({ mode: "alcohol_search", scanType: "alcohol_search", result, startTime, request });
         return NextResponse.json(result);
       } catch {
         return NextResponse.json({ error: "Nie znaleziono tego alkoholu." }, { status: 422 });
@@ -1033,7 +1041,7 @@ export async function POST(request: NextRequest) {
       try {
         const result = parseJsonResponse(res.text);
         result.mode = "alcohol_scan";
-        void logScanToSupabase({ mode: "alcohol_scan", scanType: "alcohol_scan", base64Image: image, result, startTime, userId: userId || undefined });
+        void logScanToSupabase({ mode: "alcohol_scan", scanType: "alcohol_scan", base64Image: image, result, startTime, request });
         return NextResponse.json(result);
       } catch {
         return NextResponse.json({ error: "Nie udało się rozpoznać alkoholu." }, { status: 422 });
@@ -1294,7 +1302,7 @@ Odpowiedz WYŁĄCZNIE poprawnym JSON (bez markdown, bez komentarzy):
             { label: "Węglowodany", value: `${result.total.carbs} g`, icon: "🍞" },
           ];
         }
-        void logScanToSupabase({ mode: "meal", scanType: "meal", base64Image: image, result, aiModel: "claude-opus-4-20250514", startTime, userId: userId || undefined });
+        void logScanToSupabase({ mode: "meal", scanType: "meal", base64Image: image, result, aiModel: "claude-opus-4-20250514", startTime, request });
         return NextResponse.json(result);
       } catch {
         void logFailedScan({ mode: "meal", base64Image: image, error: "Meal parse failed", startTime });
@@ -1316,7 +1324,7 @@ Odpowiedz WYŁĄCZNIE poprawnym JSON (bez markdown, bez komentarzy):
         if (!result.name) result.name = "Skan lodówki";
         if (!result.brand) result.brand = "";
         if (!result.score && result.fridge_score) result.score = Math.round(result.fridge_score);
-        void logScanToSupabase({ mode: "fridge_scan", scanType: "fridge_scan", base64Image: image, result, aiModel: "claude-opus-4-20250514", startTime, userId: userId || undefined });
+        void logScanToSupabase({ mode: "fridge_scan", scanType: "fridge_scan", base64Image: image, result, aiModel: "claude-opus-4-20250514", startTime, request });
         return NextResponse.json(result);
       } catch {
         void logFailedScan({ mode: "fridge_scan", base64Image: image, error: "Fridge parse failed", startTime });
@@ -1345,7 +1353,7 @@ Odpowiedz WYŁĄCZNIE poprawnym JSON (bez markdown, bez komentarzy):
         result.name = "CheckForm";
         result.brand = "";
         if (!result.score && result.overall_score) result.score = result.overall_score;
-        void logScanToSupabase({ mode: "forma", scanType: "forma", base64Image: image, image2Base64: image2 || undefined, result, aiModel: "claude-opus-4-20250514", startTime, userId: userId || undefined });
+        void logScanToSupabase({ mode: "forma", scanType: "forma", base64Image: image, image2Base64: image2 || undefined, result, aiModel: "claude-opus-4-20250514", startTime, request });
         return NextResponse.json(result);
       } catch {
         void logFailedScan({ mode: "forma", base64Image: image, error: "Forma parse failed", startTime });
@@ -1510,7 +1518,7 @@ SZUKAJ LEPSZEGO (search_queries) — KLUCZOWE:
         if (!result.interactions) result.interactions = [];
         if (!result.who_for) result.who_for = [];
         if (!result.who_avoid) result.who_avoid = [];
-        void logScanToSupabase({ mode: "suplement", scanType: "suplement", base64Image: image, image2Base64: image2 || undefined, result, startTime, ocrText: supplOcrText || undefined, userId: userId || undefined });
+        void logScanToSupabase({ mode: "suplement", scanType: "suplement", base64Image: image, image2Base64: image2 || undefined, result, startTime, ocrText: supplOcrText || undefined, request });
         return NextResponse.json(result);
       } catch {
         void logFailedScan({ mode: "suplement", base64Image: image, error: "Suplement parse failed", startTime });
@@ -1681,7 +1689,7 @@ Zweryfikuj z obrazem. Odpowiedz WYŁĄCZNIE poprawnym JSON.${skinProfileHint}`,
       if (!result.allergens) result.allergens = [];
       if (!result.fun_comparisons) result.fun_comparisons = [];
 
-      void logScanToSupabase({ mode: isCosmetics ? "cosmetics" : "food", scanType: isCosmetics ? "cosmetics" : "food", base64Image: image, image2Base64: image2 || undefined, result, startTime, ocrText: ocrText || undefined, userId: userId || undefined });
+      void logScanToSupabase({ mode: isCosmetics ? "cosmetics" : "food", scanType: isCosmetics ? "cosmetics" : "food", base64Image: image, image2Base64: image2 || undefined, result, startTime, ocrText: ocrText || undefined, request });
       return NextResponse.json(result);
     } catch {
       console.error("Failed to parse AI response:", step2.text?.substring(0, 500));
