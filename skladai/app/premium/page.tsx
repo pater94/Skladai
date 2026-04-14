@@ -9,7 +9,9 @@ import { usePremium } from "@/lib/hooks/usePremium";
 import { getGlobalScanCount, FREE_TOTAL_SCANS } from "@/lib/storage";
 
 const FEATURES = [
-  { icon: "📸", title: "Skany AI", free: "20 łącznie", premium: "Bez limitu" },
+  { icon: "♾️", title: "Nielimitowane skany AI", free: "20 łącznie", premium: "Bez limitu" },
+  { icon: "💰", title: "Znajdź najlepszą cenę produktu na Ceneo i Allegro", free: "—", premium: "✓" },
+  { icon: "🔍", title: "Szukaj produktów bez szkodliwych składników", free: "—", premium: "✓" },
   { icon: "🎙️", title: "Voice meal", free: "Wliczane do 20", premium: "Bez limitu" },
   { icon: "📊", title: "Dashboard zdrowotny", free: "—", premium: "✓" },
   { icon: "🩸", title: "Panel cukrzyka", free: "—", premium: "✓" },
@@ -33,12 +35,39 @@ const PKG_LABELS: Record<string, { label: string; period: string }> = {
 // Order for display — yearly first (default), then monthly, then lifetime
 const PKG_ORDER: string[] = ["ANNUAL", "MONTHLY", "LIFETIME"];
 
+// Unified plan shape. `pkg` is null for fallback/hardcoded prices.
+type PlanView = {
+  id: string;
+  typeStr: "MONTHLY" | "ANNUAL" | "LIFETIME";
+  priceString: string;
+  pricePerMonthString: string | null;
+  pkg: PurchasesPackage | null;
+};
+
+// Fallback prices shown when RevenueCat offerings aren't available
+// (web PWA, or native with a failed getOfferings call).
+const FALLBACK_PLANS: PlanView[] = [
+  { id: "fallback_annual",   typeStr: "ANNUAL",   priceString: "89,99 zł",  pricePerMonthString: "7,50 zł", pkg: null },
+  { id: "fallback_monthly",  typeStr: "MONTHLY",  priceString: "14,99 zł",  pricePerMonthString: null,      pkg: null },
+  { id: "fallback_lifetime", typeStr: "LIFETIME", priceString: "199,99 zł", pricePerMonthString: null,      pkg: null },
+];
+
 function sortPackages(pkgs: PurchasesPackage[]): PurchasesPackage[] {
   return [...pkgs].sort((a, b) => {
     const aIdx = PKG_ORDER.indexOf(a.packageType as string);
     const bIdx = PKG_ORDER.indexOf(b.packageType as string);
     return (aIdx === -1 ? 99 : aIdx) - (bIdx === -1 ? 99 : bIdx);
   });
+}
+
+function packageToView(pkg: PurchasesPackage): PlanView {
+  return {
+    id: pkg.identifier,
+    typeStr: pkg.packageType as PlanView["typeStr"],
+    priceString: pkg.product.priceString,
+    pricePerMonthString: pkg.product.pricePerMonthString || null,
+    pkg,
+  };
 }
 
 export default function PremiumPage() {
@@ -62,34 +91,41 @@ function PremiumPageInner() {
     setScansUsed(getGlobalScanCount());
   }, []);
 
-  const [packages, setPackages] = useState<PurchasesPackage[]>([]);
-  const [selectedPkg, setSelectedPkg] = useState<PurchasesPackage | null>(null);
+  const [plans, setPlans] = useState<PlanView[]>(FALLBACK_PLANS);
+  const [selectedPlan, setSelectedPlan] = useState<PlanView | null>(
+    FALLBACK_PLANS.find((p) => p.typeStr === "ANNUAL") || FALLBACK_PLANS[0] || null
+  );
   const [purchasing, setPurchasing] = useState(false);
   const [restoring, setRestoring] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [offeringsLoaded, setOfferingsLoaded] = useState(false);
 
-  // Load offerings on mount (native only)
+  // Load offerings on mount (native only). Falls back to hardcoded prices on
+  // web or when getOfferings fails — Annual stays selected by default.
   useEffect(() => {
     if (!isNative) { setOfferingsLoaded(true); return; }
     getOfferings().then((offering) => {
-      if (offering?.availablePackages) {
-        const sorted = sortPackages(offering.availablePackages);
-        setPackages(sorted);
-        // Default to ANNUAL, fall back to first package
-        const annual = sorted.find((p) => (p.packageType as string) === "ANNUAL");
-        setSelectedPkg(annual || sorted[0] || null);
+      if (offering?.availablePackages && offering.availablePackages.length > 0) {
+        const sorted = sortPackages(offering.availablePackages).map(packageToView);
+        setPlans(sorted);
+        const annual = sorted.find((p) => p.typeStr === "ANNUAL");
+        setSelectedPlan(annual || sorted[0] || null);
       }
       setOfferingsLoaded(true);
     }).catch(() => setOfferingsLoaded(true));
   }, [isNative]);
 
   const handlePurchase = async () => {
-    if (!selectedPkg || purchasing) return;
+    if (!selectedPlan || purchasing) return;
+    // Fallback plan (no real RC package) — no purchase possible, point user to app stores
+    if (!selectedPlan.pkg) {
+      setError("Płatności dostępne w aplikacji mobilnej. Pobierz SkładAI z App Store lub Google Play.");
+      return;
+    }
     setPurchasing(true);
     setError(null);
     try {
-      const success = await purchasePackage(selectedPkg);
+      const success = await purchasePackage(selectedPlan.pkg);
       if (success) {
         refresh();
         router.push("/");
@@ -192,99 +228,92 @@ function PremiumPageInner() {
           </div>
         )}
 
-        {/* ── WEB: no payments ── */}
-        {!premium && !isNative && (
-          <div className="card-elevated rounded-[24px] p-6 mb-4 text-center">
-            <p className="text-[15px] font-bold text-[#1A3A0A] mb-2">📱 Płatności dostępne w aplikacji mobilnej</p>
-            <p className="text-[12px] text-gray-400 mb-5">Pobierz SkładAI na telefon żeby aktywować Premium</p>
-            <div className="flex gap-3 justify-center">
-              <a href="#" className="flex items-center gap-2 px-4 py-2.5 rounded-[12px] bg-black text-white text-[12px] font-bold">
-                 App Store
-              </a>
-              <a href="#" className="flex items-center gap-2 px-4 py-2.5 rounded-[12px] bg-black text-white text-[12px] font-bold">
-                 Google Play
-              </a>
-            </div>
-          </div>
-        )}
-
-        {/* ── NATIVE: RevenueCat offerings ── */}
-        {!premium && isNative && (
+        {/* ── PLAN CARDS + CTA (shown on native with offerings OR with
+             fallback prices when offerings unavailable; also visible on web
+             for transparency about pricing, but CTA becomes a download
+             prompt there) ── */}
+        {!premium && (
           <div className="card-elevated rounded-[24px] p-6 mb-4">
-            {/* Package cards */}
-            {packages.length > 0 ? (
-              <div className="space-y-3 mb-5">
-                {packages.map((pkg) => {
-                  const typeStr = pkg.packageType as string;
-                  const info = PKG_LABELS[typeStr] || { label: pkg.identifier, period: "" };
-                  const isSelected = selectedPkg?.identifier === pkg.identifier;
-                  const isAnnual = typeStr === "ANNUAL";
-
-                  return (
-                    <button
-                      key={pkg.identifier}
-                      onClick={() => setSelectedPkg(pkg)}
-                      className="w-full text-left relative rounded-[16px] p-4 transition-all"
-                      style={{
-                        background: isSelected ? "rgba(245,158,11,0.08)" : "rgba(0,0,0,0.02)",
-                        border: isSelected ? "2px solid #f59e0b" : "2px solid rgba(0,0,0,0.06)",
-                      }}
-                    >
-                      {isAnnual && (
-                        <span className="absolute -top-2.5 right-3 text-[9px] font-black text-white bg-gradient-to-r from-amber-500 to-orange-500 px-2.5 py-0.5 rounded-full uppercase tracking-wider">
-                          Najlepszy wybór
-                        </span>
-                      )}
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-[14px] font-bold text-[#1A3A0A]">{info.label}</p>
-                          {isAnnual && pkg.product.pricePerMonthString && (
-                            <p className="text-[11px] text-gray-400 mt-0.5">
-                              {pkg.product.pricePerMonthString}/mies.
-                            </p>
-                          )}
-                        </div>
-                        <div className="text-right">
-                          <p className="text-[18px] font-black text-[#1A3A0A]">
-                            {pkg.product.priceString}
+            {/* Plan cards */}
+            <div className="space-y-3 mb-5">
+              {plans.map((plan) => {
+                const info = PKG_LABELS[plan.typeStr];
+                const isSelected = selectedPlan?.id === plan.id;
+                const isAnnual = plan.typeStr === "ANNUAL";
+                return (
+                  <button
+                    key={plan.id}
+                    type="button"
+                    onClick={() => setSelectedPlan(plan)}
+                    className="w-full text-left relative rounded-[16px] p-4 transition-all"
+                    style={{
+                      background: isSelected ? "rgba(245,158,11,0.08)" : "rgba(0,0,0,0.02)",
+                      border: isSelected ? "2px solid #f59e0b" : "2px solid rgba(0,0,0,0.06)",
+                    }}
+                  >
+                    {isAnnual && (
+                      <span className="absolute -top-2.5 right-3 text-[9px] font-black text-white bg-gradient-to-r from-amber-500 to-orange-500 px-2.5 py-0.5 rounded-full uppercase tracking-wider">
+                        Najlepszy wybór
+                      </span>
+                    )}
+                    <div className="flex items-center justify-between">
+                      <div className="ml-7">
+                        <p className="text-[14px] font-bold text-[#1A3A0A]">{info.label}</p>
+                        {isAnnual && plan.pricePerMonthString && (
+                          <p className="text-[11px] text-gray-400 mt-0.5">
+                            {plan.pricePerMonthString}/mies.
                           </p>
-                          {info.period && (
-                            <p className="text-[11px] text-gray-400">{info.period}</p>
-                          )}
-                        </div>
+                        )}
                       </div>
-                      {/* Selection indicator */}
-                      <div className="absolute top-4 left-4 w-5 h-5 rounded-full border-2 flex items-center justify-center"
-                        style={{ borderColor: isSelected ? "#f59e0b" : "rgba(0,0,0,0.15)" }}>
-                        {isSelected && <div className="w-3 h-3 rounded-full bg-amber-500" />}
+                      <div className="text-right">
+                        <p className="text-[18px] font-black text-[#1A3A0A]">{plan.priceString}</p>
+                        {info.period && <p className="text-[11px] text-gray-400">{info.period}</p>}
                       </div>
-                    </button>
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="text-center py-4 mb-4">
-                <p className="text-[13px] text-gray-400">Ładowanie ofert...</p>
-              </div>
-            )}
+                    </div>
+                    {/* Selection indicator */}
+                    <div className="absolute top-4 left-4 w-5 h-5 rounded-full border-2 flex items-center justify-center"
+                      style={{ borderColor: isSelected ? "#f59e0b" : "rgba(0,0,0,0.15)" }}>
+                      {isSelected && <div className="w-3 h-3 rounded-full bg-amber-500" />}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
 
-            {/* Purchase button */}
+            {/* CTA — dynamic price of selected plan */}
             <button
               onClick={handlePurchase}
-              disabled={purchasing || !selectedPkg}
+              disabled={purchasing || !selectedPlan}
               className="w-full py-4 bg-gradient-to-r from-amber-400 via-orange-500 to-amber-500 text-white font-bold rounded-[18px] active:scale-[0.97] transition-all text-[15px] shadow-xl shadow-orange-500/25 mb-3 disabled:opacity-50"
             >
-              {purchasing ? "Przetwarzanie..." : "👑 Kup Premium"}
+              {purchasing
+                ? "Przetwarzanie..."
+                : selectedPlan
+                ? `Rozpocznij — ${selectedPlan.priceString}${PKG_LABELS[selectedPlan.typeStr].period}`
+                : "Rozpocznij"}
             </button>
 
-            {/* Restore purchases */}
-            <button
-              onClick={handleRestore}
-              disabled={restoring}
-              className="w-full py-2 text-[12px] text-gray-400 font-semibold"
-            >
-              {restoring ? "Przywracanie..." : "Przywróć zakupy"}
-            </button>
+            {/* Native-only: restore purchases */}
+            {isNative && (
+              <button
+                onClick={handleRestore}
+                disabled={restoring}
+                className="w-full py-2 text-[12px] text-gray-400 font-semibold"
+              >
+                {restoring ? "Przywracanie..." : "Przywróć zakupy"}
+              </button>
+            )}
+
+            {/* Web-only: download prompt + store links */}
+            {!isNative && (
+              <div className="mt-4 pt-4 border-t border-gray-100 text-center">
+                <p className="text-[12px] font-bold text-[#1A3A0A] mb-2">📱 Płatności dostępne w aplikacji mobilnej</p>
+                <div className="flex gap-3 justify-center">
+                  <a href="#" className="px-4 py-2 rounded-[12px] bg-black text-white text-[12px] font-bold"> App Store</a>
+                  <a href="#" className="px-4 py-2 rounded-[12px] bg-black text-white text-[12px] font-bold"> Google Play</a>
+                </div>
+              </div>
+            )}
 
             {/* Error */}
             {error && (

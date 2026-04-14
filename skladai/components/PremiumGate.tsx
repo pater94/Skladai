@@ -25,6 +25,9 @@ export default function PremiumGate({ feature, children, isPremium }: Props) {
 
         <div className="space-y-2 text-left mb-6">
           {[
+            "♾️ Nielimitowane skany AI",
+            "💰 Znajdź najlepszą cenę produktu na Ceneo i Allegro",
+            "🔍 Szukaj produktów bez szkodliwych składników",
             "📊 Dashboard zdrowotny",
             "🩸 Panel cukrzyka (WW, IG)",
             "🤰 Panel ciąży",
@@ -32,7 +35,6 @@ export default function PremiumGate({ feature, children, isPremium }: Props) {
             "⚔️ Scan Battle",
             "📈 Weekly Wrapped",
             "🛒 Lista zakupów",
-            "♾️ Nielimitowane skany",
           ].map((item, i) => (
             <div key={i} className="flex items-center gap-2.5">
               <span className="text-[12px] text-emerald-500">✓</span>
