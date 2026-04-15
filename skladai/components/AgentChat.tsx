@@ -643,32 +643,19 @@ export default function AgentChat({ open, onClose, isPremium }: Props) {
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Counter bar */}
-        <div style={{ padding: "8px 18px 4px", flexShrink: 0 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
-            <span style={{ fontSize: 11, color: "rgba(255,255,255,0.65)", fontWeight: 700 }}>
-              {isPremium
-                ? `Wiadomości${expertMode ? " (×5 w trybie eksperckim)" : ""}`
-                : "Darmowe wiadomości"}
-            </span>
-            <span style={{ fontSize: 11, fontWeight: 800, color: counterColor }}>
-              {usedCount} / {limit}{isPremium ? " dziś" : ""}
-            </span>
-          </div>
-          <div style={{ height: 4, borderRadius: 2, background: "rgba(255,255,255,0.06)", overflow: "hidden" }}>
-            <div style={{ height: "100%", width: `${counterPercent}%`, background: counterColor, transition: "width 0.4s ease" }} />
-          </div>
-        </div>
-
-        {/* Input */}
-        <div style={{ padding: "8px 18px 18px", flexShrink: 0, borderTop: "1px solid rgba(255,255,255,0.04)" }}>
+        {/* Input — sits ABOVE the counter bar so it's always visible.
+            Previously the input was last in the flex column, which meant
+            iOS' home-indicator safe area (~34px) clipped it out of view.
+            Border-top visually separates input from the scrollable
+            messages above. */}
+        <div style={{ padding: "10px 18px 10px", flexShrink: 0, borderTop: "1px solid rgba(255,255,255,0.04)", background: "#0a0e0c" }}>
           <div style={{ display: "flex", gap: 8, alignItems: "flex-end" }}>
             {expertMode && (
               <button
                 onClick={handlePhotoAttach}
                 aria-label="Załącz zdjęcie"
                 style={{
-                  width: 40, height: 40, borderRadius: 12, flexShrink: 0,
+                  width: 44, height: 44, borderRadius: 12, flexShrink: 0,
                   background: `rgba(${accentRgb},0.08)`, border: `1px solid rgba(${accentRgb},0.18)`,
                   color: accent, fontSize: 16, cursor: "pointer",
                 }}
@@ -685,8 +672,8 @@ export default function AgentChat({ open, onClose, isPremium }: Props) {
               rows={1}
               disabled={freeLimitReached}
               style={{
-                flex: 1, resize: "none", maxHeight: 120, minHeight: 40,
-                padding: "10px 14px", borderRadius: 12,
+                flex: 1, resize: "none", maxHeight: 120, minHeight: 44,
+                padding: "12px 14px", borderRadius: 12,
                 background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)",
                 color: "#fff", fontSize: 14, lineHeight: 1.4, outline: "none",
                 fontFamily: "inherit",
@@ -698,7 +685,7 @@ export default function AgentChat({ open, onClose, isPremium }: Props) {
                 onClick={handleLockClick}
                 aria-label="Tryb ekspercki wymaga Pro+"
                 style={{
-                  width: 40, height: 40, borderRadius: 12, flexShrink: 0, border: "1px solid rgba(251,191,36,0.28)",
+                  width: 44, height: 44, borderRadius: 12, flexShrink: 0, border: "1px solid rgba(251,191,36,0.28)",
                   background: "rgba(251,191,36,0.12)", color: "#FBBF24",
                   fontSize: 18, cursor: "pointer", transition: "all 0.2s",
                 }}
@@ -711,7 +698,7 @@ export default function AgentChat({ open, onClose, isPremium }: Props) {
                 disabled={!input.trim() || sending || freeLimitReached}
                 aria-label="Wyślij wiadomość"
                 style={{
-                  width: 40, height: 40, borderRadius: 12, flexShrink: 0, border: "none",
+                  width: 44, height: 44, borderRadius: 12, flexShrink: 0, border: "none",
                   background: input.trim() && !sending && !freeLimitReached
                     ? `linear-gradient(135deg, ${accent}, ${expertMode ? "#F59E0B" : "#3dd990"})`
                     : "rgba(255,255,255,0.06)",
@@ -723,6 +710,31 @@ export default function AgentChat({ open, onClose, isPremium }: Props) {
                 ➤
               </button>
             )}
+          </div>
+        </div>
+
+        {/* Counter bar — sits below the input. Uses env(safe-area-inset-bottom)
+            so on iPhones with home indicators it lifts itself above the
+            indicator (no bottom nav underneath the modal sheet). */}
+        <div
+          style={{
+            padding: "6px 18px calc(6px + env(safe-area-inset-bottom, 0px))",
+            flexShrink: 0,
+            background: "#0a0e0c",
+          }}
+        >
+          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
+            <span style={{ fontSize: 11, color: "rgba(255,255,255,0.65)", fontWeight: 700 }}>
+              {isPremium
+                ? `Wiadomości${expertMode ? " (×5 w trybie eksperckim)" : ""}`
+                : "Darmowe wiadomości"}
+            </span>
+            <span style={{ fontSize: 11, fontWeight: 800, color: counterColor }}>
+              {usedCount} / {limit}{isPremium ? " dziś" : ""}
+            </span>
+          </div>
+          <div style={{ height: 4, borderRadius: 2, background: "rgba(255,255,255,0.06)", overflow: "hidden" }}>
+            <div style={{ height: "100%", width: `${counterPercent}%`, background: counterColor, transition: "width 0.4s ease" }} />
           </div>
         </div>
       </div>
