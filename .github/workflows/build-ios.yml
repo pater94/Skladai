@@ -98,13 +98,16 @@ jobs:
       - name: Build signed iOS archive
         working-directory: skladai/ios/App
         run: |
-          # PROVISIONING_PROFILE_SPECIFIER and CODE_SIGN_STYLE are set INSIDE
-          # the App target's Release config in project.pbxproj — passing them
-          # via CLI makes them apply globally to every target (incl. SPM
-          # packages like RevenueCat_RevenueCat which can't have profiles).
-          # We leave DEVELOPMENT_TEAM and CODE_SIGN_IDENTITY in the CLI
-          # because they're benign global overrides (team applies to all,
-          # identity matches what's in the keychain).
+          # All signing settings live INSIDE the App target's Release config
+          # in project.pbxproj (CODE_SIGN_STYLE, DEVELOPMENT_TEAM,
+          # PROVISIONING_PROFILE_SPECIFIER, CODE_SIGN_IDENTITY). Passing any
+          # of them via the xcodebuild CLI makes them apply globally to
+          # every target — including SPM packages (RevenueCat_RevenueCat,
+          # PurchasesHybridCommon, capacitor-swift-pm, ...) which are
+          # signed Automatic-for-development by SPM and refuse "iPhone
+          # Distribution" → the build errors with "conflicting provisioning
+          # settings". Keeping CLI signing-free lets each target use its
+          # own pbxproj settings.
           xcodebuild \
             -project App.xcodeproj \
             -scheme App \
@@ -112,9 +115,7 @@ jobs:
             -archivePath build/App.xcarchive \
             -destination 'generic/platform=iOS' \
             -skipPackagePluginValidation \
-            archive \
-            DEVELOPMENT_TEAM="AWRQPLPRL6" \
-            "CODE_SIGN_IDENTITY=iPhone Distribution"
+            archive
 
       - name: Create ExportOptions.plist
         working-directory: skladai/ios/App
