@@ -309,6 +309,12 @@ export default function AgentChat({ open, onClose, isPremium }: Props) {
           display: "flex",
           flexDirection: "column",
           fontFamily: "'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif",
+          // Reserve space at the bottom of the sheet for the app's
+          // BottomNav (position: fixed, zIndex 9999 — stacks above this
+          // sheet). 68px matches BottomNav's height; env(safe-area-inset-
+          // bottom) clears the iOS home indicator below it. Without this,
+          // the input + counter would be hidden behind the nav.
+          paddingBottom: "calc(68px + env(safe-area-inset-bottom, 0px))",
         }}
       >
         {/* Safe area top */}
@@ -713,12 +719,12 @@ export default function AgentChat({ open, onClose, isPremium }: Props) {
           </div>
         </div>
 
-        {/* Counter bar — sits below the input. Uses env(safe-area-inset-bottom)
-            so on iPhones with home indicators it lifts itself above the
-            indicator (no bottom nav underneath the modal sheet). */}
+        {/* Counter bar — sits below the input. Bottom-nav and iOS
+            home-indicator clearance is handled by the sheet's own
+            paddingBottom, so this just needs its normal inner padding. */}
         <div
           style={{
-            padding: "6px 18px calc(6px + env(safe-area-inset-bottom, 0px))",
+            padding: "6px 18px 8px",
             flexShrink: 0,
             background: "#0a0e0c",
           }}
