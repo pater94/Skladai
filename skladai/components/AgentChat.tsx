@@ -99,7 +99,10 @@ export default function AgentChat({ open, onClose, isPremium }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [usedCount, setUsedCount] = useState(0);
   const [showInfoTooltip, setShowInfoTooltip] = useState(false);
-  const [showExpertLocked, setShowExpertLocked] = useState(false);
+  // Shown when a non-premium user tries to SEND a message while expert
+  // mode is on. Expert mode itself is free to toggle — only submitting
+  // expert-mode messages is gated.
+  const [showExpertPaywall, setShowExpertPaywall] = useState(false);
   const [contextPills, setContextPills] = useState<{ label: string; value: string }[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -124,8 +127,8 @@ export default function AgentChat({ open, onClose, isPremium }: Props) {
       return [{ role: "assistant", content: WELCOME_MESSAGE }];
     });
 
-    // Free users can't enter expert mode — force it off when chat opens
-    if (!isPremium) setExpertMode(false);
+    // Clear any stale expert paywall banner from previous session
+    setShowExpertPaywall(false);
 
     // Load context pills from profile
     try {
@@ -169,6 +172,13 @@ export default function AgentChat({ open, onClose, isPremium }: Props) {
   const handleSend = useCallback(async (textOverride?: string) => {
     const text = (textOverride ?? input).trim();
     if (!text || sending) return;
+
+    // Expert mode requires premium — non-premium users can toggle to
+    // preview the UI but sending triggers an inline paywall.
+    if (expertMode && !isPremium) {
+      setShowExpertPaywall(true);
+      return;
+    }
 
     // Free users: hard lifetime cap at 5. The paywall banner is already
     // rendered inline; we simply refuse to call the API.
@@ -226,14 +236,13 @@ export default function AgentChat({ open, onClose, isPremium }: Props) {
   }, [input, sending, usedCount, expertMode, messages, isPremium]);
 
   const handleExpertToggle = () => {
-    // Free users can see the toggle but can't flip it — tapping shows a tooltip.
-    if (!isPremium) {
-      setShowExpertLocked(true);
-      setTimeout(() => setShowExpertLocked(false), 2500);
-      return;
-    }
+    // Everyone can toggle expert mode — UI flips to amber so users can
+    // see what they're missing. The paywall only kicks in when a
+    // non-premium user tries to SEND in expert mode.
     const next = !expertMode;
     setExpertMode(next);
+    // Turning expert off clears any lingering paywall prompt
+    if (!next) setShowExpertPaywall(false);
     setMessages((prev) => [
       ...prev,
       { role: "system", content: next ? "👑 Tryb ekspercki włączony" : "Tryb standardowy" },
@@ -296,7 +305,7 @@ export default function AgentChat({ open, onClose, isPremium }: Props) {
                 )}
               </div>
               <p style={{ fontSize: 12, color: "rgba(255,255,255,0.6)", marginTop: 2, marginBottom: 0 }}>
-                Zna Twój profil i historię
+                Zna Twój profil i cele
               </p>
             </div>
             <button
@@ -312,17 +321,16 @@ export default function AgentChat({ open, onClose, isPremium }: Props) {
             </button>
           </div>
 
-          {/* Expert toggle row */}
-          <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 12, paddingLeft: 60, position: "relative" }}>
+          {/* Expert toggle row — open to everyone; paywall is on send */}
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 12, paddingLeft: 60 }}>
             <button
               onClick={handleExpertToggle}
               style={{
                 display: "inline-flex", alignItems: "center", gap: 8, padding: "5px 10px",
                 borderRadius: 999,
-                background: isPremium ? `rgba(${accentRgb},0.08)` : "rgba(255,255,255,0.04)",
-                border: isPremium ? `1px solid rgba(${accentRgb},0.2)` : "1px solid rgba(255,255,255,0.08)",
+                background: `rgba(${accentRgb},0.08)`,
+                border: `1px solid rgba(${accentRgb},0.2)`,
                 cursor: "pointer",
-                opacity: isPremium ? 1 : 0.7,
               }}
             >
               <span style={{
@@ -338,23 +346,7 @@ export default function AgentChat({ open, onClose, isPremium }: Props) {
               <span style={{ fontSize: 11, fontWeight: 700, color: expertMode ? accent : "rgba(255,255,255,0.7)" }}>
                 Tryb ekspercki
               </span>
-              {!isPremium && <span style={{ fontSize: 10, marginLeft: 2 }}>🔒</span>}
             </button>
-
-            {/* Locked tooltip for free users */}
-            {showExpertLocked && (
-              <div
-                style={{
-                  position: "absolute", top: "100%", left: 60, marginTop: 6,
-                  padding: "6px 10px", borderRadius: 8,
-                  background: "rgba(251,191,36,0.12)", border: "1px solid rgba(251,191,36,0.28)",
-                  fontSize: 11, fontWeight: 700, color: "#FBBF24",
-                  whiteSpace: "nowrap", zIndex: 10,
-                }}
-              >
-                👑 Dostępne w Pro+
-              </div>
-            )}
 
             <button
               onClick={() => setShowInfoTooltip((v) => !v)}
@@ -524,6 +516,36 @@ export default function AgentChat({ open, onClose, isPremium }: Props) {
             </div>
           )}
 
+          {/* Expert-mode paywall (inline, when free user tries to send in expert mode) */}
+          {showExpertPaywall && !isPremium && expertMode && (
+            <div
+              style={{
+                marginTop: 8,
+                padding: 16,
+                borderRadius: 16,
+                background: "linear-gradient(135deg, rgba(251,191,36,0.12), rgba(249,115,22,0.08))",
+                border: "1px solid rgba(251,191,36,0.3)",
+              }}
+            >
+              <p style={{ fontSize: 13, fontWeight: 800, color: "#FBBF24", margin: 0, marginBottom: 6 }}>
+                👑 Tryb ekspercki wymaga Pro+
+              </p>
+              <p style={{ fontSize: 12, color: "rgba(255,255,255,0.75)", margin: 0, marginBottom: 12, lineHeight: 1.5 }}>
+                Odblokuj żeby korzystać z zaawansowanego AI — analiza badań krwi, cykl treningowy, kontuzje, interakcje leków.
+              </p>
+              <button
+                onClick={() => router.push("/premium")}
+                style={{
+                  width: "100%", padding: 12, borderRadius: 12, border: "none",
+                  background: "linear-gradient(135deg,#FBBF24,#F59E0B)",
+                  color: "#000", fontWeight: 800, fontSize: 13, cursor: "pointer",
+                }}
+              >
+                Odblokuj Pro+
+              </button>
+            </div>
+          )}
+
           {/* Free-trial exhausted paywall (inline, not redirect) */}
           {freeLimitReached && (
             <div
@@ -595,7 +617,7 @@ export default function AgentChat({ open, onClose, isPremium }: Props) {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
-              placeholder={freeLimitReached ? "Odblokuj Premium żeby kontynuować" : expertMode ? "Zapytaj eksperta..." : "Zapytaj Agenta AI..."}
+              placeholder={freeLimitReached ? "Odblokuj Premium żeby kontynuować" : expertMode && !isPremium ? "Tryb ekspercki — Pro+ wymagany" : expertMode ? "Zapytaj eksperta..." : "Zapytaj Agenta AI..."}
               rows={1}
               disabled={freeLimitReached}
               style={{
@@ -607,22 +629,36 @@ export default function AgentChat({ open, onClose, isPremium }: Props) {
                 opacity: freeLimitReached ? 0.5 : 1,
               }}
             />
-            <button
-              onClick={() => handleSend()}
-              disabled={!input.trim() || sending || freeLimitReached}
-              aria-label="Wyślij wiadomość"
-              style={{
-                width: 40, height: 40, borderRadius: 12, flexShrink: 0, border: "none",
-                background: input.trim() && !sending && !freeLimitReached
-                  ? `linear-gradient(135deg, ${accent}, ${expertMode ? "#F59E0B" : "#3dd990"})`
-                  : "rgba(255,255,255,0.06)",
-                color: input.trim() && !sending && !freeLimitReached ? "#000" : "rgba(255,255,255,0.3)",
-                fontSize: 18, cursor: input.trim() && !sending && !freeLimitReached ? "pointer" : "default",
-                transition: "all 0.2s",
-              }}
-            >
-              ➤
-            </button>
+            {expertMode && !isPremium ? (
+              <button
+                onClick={() => setShowExpertPaywall(true)}
+                aria-label="Tryb ekspercki wymaga Pro+"
+                style={{
+                  width: 40, height: 40, borderRadius: 12, flexShrink: 0, border: "1px solid rgba(251,191,36,0.28)",
+                  background: "rgba(251,191,36,0.12)", color: "#FBBF24",
+                  fontSize: 18, cursor: "pointer", transition: "all 0.2s",
+                }}
+              >
+                🔒
+              </button>
+            ) : (
+              <button
+                onClick={() => handleSend()}
+                disabled={!input.trim() || sending || freeLimitReached}
+                aria-label="Wyślij wiadomość"
+                style={{
+                  width: 40, height: 40, borderRadius: 12, flexShrink: 0, border: "none",
+                  background: input.trim() && !sending && !freeLimitReached
+                    ? `linear-gradient(135deg, ${accent}, ${expertMode ? "#F59E0B" : "#3dd990"})`
+                    : "rgba(255,255,255,0.06)",
+                  color: input.trim() && !sending && !freeLimitReached ? "#000" : "rgba(255,255,255,0.3)",
+                  fontSize: 18, cursor: input.trim() && !sending && !freeLimitReached ? "pointer" : "default",
+                  transition: "all 0.2s",
+                }}
+              >
+                ➤
+              </button>
+            )}
           </div>
         </div>
       </div>
