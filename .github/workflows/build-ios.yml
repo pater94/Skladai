@@ -98,17 +98,26 @@ jobs:
       - name: Build signed iOS archive
         working-directory: skladai/ios/App
         run: |
+          # -skipPackagePluginValidation: skip plugin permission prompts
+          # CODE_SIGNING_ALLOWED_FOR_PACKAGES=NO: stop Xcode from trying to
+          #   sign SPM package products (RevenueCat_RevenueCat, etc.) —
+          #   only the app target gets the manual provisioning profile
+          # CODE_SIGN_ALLOW_ENTITLEMENTS_MODIFICATION=YES: permit the
+          #   build system to adjust entitlements for SPM products
           xcodebuild \
             -project App.xcodeproj \
             -scheme App \
             -configuration Release \
             -archivePath build/App.xcarchive \
             -destination 'generic/platform=iOS' \
+            -skipPackagePluginValidation \
             archive \
             CODE_SIGN_STYLE=Manual \
             DEVELOPMENT_TEAM="AWRQPLPRL6" \
             PROVISIONING_PROFILE_SPECIFIER="SkladAI Distribution" \
-            CODE_SIGN_IDENTITY="iPhone Distribution"
+            CODE_SIGN_IDENTITY="iPhone Distribution" \
+            CODE_SIGNING_ALLOWED_FOR_PACKAGES=NO \
+            CODE_SIGN_ALLOW_ENTITLEMENTS_MODIFICATION=YES
 
       - name: Create ExportOptions.plist
         working-directory: skladai/ios/App
