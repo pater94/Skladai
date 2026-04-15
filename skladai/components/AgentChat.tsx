@@ -322,28 +322,29 @@ export default function AgentChat({ open, onClose, isPremium }: Props) {
           </div>
 
           {/* Expert toggle row — open to everyone; paywall is on send */}
-          <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 12, paddingLeft: 60 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 14, paddingLeft: 60 }}>
             <button
               onClick={handleExpertToggle}
               style={{
-                display: "inline-flex", alignItems: "center", gap: 8, padding: "5px 10px",
+                display: "inline-flex", alignItems: "center", gap: 10, padding: "7px 14px",
                 borderRadius: 999,
-                background: `rgba(${accentRgb},0.08)`,
-                border: `1px solid rgba(${accentRgb},0.2)`,
+                background: `rgba(${accentRgb},0.1)`,
+                border: `1px solid rgba(${accentRgb},0.28)`,
                 cursor: "pointer",
               }}
             >
               <span style={{
-                width: 28, height: 16, borderRadius: 999, position: "relative", flexShrink: 0,
-                background: expertMode ? accent : "rgba(255,255,255,0.15)", transition: "background 0.2s",
+                width: 42, height: 24, borderRadius: 999, position: "relative", flexShrink: 0,
+                background: expertMode ? accent : "rgba(255,255,255,0.22)", transition: "background 0.2s",
               }}>
                 <span style={{
-                  position: "absolute", top: 2, left: expertMode ? 14 : 2,
-                  width: 12, height: 12, borderRadius: "50%", background: "#fff",
+                  position: "absolute", top: 2, left: expertMode ? 20 : 2,
+                  width: 20, height: 20, borderRadius: "50%", background: "#fff",
+                  boxShadow: "0 1px 3px rgba(0,0,0,0.35)",
                   transition: "left 0.2s",
                 }} />
               </span>
-              <span style={{ fontSize: 11, fontWeight: 700, color: expertMode ? accent : "rgba(255,255,255,0.7)" }}>
+              <span style={{ fontSize: 13, fontWeight: 700, color: expertMode ? accent : "rgba(255,255,255,0.85)" }}>
                 Tryb ekspercki
               </span>
             </button>
@@ -352,9 +353,9 @@ export default function AgentChat({ open, onClose, isPremium }: Props) {
               onClick={() => setShowInfoTooltip((v) => !v)}
               aria-label="Co to tryb ekspercki?"
               style={{
-                width: 22, height: 22, borderRadius: 11, border: "1px solid rgba(255,255,255,0.15)",
-                background: "rgba(255,255,255,0.03)", color: "rgba(255,255,255,0.6)",
-                fontSize: 11, fontWeight: 700, cursor: "pointer",
+                width: 26, height: 26, borderRadius: 13, border: "1px solid rgba(255,255,255,0.28)",
+                background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.85)",
+                fontSize: 13, fontWeight: 800, cursor: "pointer",
               }}
             >
               ?
@@ -415,7 +416,7 @@ export default function AgentChat({ open, onClose, isPremium }: Props) {
         <div data-scrollable="true" style={{ flex: 1, overflowY: "auto", overflowX: "hidden", padding: "16px 18px 8px" }}>
           {messages.length === 0 && (
             <div style={{ padding: "20px 0" }}>
-              <p style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", textAlign: "center", marginBottom: 16 }}>
+              <p style={{ fontSize: 12, color: "rgba(255,255,255,0.65)", textAlign: "center", marginBottom: 16 }}>
                 Zapytaj o cokolwiek
               </p>
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -582,12 +583,12 @@ export default function AgentChat({ open, onClose, isPremium }: Props) {
         {/* Counter bar */}
         <div style={{ padding: "8px 18px 4px", flexShrink: 0 }}>
           <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
-            <span style={{ fontSize: 10, color: "rgba(255,255,255,0.45)", fontWeight: 600 }}>
+            <span style={{ fontSize: 11, color: "rgba(255,255,255,0.65)", fontWeight: 700 }}>
               {isPremium
                 ? `Wiadomości${expertMode ? " (×5 w trybie eksperckim)" : ""}`
                 : "Darmowe wiadomości"}
             </span>
-            <span style={{ fontSize: 10, fontWeight: 700, color: counterColor }}>
+            <span style={{ fontSize: 11, fontWeight: 800, color: counterColor }}>
               {usedCount} / {limit}{isPremium ? " dziś" : ""}
             </span>
           </div>
