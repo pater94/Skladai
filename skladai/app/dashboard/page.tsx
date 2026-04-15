@@ -6,7 +6,6 @@ import { UserProfile, DailyTotals } from "@/lib/types";
 import { getProfile, getDailyTotals, getWeekTotals, todayStr, removeDiaryEntry, getStreak, getHistory, saveMode } from "@/lib/storage";
 import { useHealthData } from "@/lib/useHealthData";
 import VoiceLog, { VoiceMicButton } from "@/components/VoiceLog";
-import ActivityBadges from "@/components/ActivityBadges";
 
 type DashView = "today" | "week";
 type MealTypeKey = "breakfast" | "lunch" | "dinner" | "snack";
@@ -194,7 +193,9 @@ export default function DashboardPage() {
             <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", marginTop: 2 }}>{dateStr}</div>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <ActivityBadges theme="light" />
+            {/* ActivityBadges intentionally NOT rendered on Dashboard —
+                steps/kcal/sleep are already shown in the "Aktywność dziś"
+                card below. Streak pill stays. */}
             {streak > 0 && (
               <div style={{ padding: "6px 14px", borderRadius: 20, background: "rgba(110,252,180,0.08)", border: "1px solid rgba(110,252,180,0.15)", display: "flex", alignItems: "center", gap: 4 }}>
                 <span style={{ fontSize: 12 }}>🔥</span>
