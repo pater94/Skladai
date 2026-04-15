@@ -50,7 +50,7 @@ function bumpPaidUsed(amount: number) {
   localStorage.setItem(PAID_COUNT_KEY, String(cur + amount));
 }
 
-const WELCOME_MESSAGE = "Cześć! Jestem Twoim Agentem AI. Wiem jaki masz cel, śledzę Twoją aktywność, sen i formę. Zapytaj mnie o dietę, trening, suplementy — pomogę Ci osiągnąć wymarzoną sylwetkę 💪";
+const WELCOME_MESSAGE = "Cześć! Jestem Twoim Agentem AI. Wiem jaki masz cel, śledzę Twoją aktywność, sen i formę. Zapytaj mnie o dietę, trening, suplementy — pomogę Ci osiągnąć wymarzoną formę 💪";
 
 // ── Logo (rounded square + scanner brackets + S) — inline SVG ──
 function ScannerLogo({ size = 40, expert = false }: { size?: number; expert?: boolean }) {
@@ -99,10 +99,13 @@ export default function AgentChat({ open, onClose, isPremium }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [usedCount, setUsedCount] = useState(0);
   const [showInfoTooltip, setShowInfoTooltip] = useState(false);
-  // Shown when a non-premium user tries to SEND a message while expert
-  // mode is on. Expert mode itself is free to toggle — only submitting
-  // expert-mode messages is gated.
-  const [showExpertPaywall, setShowExpertPaywall] = useState(false);
+  // Expert-mode education banner for non-premium users. Shown once per
+  // session the first time they flip expert ON. After X is clicked,
+  // `expertEduDismissedRef` prevents the banner from re-appearing; a
+  // toast takes its place on subsequent 🔒 send taps.
+  const [showExpertEdu, setShowExpertEdu] = useState(false);
+  const expertEduDismissedRef = useRef(false);
+  const [expertToast, setExpertToast] = useState<string>("");
   const [contextPills, setContextPills] = useState<{ label: string; value: string }[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -127,8 +130,10 @@ export default function AgentChat({ open, onClose, isPremium }: Props) {
       return [{ role: "assistant", content: WELCOME_MESSAGE }];
     });
 
-    // Clear any stale expert paywall banner from previous session
-    setShowExpertPaywall(false);
+    // Reset transient UI state from previous session
+    setShowExpertEdu(false);
+    setExpertToast("");
+    expertEduDismissedRef.current = false;
 
     // Load context pills from profile
     try {
@@ -174,9 +179,10 @@ export default function AgentChat({ open, onClose, isPremium }: Props) {
     if (!text || sending) return;
 
     // Expert mode requires premium — non-premium users can toggle to
-    // preview the UI but sending triggers an inline paywall.
+    // preview the UI but sending is blocked. We delegate to the same
+    // handler that the 🔒 send button uses.
     if (expertMode && !isPremium) {
-      setShowExpertPaywall(true);
+      handleLockClick();
       return;
     }
 
@@ -237,16 +243,35 @@ export default function AgentChat({ open, onClose, isPremium }: Props) {
 
   const handleExpertToggle = () => {
     // Everyone can toggle expert mode — UI flips to amber so users can
-    // see what they're missing. The paywall only kicks in when a
-    // non-premium user tries to SEND in expert mode.
+    // see what it does. Non-premium users see an education banner the
+    // first time per session; premium users see nothing extra.
+    // No system-message pills are appended — mode change is purely visual.
     const next = !expertMode;
     setExpertMode(next);
-    // Turning expert off clears any lingering paywall prompt
-    if (!next) setShowExpertPaywall(false);
-    setMessages((prev) => [
-      ...prev,
-      { role: "system", content: next ? "👑 Tryb ekspercki włączony" : "Tryb standardowy" },
-    ]);
+    if (next && !isPremium && !expertEduDismissedRef.current) {
+      setShowExpertEdu(true);
+    }
+    if (!next) {
+      setShowExpertEdu(false);
+      setExpertToast("");
+    }
+  };
+
+  const dismissExpertEdu = () => {
+    setShowExpertEdu(false);
+    expertEduDismissedRef.current = true;
+  };
+
+  const handleLockClick = () => {
+    // Non-premium user tapped 🔒 in expert mode. If they haven't
+    // explicitly dismissed the edu banner yet, re-surface it. Otherwise
+    // show a transient toast.
+    if (expertEduDismissedRef.current) {
+      setExpertToast("Tryb ekspercki wymaga Pro+");
+      setTimeout(() => setExpertToast(""), 2500);
+    } else {
+      setShowExpertEdu(true);
+    }
   };
 
   const handlePhotoAttach = () => {
@@ -413,7 +438,29 @@ export default function AgentChat({ open, onClose, isPremium }: Props) {
         </div>
 
         {/* Messages */}
-        <div data-scrollable="true" style={{ flex: 1, overflowY: "auto", overflowX: "hidden", padding: "16px 18px 8px" }}>
+        <div data-scrollable="true" style={{ flex: 1, overflowY: "auto", overflowX: "hidden", padding: "16px 18px 8px", position: "relative" }}>
+          {/* Floating toast for transient expert-mode nudges */}
+          {expertToast && (
+            <div
+              style={{
+                position: "sticky",
+                top: 0,
+                zIndex: 5,
+                margin: "-8px auto 8px",
+                maxWidth: 280,
+                padding: "8px 14px",
+                borderRadius: 999,
+                background: "rgba(251,191,36,0.16)",
+                border: "1px solid rgba(251,191,36,0.35)",
+                textAlign: "center",
+                fontSize: 12,
+                fontWeight: 700,
+                color: "#FBBF24",
+              }}
+            >
+              👑 {expertToast}
+            </div>
+          )}
           {messages.length === 0 && (
             <div style={{ padding: "20px 0" }}>
               <p style={{ fontSize: 12, color: "rgba(255,255,255,0.65)", textAlign: "center", marginBottom: 16 }}>
@@ -517,22 +564,38 @@ export default function AgentChat({ open, onClose, isPremium }: Props) {
             </div>
           )}
 
-          {/* Expert-mode paywall (inline, when free user tries to send in expert mode) */}
-          {showExpertPaywall && !isPremium && expertMode && (
+          {/* Expert-mode education banner (one-time per session, dismissible) */}
+          {showExpertEdu && !isPremium && expertMode && (
             <div
               style={{
                 marginTop: 8,
                 padding: 16,
                 borderRadius: 16,
-                background: "linear-gradient(135deg, rgba(251,191,36,0.12), rgba(249,115,22,0.08))",
-                border: "1px solid rgba(251,191,36,0.3)",
+                position: "relative",
+                background: "linear-gradient(135deg, rgba(251,191,36,0.14), rgba(249,115,22,0.1))",
+                border: "1px solid rgba(251,191,36,0.35)",
               }}
             >
-              <p style={{ fontSize: 13, fontWeight: 800, color: "#FBBF24", margin: 0, marginBottom: 6 }}>
-                👑 Tryb ekspercki wymaga Pro+
+              <button
+                onClick={dismissExpertEdu}
+                aria-label="Zamknij informację o trybie eksperckim"
+                style={{
+                  position: "absolute", top: 8, right: 8,
+                  width: 26, height: 26, borderRadius: 13, border: "none",
+                  background: "rgba(0,0,0,0.25)", color: "rgba(255,255,255,0.9)",
+                  fontSize: 13, lineHeight: 1, cursor: "pointer",
+                }}
+              >
+                ✕
+              </button>
+              <p style={{ fontSize: 14, fontWeight: 800, color: "#FBBF24", margin: 0, marginBottom: 8, paddingRight: 28 }}>
+                👑 Tryb ekspercki
               </p>
-              <p style={{ fontSize: 12, color: "rgba(255,255,255,0.75)", margin: 0, marginBottom: 12, lineHeight: 1.5 }}>
-                Odblokuj żeby korzystać z zaawansowanego AI — analiza badań krwi, cykl treningowy, kontuzje, interakcje leków.
+              <p style={{ fontSize: 12.5, color: "rgba(255,255,255,0.85)", margin: 0, marginBottom: 8, lineHeight: 1.55 }}>
+                Zaawansowany AI najlepszy do: analizy badań krwi, rozpisania diety, planowania treningu, porad przy kontuzjach i regeneracji, analizy interakcji suplementów i leków.
+              </p>
+              <p style={{ fontSize: 11.5, color: "rgba(255,255,255,0.65)", margin: 0, marginBottom: 12, fontWeight: 600 }}>
+                ⚡ Zużywa 5x więcej z puli wiadomości
               </p>
               <button
                 onClick={() => router.push("/premium")}
@@ -632,7 +695,7 @@ export default function AgentChat({ open, onClose, isPremium }: Props) {
             />
             {expertMode && !isPremium ? (
               <button
-                onClick={() => setShowExpertPaywall(true)}
+                onClick={handleLockClick}
                 aria-label="Tryb ekspercki wymaga Pro+"
                 style={{
                   width: 40, height: 40, borderRadius: 12, flexShrink: 0, border: "1px solid rgba(251,191,36,0.28)",
