@@ -729,10 +729,12 @@ export default function AgentChat({ open, onClose, isPremium }: Props) {
           </div>
         </div>
 
-        {/* Counter bar — sits below the input. */}
+        {/* Counter bar — sits below the input. Uses env(safe-area-inset-bottom)
+            so on iPhones with home indicators it lifts itself above the
+            indicator (no bottom nav underneath the modal sheet). */}
         <div
           style={{
-            padding: "6px 18px 8px",
+            padding: "6px 18px calc(6px + env(safe-area-inset-bottom, 0px))",
             flexShrink: 0,
             background: "#0a0e0c",
           }}
@@ -751,25 +753,6 @@ export default function AgentChat({ open, onClose, isPremium }: Props) {
             <div style={{ height: "100%", width: `${counterPercent}%`, background: counterColor, transition: "width 0.4s ease" }} />
           </div>
         </div>
-
-        {/*
-          Bottom-nav clearance spacer.
-
-          BottomNav (components/BottomNav.tsx) is `position: fixed; bottom: 0`
-          with `zIndex: 9999` — HIGHER than this sheet (zIndex: 200). It would
-          otherwise stack on top of the input and counter and clip them out
-          of reach. Height here mirrors BottomNav's own: 68px + the iOS
-          home-indicator safe area. Sheet background fills the space so the
-          transition looks seamless.
-        */}
-        <div
-          aria-hidden="true"
-          style={{
-            height: "calc(68px + env(safe-area-inset-bottom, 0px))",
-            flexShrink: 0,
-            background: "#0a0e0c",
-          }}
-        />
       </div>
 
       <style jsx>{`
