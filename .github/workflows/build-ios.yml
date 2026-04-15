@@ -98,6 +98,13 @@ jobs:
       - name: Build signed iOS archive
         working-directory: skladai/ios/App
         run: |
+          # PROVISIONING_PROFILE_SPECIFIER and CODE_SIGN_STYLE are set INSIDE
+          # the App target's Release config in project.pbxproj — passing them
+          # via CLI makes them apply globally to every target (incl. SPM
+          # packages like RevenueCat_RevenueCat which can't have profiles).
+          # We leave DEVELOPMENT_TEAM and CODE_SIGN_IDENTITY in the CLI
+          # because they're benign global overrides (team applies to all,
+          # identity matches what's in the keychain).
           xcodebuild \
             -project App.xcodeproj \
             -scheme App \
@@ -105,10 +112,8 @@ jobs:
             -archivePath build/App.xcarchive \
             -destination 'generic/platform=iOS' \
             archive \
-            CODE_SIGN_STYLE=Manual \
             DEVELOPMENT_TEAM="AWRQPLPRL6" \
-            PROVISIONING_PROFILE_SPECIFIER="SkladAI Distribution" \
-            CODE_SIGN_IDENTITY="iPhone Distribution"
+            "CODE_SIGN_IDENTITY=iPhone Distribution"
 
       - name: Create ExportOptions.plist
         working-directory: skladai/ios/App
