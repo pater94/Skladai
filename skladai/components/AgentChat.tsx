@@ -50,7 +50,7 @@ function bumpPaidUsed(amount: number) {
   localStorage.setItem(PAID_COUNT_KEY, String(cur + amount));
 }
 
-const WELCOME_MESSAGE = "Cześć! Jestem Twoim Agentem AI. Znam Twój profil i historię skanów. Zapytaj mnie o dietę, trening, suplementy — cokolwiek związanego ze zdrowiem. 💪";
+const WELCOME_MESSAGE = "Cześć! Jestem Twoim Agentem AI. Wiem jaki masz cel, śledzę Twoją aktywność, sen i formę. Zapytaj mnie o dietę, trening, suplementy — pomogę Ci osiągnąć wymarzoną sylwetkę 💪";
 
 // ── Logo (rounded square + scanner brackets + S) — inline SVG ──
 function ScannerLogo({ size = 40, expert = false }: { size?: number; expert?: boolean }) {
