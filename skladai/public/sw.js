@@ -1,119 +1,75 @@
-const CACHE_NAME = "skladai-v8";
-const PRECACHE_URLS = ["/manifest.json"];
+// Minimal pass-through service worker.
+//
+// History: earlier versions of this SW ran cache-first for .js/.css with
+// cache.put() on every fetch. Combined with iOS Capacitor WKWebView's
+// own aggressive caching, stale Next.js chunks sometimes stuck around
+// after a deploy, and on re-opening the native app the old cached JS
+// would crash against the fresh server-rendered HTML — black screen.
+//
+// This version does the minimum:
+//   - Skip waiting + claim clients, so a new SW takes over immediately.
+//   - On activate, wipe every cache bucket so no stale chunk survives.
+//   - HTML navigations are ALWAYS fetched from network (no cache read,
+//     no cache write).
+//   - Everything else reads from cache if present, otherwise network —
+//     but we never write anything back, so the caches stay empty after
+//     activate and effectively become a pass-through.
+//
+// Net effect: the SW stays registered (so the browser tracks updates
+// via sw.js byte changes), but functionally acts like "no service
+// worker" — nothing is cached, nothing can go stale, nothing can
+// poison a future reload.
 
-// Static asset extensions for cache-first strategy
-const STATIC_EXTENSIONS = [
-  ".js", ".css", ".woff", ".woff2", ".ttf", ".otf", ".eot",
-  ".png", ".jpg", ".jpeg", ".gif", ".svg", ".ico", ".webp", ".avif",
-];
+const CACHE_VERSION = "skladai-v74";
 
-function isStaticAsset(url) {
-  const pathname = new URL(url).pathname;
-  return STATIC_EXTENSIONS.some((ext) => pathname.endsWith(ext))
-    || pathname.startsWith("/icons/");
-}
-
-function isApiCall(url) {
-  return new URL(url).pathname.startsWith("/api/");
-}
-
-function isHTMLNavigation(request) {
-  return request.mode === "navigate"
-    || (request.method === "GET" && request.headers.get("accept")?.includes("text/html"));
-}
-
-// === Install: precache + skipWaiting ===
-self.addEventListener("install", (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(PRECACHE_URLS))
-  );
+self.addEventListener("install", () => {
   self.skipWaiting();
 });
 
-// === Activate: clean old caches + claim clients ===
 self.addEventListener("activate", (event) => {
   event.waitUntil(
-    caches.keys().then((keys) =>
-      Promise.all(
-        keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))
-      )
-    )
+    caches
+      .keys()
+      .then((keys) => Promise.all(keys.map((key) => caches.delete(key))))
+      .then(() => self.clients.claim()),
   );
-  self.clients.claim();
 });
 
-// === Message handler for SKIP_WAITING ===
+// Allow the SWUpdateBanner "Odśwież" button to force-activate a
+// waiting worker via postMessage.
 self.addEventListener("message", (event) => {
   if (event.data && event.data.type === "SKIP_WAITING") {
     self.skipWaiting();
   }
 });
 
-// === Fetch strategies ===
+function isHTMLNavigation(request) {
+  if (request.mode === "navigate") return true;
+  if (request.method !== "GET") return false;
+  const accept = request.headers.get("accept") || "";
+  return accept.includes("text/html");
+}
+
 self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
 
-  const url = event.request.url;
-
-  // Network-first for API calls
-  if (isApiCall(url)) {
-    event.respondWith(
-      fetch(event.request)
-        .then((response) => {
-          if (response.ok) {
-            const clone = response.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
-          }
-          return response;
-        })
-        .catch(() => caches.match(event.request))
-    );
-    return;
-  }
-
-  // Network-first for HTML pages
+  // HTML: always fresh from the network. No cache read, no cache put.
+  // This guarantees the first thing the app parses on reopen is the
+  // live Vercel HTML, which references only current chunk hashes.
   if (isHTMLNavigation(event.request)) {
-    event.respondWith(
-      fetch(event.request)
-        .then((response) => {
-          if (response.ok) {
-            const clone = response.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
-          }
-          return response;
-        })
-        .catch(() => caches.match(event.request))
-    );
+    event.respondWith(fetch(event.request));
     return;
   }
 
-  // Cache-first for static assets
-  if (isStaticAsset(url)) {
-    event.respondWith(
-      caches.match(event.request).then((cached) => {
-        if (cached) return cached;
-        return fetch(event.request).then((response) => {
-          if (response.ok) {
-            const clone = response.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
-          }
-          return response;
-        });
-      })
-    );
-    return;
-  }
-
-  // Default: network-first
+  // Anything else: read from cache if something is there (pass-through
+  // in steady state because activate wiped everything), otherwise go
+  // to the network. We DO NOT cache.put() — nothing sticks, nothing
+  // goes stale.
   event.respondWith(
-    fetch(event.request)
-      .then((response) => {
-        if (response.ok) {
-          const clone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
-        }
-        return response;
-      })
-      .catch(() => caches.match(event.request))
+    caches.match(event.request).then((cached) => cached || fetch(event.request)),
   );
 });
+
+// Expose the version so "curl /sw.js | grep CACHE_VERSION" can confirm
+// the current deploy without needing to scan the bundle.
+void CACHE_VERSION;
