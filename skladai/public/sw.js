@@ -22,7 +22,32 @@
 
 const CACHE_VERSION = "skladai-v74";
 
-self.addEventListener("install", () => {
+// Detect native WKWebView (Capacitor / iOS standalone PWA). Their UA
+// contains "Mobile/<build>" but lacks "Safari/<version>" — real Safari
+// on iOS includes both. We do NOT want this SW running inside
+// Capacitor: on cold reopen WKWebView starts the SW before the page
+// loads, and if the fetch handler misbehaves the WebView just hands
+// back nothing → black screen. Kill the SW from inside so legacy
+// installs from earlier builds unregister themselves.
+function isNativeWebView() {
+  const ua = (self.navigator && self.navigator.userAgent) || "";
+  return /Mobile\/\w+/.test(ua) && !/Safari\//.test(ua);
+}
+
+self.addEventListener("install", (event) => {
+  if (isNativeWebView()) {
+    // Self-destruct: unregister + wipe every cache bucket, then never
+    // activate. The install event must resolve before unregister runs
+    // or iOS will keep the old SW around.
+    event.waitUntil(
+      self.registration
+        .unregister()
+        .then(() => caches.keys())
+        .then((keys) => Promise.all(keys.map((key) => caches.delete(key))))
+        .catch(() => undefined),
+    );
+    return;
+  }
   self.skipWaiting();
 });
 
