@@ -97,9 +97,13 @@ export function useHealthData(): HealthData {
         return;
       }
 
-      // Check if we already have authorization
+      // Check if we already have authorization for the core three types.
+      // Sleep is checked / requested SEPARATELY below — if we add "sleep"
+      // into this array and the native plugin bundled in an older IPA
+      // doesn't know the type, the whole call throws and kills Apple
+      // Health for this user.
       const authStatus = await Health.checkAuthorization({
-        read: ["steps", "calories", "distance", "sleep"],
+        read: ["steps", "calories", "distance"],
       });
 
       const hasAccess = authStatus.readAuthorized.length > 0;
@@ -149,7 +153,20 @@ export function useHealthData(): HealthData {
 
       // Sleep: read individual segments from last night window (18:00 yesterday → 12:00 today local).
       // Wrapped in its own try/catch so a sleep failure doesn't break steps/kcal/distance above.
+      // We also gate the readSamples call with an isolated authorization
+      // check — this way if the plugin doesn't know the "sleep" data type
+      // at all, the throw is contained here and never reaches the outer
+      // try that handles the core three types.
       try {
+        const sleepAuth = await Health.checkAuthorization({ read: ["sleep"] });
+        const hasSleepAccess = sleepAuth.readAuthorized.length > 0;
+        if (!hasSleepAccess) {
+          setSleepMinutes(0);
+          setSleepStart(null);
+          setSleepEnd(null);
+          // fall through — readSamples would fail without auth anyway.
+          throw new Error("no-sleep-auth");
+        }
         const { start: night18y, end: noon12t } = lastNightWindow();
         const sleepRes = await Health.readSamples({
           dataType: "sleep",
@@ -210,9 +227,20 @@ export function useHealthData(): HealthData {
       const availability = await Health.isAvailable();
       if (!availability.available) return;
 
+      // Request the core three types first. This is the call whose success
+      // unlocks the "Aktywność dziś" card — it must never be blocked by
+      // an older plugin that doesn't know about "sleep".
       await Health.requestAuthorization({
-        read: ["steps", "calories", "distance", "sleep"],
+        read: ["steps", "calories", "distance"],
       });
+
+      // Request sleep separately so a plugin that doesn't support it
+      // can't poison the main permission flow.
+      try {
+        await Health.requestAuthorization({ read: ["sleep"] });
+      } catch (sleepAuthErr) {
+        console.warn("[useHealthData] Sleep authorization request failed:", sleepAuthErr);
+      }
 
       // Re-fetch after granting permissions
       setLoading(true);
