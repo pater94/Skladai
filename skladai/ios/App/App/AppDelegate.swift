@@ -65,13 +65,17 @@ enum DebugLog {
 // load errors without breaking existing plugin navigation handling.
 // Wired in via Base.lproj/Main.storyboard (customClass="DiagBridgeViewController",
 // customModule="App").
+//
+// Hook point: `capacitorDidLoad()` is Capacitor's documented override
+// point, called from `loadView()` AFTER `prepareWebView` has installed
+// its own delegate on the WKWebView. We cannot override `loadWebView()`
+// because it's declared `public final func` in CAPBridgeViewController.
 class DiagBridgeViewController: CAPBridgeViewController {
     // Strongly held — WKWebView's navigationDelegate is a weak reference.
     private let navigationProxy = DiagNavigationDelegateProxy()
 
-    override func loadWebView() {
-        // Let Capacitor build the WebView and install its own delegate first.
-        super.loadWebView()
+    override func capacitorDidLoad() {
+        super.capacitorDidLoad()
         guard let webView = self.webView else {
             DebugLog.post(type: "webview_missing_after_load")
             return
