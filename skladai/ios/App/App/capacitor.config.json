@@ -4,7 +4,10 @@
 	"webDir": "www",
 	"server": {
 		"url": "https://skladai.com",
-		"cleartext": true
+		"cleartext": true,
+		"hostname": "skladai.com",
+		"iosScheme": "https",
+		"androidScheme": "https"
 	},
 	"plugins": {
 		"Camera": {

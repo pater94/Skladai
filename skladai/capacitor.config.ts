@@ -8,6 +8,19 @@ const config: CapacitorConfig = {
     // Hybrid mode — native shell loads web content from the custom domain
     url: "https://skladai.com",
     cleartext: true,
+    // Pin the WebView's effective Origin to skladai.com on iOS and
+    // Android. Without these three fields Capacitor falls back to its
+    // internal capacitor://localhost / http://localhost origins for
+    // anything not explicitly hit via server.url, which can fight with
+    // Supabase auth cookies and session storage across cold reopens.
+    //   - hostname: sets the Origin used for internal schemes.
+    //   - iosScheme: "https" makes iOS WKWebView treat internal
+    //     resources as same-origin with https://skladai.com
+    //     (critical for cookies / CORS).
+    //   - androidScheme: same on Android.
+    hostname: "skladai.com",
+    iosScheme: "https",
+    androidScheme: "https",
     // NOTE: do NOT add allowNavigation — when set, Capacitor opens any
     // non-matching navigation in SFSafariViewController (which shows the
     // iOS Safari URL bar at the bottom). Without it, all navigation

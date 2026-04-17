@@ -1,5 +1,6 @@
 import UIKit
 import Capacitor
+import WebKit
 
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
@@ -7,7 +8,41 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     var window: UIWindow?
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
-        // Override point for customization after application launch.
+        // Diagnostic marker — shows up in Xcode console + device.log to
+        // confirm the native cold-launch path fires at all.
+        print("[CAPACITOR] didFinishLaunchingWithOptions fired")
+
+        // Wipe transient WKWebView caches on every cold launch.
+        //
+        // Why: the cold-reopen black screen on iOS almost certainly comes
+        // from WKWebView trying to reuse stale data from the last session
+        // (HTTP disk cache, memory cache, service-worker registrations
+        // left over from older app versions, and the fetch-cache used by
+        // fetch()/XHR). Nuking just these four categories guarantees a
+        // fresh network fetch for skladai.com on every launch.
+        //
+        // What we deliberately do NOT wipe (those stay on the default
+        // data store so the user stays signed in and their client-side
+        // data persists):
+        //   - WKWebsiteDataTypeCookies
+        //   - WKWebsiteDataTypeLocalStorage
+        //   - WKWebsiteDataTypeIndexedDBDatabases
+        //   - WKWebsiteDataTypeSessionStorage
+        //   - WKWebsiteDataTypeWebSQLDatabases
+        let types: Set<String> = [
+            WKWebsiteDataTypeDiskCache,
+            WKWebsiteDataTypeMemoryCache,
+            WKWebsiteDataTypeServiceWorkerRegistrations,
+            WKWebsiteDataTypeFetchCache,
+        ]
+        WKWebsiteDataStore.default().removeData(
+            ofTypes: types,
+            modifiedSince: Date.distantPast,
+            completionHandler: {
+                print("[CAPACITOR] WKWebView caches cleared on cold launch")
+            }
+        )
+
         return true
     }
 
