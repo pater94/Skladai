@@ -74,6 +74,14 @@ jobs:
         working-directory: skladai
         run: npm ci
 
+      - name: Clear stale SPM artifact cache
+        # Workaround for Xcode 26.x SPM bug: binary xcframework ZIPs
+        # sometimes remain in the runner cache with inconsistent
+        # metadata and the resolve step fails with
+        # "already exists in file system" fatalError. Wiping the
+        # cache forces a clean re-download on every run (~30s cost).
+        run: rm -rf ~/Library/Caches/org.swift.swiftpm
+
       - name: Resolve SPM packages
         working-directory: skladai/ios/App
         run: |
