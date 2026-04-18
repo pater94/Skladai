@@ -18,6 +18,13 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Clear stale SPM artifact cache
+        # No-op on this branch (workflow uses CocoaPods, not SPM) but
+        # kept for consistency with other test-binary-* branches where
+        # Xcode 26.x has a known SPM fatalError on cached xcframework
+        # ZIPs. Safe to leave in.
+        run: rm -rf ~/Library/Caches/org.swift.swiftpm
+
       - name: Sync Capacitor iOS
         run: npx cap sync ios
 
