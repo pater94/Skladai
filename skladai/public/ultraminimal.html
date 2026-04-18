@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>UM</title>
+<style>
+  html,body{margin:0;padding:0;background:#0a0f0d;color:#84cc16;font:700 48px -apple-system,system-ui,sans-serif}
+  body{display:flex;align-items:center;justify-content:center;min-height:100vh}
+  #status{font-size:16px;color:#9ca3af;font-weight:400;text-align:center;padding:0 16px}
+</style>
+</head>
+<body>
+<div>
+  <div style="text-align:center">Hello</div>
+  <div id="status" style="margin-top:24px">script pending…</div>
+</div>
+<script>
+(function(){
+  var status = document.getElementById("status");
+  function say(s){ try { if (status) status.textContent = s; } catch(e){} }
+  say("script running");
+  try {
+    var w = window;
+    var payload = {
+      type: "ultraminimal_load",
+      ts: Date.now(),
+      ua: navigator.userAgent,
+      url: location.href,
+      capacitor: typeof w.Capacitor,
+      capacitorIsNative: (function(){
+        try { return w.Capacitor && typeof w.Capacitor.isNativePlatform === "function" ? w.Capacitor.isNativePlatform() : null; }
+        catch(e){ return "threw:" + e.message; }
+      })(),
+      webkit: typeof w.webkit,
+      webkitMessageHandlers: !!(w.webkit && w.webkit.messageHandlers),
+      readyState: document.readyState,
+      innerWidth: w.innerWidth,
+      innerHeight: w.innerHeight
+    };
+    if (typeof fetch === "function") {
+      fetch("/api/debug-log", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+        cache: "no-store",
+        keepalive: true
+      }).then(function(){ say("WebView works ✓"); })
+        .catch(function(e){ say("fetch failed: " + (e && e.message ? e.message : e)); });
+    } else {
+      say("no fetch API");
+    }
+  } catch(e) {
+    say("script threw: " + (e && e.message ? e.message : e));
+  }
+})();
+</script>
+</body>
+</html>

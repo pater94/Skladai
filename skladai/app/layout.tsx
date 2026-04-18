@@ -65,6 +65,73 @@ export default function RootLayout({
         WebView never turns logging itself into the crash.
       */}
       <body style={{ fontFamily: "-apple-system, 'SF Pro Display', 'Helvetica Neue', system-ui, sans-serif" }}>
+        {/*
+          ULTRA-MINIMAL PREACT PING (remove with the rest of the
+          diagnostic scripts once the black-screen bug is fixed).
+
+          The full error reporter below does a lot — ring buffer,
+          sessionStorage, 5 event listeners, Object.prototype.hasOwnProperty
+          loops. If anything in that script has a syntax quirk that
+          iOS 26 WKWebView refuses to execute, ALL events are lost and
+          we get no signal in Vercel logs.
+
+          This tiny block runs first, with no modern syntax and
+          no dependencies beyond fetch+JSON. If THIS doesn't reach
+          /api/debug-log but Safari loading the same origin works,
+          the problem is inline-script execution in WKWebView itself.
+        */}
+        <script dangerouslySetInnerHTML={{ __html: `
+          try {
+            var __w = window;
+            var __body = {
+              type: "preact_ping",
+              ts: Date.now(),
+              ua: navigator.userAgent,
+              url: location.href,
+              capacitorDefined: typeof __w.Capacitor,
+              webkitDefined: typeof __w.webkit,
+              messageHandlersExist: !!(__w.webkit && __w.webkit.messageHandlers),
+              readyState: document.readyState,
+              bodyChildren: (document.body && document.body.children.length) || 0
+            };
+            if (typeof fetch === "function") {
+              fetch("/api/debug-log", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(__body),
+                cache: "no-store",
+                keepalive: true
+              }).catch(function(){});
+            }
+            setTimeout(function(){
+              try {
+                fetch("/api/debug-log", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    type: "preact_alive_1s",
+                    ts: Date.now(),
+                    bodyChildren: (document.body && document.body.children.length) || 0,
+                    readyState: document.readyState,
+                    bodyInnerText: ((document.body && document.body.innerText) || "").slice(0, 80)
+                  }),
+                  cache: "no-store",
+                  keepalive: true
+                }).catch(function(){});
+              } catch(__e) {}
+            }, 1000);
+          } catch(__e) {
+            try {
+              fetch("/api/debug-log", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ type: "preact_ping_threw", msg: (__e && __e.message) || String(__e) }),
+                cache: "no-store",
+                keepalive: true
+              }).catch(function(){});
+            } catch(__e2) {}
+          }
+        ` }} />
         <script dangerouslySetInnerHTML={{ __html: `
           (function () {
             var LS_KEY = '__skladai_errors';
