@@ -72,5 +72,29 @@
 			</array>
 		</dict>
 	</array>
+	<!--
+	  WKAppBoundDomains — explicit app-bound domain allowlist.
+
+	  iOS 14+ quietly restricts what a WKWebView loading a remote URL
+	  can do unless the domain is declared here. iOS 26 appears to have
+	  tightened this further: without an explicit WKAppBoundDomains
+	  entry, a hybrid app loading a remote URL via `server.url` can
+	  black-screen inside WKWebView while the same URL loads fine in
+	  Safari on the same device.
+
+	  Listing the two domains the app can serve from (the custom
+	  apex + the Vercel fallback) grants them full WebView
+	  capabilities and brings us onto the modern, fully-supported
+	  iOS app-bound-domains path.
+
+	  Max 10 entries, apex only (no wildcards) per Apple's spec.
+	-->
+	<key>WKAppBoundDomains</key>
+	<array>
+		<string>skladai.com</string>
+		<string>skladai.vercel.app</string>
+		<string>accounts.google.com</string>
+		<string>appleid.apple.com</string>
+	</array>
 </dict>
 </plist>
