@@ -42,6 +42,25 @@ const config: CapacitorConfig = {
     contentInset: "automatic",
     allowsLinkPreview: false,
     scrollEnabled: true,
+    // Required companion to WKAppBoundDomains in Info.plist.
+    //
+    // WebKit behaviour (webkit.org/blog/10882/app-bound-domains/ +
+    // Apple WKWebViewConfiguration docs): once an app declares
+    // WKAppBoundDomains, every WKWebView it creates DEFAULTS to
+    // refusing JavaScript injection, custom stylesheets, cookie
+    // manipulation, and message handlers — unless the config opts
+    // into app-bound mode explicitly by setting this flag to true.
+    //
+    // Without this flag and with WKAppBoundDomains present, the
+    // Capacitor bridge cannot inject `window.Capacitor`, inline
+    // <script> tags never run, and the WebView stays permanently
+    // blank while Safari on the same device loads the same URL
+    // fine. Symptom reproduced on iPhone 17 Pro (iOS 26.3) fresh
+    // install with build 1037 and confirmed via missing POSTs to
+    // /api/debug-log from Capacitor UA.
+    //
+    // GitHub: ionic-team/capacitor#4721 + PR #4789.
+    limitsNavigationsToAppBoundDomains: true,
   },
 };
 
