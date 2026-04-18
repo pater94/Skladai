@@ -86,6 +86,25 @@ jobs:
             -project App.xcodeproj \
             -scheme App
 
+      - name: Bump CFBundleVersion in project.pbxproj
+        working-directory: skladai/ios/App
+        env:
+          # Use a HIGH starting offset (1000) so we never collide with the
+          # historic hardcoded values (1, 2). github.run_number increments
+          # per workflow run and never repeats. Needed on this branch
+          # because the commit the branch is based on predates the CI
+          # auto-bump step (added in 5e875de, Apr 6) — App Store Connect
+          # rejects uploads that reuse a previously-seen build number.
+          BUILD_NUMBER: ${{ github.run_number }}
+        run: |
+          NEW_VERSION=$((1000 + BUILD_NUMBER))
+          echo "Bumping CURRENT_PROJECT_VERSION to $NEW_VERSION"
+          sed -i.bak -E "s/CURRENT_PROJECT_VERSION = [0-9]+;/CURRENT_PROJECT_VERSION = $NEW_VERSION;/g" App.xcodeproj/project.pbxproj
+          sed -i.bak -E "s/MARKETING_VERSION = [0-9.]+;/MARKETING_VERSION = 1.0.$NEW_VERSION;/g" App.xcodeproj/project.pbxproj
+          rm -f App.xcodeproj/project.pbxproj.bak
+          echo "After bump:"
+          grep -E "CURRENT_PROJECT_VERSION|MARKETING_VERSION" App.xcodeproj/project.pbxproj
+
       - name: Build signed iOS archive
         working-directory: skladai/ios/App
         run: |
