@@ -73,28 +73,26 @@
 		</dict>
 	</array>
 	<!--
-	  WKAppBoundDomains — explicit app-bound domain allowlist.
+	  WKAppBoundDomains REMOVED for this test.
 
-	  iOS 14+ quietly restricts what a WKWebView loading a remote URL
-	  can do unless the domain is declared here. iOS 26 appears to have
-	  tightened this further: without an explicit WKAppBoundDomains
-	  entry, a hybrid app loading a remote URL via `server.url` can
-	  black-screen inside WKWebView while the same URL loads fine in
-	  Safari on the same device.
+	  Build 1037 (fc59761 — first introduction) and build 1038 (4fa67d8 —
+	  added the required `limitsNavigationsToAppBoundDomains` companion
+	  flag) both black-screened inside Capacitor WKWebView on iPhone 17
+	  Pro (iOS 26.3) and on cold-reopen on iPhone 14 Pro, while Safari
+	  loaded skladai.com normally on the same devices. Vercel logs
+	  confirmed: zero inline-script POSTs from Capacitor UA on both
+	  builds.
 
-	  Listing the two domains the app can serve from (the custom
-	  apex + the Vercel fallback) grants them full WebView
-	  capabilities and brings us onto the modern, fully-supported
-	  iOS app-bound-domains path.
-
-	  Max 10 entries, apex only (no wildcards) per Apple's spec.
+	  Hypothesis: declaring WKAppBoundDomains in Info.plist at all on
+	  iOS 26 flips the app into app-bound mode regardless of the
+	  companion config flag, and something in that mode is silently
+	  killing JavaScript execution / Capacitor bridge injection.
+	  Removing the key entirely drops the app back to the default
+	  "not app-bound" WebKit mode. The Capacitor 8.3.1 bump and the
+	  `ios.limitsNavigationsToAppBoundDomains: true` flag in
+	  capacitor.config.{ts,json} are intentionally kept — user's
+	  explicit instruction. Without a WKAppBoundDomains list, the
+	  native flag has no effect either way, so leaving it is harmless.
 	-->
-	<key>WKAppBoundDomains</key>
-	<array>
-		<string>skladai.com</string>
-		<string>skladai.vercel.app</string>
-		<string>accounts.google.com</string>
-		<string>appleid.apple.com</string>
-	</array>
 </dict>
 </plist>
