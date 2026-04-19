@@ -9,11 +9,17 @@ interface ActivityBadgesProps {
 }
 
 /**
- * Two tiny pills: 👟 steps | 🔥 kcal burned.
+ * Three tiny pills: 👟 steps | 🔥 kcal burned | 😴 sleep.
  *
- * Client-only: the pill content (steps, kcal, isNative) depends on the
- * browser's Capacitor bridge and hydration would mismatch if we rendered
- * during SSR. We return null on the first paint and render after mount.
+ * Sleep is shown as a compact "Xh" (rounded down to whole hours) so the
+ * pill stays narrow next to the others. Falls back to "—" while loading
+ * and "0h" when the data is zero (pill stays clickable to trigger
+ * HealthKit / Health Connect permission).
+ *
+ * Client-only: the pill content (steps, kcal, sleep, isNative) depends
+ * on the browser's Capacitor bridge and hydration would mismatch if we
+ * rendered during SSR. We return null on the first paint and render
+ * after mount.
  *
  * Click behavior:
  *   - Health not connected OR no data → trigger requestAccess() (or
@@ -31,7 +37,7 @@ export default function ActivityBadges({ theme = "dark" }: ActivityBadgesProps) 
 
   if (!mounted) return null;
 
-  const hasData = health.steps > 0 || health.kcalBurned > 0;
+  const hasData = health.steps > 0 || health.kcalBurned > 0 || health.sleepMinutes > 0;
   const needsInstall =
     health.platform === "android" && !health.loading && !health.isAvailable;
 
@@ -60,6 +66,14 @@ export default function ActivityBadges({ theme = "dark" }: ActivityBadgesProps) 
 
   const stepsText = health.loading ? "—" : health.steps.toLocaleString("pl-PL");
   const kcalText = health.loading ? "—" : String(health.kcalBurned);
+  // Compact sleep label: "7h 23m" → "7h" so 3 pills fit comfortably in
+  // the top-right header. Falls back to "—" when loading and "0h" when
+  // there's no data (pill stays clickable to trigger permission grant).
+  const sleepText = health.loading
+    ? "—"
+    : health.sleepMinutes > 0
+    ? `${Math.floor(health.sleepMinutes / 60)}h`
+    : "0h";
 
   const pillStyle: React.CSSProperties = {
     display: "inline-flex",
@@ -80,7 +94,7 @@ export default function ActivityBadges({ theme = "dark" }: ActivityBadgesProps) 
       onClick={onClick}
       aria-label={
         hasData
-          ? `Aktywność dziś: ${health.steps} kroków, ${health.kcalBurned} kcal`
+          ? `Aktywność dziś: ${health.steps} kroków, ${health.kcalBurned} kcal, ${sleepText} snu`
           : "Połącz z aplikacją zdrowia"
       }
       style={{
@@ -99,6 +113,10 @@ export default function ActivityBadges({ theme = "dark" }: ActivityBadgesProps) 
       <span style={pillStyle}>
         <span style={{ fontSize: "12px", opacity: emojiOpacity }}>🔥</span>
         <span style={{ color: "#f97316" }}>{kcalText}</span>
+      </span>
+      <span style={pillStyle}>
+        <span style={{ fontSize: "12px", opacity: emojiOpacity }}>😴</span>
+        <span style={{ color: "#8b5cf6" }}>{sleepText}</span>
       </span>
     </button>
   );
