@@ -71,6 +71,9 @@ jobs:
         working-directory: skladai
         run: npm ci
 
+      - name: Clear stale SPM artifact cache
+        run: rm -rf ~/Library/Caches/org.swift.swiftpm
+
       - name: Resolve SPM packages
         working-directory: skladai/ios/App
         run: |
