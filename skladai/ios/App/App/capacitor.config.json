@@ -3,7 +3,7 @@
 	"appName": "SkładAI",
 	"webDir": "www",
 	"server": {
-		"url": "https://skladai.com",
+		"url": "https://www.skladai.com",
 		"cleartext": true
 	},
 	"plugins": {
