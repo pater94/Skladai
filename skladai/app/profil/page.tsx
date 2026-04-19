@@ -349,7 +349,7 @@ export default function ProfilPage() {
                       {healthLabel}
                     </div>
                     <div style={{ fontSize: 11, color: "rgba(255,255,255,0.5)", marginTop: 2 }}>
-                      Śledź aktywność i bilans kaloryczny
+                      Śledź kroki, kalorie i sen
                     </div>
                   </div>
                   <button

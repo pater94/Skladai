@@ -354,13 +354,22 @@ export default function DashboardPage() {
 
               {health.isConnected ? (
                 <>
-                  <div style={{ display: "flex", gap: 10 }}>
-                    {[
-                      { value: health.steps.toLocaleString("pl-PL"), label: "Kroki", icon: "👟", color: "#6efcb4" },
-                      { value: String(health.kcalBurned), label: "kcal spalone", icon: "🔥", color: "#f97316" },
-                      { value: `${health.distanceKm.toFixed(1)} km`, label: "Dystans", icon: "📍", color: "#3b82f6" },
-                    ].map((a, i) => (
-                      <div key={i} style={{ flex: 1, padding: "12px 8px", borderRadius: 14, textAlign: "center", background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)" }}>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+                    {(() => {
+                      const fmtSleep = (mins: number): string => {
+                        if (!mins || mins <= 0) return "—";
+                        const h = Math.floor(mins / 60);
+                        const m = mins % 60;
+                        return `${h}h ${m}m`;
+                      };
+                      return [
+                        { value: health.steps.toLocaleString("pl-PL"), label: "Kroki", icon: "👟", color: "#6efcb4" },
+                        { value: String(health.kcalBurned), label: "kcal spalone", icon: "🔥", color: "#f97316" },
+                        { value: `${health.distanceKm.toFixed(1)} km`, label: "Dystans", icon: "📍", color: "#3b82f6" },
+                        { value: fmtSleep(health.sleepMinutes), label: "Sen", icon: "😴", color: "#8b5cf6" },
+                      ];
+                    })().map((a, i) => (
+                      <div key={i} style={{ flex: "1 1 calc(50% - 5px)", padding: "12px 8px", borderRadius: 14, textAlign: "center", background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)" }}>
                         <div style={{ fontSize: 13, marginBottom: 4 }}>{a.icon}</div>
                         <div style={{ fontSize: 16, fontWeight: 900, color: a.color, letterSpacing: "-0.02em" }}>{a.value}</div>
                         <div style={{ fontSize: 9.5, color: "rgba(255,255,255,0.7)", marginTop: 2 }}>{a.label}</div>
