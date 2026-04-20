@@ -270,18 +270,24 @@ export function useHealthData(): HealthData {
   }, [isNative, fetchData]);
 
   /**
-   * Opens the platform-native health settings page where the user can
-   * review or revoke individual data-type permissions.
+   * Opens the platform-native settings page where the user can
+   * review, revoke, or re-enable individual HealthKit / Health Connect
+   * data-type permissions.
    *
    * - Android: @capgo/capacitor-health exposes openHealthConnectSettings()
-   *   which deep-links to the Health Connect app's permission screen
-   *   for this app.
-   * - iOS: HealthKit has no API to deep-link to its permissions screen
-   *   inside Settings → Health → Apps → SkładAI. The closest is to
-   *   open the Apple Health app via the x-apple-health:// URL scheme
-   *   — user then navigates to Udostępnianie → Aplikacje → SkładAI
-   *   manually. If the URL scheme call fails on a given iOS build, we
-   *   swallow the error silently — there's no better fallback.
+   *   which deep-links straight to the Health Connect permissions
+   *   screen for SkładAI.
+   * - iOS: we use the `app-settings:` URL scheme to open iOS Settings
+   *   directly at the SkładAI app entry. From there the user taps
+   *   "Zdrowie" (listed under the app's permissions) and sees the
+   *   same 4 toggles (Kroki / Kalorie / Dystans / Sen) as the
+   *   original grant dialog. This is the shortest native path —
+   *   HealthKit itself has no API for re-prompting the authorization
+   *   dialog once the user has decided (Apple privacy design).
+   *
+   *   Fallback to `x-apple-health://` (Apple Health app → Sharing →
+   *   Apps → SkładAI) if Settings URL scheme is blocked on some
+   *   builds; that is 2-3 extra taps but always works.
    */
   const openSettings = useCallback(async () => {
     if (!isNative) return;
@@ -293,9 +299,17 @@ export function useHealthData(): HealthData {
       }
       if (platform === "ios") {
         try {
-          window.location.href = "x-apple-health://";
+          window.location.href = "app-settings:";
         } catch (iosErr) {
-          console.warn("[useHealthData] Could not open Apple Health:", iosErr);
+          console.warn(
+            "[useHealthData] Could not open app Settings, trying Apple Health app:",
+            iosErr,
+          );
+          try {
+            window.location.href = "x-apple-health://";
+          } catch (fallbackErr) {
+            console.warn("[useHealthData] Fallback also failed:", fallbackErr);
+          }
         }
       }
     } catch (e) {

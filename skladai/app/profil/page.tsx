@@ -334,7 +334,7 @@ export default function ProfilPage() {
                     onClick={() => {
                       const isIos = health.platform === "ios";
                       const msg = isIos
-                        ? "Otworzę aplikację Zdrowie. Wejdź w Udostępnianie → Aplikacje → SkładAI aby zarządzać uprawnieniami."
+                        ? "Otworzę Ustawienia iPhone → SkładAI. Wybierz sekcję 'Zdrowie' aby zobaczyć te same 4 toggle co przy pierwszym łączeniu (Kroki, Kalorie, Dystans, Sen)."
                         : "Otworzę ustawienia Health Connect, gdzie możesz zarządzać uprawnieniami SkładAI.";
                       if (window.confirm(msg)) {
                         health.openSettings();
