@@ -340,25 +340,24 @@ export function useHealthData(): HealthData {
         return;
       }
       if (platform === "ios") {
-        // iOS 26.3 blocks every shorter path:
-        //   - x-apple-health://sharing  → Apple ignores suffix, opens
-        //     Podsumowanie anyway
-        //   - App-Prefs:root=Privacy&path=HEALTH → URL scheme silently
-        //     dropped (confirmed 2026-04-20 on iPhone 17 Pro iOS 26.3)
-        //   - app-settings: → lands on SkładAI's app-level Settings
-        //     page which on iOS 26 NO LONGER includes a Zdrowie section
-        //     (Apple moved HealthKit perms exclusively to the Health
-        //     app / Privacy & Security → Health)
+        // Target: iOS Settings → Prywatność → Zdrowie. From there
+        // 'Dostęp do danych i urządzenia' → list of apps → SkładAI →
+        // toggles. Two taps from the Settings screen — strictly shorter
+        // than the Apple Health app path (Podsumowanie → Udostępnianie
+        // tab → Aplikacje section → SkładAI → toggles = four taps).
         //
-        // Only working deep-link on iOS 26.3 is x-apple-health:// which
-        // opens Health app at the Podsumowanie tab. User has to tap
-        // Udostępnianie → Aplikacje → SkładAI → toggles. Three taps.
-        // Can't do better until Apple ships a dedicated API (they
-        // deliberately haven't for a decade on privacy grounds).
+        // The earlier attempt paired App-Prefs with a 400 ms visibility
+        // fallback to x-apple-health://, but 400 ms was too aggressive —
+        // Settings transition animation takes longer, so the fallback
+        // fired mid-transition and iOS ended up opening Apple Health
+        // instead. Dropping the fallback entirely: if App-Prefs is
+        // silently ignored on a particular iOS build, the user just
+        // sees nothing happen and can report back. Better than the
+        // surprise 'why am I in Health app again' flow.
         try {
-          window.location.href = "x-apple-health://";
+          window.location.href = "App-Prefs:root=Privacy&path=HEALTH";
         } catch (iosErr) {
-          console.warn("[useHealthData] Could not open Apple Health:", iosErr);
+          console.warn("[useHealthData] Could not open iOS Settings:", iosErr);
         }
       }
     } catch (e) {
