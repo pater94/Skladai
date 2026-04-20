@@ -30,6 +30,16 @@ import { devLog } from "@/lib/dev-log";
 import ActivityBadges from "@/components/ActivityBadges";
 import type { ScanMode, ScanHistoryItem } from "@/lib/types";
 import { Apple, UtensilsCrossed, Sparkles, Pill } from "lucide-react";
+import { useSpeechToText } from "@/lib/useSpeechToText";
+import { nsSet } from "@/lib/native-storage";
+
+/**
+ * Key used to hide the mic's "NEW" badge once the user has actually used
+ * voice input at least once. Persisted via Capacitor Preferences
+ * (iOS UserDefaults / Android SharedPreferences) AND localStorage so
+ * the flag survives a WebView localStorage wipe on iOS.
+ */
+const FOOD_VOICE_USED_KEY = "hasUsedFoodVoice";
 
 /* ── tip arrays ── */
 const FOOD_TIPS = [
@@ -93,14 +103,29 @@ const ACCENT_MAP: Record<string, { hex: string; rgb: string }> = {
   suplement: { hex: "#3b82f6", rgb: "59,130,246" },
 };
 
-/* ── MicButton component ── */
-function MicButton({ accentRgb, onPress }: { accentRgb: string; onPress?: () => void }) {
+/* ── MicButton component ──
+ * Renders the mic / stop toggle for the food scanner search bar.
+ * Used to open a VoiceLog modal; now hooked up to an inline
+ * useSpeechToText session so the transcript streams straight into the
+ * search input. Parent owns the recording state — MicButton just
+ * reflects it visually and forwards taps via onToggle.
+ */
+function MicButton({
+  isRecording,
+  onToggle,
+}: {
+  isRecording: boolean;
+  onToggle: () => void;
+}) {
   const [showTooltip, setShowTooltip] = useState(false);
   const [showBadge, setShowBadge] = useState(false);
 
   useEffect(() => {
-    // Show tooltip on first visit
+    // Show tooltip on first visit. localStorage is browser-only so the
+    // effect is the only place we can read it — lint rule below is
+    // fine to suppress for this one-shot check.
     if (!localStorage.getItem("micTooltipShown")) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setShowTooltip(true);
       const timer = setTimeout(() => {
         setShowTooltip(false);
@@ -111,27 +136,40 @@ function MicButton({ accentRgb, onPress }: { accentRgb: string; onPress?: () => 
   }, []);
 
   useEffect(() => {
-    // Show NEW badge until first mic use
-    if (!localStorage.getItem("voiceUsed")) {
+    // Show NEW badge until first mic use. Reads the fresher of the two
+    // storage locations to stay consistent after an iOS localStorage wipe.
+    if (!localStorage.getItem(FOOD_VOICE_USED_KEY)) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setShowBadge(true);
     }
   }, []);
 
-  const handleMicClick = () => {
-    devLog("[MicButton] clicked");
+  const handleClick = () => {
+    devLog("[MicButton] clicked, recording=", isRecording);
     setShowTooltip(false);
     localStorage.setItem("micTooltipShown", "1");
-    if (!localStorage.getItem("voiceUsed")) {
-      localStorage.setItem("voiceUsed", "1");
+    // First-ever tap → mark voice as used. nsSet writes to both
+    // Capacitor Preferences (UserDefaults / SharedPreferences) and
+    // localStorage so the flag survives a WebView wipe.
+    if (!isRecording && !localStorage.getItem(FOOD_VOICE_USED_KEY)) {
+      nsSet(FOOD_VOICE_USED_KEY, "true").catch(() => {
+        // nsSet already falls back to localStorage-only on failure
+      });
       setShowBadge(false);
     }
-    onPress?.();
+    onToggle();
   };
+
+  const bg = isRecording ? "rgba(239,68,68,0.18)" : "rgba(110,252,180,0.12)";
+  const border = isRecording
+    ? "1.5px solid rgba(239,68,68,0.45)"
+    : "1.5px solid rgba(110,252,180,0.25)";
+  const stroke = isRecording ? "#ef4444" : "#6efcb4";
 
   return (
     <div style={{ position: "relative" }}>
-      {/* Tooltip */}
-      {showTooltip && (
+      {/* Tooltip — hidden while actively recording to avoid clutter */}
+      {showTooltip && !isRecording && (
         <div style={{
           position: "absolute", bottom: "calc(100% + 10px)", right: 0,
           padding: "8px 14px", borderRadius: 10,
@@ -149,33 +187,53 @@ function MicButton({ accentRgb, onPress }: { accentRgb: string; onPress?: () => 
           }} />
         </div>
       )}
-      {/* NEW badge */}
-      {showBadge && (
+      {/* NEW badge — stays only until first use, then gone forever */}
+      {showBadge && !isRecording && (
         <span style={{
           position: "absolute", top: -4, right: -4, zIndex: 10,
           fontSize: 8, padding: "2px 6px", borderRadius: 6,
           background: "#6efcb4", color: "#0a0e0c", fontWeight: 700,
         }}>NEW</span>
       )}
-      {/* Mic button */}
+      {/* Button */}
       <button
-        onClick={handleMicClick}
+        type="button"
+        onClick={handleClick}
+        aria-label={isRecording ? "Zakończ nagrywanie" : "Nagraj głosowo"}
         style={{
           width: 52, height: 52, borderRadius: "50%",
           display: "flex", alignItems: "center", justifyContent: "center",
-          background: "rgba(110,252,180,0.12)",
-          border: "1.5px solid rgba(110,252,180,0.25)",
+          background: bg,
+          border,
           cursor: "pointer",
-          animation: "micPulse 2.5s ease-in-out infinite",
+          animation: isRecording ? undefined : "micPulse 2.5s ease-in-out infinite",
           transition: "all 0.2s",
+          position: "relative",
         }}
       >
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6efcb4" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <rect x="9" y="1" width="6" height="12" rx="3" />
-          <path d="M5 10a7 7 0 0 0 14 0" />
-          <line x1="12" y1="17" x2="12" y2="21" />
-          <line x1="8" y1="21" x2="16" y2="21" />
-        </svg>
+        {isRecording ? (
+          // Stop icon — a filled square, clearly different from idle
+          <svg width="18" height="18" viewBox="0 0 24 24" fill={stroke}>
+            <rect x="5" y="5" width="14" height="14" rx="2" />
+          </svg>
+        ) : (
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={stroke} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="9" y="1" width="6" height="12" rx="3" />
+            <path d="M5 10a7 7 0 0 0 14 0" />
+            <line x1="12" y1="17" x2="12" y2="21" />
+            <line x1="8" y1="21" x2="16" y2="21" />
+          </svg>
+        )}
+        {isRecording && (
+          <span
+            style={{
+              position: "absolute", inset: -4, borderRadius: "50%",
+              border: "2px solid rgba(239,68,68,0.35)",
+              animation: "foodMicRing 1.4s ease-out infinite",
+              pointerEvents: "none",
+            }}
+          />
+        )}
       </button>
     </div>
   );
@@ -202,7 +260,47 @@ export default function Home() {
   const [lastScanArgs, setLastScanArgs] = useState<{ kind: "scan" | "fridge"; base64: string } | null>(null);
   const router = useRouter();
 
+  // ── Inline voice input for the food search bar ──
+  // The mic in the search bar used to open VoiceLog directly. Now it
+  // runs a live speech-to-text session via the shared hook and streams
+  // the transcript into `foodSearchQuery`. The existing "→ Analizuj"
+  // button keeps its behaviour (open VoiceLog with the typed text) — so
+  // the user flow is: tap mic → speak → tap mic (stop) → edit if needed
+  // → tap → → normal scan / log flow. No extra scan counter.
+  const {
+    isRecording: foodVoiceRecording,
+    startRecording: foodVoiceHookStart,
+    stopRecording: foodVoiceStop,
+    transcript: foodVoiceTranscript,
+    error: foodVoiceError,
+    isSupported: foodVoiceSupported,
+    resetError: resetFoodVoiceError,
+  } = useSpeechToText({ lang: "pl-PL", continuous: true, interimResults: true });
+  // Snapshot of foodSearchQuery at the moment recording started so
+  // transcripts append to any typed text instead of replacing it.
+  const foodVoiceBaseRef = useRef<string>("");
+
+  // Merge hook transcript into the search box on every update
+  useEffect(() => {
+    if (!foodVoiceRecording) return;
+    const base = foodVoiceBaseRef.current;
+    const merged = (base + (foodVoiceTranscript || "")).replace(/\s+/g, " ").trimStart();
+    setFoodSearchQuery(merged);
+  }, [foodVoiceTranscript, foodVoiceRecording]);
+
+  const toggleFoodVoice = useCallback(() => {
+    if (foodVoiceRecording) {
+      foodVoiceStop();
+    } else {
+      const base = foodSearchQuery.trim();
+      foodVoiceBaseRef.current = base ? base + " " : "";
+      foodVoiceHookStart();
+    }
+  }, [foodVoiceRecording, foodVoiceStop, foodVoiceHookStart, foodSearchQuery]);
+
   const submitFoodSearch = () => {
+    // Make sure any live recording is flushed before we hand off to VoiceLog.
+    if (foodVoiceRecording) foodVoiceStop();
     const trimmed = foodSearchQuery.trim();
     if (!trimmed) return;
     setVoiceInitialText(trimmed);
@@ -930,10 +1028,17 @@ export default function Home() {
                         submitFoodSearch();
                       }
                     }}
-                    placeholder="np. 2 jajka, kanapka z serem, kawa..."
+                    placeholder={foodVoiceRecording ? "Mów teraz..." : "np. 2 jajka, kanapka z serem, kawa..."}
                     className="flex-1 bg-transparent text-white/80 text-[13px] outline-none placeholder:text-white/40"
                   />
-                  {foodSearchQuery.trim().length > 0 ? (
+                  {/* Trailing control — while recording we show the mic (as
+                      a stop button) REGARDLESS of whether text is present,
+                      so the user can always end the session. Otherwise:
+                      text present → → (analyze), empty → mic. The mic is
+                      hidden only if the Web Speech API is unavailable. */}
+                  {foodVoiceRecording ? (
+                    <MicButton isRecording onToggle={toggleFoodVoice} />
+                  ) : foodSearchQuery.trim().length > 0 ? (
                     <button
                       type="button"
                       onClick={submitFoodSearch}
@@ -950,10 +1055,42 @@ export default function Home() {
                     >
                       →
                     </button>
-                  ) : (
-                    <MicButton accentRgb={accent.rgb} onPress={() => { setVoiceInitialText(undefined); setShowVoice(true); }} />
-                  )}
+                  ) : foodVoiceSupported ? (
+                    <MicButton isRecording={false} onToggle={toggleFoodVoice} />
+                  ) : null}
                 </div>
+                {/* Live "recording" indicator */}
+                {foodVoiceRecording && (
+                  <div
+                    className="px-4 pb-3 flex items-center gap-2"
+                    style={{ fontSize: 11, fontWeight: 700, color: "#fca5a5" }}
+                  >
+                    <span
+                      style={{
+                        width: 8, height: 8, borderRadius: "50%",
+                        background: "#ef4444",
+                        animation: "foodMicPulse 1.2s ease-in-out infinite",
+                      }}
+                    />
+                    Słucham... (kliknij ■ by zakończyć)
+                  </div>
+                )}
+                {/* Voice error / permission hint */}
+                {foodVoiceError && (
+                  <div
+                    role="alert"
+                    onClick={resetFoodVoiceError}
+                    className="mx-3 mb-3 px-3 py-2 rounded-lg cursor-pointer"
+                    style={{
+                      background: "rgba(239,68,68,0.1)",
+                      border: "1px solid rgba(239,68,68,0.25)",
+                      fontSize: 11,
+                      color: "#fca5a5",
+                    }}
+                  >
+                    🎙️ {foodVoiceError}
+                  </div>
+                )}
               </div>
             )}
           </div>

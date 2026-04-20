@@ -6,6 +6,8 @@ import { useHealthData } from "@/lib/useHealthData";
 import { createClient } from "@/lib/supabase";
 import { IS_DEMO } from "@/lib/config";
 import { activatePremiumDemo, resetChatLimitsDemo } from "@/lib/demo";
+import { useSpeechToText } from "@/lib/useSpeechToText";
+import TTSButton from "@/components/TTSButton";
 
 interface Props {
   open: boolean;
@@ -115,6 +117,26 @@ export default function AgentChat({ open, onClose, isPremium }: Props) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
+  // ── Voice input (via shared useSpeechToText hook) ──
+  // `isSupported` drives whether the mic button is rendered at all (we
+  // don't show a dead button on WebViews without SpeechRecognition).
+  // Transcripts go to the existing `input` state — we never auto-send so
+  // the user always gets to edit + confirm before a message counts
+  // against their limit.
+  const {
+    isRecording: recording,
+    startRecording: hookStart,
+    stopRecording,
+    transcript: voiceTranscript,
+    error: voiceError,
+    isSupported: voiceSupported,
+    resetError: resetVoiceError,
+  } = useSpeechToText({ lang: "pl-PL", continuous: true, interimResults: true });
+  // Snapshot of the input value when recording started. Finals are
+  // appended to THIS base with a space separator so the user's existing
+  // text isn't overwritten when they tap the mic mid-compose.
+  const voiceBaseRef = useRef<string>("");
+
   // Free users can't use expert mode — lock it visually
   const accent = expertMode ? "#FBBF24" : "#6efcb4";
   const accentRgb = expertMode ? "251,191,36" : "110,252,180";
@@ -178,6 +200,47 @@ export default function AgentChat({ open, onClose, isPremium }: Props) {
       messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
     });
   }, [messages, sending]);
+
+  // ── Voice: stop listening the moment the sheet swipes closed. The
+  //    hook already cleans up on unmount, but `open` can flip false
+  //    without the component actually unmounting (it's just hidden), so
+  //    we have to abort manually to avoid a hot mic in the background. ──
+  useEffect(() => {
+    if (!open && recording) stopRecording();
+  }, [open, recording, stopRecording]);
+
+  // ── Voice: when the hook produces transcript updates, merge them
+  //    into the input field on top of whatever the user had typed
+  //    before they hit the mic. Each keystroke the user makes while
+  //    not recording becomes the new base for the next session. ──
+  useEffect(() => {
+    if (!recording) return;
+    const base = voiceBaseRef.current;
+    const merged = (base + (voiceTranscript || "")).replace(/\s+/g, " ").trimStart();
+    setInput(merged);
+  }, [voiceTranscript, recording]);
+
+  // When recording ends, refocus the textarea so the user can edit or send.
+  const prevRecordingRef = useRef(false);
+  useEffect(() => {
+    if (prevRecordingRef.current && !recording) {
+      inputRef.current?.focus();
+    }
+    prevRecordingRef.current = recording;
+  }, [recording]);
+
+  const startRecording = useCallback(() => {
+    // Snapshot whatever the user has typed so the hook's transcript is
+    // appended to it rather than replacing it.
+    const base = input.trim();
+    voiceBaseRef.current = base ? base + " " : "";
+    hookStart();
+  }, [input, hookStart]);
+
+  const toggleRecording = useCallback(() => {
+    if (recording) stopRecording();
+    else startRecording();
+  }, [recording, startRecording, stopRecording]);
 
   const handleSend = useCallback(async (textOverride?: string) => {
     const text = (textOverride ?? input).trim();
@@ -562,8 +625,22 @@ export default function AgentChat({ open, onClose, isPremium }: Props) {
                     : `1px solid rgba(${accentRgb},0.18)`,
                   fontSize: 14, lineHeight: 1.5, color: "rgba(255,255,255,0.92)",
                   whiteSpace: "pre-wrap", wordBreak: "break-word",
+                  position: "relative",
                 }}>
                   {m.content}
+                  {!isUser && (
+                    // TTS speaker — discreet, bottom-right of the bubble.
+                    // `messageId` = index + first 20 chars of content, stable
+                    // across re-renders since messages are append-only.
+                    <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 6 }}>
+                      <TTSButton
+                        text={m.content}
+                        messageId={`msg-${i}`}
+                        accent={accent}
+                        accentRgb={accentRgb}
+                      />
+                    </div>
+                  )}
                 </div>
               </div>
             );
@@ -733,6 +810,52 @@ export default function AgentChat({ open, onClose, isPremium }: Props) {
             Border-top visually separates input from the scrollable
             messages above. */}
         <div style={{ padding: "10px 18px 10px", flexShrink: 0, borderTop: "1px solid rgba(255,255,255,0.04)", background: "#0a0e0c" }}>
+          {/* Voice-input error / permission notice */}
+          {voiceError && (
+            <div
+              role="alert"
+              onClick={resetVoiceError}
+              style={{
+                marginBottom: 8,
+                padding: "8px 12px",
+                borderRadius: 10,
+                background: "rgba(239,68,68,0.1)",
+                border: "1px solid rgba(239,68,68,0.25)",
+                fontSize: 12,
+                color: "#fca5a5",
+                cursor: "pointer",
+              }}
+            >
+              🎙️ {voiceError}
+            </div>
+          )}
+          {/* Live "recording" indicator */}
+          {recording && (
+            <div
+              style={{
+                marginBottom: 8,
+                padding: "6px 12px",
+                borderRadius: 999,
+                background: "rgba(239,68,68,0.1)",
+                border: "1px solid rgba(239,68,68,0.3)",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 8,
+                fontSize: 11,
+                fontWeight: 700,
+                color: "#fca5a5",
+              }}
+            >
+              <span
+                style={{
+                  width: 8, height: 8, borderRadius: "50%",
+                  background: "#ef4444",
+                  animation: "agentMicPulse 1.2s ease-in-out infinite",
+                }}
+              />
+              Słucham... (kliknij mikrofon by zakończyć)
+            </div>
+          )}
           <div style={{ display: "flex", gap: 8, alignItems: "flex-end" }}>
             {expertMode && (
               <button
@@ -752,7 +875,7 @@ export default function AgentChat({ open, onClose, isPremium }: Props) {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
-              placeholder={freeLimitReached ? "Odblokuj Premium żeby kontynuować" : expertMode && !isPremium ? "Tryb ekspercki — Pro+ wymagany" : expertMode ? "Zapytaj eksperta..." : "Zapytaj Agenta AI..."}
+              placeholder={freeLimitReached ? "Odblokuj Premium żeby kontynuować" : expertMode && !isPremium ? "Tryb ekspercki — Pro+ wymagany" : recording ? "Mów teraz..." : expertMode ? "Zapytaj eksperta..." : "Zapytaj Agenta AI..."}
               rows={1}
               disabled={freeLimitReached}
               style={{
@@ -764,6 +887,46 @@ export default function AgentChat({ open, onClose, isPremium }: Props) {
                 opacity: freeLimitReached ? 0.5 : 1,
               }}
             />
+            {/* Mic button — hidden entirely when Web Speech API is
+                unsupported (e.g. Chrome on iOS, some WebViews). Placed
+                left of the send button so the send CTA stays in the
+                thumb-friendly bottom-right corner. Available to both
+                Standard (green) and Expert (gold) modes, free + paid. */}
+            {voiceSupported && !freeLimitReached && (
+              <button
+                onClick={toggleRecording}
+                aria-label={recording ? "Zakończ nagrywanie" : "Nagraj głosowo"}
+                disabled={sending}
+                style={{
+                  width: 44, height: 44, borderRadius: 12, flexShrink: 0,
+                  border: recording
+                    ? "1px solid rgba(239,68,68,0.45)"
+                    : `1px solid rgba(${accentRgb},0.28)`,
+                  background: recording
+                    ? "rgba(239,68,68,0.18)"
+                    : `rgba(${accentRgb},0.1)`,
+                  color: recording ? "#ef4444" : accent,
+                  fontSize: 18,
+                  cursor: sending ? "default" : "pointer",
+                  transition: "all 0.2s",
+                  position: "relative",
+                }}
+              >
+                {recording ? "■" : "🎙"}
+                {recording && (
+                  <span
+                    style={{
+                      position: "absolute",
+                      inset: -4,
+                      borderRadius: 16,
+                      border: "2px solid rgba(239,68,68,0.35)",
+                      animation: "agentMicRing 1.4s ease-out infinite",
+                      pointerEvents: "none",
+                    }}
+                  />
+                )}
+              </button>
+            )}
             {expertMode && !isPremium ? (
               <button
                 onClick={handleLockClick}
@@ -851,6 +1014,14 @@ export default function AgentChat({ open, onClose, isPremium }: Props) {
         @keyframes typingDot {
           0%, 60%, 100% { opacity: 0.3; transform: translateY(0); }
           30% { opacity: 1; transform: translateY(-3px); }
+        }
+        @keyframes agentMicPulse {
+          0%, 100% { opacity: 1; transform: scale(1); }
+          50% { opacity: 0.5; transform: scale(1.3); }
+        }
+        @keyframes agentMicRing {
+          0% { opacity: 0.6; transform: scale(1); }
+          100% { opacity: 0; transform: scale(1.25); }
         }
       `}</style>
     </>

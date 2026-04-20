@@ -166,6 +166,17 @@ body.onboarding-active #scroll-container {
   to { opacity: 1; transform: translateY(0); }
 }
 
+/* Food-scanner voice input — live status dot + expanding halo */
+@keyframes foodMicPulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(1.3); }
+}
+
+@keyframes foodMicRing {
+  0% { opacity: 0.6; transform: scale(1); }
+  100% { opacity: 0; transform: scale(1.25); }
+}
+
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(4px); }
   to { opacity: 1; transform: translateY(0); }
