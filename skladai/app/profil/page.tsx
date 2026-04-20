@@ -302,20 +302,36 @@ export default function ProfilPage() {
         {health.isNative && (() => {
           const healthLabel = health.platform === "android" ? "Health Connect" : "Apple Health";
           const needsInstall = health.platform === "android" && !health.loading && !health.isAvailable;
+
+          // iOS HealthKit deliberately cannot report read-permission
+          // revocation (Apple privacy design — checkAuthorization
+          // always returns .sharingAuthorized once the app was asked).
+          // Use a data-presence heuristic as the fallback:
+          //   - Set 'healthDataEverSeen' once we have EVER seen any
+          //     non-zero value (steps/kcal/distance) today. Done in
+          //     useHealthData's fetchData.
+          //   - If user is marked isConnected but today's data is
+          //     all zero AND we've seen data before → likely revoked.
+          //   - Fresh users who never walked yet: stay optimistic,
+          //     render as connected.
+          // On Android, Health Connect DOES clear readAuthorized on
+          // revoke and useHealthData flips isConnected false — so
+          // this extra heuristic only matters for iOS in practice.
+          const hasAnyData =
+            health.steps > 0 ||
+            health.kcalBurned > 0 ||
+            health.distanceKm > 0 ||
+            health.sleepMinutes > 0;
+          let hasEverSeenData = false;
+          try {
+            hasEverSeenData = localStorage.getItem("healthDataEverSeen") === "1";
+          } catch {}
+          const suspectRevoked =
+            health.isConnected && !hasAnyData && hasEverSeenData;
+          const showAsConnected = health.isConnected && !suspectRevoked;
           return (
             <GlassCard>
-              {health.isConnected ? (
-                // Binary status: if checkAuthorization returned any
-                // granted types, we show "połączono" (green). Zero data
-                // is NOT a revocation signal — users can simply not
-                // have walked yet today, or have no sleep data logged.
-                // iOS HealthKit privacy means we can't detect revocation
-                // via check() anyway; user will notice zeros and can
-                // tap ZARZĄDZAJ to inspect. On Android, readAuthorized
-                // actually does drop to [] after revoke, and our
-                // fetchData resets isConnected=false in that case —
-                // the user then sees the "Połącz" button below, which
-                // is the correct path back.
+              {showAsConnected ? (
                 <button
                   type="button"
                   onClick={() => {

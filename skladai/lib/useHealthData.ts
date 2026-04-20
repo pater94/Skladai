@@ -177,6 +177,27 @@ export function useHealthData(): HealthData {
       if (calRes.samples.length > 0) setKcalBurned(Math.round(calRes.samples[0].value));
       if (distRes.samples.length > 0) setDistanceKm(Math.round((distRes.samples[0].value / 1000) * 10) / 10); // meters → km
 
+      // Persist a flag the first time we successfully read ANY non-zero
+      // data from HealthKit/Health Connect. The Profile card uses this
+      // to distinguish 'fresh user who hasn't walked yet today' (zero
+      // everything, but never saw data before — stay optimistic, show
+      // green 'połączono') from 'established user who just revoked in
+      // Settings' (readAuthorized still populated on iOS due to Apple
+      // privacy, but now getting zeros — show yellow 'brak danych').
+      //
+      // iOS HealthKit deliberately cannot report revocation via
+      // checkAuthorization for read perms — this flag + data-presence
+      // check is the best heuristic we have.
+      try {
+        const anyNonZeroToday =
+          (stepsRes.samples.length > 0 && stepsRes.samples[0].value > 0) ||
+          (calRes.samples.length > 0 && calRes.samples[0].value > 0) ||
+          (distRes.samples.length > 0 && distRes.samples[0].value > 0);
+        if (anyNonZeroToday && localStorage.getItem("healthDataEverSeen") !== "1") {
+          localStorage.setItem("healthDataEverSeen", "1");
+        }
+      } catch {}
+
       // Sum daily buckets into a week total.
       const sumSamples = (samples: { value: number }[]): number =>
         samples.reduce((acc, s) => acc + (s.value || 0), 0);
