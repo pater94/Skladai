@@ -184,6 +184,41 @@ export default function OnboardingWrapper() {
         identifyUser(session.user.id).catch(() => {});
         setState("hidden");
         window.dispatchEvent(new Event("cloud-sync-done"));
+
+        // FIRST-TIME HEALTH PROMPT — ask HealthKit / Health Connect once
+        // per install. Fires the native 4-toggle dialog (Kroki, Kalorie,
+        // Dystans, Sen) so the user doesn't have to manually navigate to
+        // Profil → Połącz later. Gated on localStorage "healthKitAsked"
+        // so re-logins don't spam the dialog. On iOS, subsequent
+        // requestAuthorization calls are no-ops anyway (Apple privacy),
+        // but on Android fresh installs / post-uninstall they would
+        // fire the dialog again — the flag prevents that.
+        if (event === "SIGNED_IN") {
+          try {
+            if (localStorage.getItem("healthKitAsked") !== "1") {
+              // 500 ms delay lets the Login screen unmount + Dashboard
+              // mount finish, so the native dialog lands on a stable UI
+              // rather than mid-transition.
+              setTimeout(async () => {
+                try {
+                  const { Capacitor } = await import("@capacitor/core");
+                  if (!Capacitor.isNativePlatform()) return;
+                  const { Health } = await import("@capgo/capacitor-health");
+                  const availability = await Health.isAvailable();
+                  if (!availability.available) return;
+                  await Health.requestAuthorization({
+                    read: ["steps", "calories", "distance", "sleep"],
+                  });
+                  localStorage.setItem("healthKitAsked", "1");
+                } catch (err) {
+                  console.warn("[Onboarding] Auto health prompt failed:", err);
+                }
+              }, 500);
+            }
+          } catch {
+            // localStorage can throw in private-browsing modes; skip.
+          }
+        }
       } else if (event === "SIGNED_OUT") {
         // User tapped "Wyloguj się" in Profil. We need to resurface the
         // login UI so they can sign back in — without this, OnboardingWrapper

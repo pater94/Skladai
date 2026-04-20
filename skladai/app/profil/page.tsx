@@ -370,19 +370,19 @@ export default function ProfilPage() {
                       width: 42,
                       height: 42,
                       borderRadius: 12,
-                      background: "rgba(52,211,153,0.1)",
-                      border: "1px solid rgba(52,211,153,0.15)",
+                      background: "rgba(251,191,36,0.08)",
+                      border: "1px solid rgba(251,191,36,0.15)",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
                       flexShrink: 0,
                     }}
                   >
-                    <span style={{ fontSize: 18 }}>❤️</span>
+                    <span style={{ fontSize: 18 }}>⚠️</span>
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 13.5, fontWeight: 700, color: "#fff" }}>
-                      {healthLabel}
+                    <div style={{ fontSize: 13.5, fontWeight: 700, color: "rgba(251,191,36,0.9)" }}>
+                      {healthLabel} — brak zgód
                     </div>
                     <div style={{ fontSize: 11, color: "rgba(255,255,255,0.5)", marginTop: 2 }}>
                       Śledź kroki, kalorie i sen
