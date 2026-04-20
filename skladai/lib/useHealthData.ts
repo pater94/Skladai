@@ -340,37 +340,25 @@ export function useHealthData(): HealthData {
         return;
       }
       if (platform === "ios") {
-        // Try iOS Settings → Privacy & Security → Health first via the
-        // undocumented App-Prefs URL scheme. On success the user lands
-        // 2 taps from SkładAI's toggles (tap 'Apps' / 'Aplikacje' →
-        // tap SkładAI). If iOS 26.3 silently ignores App-Prefs (Apple
-        // has been killing these schemes across versions), fall back
-        // to opening Apple Health app directly — still a valid path
-        // (Udostępnianie → Aplikacje → SkładAI) just 1-2 taps longer.
+        // iOS 26.3 blocks every shorter path:
+        //   - x-apple-health://sharing  → Apple ignores suffix, opens
+        //     Podsumowanie anyway
+        //   - App-Prefs:root=Privacy&path=HEALTH → URL scheme silently
+        //     dropped (confirmed 2026-04-20 on iPhone 17 Pro iOS 26.3)
+        //   - app-settings: → lands on SkładAI's app-level Settings
+        //     page which on iOS 26 NO LONGER includes a Zdrowie section
+        //     (Apple moved HealthKit perms exclusively to the Health
+        //     app / Privacy & Security → Health)
         //
-        // We can't detect URL-scheme-silently-ignored in WebView, so
-        // we only get ONE shot. Ordering App-Prefs first because it's
-        // shorter for the user when it works.
+        // Only working deep-link on iOS 26.3 is x-apple-health:// which
+        // opens Health app at the Podsumowanie tab. User has to tap
+        // Udostępnianie → Aplikacje → SkładAI → toggles. Three taps.
+        // Can't do better until Apple ships a dedicated API (they
+        // deliberately haven't for a decade on privacy grounds).
         try {
-          window.location.href = "App-Prefs:root=Privacy&path=HEALTH";
-          // Schedule a fallback a beat later — if App-Prefs worked,
-          // the app is already backgrounded and setTimeout won't fire
-          // until user returns. If it didn't work (silently failed),
-          // we fire the Apple Health fallback.
-          setTimeout(() => {
-            try {
-              if (document.visibilityState === "visible") {
-                window.location.href = "x-apple-health://";
-              }
-            } catch {}
-          }, 400);
+          window.location.href = "x-apple-health://";
         } catch (iosErr) {
-          console.warn("[useHealthData] Could not open Settings, trying Apple Health:", iosErr);
-          try {
-            window.location.href = "x-apple-health://";
-          } catch (fallbackErr) {
-            console.warn("[useHealthData] Both paths failed:", fallbackErr);
-          }
+          console.warn("[useHealthData] Could not open Apple Health:", iosErr);
         }
       }
     } catch (e) {
