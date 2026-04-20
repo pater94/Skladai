@@ -337,7 +337,7 @@ export default function ProfilPage() {
                   onClick={() => {
                     const isIos = health.platform === "ios";
                     const msg = isIos
-                      ? "Otworzę Ustawienia → Prywatność → Zdrowie.\n\nTam: Dostęp do danych i urządzenia → SkładAI → włącz/wyłącz: Kroki, Kalorie, Dystans, Sen."
+                      ? "Otworzę aplikację Zdrowie.\n\nTam: dolny pasek → Udostępnianie → sekcja Aplikacje → SkładAI → włącz/wyłącz: Kroki, Kalorie, Dystans, Sen."
                       : "Otworzę Health Connect.\n\nTam: sekcja Aplikacje związane ze zdrowiem → SkładAI → włącz/wyłącz zgody.";
                     if (window.confirm(msg)) {
                       health.openSettings();
