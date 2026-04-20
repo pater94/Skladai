@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useHealthData } from "@/lib/useHealthData";
+import { createClient } from "@/lib/supabase";
 
 interface Props {
   open: boolean;
@@ -221,10 +222,28 @@ export default function AgentChat({ open, onClose, isPremium }: Props) {
     if (health.sleepStart) todayStats.sleepStart = health.sleepStart;
     if (health.sleepEnd) todayStats.sleepEnd = health.sleepEnd;
 
+    // Pull the access token directly from the Supabase client's storage
+    // (Capacitor Preferences on native, localStorage on web) and send it
+    // via Authorization: Bearer header. The backend /api/chat tries this
+    // header first, then falls back to cookies for plain web browsers.
+    // WKWebView cookies are unreliable across cold reopens, so this is
+    // the path that actually works on iOS/Android Capacitor builds.
+    let accessToken: string | null = null;
+    try {
+      const supabase = createClient();
+      const { data: { session } } = await supabase.auth.getSession();
+      accessToken = session?.access_token ?? null;
+    } catch {
+      // no-op — backend will return 401 and the existing error UI handles it
+    }
+
     try {
       const res = await fetch("/api/chat", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+        },
         body: JSON.stringify({
           message: text,
           history: history.slice(0, -1),

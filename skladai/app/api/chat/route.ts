@@ -75,18 +75,34 @@ async function extractUserId(request: NextRequest): Promise<string | null> {
     const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
     if (!supabaseUrl || !serviceKey) return null;
 
-    const cookieStore = request.cookies;
     let accessToken: string | null = null;
 
-    for (const [name, cookie] of cookieStore) {
-      if (name.startsWith("sb-") && name.endsWith("-auth-token")) {
-        try {
-          const parsed = JSON.parse(cookie.value);
-          accessToken = parsed?.access_token || parsed?.[0] || null;
-          if (accessToken) break;
-        } catch { /* not JSON */ }
+    // 1) Authorization: Bearer <jwt> — preferred path. Capacitor apps
+    //    (iOS/Android) keep the Supabase session in native Preferences,
+    //    NOT in cookies — WKWebView cookies are too unreliable across
+    //    cold reopens. Frontend explicitly pulls session.access_token
+    //    and sends it here.
+    const authHeader = request.headers.get("authorization") || request.headers.get("Authorization");
+    if (authHeader && authHeader.toLowerCase().startsWith("bearer ")) {
+      accessToken = authHeader.slice(7).trim() || null;
+    }
+
+    // 2) Cookie fallback — plain web browsers where the Supabase client
+    //    still happens to write sb-*-auth-token cookies (older
+    //    storage adapters, non-PKCE flow, etc.).
+    if (!accessToken) {
+      const cookieStore = request.cookies;
+      for (const [name, cookie] of cookieStore) {
+        if (name.startsWith("sb-") && name.endsWith("-auth-token")) {
+          try {
+            const parsed = JSON.parse(cookie.value);
+            accessToken = parsed?.access_token || parsed?.[0] || null;
+            if (accessToken) break;
+          } catch { /* not JSON */ }
+        }
       }
     }
+
     if (!accessToken) return null;
 
     const supaAdmin = createSupabaseClient(supabaseUrl, serviceKey);
