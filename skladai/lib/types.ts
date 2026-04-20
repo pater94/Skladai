@@ -404,4 +404,12 @@ export interface ScanHistoryItem {
   date: string;
   thumbnail: string;
   result: AnalysisResult;
+  /**
+   * Server-generated scan_logs.id returned by /api/analyze. Present only
+   * for scans logged after the scan_id migration (old history items keep
+   * this undefined). When set, feedback POSTs include it as `scan_id`
+   * so the 👍/👎 updates the exact row instead of the most recent match
+   * on product_name.
+   */
+  scan_log_id?: string;
 }

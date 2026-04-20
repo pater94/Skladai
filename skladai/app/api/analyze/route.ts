@@ -1,8 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
+import { randomUUID } from "crypto";
 import type { ScanMode } from "@/lib/types";
 
 export const maxDuration = 60;
+
+/**
+ * Prompt version stamped onto every scan_log row.
+ * BUMP THIS WHENEVER ANY ANALYSIS PROMPT CHANGES (READ_FOOD_LABEL,
+ * FOOD_ANALYSIS, COSMETICS_ANALYSIS, MEAL_ANALYSIS, etc.). The admin
+ * dashboard filters by version so we can compare iteration A vs B
+ * side-by-side and know exactly which prompt produced which verdict.
+ *
+ * Naming convention: "vN" where N is a monotonically increasing integer.
+ * Write a one-line changelog comment each bump so reviewing old scans
+ * tomorrow stays sane:
+ *   v1 — initial prod prompts (through 2026-04-20)
+ */
+const PROMPT_VERSION = "v1";
 
 // ==================== SCAN LOGGING (fire-and-forget) ====================
 
@@ -17,6 +32,22 @@ async function logScanToSupabase(opts: {
   ocrText?: string;
   request?: NextRequest;
 }): Promise<void> {
+  // Pre-generate the scan_logs.id so we can (a) stamp the row with it
+  // when we insert below AND (b) mutate the caller's `result` object so
+  // the NextResponse.json(result) that runs IMMEDIATELY after the caller
+  // does `void logScanToSupabase(...)` carries the id back to the
+  // client. This is the bridge that lets /api/feedback update exactly
+  // the right row — no more fuzzy product_name matching.
+  //
+  // JS semantics: everything before the first `await` in an async
+  // function runs synchronously at the call site, so the mutation
+  // below lands on `result` BEFORE the caller's `return NextResponse.
+  // json(result)` serializes.
+  const scanLogId = randomUUID();
+  if (opts.result && typeof opts.result === "object") {
+    (opts.result as Record<string, unknown>).__scan_log_id = scanLogId;
+  }
+
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!supabaseUrl || !supabaseServiceKey) return;
@@ -104,6 +135,7 @@ async function logScanToSupabase(opts: {
     const userId = opts.request ? await extractUserId(opts.request) : null;
 
     await supaAdmin.from("scan_logs").insert({
+      id: scanLogId,
       mode: opts.mode,
       scan_type: opts.scanType || opts.mode,
       user_id: userId,
@@ -119,7 +151,7 @@ async function logScanToSupabase(opts: {
       brand,
       product_category: category,
       processing_time_ms: Date.now() - opts.startTime,
-      prompt_version: "v1",
+      prompt_version: PROMPT_VERSION,
       // Analytics columns
       risk_level: typeof r.risk_level === "string" ? r.risk_level : null,
       has_pregnancy_warning: hasPregnancyWarning,
@@ -139,6 +171,7 @@ async function logFailedScan(opts: {
   base64Image?: string;
   error: string;
   startTime: number;
+  request?: NextRequest;
 }): Promise<void> {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -172,16 +205,21 @@ async function logFailedScan(opts: {
       : errLower.includes("timeout") || errLower.includes("504") ? "timeout"
       : "api_error";
 
+    // Capture user_id so "all my failed scans" is filterable in admin.
+    // Runs inside the fire-and-forget block — never blocks scan response.
+    const userId = opts.request ? await extractUserId(opts.request) : null;
+
     await supaAdmin.from("scan_logs").insert({
       mode: opts.mode,
       scan_type: opts.mode,
+      user_id: userId,
       image_url: imageUrl,
       ai_result: { error: opts.error, failed: true },
       ai_model: "error",
       score: null,
       product_name: null,
       processing_time_ms: Date.now() - opts.startTime,
-      prompt_version: "v1",
+      prompt_version: PROMPT_VERSION,
       error_type: errorType,
     });
   } catch (e) {
@@ -1344,7 +1382,7 @@ Odpowiedz WYŁĄCZNIE poprawnym JSON (bez markdown, bez komentarzy):
         void logScanToSupabase({ mode: "meal", scanType: "meal", base64Image: image, result, aiModel: "claude-opus-4-20250514", startTime, request });
         return NextResponse.json(result);
       } catch {
-        void logFailedScan({ mode: "meal", base64Image: image, error: "Meal parse failed", startTime });
+        void logFailedScan({ mode: "meal", base64Image: image, error: "Meal parse failed", startTime, request });
         return NextResponse.json({ error: "Nie udało się rozpoznać dania. Spróbuj z lepszym zdjęciem." }, { status: 422 });
       }
     }
@@ -1366,7 +1404,7 @@ Odpowiedz WYŁĄCZNIE poprawnym JSON (bez markdown, bez komentarzy):
         void logScanToSupabase({ mode: "fridge_scan", scanType: "fridge_scan", base64Image: image, result, aiModel: "claude-opus-4-20250514", startTime, request });
         return NextResponse.json(result);
       } catch {
-        void logFailedScan({ mode: "fridge_scan", base64Image: image, error: "Fridge parse failed", startTime });
+        void logFailedScan({ mode: "fridge_scan", base64Image: image, error: "Fridge parse failed", startTime, request });
         return NextResponse.json({ error: "Nie udało się przeanalizować lodówki." }, { status: 422 });
       }
     }
@@ -1395,7 +1433,7 @@ Odpowiedz WYŁĄCZNIE poprawnym JSON (bez markdown, bez komentarzy):
         void logScanToSupabase({ mode: "forma", scanType: "forma", base64Image: image, image2Base64: image2 || undefined, result, aiModel: "claude-opus-4-20250514", startTime, request });
         return NextResponse.json(result);
       } catch {
-        void logFailedScan({ mode: "forma", base64Image: image, error: "Forma parse failed", startTime });
+        void logFailedScan({ mode: "forma", base64Image: image, error: "Forma parse failed", startTime, request });
         return NextResponse.json({ error: "Nie udało się przeanalizować zdjęcia. Spróbuj z lepszym oświetleniem." }, { status: 422 });
       }
     }
@@ -1560,7 +1598,7 @@ SZUKAJ LEPSZEGO (search_queries) — KLUCZOWE:
         void logScanToSupabase({ mode: "suplement", scanType: "suplement", base64Image: image, image2Base64: image2 || undefined, result, startTime, ocrText: supplOcrText || undefined, request });
         return NextResponse.json(result);
       } catch {
-        void logFailedScan({ mode: "suplement", base64Image: image, error: "Suplement parse failed", startTime });
+        void logFailedScan({ mode: "suplement", base64Image: image, error: "Suplement parse failed", startTime, request });
         return NextResponse.json({ error: "Nie udało się przeanalizować suplementu." }, { status: 422 });
       }
     }
@@ -1732,12 +1770,12 @@ Zweryfikuj z obrazem. Odpowiedz WYŁĄCZNIE poprawnym JSON.${skinProfileHint}`,
       return NextResponse.json(result);
     } catch {
       console.error("Failed to parse AI response:", step2.text?.substring(0, 500));
-      void logFailedScan({ mode: isCosmetics ? "cosmetics" : "food", base64Image: image, error: "Parse failed: " + (step2.text?.substring(0, 200) || "empty"), startTime });
+      void logFailedScan({ mode: isCosmetics ? "cosmetics" : "food", base64Image: image, error: "Parse failed: " + (step2.text?.substring(0, 200) || "empty"), startTime, request });
       return NextResponse.json({ error: "Nie udało się przeanalizować. Spróbuj wyraźniejsze zdjęcie." }, { status: 422 });
     }
   } catch (error) {
     console.error("Analysis error:", error);
-    void logFailedScan({ mode: body?.mode || "unknown", base64Image: body?.image, error: String(error).substring(0, 300), startTime });
+    void logFailedScan({ mode: body?.mode || "unknown", base64Image: body?.image, error: String(error).substring(0, 300), startTime, request });
     return NextResponse.json({ error: "Wystąpił błąd. Spróbuj ponownie." }, { status: 500 });
   }
 }

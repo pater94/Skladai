@@ -37,6 +37,12 @@ export function addToHistory(
   scanType: ScanMode = "food",
   customDate?: string
 ): ScanHistoryItem {
+  // /api/analyze mutates the result to include __scan_log_id (the
+  // server-side scan_logs PK). Pluck it out so /api/feedback can
+  // update exactly the right row regardless of duplicate product names.
+  const resultWithId = result as AnalysisResult & { __scan_log_id?: string };
+  const scanLogId = typeof resultWithId.__scan_log_id === "string" ? resultWithId.__scan_log_id : undefined;
+
   const item: ScanHistoryItem = {
     id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
     scanType,
@@ -46,6 +52,7 @@ export function addToHistory(
     date: customDate || new Date().toISOString(),
     thumbnail,
     result,
+    scan_log_id: scanLogId,
   };
 
   const history = getHistory();
