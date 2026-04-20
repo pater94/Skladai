@@ -54,14 +54,20 @@ export default function OnboardingLogin({ onSkip, startSlide = 0 }: OnboardingLo
     try {
       const supabase = createClient();
       await signInWithProviderNative(supabase, "apple");
+      // Intentionally NOT resetting loginBusy on success. The loader
+      // overlay below stays up until this component unmounts, which
+      // happens the moment OnboardingWrapper sees SIGNED_IN and flips
+      // state to "hidden". Without this, the finally block would hide
+      // the loader, and for ~100-500ms between Browser closing and
+      // SIGNED_IN firing, the login slide is visible again — a flash
+      // user reported as unprofessional.
     } catch (e) {
       console.error("Apple sign in failed:", e);
       setLoginError(
         "Nie udało się zalogować przez Apple. " +
           (e instanceof Error ? e.message : "Spróbuj ponownie lub użyj Google.")
       );
-    } finally {
-      setLoginBusy(null);
+      setLoginBusy(null); // Only reset on error so user can retry.
     }
   };
 
@@ -72,13 +78,13 @@ export default function OnboardingLogin({ onSkip, startSlide = 0 }: OnboardingLo
     try {
       const supabase = createClient();
       await signInWithProviderNative(supabase, "google");
+      // See handleAppleSignIn — loginBusy intentionally sticky on success.
     } catch (e) {
       console.error("Google sign in failed:", e);
       setLoginError(
         "Nie udało się zalogować przez Google. " +
           (e instanceof Error ? e.message : "Spróbuj ponownie.")
       );
-    } finally {
       setLoginBusy(null);
     }
   };
@@ -310,6 +316,54 @@ export default function OnboardingLogin({ onSkip, startSlide = 0 }: OnboardingLo
           </button>
         )}
       </div>
+
+      {/* Full-screen loading overlay during OAuth.
+          Covers the slides while the user is in the Apple/Google OAuth
+          browser AND during the ~100-500ms between Browser closing and
+          the OnboardingWrapper's SIGNED_IN handler firing setState("hidden").
+          Without this, the user sees a brief flash of the login slide
+          (state still "login") after returning from the OAuth browser,
+          before the main app takes over.
+          The loader stays visible until OnboardingLogin itself unmounts
+          — which happens the moment OnboardingWrapper switches state. */}
+      {loginBusy && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 200,
+            background: "#0a0e0c",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 20,
+          }}
+          aria-live="polite"
+          aria-label="Łączenie z kontem"
+        >
+          <div
+            style={{
+              width: 48,
+              height: 48,
+              border: "3px solid rgba(110,252,180,0.2)",
+              borderTopColor: "#6efcb4",
+              borderRadius: "50%",
+              animation: "skladai-spin 0.8s linear infinite",
+            }}
+          />
+          <div
+            style={{
+              color: "rgba(255,255,255,0.8)",
+              fontSize: 14,
+              fontWeight: 600,
+            }}
+          >
+            Łączenie z {loginBusy === "apple" ? "Apple" : "Google"}...
+          </div>
+          <style>{`@keyframes skladai-spin { to { transform: rotate(360deg); } }`}</style>
+        </div>
+      )}
     </div>
   );
 }
