@@ -320,7 +320,12 @@ export function useHealthData(): HealthData {
       }
       if (platform === "ios") {
         try {
-          window.location.href = "x-apple-health://";
+          // Try deep-linking to the Sharing (Udostępnianie) tab first —
+          // undocumented path but may land user closer to the SkładAI
+          // toggles on iOS 26.3. If Apple silently ignores the path
+          // component, it still opens Health.app root (same result as
+          // bare x-apple-health://). No regression either way.
+          window.location.href = "x-apple-health://sharing";
         } catch (iosErr) {
           console.warn("[useHealthData] Could not open Apple Health:", iosErr);
         }
