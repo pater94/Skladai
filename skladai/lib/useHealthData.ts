@@ -108,6 +108,24 @@ export function useHealthData(): HealthData {
 
       const readAuthorized = authStatus.readAuthorized || [];
       const hasAccess = readAuthorized.length > 0;
+
+      // If we know HealthKit has been asked (readAuthorized has ANY types,
+      // regardless of whether user later revoked in Settings), persist a
+      // flag so the Połącz-button handler can skip the pointless
+      // requestAuthorization on iOS and open Settings directly instead.
+      // This covers users who granted perms via a different code path
+      // (onboarding, Dashboard CTA) and never touched the Profil button
+      // — without it, hasAskedBefore would be false on reconnect and
+      // iOS would flash the Settings → Health page then drop them on
+      // the app's root Settings entry.
+      if (hasAccess) {
+        try {
+          if (localStorage.getItem("healthKitAsked") !== "1") {
+            localStorage.setItem("healthKitAsked", "1");
+          }
+        } catch {}
+      }
+
       if (!hasAccess) {
         // User revoked all perms in Settings — reset connection state
         // and zero out any previously displayed values so the UI
