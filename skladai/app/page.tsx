@@ -371,7 +371,14 @@ export default function Home() {
         ctx.drawImage(img, (img.width - minDim) / 2, (img.height - minDim) / 2, minDim, minDim, 0, 0, 96, 96);
         const thumbnail = canvas.toDataURL("image/jpeg", 0.5);
         const historyItem = addToHistory(data, thumbnail, mode);
+        // Keep isLoading=true through the route transition. If we
+        // setIsLoading(false) before router.push settles, the current
+        // page re-renders with the default scanner UI for a single
+        // frame before /wyniki/[id] mounts → user sees a Dashboard
+        // flash. Leaving the loader up until the new page takes over
+        // makes the hand-off invisible.
         router.push(`/wyniki/${historyItem.id}`);
+        return;
       } catch (err) {
         const msg = err instanceof Error ? err.message : "";
         // Strip internal "error_NNN: " / "server_NNN" prefixes before showing to user.
@@ -381,7 +388,13 @@ export default function Home() {
         } else {
           setError(cleanMsg || "Wystąpił błąd. Spróbuj ponownie.");
         }
-      } finally { setIsLoading(false); setIsScanning(false); scanLockRef.current = false; }
+        // Only reset loading state on the error path — the success
+        // path returns early above to keep the loader up during
+        // route transition.
+        setIsLoading(false);
+        setIsScanning(false);
+        scanLockRef.current = false;
+      }
     },
     [router, mode]
   );
@@ -422,9 +435,17 @@ export default function Home() {
         const thumbnail = canvas.toDataURL("image/jpeg", 0.5);
         data.type = "fridge";
         const historyItem = addToHistory(data, thumbnail, "food" as ScanMode);
+        // Keep isLoading=true through the route transition — see the
+        // handleLabelScan version above for the full explanation.
         router.push(`/wyniki/${historyItem.id}`);
-      } catch { setError("Nie udało się przeanalizować produktu. Spróbuj ponownie — upewnij się, że etykieta ze składem jest dobrze widoczna."); }
-      finally { setIsLoading(false); scanLockRef.current = false; }
+        return;
+      } catch {
+        setError("Nie udało się przeanalizować produktu. Spróbuj ponownie — upewnij się, że etykieta ze składem jest dobrze widoczna.");
+      }
+      // Reset loading only on early return paths (non-OK HTTP handled
+      // inline above with its own setIsLoading) and on the catch branch.
+      setIsLoading(false);
+      scanLockRef.current = false;
     },
     [router]
   );
