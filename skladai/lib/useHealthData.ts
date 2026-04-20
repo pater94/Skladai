@@ -340,15 +340,37 @@ export function useHealthData(): HealthData {
         return;
       }
       if (platform === "ios") {
+        // Try iOS Settings → Privacy & Security → Health first via the
+        // undocumented App-Prefs URL scheme. On success the user lands
+        // 2 taps from SkładAI's toggles (tap 'Apps' / 'Aplikacje' →
+        // tap SkładAI). If iOS 26.3 silently ignores App-Prefs (Apple
+        // has been killing these schemes across versions), fall back
+        // to opening Apple Health app directly — still a valid path
+        // (Udostępnianie → Aplikacje → SkładAI) just 1-2 taps longer.
+        //
+        // We can't detect URL-scheme-silently-ignored in WebView, so
+        // we only get ONE shot. Ordering App-Prefs first because it's
+        // shorter for the user when it works.
         try {
-          // Try deep-linking to the Sharing (Udostępnianie) tab first —
-          // undocumented path but may land user closer to the SkładAI
-          // toggles on iOS 26.3. If Apple silently ignores the path
-          // component, it still opens Health.app root (same result as
-          // bare x-apple-health://). No regression either way.
-          window.location.href = "x-apple-health://sharing";
+          window.location.href = "App-Prefs:root=Privacy&path=HEALTH";
+          // Schedule a fallback a beat later — if App-Prefs worked,
+          // the app is already backgrounded and setTimeout won't fire
+          // until user returns. If it didn't work (silently failed),
+          // we fire the Apple Health fallback.
+          setTimeout(() => {
+            try {
+              if (document.visibilityState === "visible") {
+                window.location.href = "x-apple-health://";
+              }
+            } catch {}
+          }, 400);
         } catch (iosErr) {
-          console.warn("[useHealthData] Could not open Apple Health:", iosErr);
+          console.warn("[useHealthData] Could not open Settings, trying Apple Health:", iosErr);
+          try {
+            window.location.href = "x-apple-health://";
+          } catch (fallbackErr) {
+            console.warn("[useHealthData] Both paths failed:", fallbackErr);
+          }
         }
       }
     } catch (e) {
