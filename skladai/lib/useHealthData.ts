@@ -312,8 +312,14 @@ export function useHealthData(): HealthData {
   // iOS Settings → Zdrowie → SkładAI (or Health Connect on Android) —
   // without this listener the app would keep showing "połączono" in
   // Profil and a stale ✅ in ActivityBadges even though HealthKit now
-  // refuses reads. Firing fetchData on visibility change keeps the UI
-  // in sync with native permission state.
+  // refuses reads.
+  //
+  // We listen on BOTH:
+  //   - document.visibilitychange — web-level signal, works on web+native
+  //   - @capacitor/app appStateChange — the reliable native signal.
+  //     Capacitor emits isActive=true when the app resumes from
+  //     background (user coming back from Settings). This fires where
+  //     visibilitychange can miss events on some iOS 26 WKWebView builds.
   useEffect(() => {
     if (!isNative) return;
     const onVisible = () => {
@@ -322,7 +328,27 @@ export function useHealthData(): HealthData {
       }
     };
     document.addEventListener("visibilitychange", onVisible);
-    return () => document.removeEventListener("visibilitychange", onVisible);
+
+    let appStateListener: { remove: () => Promise<void> } | null = null;
+    (async () => {
+      try {
+        const { App } = await import("@capacitor/app");
+        appStateListener = await App.addListener("appStateChange", (state) => {
+          if (state.isActive) {
+            fetchData();
+          }
+        });
+      } catch (e) {
+        console.warn("[useHealthData] appStateChange listener failed:", e);
+      }
+    })();
+
+    return () => {
+      document.removeEventListener("visibilitychange", onVisible);
+      if (appStateListener) {
+        appStateListener.remove().catch(() => undefined);
+      }
+    };
   }, [isNative, fetchData]);
 
   return {

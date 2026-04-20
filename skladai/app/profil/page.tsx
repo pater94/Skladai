@@ -304,53 +304,73 @@ export default function ProfilPage() {
           const needsInstall = health.platform === "android" && !health.loading && !health.isAvailable;
           return (
             <GlassCard>
-              {health.isConnected ? (
-                <button
-                  type="button"
-                  onClick={() => {
-                    // HealthKit on iOS has no API to revoke permissions
-                    // programmatically — user must toggle them off in the
-                    // native Apple Health app. Android's Health Connect
-                    // has its own settings screen. Offer to open whichever
-                    // is appropriate for this device.
-                    const isIos = health.platform === "ios";
-                    const msg = isIos
-                      ? "Aby zarządzać uprawnieniami, otworzę aplikację Zdrowie. Wejdź w Udostępnianie → Aplikacje → SkładAI i wyłącz dowolne pozycje."
-                      : "Otworzę ustawienia Health Connect, w których możesz zarządzać uprawnieniami SkładAI.";
-                    if (window.confirm(msg)) {
-                      health.openSettings();
-                    }
-                  }}
-                  style={{
-                    width: "100%",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 10,
-                    padding: "4px 2px",
-                    fontSize: 13,
-                    fontWeight: 700,
-                    color: "rgba(110,252,180,0.85)",
-                    background: "transparent",
-                    border: "none",
-                    cursor: "pointer",
-                    textAlign: "left",
-                  }}
-                  aria-label={`${healthLabel} połączono — kliknij aby zarządzać uprawnieniami`}
-                >
-                  <span style={{ fontSize: 16 }}>✅</span>
-                  <span style={{ flex: 1 }}>{healthLabel} — połączono</span>
-                  <span
-                    style={{
-                      fontSize: 10,
-                      fontWeight: 600,
-                      opacity: 0.6,
-                      letterSpacing: 0.3,
+              {health.isConnected ? (() => {
+                // iOS HealthKit deliberately cannot report whether the
+                // user revoked permissions in Settings (privacy-
+                // preserving — Apple doesn't want apps to know the user
+                // said no). So `isConnected` from checkAuthorization
+                // can become stale.
+                //
+                // Use data presence as a stronger honest signal: if we
+                // have any fresh data today, we're definitely reading
+                // OK. If all values are 0 despite being marked
+                // "connected", something is probably off (revoked, or
+                // simply no activity yet today).
+                const hasAnyData =
+                  health.steps > 0 ||
+                  health.kcalBurned > 0 ||
+                  health.distanceKm > 0 ||
+                  health.sleepMinutes > 0;
+                const statusText = hasAnyData
+                  ? `${healthLabel} — aktywne`
+                  : `${healthLabel} — brak danych dziś`;
+                const icon = hasAnyData ? "✅" : "⚠️";
+                const color = hasAnyData
+                  ? "rgba(110,252,180,0.85)"
+                  : "rgba(251,191,36,0.9)";
+                return (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const isIos = health.platform === "ios";
+                      const msg = isIos
+                        ? "Otworzę aplikację Zdrowie. Wejdź w Udostępnianie → Aplikacje → SkładAI aby zarządzać uprawnieniami."
+                        : "Otworzę ustawienia Health Connect, gdzie możesz zarządzać uprawnieniami SkładAI.";
+                      if (window.confirm(msg)) {
+                        health.openSettings();
+                      }
                     }}
+                    style={{
+                      width: "100%",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 10,
+                      padding: "4px 2px",
+                      fontSize: 13,
+                      fontWeight: 700,
+                      color,
+                      background: "transparent",
+                      border: "none",
+                      cursor: "pointer",
+                      textAlign: "left",
+                    }}
+                    aria-label={`${statusText} — kliknij aby zarządzać uprawnieniami`}
                   >
-                    ZARZĄDZAJ ›
-                  </span>
-                </button>
-              ) : (
+                    <span style={{ fontSize: 16 }}>{icon}</span>
+                    <span style={{ flex: 1 }}>{statusText}</span>
+                    <span
+                      style={{
+                        fontSize: 10,
+                        fontWeight: 600,
+                        opacity: 0.6,
+                        letterSpacing: 0.3,
+                      }}
+                    >
+                      ZARZĄDZAJ ›
+                    </span>
+                  </button>
+                );
+              })() : (
                 <div
                   style={{
                     display: "flex",

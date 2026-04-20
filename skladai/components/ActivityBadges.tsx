@@ -45,7 +45,11 @@ export default function ActivityBadges({ theme = "dark" }: ActivityBadgesProps) 
     if (health.loading) return;
     // On web there's no native Health SDK — the badges are informational only.
     if (!health.isNative) return;
-    if (!hasData || !health.isConnected) {
+
+    // Not connected yet OR Android without Health Connect installed:
+    // trigger the connect flow (permission prompt or Play Store deep
+    // link to install Health Connect).
+    if (!health.isConnected) {
       try { localStorage.setItem("healthKitAsked", "1"); } catch {}
       if (needsInstall) {
         health.openSettings();
@@ -54,7 +58,21 @@ export default function ActivityBadges({ theme = "dark" }: ActivityBadgesProps) 
       }
       return;
     }
-    router.push("/dashboard#aktywnosc-dzis");
+
+    // Connected — offer to jump into native settings so the user can
+    // review / revoke / re-enable individual data types. On iOS
+    // HealthKit doesn't expose revocation status to the app, so this
+    // is the only way for the user to resolve 'połączono but 0 data'
+    // cases. Cancel falls back to opening the Dashboard activity card.
+    const isIos = health.platform === "ios";
+    const msg = isIos
+      ? "Otworzyć aplikację Zdrowie aby zarządzać uprawnieniami? Anuluj aby zobaczyć pełne statystyki."
+      : "Otworzyć ustawienia Health Connect aby zarządzać uprawnieniami? Anuluj aby zobaczyć pełne statystyki.";
+    if (window.confirm(msg)) {
+      health.openSettings();
+    } else {
+      router.push("/dashboard#aktywnosc-dzis");
+    }
   };
 
   const isDark = theme === "dark";
