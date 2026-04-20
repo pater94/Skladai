@@ -6,6 +6,7 @@ import OnboardingWrapper from "@/components/OnboardingWrapper";
 import CloudSync from "@/components/CloudSync";
 import AppInit from "@/components/AppInit";
 import AgentFAB from "@/components/AgentFAB";
+import SafeBoundary from "@/components/SafeBoundary";
 
 export const metadata: Metadata = {
   title: "SkładAI — Sprawdź co naprawdę jesz",
@@ -50,10 +51,16 @@ export default function RootLayout({
         </div>
         <BottomNav />
         <SWUpdateBanner />
+        {/* OnboardingWrapper is the critical auth path — do NOT wrap it in
+            a SafeBoundary. If it errors out, that's a real problem we need
+            to see. */}
         <OnboardingWrapper />
-        <CloudSync />
-        <AppInit />
-        <AgentFAB />
+        <SafeBoundary name="CloudSync"><CloudSync /></SafeBoundary>
+        <SafeBoundary name="AppInit"><AppInit /></SafeBoundary>
+        {/* AgentFAB pulls in useHealthData (dynamic @capgo/capacitor-health
+            import) and the full AgentChat tree — any crash here must NOT
+            take the rest of the app down with it. */}
+        <SafeBoundary name="AgentFAB"><AgentFAB /></SafeBoundary>
         {/* Block iOS rubber-band bounce on non-scrollable areas */}
         <script dangerouslySetInnerHTML={{ __html: `
           document.body.addEventListener('touchmove', function(e) {

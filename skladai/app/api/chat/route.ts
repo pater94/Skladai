@@ -165,6 +165,9 @@ async function fetchUserContext(userId: string): Promise<UserContext> {
 interface TodayStats {
   steps?: number;
   kcalBurned?: number;
+  sleepMinutes?: number;
+  sleepStart?: string | null;
+  sleepEnd?: string | null;
 }
 
 function sumDiary(entries: DiaryEntry[]) {
@@ -236,6 +239,25 @@ function buildSystemPrompt(ctx: UserContext, today: TodayStats): string {
   else lines.push(`- Węgle: ${eaten.carbs}g`);
   if (typeof today.steps === "number") lines.push(`- Kroki: ${today.steps}`);
   if (typeof today.kcalBurned === "number") lines.push(`- Spalone: ${today.kcalBurned} kcal`);
+  if (typeof today.sleepMinutes === "number" && today.sleepMinutes > 0) {
+    const h = Math.floor(today.sleepMinutes / 60);
+    const m = today.sleepMinutes % 60;
+    const fmtHM = (iso: string | null | undefined): string | null => {
+      if (!iso) return null;
+      const d = new Date(iso);
+      if (Number.isNaN(d.getTime())) return null;
+      return d.toLocaleTimeString("pl-PL", { hour: "2-digit", minute: "2-digit" });
+    };
+    const startHM = fmtHM(today.sleepStart);
+    const endHM = fmtHM(today.sleepEnd);
+    if (startHM && endHM) {
+      lines.push(`- Sen ostatnia noc: ${h}h ${m}min (od ${startHM} do ${endHM})`);
+    } else {
+      lines.push(`- Sen ostatnia noc: ${h}h ${m}min`);
+    }
+  } else {
+    lines.push(`- Sen: brak danych`);
+  }
   lines.push("");
 
   // Recent scans

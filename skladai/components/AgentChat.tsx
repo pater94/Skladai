@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { useHealthData } from "@/lib/useHealthData";
 
 interface Props {
   open: boolean;
@@ -92,6 +93,7 @@ const SUGGESTIONS = [
 
 export default function AgentChat({ open, onClose, isPremium }: Props) {
   const router = useRouter();
+  const health = useHealthData();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [expertMode, setExpertMode] = useState(false);
@@ -210,11 +212,25 @@ export default function AgentChat({ open, onClose, isPremium }: Props) {
       .slice(-10)
       .map((m) => ({ role: m.role as "user" | "assistant", content: m.content }));
 
+    // Build optional todayStats payload — include only populated fields so
+    // the request stays small when the user hasn't connected Health yet.
+    const todayStats: Record<string, number | string> = {};
+    if (health.steps > 0) todayStats.steps = health.steps;
+    if (health.kcalBurned > 0) todayStats.kcalBurned = health.kcalBurned;
+    if (health.sleepMinutes > 0) todayStats.sleepMinutes = health.sleepMinutes;
+    if (health.sleepStart) todayStats.sleepStart = health.sleepStart;
+    if (health.sleepEnd) todayStats.sleepEnd = health.sleepEnd;
+
     try {
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: text, history: history.slice(0, -1), expertMode }),
+        body: JSON.stringify({
+          message: text,
+          history: history.slice(0, -1),
+          expertMode,
+          ...(Object.keys(todayStats).length > 0 ? { todayStats } : {}),
+        }),
       });
 
       if (res.status === 401) {
@@ -239,7 +255,7 @@ export default function AgentChat({ open, onClose, isPremium }: Props) {
       setError("Nie udało się połączyć. Spróbuj ponownie.");
     }
     setSending(false);
-  }, [input, sending, usedCount, expertMode, messages, isPremium]);
+  }, [input, sending, usedCount, expertMode, messages, isPremium, health.steps, health.kcalBurned, health.sleepMinutes, health.sleepStart, health.sleepEnd]);
 
   const handleExpertToggle = () => {
     // Everyone can toggle expert mode — UI flips to amber so users can
