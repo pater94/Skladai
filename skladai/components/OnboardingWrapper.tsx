@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { usePathname } from "next/navigation";
 import OnboardingLogin from "./OnboardingLogin";
 import { createClient } from "@/lib/supabase";
 import { devLog } from "@/lib/dev-log";
@@ -11,6 +12,36 @@ import { registerOAuthCallbackListener } from "@/lib/native-oauth";
 
 const ONBOARDED_KEY = "onboardingCompleted";
 const SESSION_BACKUP_KEY = "skladai_session_backup_v1";
+
+/**
+ * Routes that must ALWAYS render their own content, even for signed-out
+ * visitors. Apple App Review, Google Play audit, and GDPR inspectors
+ * open these URLs cold — no session, no onboarding — and the page has
+ * to show the actual policy / support text, not an onboarding overlay.
+ *
+ * Listed here (and mirrored in BottomNav/AgentFAB `HIDDEN_PREFIXES`) so
+ * the full-screen overlay never mounts on these paths at all.
+ */
+const PUBLIC_ROUTES = new Set([
+  "/privacy",
+  "/polityka-prywatnosci",
+  "/support",
+  "/kontakt",
+  "/terms",
+  "/regulamin",
+  "/delete-account",
+]);
+
+function isPublicPath(pathname: string | null): boolean {
+  if (!pathname) return false;
+  // Exact match first (cheap) — then startsWith check so future nested
+  // routes under a public prefix (e.g. /privacy/cookies) also qualify.
+  if (PUBLIC_ROUTES.has(pathname)) return true;
+  for (const r of PUBLIC_ROUTES) {
+    if (pathname.startsWith(r + "/")) return true;
+  }
+  return false;
+}
 
 async function isOnboarded(): Promise<boolean> {
   // Belt and suspenders: check Preferences (UserDefaults), localStorage, and cookie
@@ -52,7 +83,18 @@ export default function OnboardingWrapper() {
   // 'login'    = show only login slide (returning user, session lost)
   const [state, setState] = useState<"checking" | "hidden" | "full" | "login">("checking");
 
+  // Public routes (privacy, support, delete-account, …) must render their
+  // own content without ever seeing the onboarding overlay. Apple Review
+  // will reject the submission if /privacy redirects / overlays instead
+  // of showing the Privacy Policy.
+  const pathname = usePathname();
+  const isPublic = isPublicPath(pathname);
+
   useEffect(() => {
+    // Short-circuit on public routes — no Supabase session check, no
+    // native storage reads, nothing. The page renders untouched.
+    if (isPublic) return;
+
     let cancelled = false;
     const supabase = createClient();
 
@@ -247,8 +289,12 @@ export default function OnboardingWrapper() {
       document.removeEventListener("visibilitychange", onVis);
       authListener.subscription.unsubscribe();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    // Depend on isPublic only — all other refs inside are stable (createClient
+    // returns a singleton-like client, registerOAuthCallbackListener is
+    // idempotent). Re-running on isPublic flip tears down auth listeners
+    // when the user navigates INTO a public route and re-arms them when
+    // they navigate back out.
+  }, [isPublic]);
 
   // Hide bottom nav while any onboarding screen is visible
   useEffect(() => {
@@ -261,6 +307,10 @@ export default function OnboardingWrapper() {
     return () => document.body.classList.remove("onboarding-active");
   }, [state]);
 
+  // Public route → never show the onboarding overlay. This is the
+  // safety net; the effect already no-ops for public routes, but a stale
+  // `state !== "hidden"` from a prior route would otherwise still render.
+  if (isPublic) return null;
   if (state === "checking" || state === "hidden") return null;
 
   // ALWAYS start from slide 0, regardless of whether this is a brand new

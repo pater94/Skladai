@@ -22,9 +22,24 @@ function getThemeColors(pathname: string) {
   return { active: "#6efcb4", inactive: "rgba(255,255,255,0.25)" };
 }
 
+// Public / static pages where the in-app BottomNav would look out of
+// place (legal docs, support, deep-link targets). Kept in sync with
+// PUBLIC_ROUTES in OnboardingWrapper.
+const HIDDEN_PREFIXES = [
+  "/wyniki",
+  "/admin",
+  "/privacy",
+  "/polityka-prywatnosci",
+  "/support",
+  "/kontakt",
+  "/terms",
+  "/regulamin",
+  "/delete-account",
+];
+
 export default function BottomNav() {
   const pathname = usePathname();
-  const hidden = pathname.startsWith("/wyniki") || pathname.startsWith("/admin") || pathname.startsWith("/privacy");
+  const hidden = HIDDEN_PREFIXES.some((p) => pathname === p || pathname.startsWith(p + "/"));
 
   // Track onboarding-active class on body to hide nav during onboarding
   const [onboarding, setOnboarding] = useState(false);

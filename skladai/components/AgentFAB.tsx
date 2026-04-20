@@ -9,7 +9,20 @@ import AgentChat from "./AgentChat";
 // intentionally excluded. Native camera UI on iOS/Android overlays
 // the WebView entirely, so no extra scan-active gate is needed.
 const ALLOWED_PATHS = new Set(["/", "/forma", "/dashboard"]);
-const HIDDEN_PREFIXES = ["/premium", "/wyniki", "/admin", "/privacy"];
+// Kept in sync with PUBLIC_ROUTES in OnboardingWrapper — legal /
+// support pages are public docs and shouldn't host the in-app FAB.
+const HIDDEN_PREFIXES = [
+  "/premium",
+  "/wyniki",
+  "/admin",
+  "/privacy",
+  "/polityka-prywatnosci",
+  "/support",
+  "/kontakt",
+  "/terms",
+  "/regulamin",
+  "/delete-account",
+];
 
 // Inline scanner logo for the FAB itself (small, emerald, no expert glow)
 function FabLogo({ size = 32 }: { size?: number }) {
