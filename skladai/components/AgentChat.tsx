@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useHealthData } from "@/lib/useHealthData";
 import { createClient } from "@/lib/supabase";
+import { DemoBadge } from "@/components/DemoBadge";
 
 interface Props {
   open: boolean;
@@ -638,6 +639,7 @@ export default function AgentChat({ open, onClose, isPremium }: Props) {
               <p style={{ fontSize: 11.5, color: "rgba(255,255,255,0.65)", margin: 0, marginBottom: 12, fontWeight: 600 }}>
                 ⚡ Zużywa 5x więcej z puli wiadomości
               </p>
+              <DemoBadge />
               <button
                 onClick={() => router.push("/premium")}
                 style={{
@@ -668,6 +670,7 @@ export default function AgentChat({ open, onClose, isPremium }: Props) {
               <p style={{ fontSize: 12, color: "rgba(255,255,255,0.75)", margin: 0, marginBottom: 12, lineHeight: 1.5 }}>
                 Odblokuj Agenta AI bez limitów — plan dietetyczny, trening, analiza skanów i więcej.
               </p>
+              <DemoBadge />
               <button
                 onClick={() => router.push("/premium")}
                 style={{

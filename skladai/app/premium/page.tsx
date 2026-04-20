@@ -7,6 +7,7 @@ import type { PurchasesPackage } from "@revenuecat/purchases-capacitor";
 import { getOfferings, purchasePackage, restorePurchases } from "@/lib/revenuecat";
 import { usePremium } from "@/lib/hooks/usePremium";
 import { getGlobalScanCount, FREE_TOTAL_SCANS } from "@/lib/storage";
+import { DemoBadge } from "@/components/DemoBadge";
 
 const FEATURES = [
   { icon: "♾️", title: "Nielimitowane skany AI", free: "20 łącznie", premium: "Bez limitu" },
@@ -280,24 +281,7 @@ function PremiumPageInner() {
               })}
             </div>
 
-            {/* DEMO badge — remove before production release.
-                Reminds testers (14-day closed-testing group) that
-                RevenueCat is not yet hooked up to live App Store /
-                Play Store products, so tapping 'Rozpocznij' will
-                either open a sandbox dialog or fail silently — no
-                real money moves. */}
-            <div
-              style={{
-                textAlign: "center",
-                fontSize: 11,
-                color: "#f59e0b",
-                fontWeight: 700,
-                marginBottom: 6,
-                letterSpacing: 1,
-              }}
-            >
-              ⚠️ DEMO — zakup nie zostanie zrealizowany
-            </div>
+            <DemoBadge />
 
             {/* CTA — dynamic price of selected plan */}
             <button

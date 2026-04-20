@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { DemoBadge } from "@/components/DemoBadge";
 
 interface Props {
   feature: string;
@@ -43,6 +44,7 @@ export default function PremiumGate({ feature, children, isPremium }: Props) {
           ))}
         </div>
 
+        <DemoBadge />
         <button onClick={() => router.push("/premium")}
           className="w-full py-4 bg-gradient-to-r from-amber-400 via-orange-500 to-amber-500 text-white font-bold rounded-[18px] active:scale-[0.97] transition-all text-[15px] shadow-xl shadow-orange-500/25">
           👑 Odblokuj Premium
