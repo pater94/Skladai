@@ -109,6 +109,19 @@ export function useHealthData(): HealthData {
       const readAuthorized = authStatus.readAuthorized || [];
       const hasAccess = readAuthorized.length > 0;
       if (!hasAccess) {
+        // User revoked all perms in Settings — reset connection state
+        // and zero out any previously displayed values so the UI
+        // reflects the actual HealthKit/Health Connect status.
+        setIsConnected(false);
+        setSteps(0);
+        setKcalBurned(0);
+        setDistanceKm(0);
+        setWeekSteps(0);
+        setWeekKcalBurned(0);
+        setWeekDistanceKm(0);
+        setSleepMinutes(0);
+        setSleepStart(null);
+        setSleepEnd(null);
         setLoading(false);
         return;
       }
@@ -256,19 +269,61 @@ export function useHealthData(): HealthData {
     }
   }, [isNative, fetchData]);
 
+  /**
+   * Opens the platform-native health settings page where the user can
+   * review or revoke individual data-type permissions.
+   *
+   * - Android: @capgo/capacitor-health exposes openHealthConnectSettings()
+   *   which deep-links to the Health Connect app's permission screen
+   *   for this app.
+   * - iOS: HealthKit has no API to deep-link to its permissions screen
+   *   inside Settings → Health → Apps → SkładAI. The closest is to
+   *   open the Apple Health app via the x-apple-health:// URL scheme
+   *   — user then navigates to Udostępnianie → Aplikacje → SkładAI
+   *   manually. If the URL scheme call fails on a given iOS build, we
+   *   swallow the error silently — there's no better fallback.
+   */
   const openSettings = useCallback(async () => {
     if (!isNative) return;
     try {
-      const { Health } = await import("@capgo/capacitor-health");
-      await Health.openHealthConnectSettings();
+      if (platform === "android") {
+        const { Health } = await import("@capgo/capacitor-health");
+        await Health.openHealthConnectSettings();
+        return;
+      }
+      if (platform === "ios") {
+        try {
+          window.location.href = "x-apple-health://";
+        } catch (iosErr) {
+          console.warn("[useHealthData] Could not open Apple Health:", iosErr);
+        }
+      }
     } catch (e) {
       console.warn("[useHealthData] openSettings error:", e);
     }
-  }, [isNative]);
+  }, [isNative, platform]);
 
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  // Re-check HealthKit/Health Connect authorization whenever the app
+  // returns from background. User may have toggled off permissions in
+  // iOS Settings → Zdrowie → SkładAI (or Health Connect on Android) —
+  // without this listener the app would keep showing "połączono" in
+  // Profil and a stale ✅ in ActivityBadges even though HealthKit now
+  // refuses reads. Firing fetchData on visibility change keeps the UI
+  // in sync with native permission state.
+  useEffect(() => {
+    if (!isNative) return;
+    const onVisible = () => {
+      if (document.visibilityState === "visible") {
+        fetchData();
+      }
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
+  }, [isNative, fetchData]);
 
   return {
     steps,

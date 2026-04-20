@@ -305,7 +305,22 @@ export default function ProfilPage() {
           return (
             <GlassCard>
               {health.isConnected ? (
-                <div
+                <button
+                  type="button"
+                  onClick={() => {
+                    // HealthKit on iOS has no API to revoke permissions
+                    // programmatically — user must toggle them off in the
+                    // native Apple Health app. Android's Health Connect
+                    // has its own settings screen. Offer to open whichever
+                    // is appropriate for this device.
+                    const isIos = health.platform === "ios";
+                    const msg = isIos
+                      ? "Aby zarządzać uprawnieniami, otworzę aplikację Zdrowie. Wejdź w Udostępnianie → Aplikacje → SkładAI i wyłącz dowolne pozycje."
+                      : "Otworzę ustawienia Health Connect, w których możesz zarządzać uprawnieniami SkładAI.";
+                    if (window.confirm(msg)) {
+                      health.openSettings();
+                    }
+                  }}
                   style={{
                     width: "100%",
                     display: "flex",
@@ -315,11 +330,26 @@ export default function ProfilPage() {
                     fontSize: 13,
                     fontWeight: 700,
                     color: "rgba(110,252,180,0.85)",
+                    background: "transparent",
+                    border: "none",
+                    cursor: "pointer",
+                    textAlign: "left",
                   }}
+                  aria-label={`${healthLabel} połączono — kliknij aby zarządzać uprawnieniami`}
                 >
                   <span style={{ fontSize: 16 }}>✅</span>
                   <span style={{ flex: 1 }}>{healthLabel} — połączono</span>
-                </div>
+                  <span
+                    style={{
+                      fontSize: 10,
+                      fontWeight: 600,
+                      opacity: 0.6,
+                      letterSpacing: 0.3,
+                    }}
+                  >
+                    ZARZĄDZAJ ›
+                  </span>
+                </button>
               ) : (
                 <div
                   style={{
