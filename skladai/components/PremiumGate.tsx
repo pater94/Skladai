@@ -1,7 +1,8 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { DemoBadge } from "@/components/DemoBadge";
+import { IS_DEMO } from "@/lib/config";
+import { activatePremiumDemo } from "@/lib/demo";
 
 interface Props {
   feature: string;
@@ -44,11 +45,34 @@ export default function PremiumGate({ feature, children, isPremium }: Props) {
           ))}
         </div>
 
-        <DemoBadge />
         <button onClick={() => router.push("/premium")}
           className="w-full py-4 bg-gradient-to-r from-amber-400 via-orange-500 to-amber-500 text-white font-bold rounded-[18px] active:scale-[0.97] transition-all text-[15px] shadow-xl shadow-orange-500/25">
           👑 Odblokuj Premium
         </button>
+        {IS_DEMO && (
+          <button
+            onClick={() => {
+              if (activatePremiumDemo()) {
+                window.dispatchEvent(new Event("premium-changed"));
+                router.refresh();
+              }
+            }}
+            style={{
+              width: "100%",
+              padding: 12,
+              background: "rgba(245,158,11,0.1)",
+              border: "1px dashed #f59e0b",
+              borderRadius: 12,
+              color: "#f59e0b",
+              fontSize: 13,
+              fontWeight: 700,
+              marginTop: 10,
+              cursor: "pointer",
+            }}
+          >
+            🧪 Aktywuj Premium DEMO (bez płatności)
+          </button>
+        )}
         <button onClick={() => router.back()}
           className="w-full mt-3 py-2 text-[12px] text-gray-400 font-semibold">
           ← Wróć

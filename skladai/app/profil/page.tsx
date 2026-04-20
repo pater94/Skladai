@@ -9,6 +9,8 @@ import { ACTIVITY_LEVELS, GOALS, COMMON_ALLERGENS, DIETS, DIABETES_TYPES, TRIMES
 import ProfileSetup from "@/components/ProfileSetup";
 import { createClient } from "@/lib/supabase";
 import { useHealthData } from "@/lib/useHealthData";
+import { IS_DEMO } from "@/lib/config";
+import { deactivatePremiumDemo, resetChatLimitsDemo } from "@/lib/demo";
 
 const AreaChart = dynamic(() => import("recharts").then(m => m.AreaChart), { ssr: false });
 const Area = dynamic(() => import("recharts").then(m => m.Area), { ssr: false });
@@ -661,6 +663,57 @@ export default function ProfilPage() {
             >
               Wyloguj się
             </button>
+          </GlassCard>
+        )}
+
+        {IS_DEMO && (
+          <GlassCard>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+              <span style={{ fontSize: 16 }}>🧪</span>
+              <span style={{ fontSize: 13, fontWeight: 800, color: "#f59e0b" }}>
+                Narzędzia DEMO
+              </span>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              <button
+                onClick={() => {
+                  if (deactivatePremiumDemo()) {
+                    window.dispatchEvent(new Event("premium-changed"));
+                    window.location.reload();
+                  }
+                }}
+                style={{
+                  width: "100%", padding: 10, borderRadius: 10,
+                  background: "rgba(245,158,11,0.08)",
+                  border: "1px dashed rgba(245,158,11,0.5)",
+                  color: "#f59e0b",
+                  fontSize: 12, fontWeight: 700, cursor: "pointer",
+                }}
+              >
+                Resetuj Premium DEMO
+              </button>
+              <button
+                onClick={() => {
+                  if (resetChatLimitsDemo()) {
+                    // Chat component listens separately; fire event so
+                    // any mounted AgentChat can resync its usedCount.
+                    window.dispatchEvent(new Event("chat-limits-reset"));
+                  }
+                }}
+                style={{
+                  width: "100%", padding: 10, borderRadius: 10,
+                  background: "rgba(245,158,11,0.08)",
+                  border: "1px dashed rgba(245,158,11,0.5)",
+                  color: "#f59e0b",
+                  fontSize: 12, fontWeight: 700, cursor: "pointer",
+                }}
+              >
+                Resetuj limity czatu DEMO
+              </button>
+            </div>
+            <p style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", marginTop: 10, marginBottom: 0, lineHeight: 1.4 }}>
+              Widoczne tylko w wersji testowej. Przed release w sklepach te narzędzia znikają — ustaw IS_DEMO=false w lib/config.ts.
+            </p>
           </GlassCard>
         )}
 

@@ -4,7 +4,8 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useHealthData } from "@/lib/useHealthData";
 import { createClient } from "@/lib/supabase";
-import { DemoBadge } from "@/components/DemoBadge";
+import { IS_DEMO } from "@/lib/config";
+import { activatePremiumDemo, resetChatLimitsDemo } from "@/lib/demo";
 
 interface Props {
   open: boolean;
@@ -639,7 +640,6 @@ export default function AgentChat({ open, onClose, isPremium }: Props) {
               <p style={{ fontSize: 11.5, color: "rgba(255,255,255,0.65)", margin: 0, marginBottom: 12, fontWeight: 600 }}>
                 ⚡ Zużywa 5x więcej z puli wiadomości
               </p>
-              <DemoBadge />
               <button
                 onClick={() => router.push("/premium")}
                 style={{
@@ -650,6 +650,27 @@ export default function AgentChat({ open, onClose, isPremium }: Props) {
               >
                 Odblokuj Pro+
               </button>
+              {IS_DEMO && (
+                <button
+                  onClick={() => {
+                    if (activatePremiumDemo()) {
+                      dismissExpertEdu();
+                      onClose();
+                      // Force parent to re-check premium on next open
+                      window.dispatchEvent(new Event("premium-changed"));
+                    }
+                  }}
+                  style={{
+                    width: "100%", padding: 10, borderRadius: 10,
+                    background: "rgba(245,158,11,0.1)",
+                    border: "1px dashed #f59e0b",
+                    color: "#f59e0b",
+                    fontSize: 12, fontWeight: 700, marginTop: 8, cursor: "pointer",
+                  }}
+                >
+                  🧪 Aktywuj Premium DEMO (bez płatności)
+                </button>
+              )}
             </div>
           )}
 
@@ -670,7 +691,6 @@ export default function AgentChat({ open, onClose, isPremium }: Props) {
               <p style={{ fontSize: 12, color: "rgba(255,255,255,0.75)", margin: 0, marginBottom: 12, lineHeight: 1.5 }}>
                 Odblokuj Agenta AI bez limitów — plan dietetyczny, trening, analiza skanów i więcej.
               </p>
-              <DemoBadge />
               <button
                 onClick={() => router.push("/premium")}
                 style={{
@@ -681,6 +701,26 @@ export default function AgentChat({ open, onClose, isPremium }: Props) {
               >
                 👑 Odblokuj Premium
               </button>
+              {IS_DEMO && (
+                <button
+                  onClick={() => {
+                    if (activatePremiumDemo()) {
+                      resetChatLimitsDemo();
+                      setUsedCount(0);
+                      window.dispatchEvent(new Event("premium-changed"));
+                    }
+                  }}
+                  style={{
+                    width: "100%", padding: 10, borderRadius: 10,
+                    background: "rgba(245,158,11,0.1)",
+                    border: "1px dashed #f59e0b",
+                    color: "#f59e0b",
+                    fontSize: 12, fontWeight: 700, marginTop: 8, cursor: "pointer",
+                  }}
+                >
+                  🧪 Aktywuj Premium DEMO (bez płatności)
+                </button>
+              )}
             </div>
           )}
 
@@ -780,6 +820,30 @@ export default function AgentChat({ open, onClose, isPremium }: Props) {
           <div style={{ height: 4, borderRadius: 2, background: "rgba(255,255,255,0.06)", overflow: "hidden" }}>
             <div style={{ height: "100%", width: `${counterPercent}%`, background: counterColor, transition: "width 0.4s ease" }} />
           </div>
+          {IS_DEMO && (
+            <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 6 }}>
+              <button
+                onClick={() => {
+                  if (resetChatLimitsDemo()) {
+                    setUsedCount(0);
+                  }
+                }}
+                style={{
+                  padding: "4px 10px",
+                  background: "rgba(245,158,11,0.1)",
+                  border: "1px dashed #f59e0b",
+                  borderRadius: 6,
+                  color: "#f59e0b",
+                  fontSize: 10,
+                  fontWeight: 700,
+                  cursor: "pointer",
+                  letterSpacing: 0.5,
+                }}
+              >
+                🧪 RESET LIMITÓW
+              </button>
+            </div>
+          )}
         </div>
       </div>
 

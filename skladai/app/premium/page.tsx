@@ -6,8 +6,8 @@ import { Capacitor } from "@capacitor/core";
 import type { PurchasesPackage } from "@revenuecat/purchases-capacitor";
 import { getOfferings, purchasePackage, restorePurchases } from "@/lib/revenuecat";
 import { usePremium } from "@/lib/hooks/usePremium";
-import { getGlobalScanCount, FREE_TOTAL_SCANS } from "@/lib/storage";
-import { DemoBadge } from "@/components/DemoBadge";
+import { getGlobalScanCount, FREE_TOTAL_SCANS, activatePremium } from "@/lib/storage";
+import { IS_DEMO } from "@/lib/config";
 
 const FEATURES = [
   { icon: "♾️", title: "Nielimitowane skany AI", free: "20 łącznie", premium: "Bez limitu" },
@@ -281,8 +281,6 @@ function PremiumPageInner() {
               })}
             </div>
 
-            <DemoBadge />
-
             {/* CTA — dynamic price of selected plan */}
             <button
               onClick={handlePurchase}
@@ -295,6 +293,29 @@ function PremiumPageInner() {
                 ? `Rozpocznij — ${selectedPlan.priceString}${PKG_LABELS[selectedPlan.typeStr].period}`
                 : "Rozpocznij"}
             </button>
+
+            {IS_DEMO && (
+              <button
+                onClick={() => {
+                  activatePremium(3650);
+                  router.push("/dashboard");
+                }}
+                style={{
+                  width: "100%",
+                  padding: 12,
+                  background: "rgba(245,158,11,0.1)",
+                  border: "1px dashed #f59e0b",
+                  borderRadius: 12,
+                  color: "#f59e0b",
+                  fontSize: 13,
+                  fontWeight: 700,
+                  marginTop: 10,
+                  cursor: "pointer",
+                }}
+              >
+                🧪 Aktywuj Premium DEMO (bez płatności)
+              </button>
+            )}
 
             {/* Native-only: restore purchases */}
             {isNative && (
