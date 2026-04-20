@@ -188,13 +188,13 @@ function PremiumPageInner() {
       </div>
 
       <div className="max-w-md mx-auto px-5 -mt-14 pb-24 relative z-20">
-        {/* Paywall reason banner — shown when redirected from a hit limit */}
-        {!premium && reason === "limit" && (
-          <div className="rounded-[20px] p-5 mb-4 text-center" style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.25)" }}>
-            <p className="text-[15px] font-bold" style={{ color: "#dc2626" }}>⏳ Wykorzystałeś {FREE_TOTAL_SCANS} darmowych skanów</p>
-            <p className="text-[12px] mt-1" style={{ color: "rgba(153,27,27,0.8)" }}>Odblokuj nielimitowane skanowanie żeby sprawdzać dalej.</p>
-          </div>
-        )}
+        {/* NOTE: previously had a separate "⏳ Wykorzystałeś X darmowych
+            skanów" banner here for reason === "limit" — removed because
+            it visually overlapped the orange header → white section
+            seam AND duplicated the information already carried by the
+            progress bar below (red fill at 20/20). The header already
+            says "SkładAI Premium"; the card below says "20/20" in red.
+            That's enough. */}
 
         {/* Usage counter + progress bar — visible to non-premium users */}
         {!premium && (
@@ -278,6 +278,25 @@ function PremiumPageInner() {
                   </button>
                 );
               })}
+            </div>
+
+            {/* DEMO badge — remove before production release.
+                Reminds testers (14-day closed-testing group) that
+                RevenueCat is not yet hooked up to live App Store /
+                Play Store products, so tapping 'Rozpocznij' will
+                either open a sandbox dialog or fail silently — no
+                real money moves. */}
+            <div
+              style={{
+                textAlign: "center",
+                fontSize: 11,
+                color: "#f59e0b",
+                fontWeight: 700,
+                marginBottom: 6,
+                letterSpacing: 1,
+              }}
+            >
+              ⚠️ DEMO — zakup nie zostanie zrealizowany
             </div>
 
             {/* CTA — dynamic price of selected plan */}
