@@ -79,7 +79,7 @@ export default function ActivityBadges({ theme = "dark" }: ActivityBadgesProps) 
     const isIos = health.platform === "ios";
     const msg = isIos
       ? "Otworzyć aplikację Zdrowie?\n\nTam: Udostępnianie → Aplikacje → SkładAI → toggles.\n\nAnuluj aby zobaczyć statystyki dziś."
-      : "Otworzyć ustawienia Health Connect?\n\nAnuluj aby zobaczyć statystyki dziś.";
+      : "Otworzyć Health Connect?\n\nTam: Aplikacje → SkładAI → toggles.\n\nAnuluj aby zobaczyć statystyki dziś.";
     if (window.confirm(msg)) {
       health.openSettings();
     } else {
