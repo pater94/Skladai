@@ -97,20 +97,22 @@ export function useHealthData(): HealthData {
         return;
       }
 
-      // Check if we already have authorization for the core three types.
-      // Sleep is checked / requested SEPARATELY below — if we add "sleep"
-      // into this array and the native plugin bundled in an older IPA
-      // doesn't know the type, the whole call throws and kills Apple
-      // Health for this user.
+      // Check authorization for all four data types at once.
+      // Current @capgo/capacitor-health@8.4.2 supports "sleep" natively
+      // on both HealthKit (iOS) and Health Connect (Android), so we
+      // don't need the defensive split that used to protect against
+      // older plugins that didn't recognise the type.
       const authStatus = await Health.checkAuthorization({
-        read: ["steps", "calories", "distance"],
+        read: ["steps", "calories", "distance", "sleep"],
       });
 
-      const hasAccess = authStatus.readAuthorized.length > 0;
+      const readAuthorized = authStatus.readAuthorized || [];
+      const hasAccess = readAuthorized.length > 0;
       if (!hasAccess) {
         setLoading(false);
         return;
       }
+      const hasSleepAuth = readAuthorized.includes("sleep");
 
       setIsConnected(true);
 
@@ -152,21 +154,15 @@ export function useHealthData(): HealthData {
       setWeekDistanceKm(Math.round((sumSamples(weekDistRes.samples) / 1000) * 10) / 10); // meters → km
 
       // Sleep: read individual segments from last night window (18:00 yesterday → 12:00 today local).
-      // Wrapped in its own try/catch so a sleep failure doesn't break steps/kcal/distance above.
-      // We also gate the readSamples call with an isolated authorization
-      // check — this way if the plugin doesn't know the "sleep" data type
-      // at all, the throw is contained here and never reaches the outer
-      // try that handles the core three types.
-      try {
-        const sleepAuth = await Health.checkAuthorization({ read: ["sleep"] });
-        const hasSleepAccess = sleepAuth.readAuthorized.length > 0;
-        if (!hasSleepAccess) {
-          setSleepMinutes(0);
-          setSleepStart(null);
-          setSleepEnd(null);
-          // fall through — readSamples would fail without auth anyway.
-          throw new Error("no-sleep-auth");
-        }
+      // Gated on sleep auth from the unified checkAuthorization above.
+      // Wrapped in own try/catch so a sleep failure (e.g. Apple Health
+      // returning unexpected data shape) doesn't break the core
+      // steps/kcal/distance card that the user already sees.
+      if (!hasSleepAuth) {
+        setSleepMinutes(0);
+        setSleepStart(null);
+        setSleepEnd(null);
+      } else try {
         const { start: night18y, end: noon12t } = lastNightWindow();
         const sleepRes = await Health.readSamples({
           dataType: "sleep",
@@ -227,19 +223,29 @@ export function useHealthData(): HealthData {
       const availability = await Health.isAvailable();
       if (!availability.available) return;
 
-      // Request the core three types first. This is the call whose success
-      // unlocks the "Aktywność dziś" card — it must never be blocked by
-      // an older plugin that doesn't know about "sleep".
-      await Health.requestAuthorization({
-        read: ["steps", "calories", "distance"],
-      });
-
-      // Request sleep separately so a plugin that doesn't support it
-      // can't poison the main permission flow.
+      // Request all four data types in a single prompt so the user sees
+      // one unified consent dialog (4 toggles: kroki / kalorie / dystans
+      // / sen). The earlier defensive split into two calls caused sleep
+      // to appear as a separate prompt much later — bad UX. Current
+      // @capgo/capacitor-health@8.4.2 supports "sleep" natively on
+      // both HealthKit and Health Connect, so the single call is safe.
       try {
-        await Health.requestAuthorization({ read: ["sleep"] });
-      } catch (sleepAuthErr) {
-        console.warn("[useHealthData] Sleep authorization request failed:", sleepAuthErr);
+        await Health.requestAuthorization({
+          read: ["steps", "calories", "distance", "sleep"],
+        });
+      } catch (err) {
+        // If the combined call throws (hypothetically — e.g. very old
+        // bundled plugin), fall back to core three + sleep separately so
+        // the user still gets Apple Health unlocked.
+        console.warn("[useHealthData] Unified auth failed, retrying split:", err);
+        await Health.requestAuthorization({
+          read: ["steps", "calories", "distance"],
+        });
+        try {
+          await Health.requestAuthorization({ read: ["sleep"] });
+        } catch (sleepErr) {
+          console.warn("[useHealthData] Sleep auth retry failed:", sleepErr);
+        }
       }
 
       // Re-fetch after granting permissions
