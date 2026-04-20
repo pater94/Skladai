@@ -78,8 +78,8 @@ export default function ActivityBadges({ theme = "dark" }: ActivityBadgesProps) 
     // cases. Cancel falls back to opening the Dashboard activity card.
     const isIos = health.platform === "ios";
     const msg = isIos
-      ? "Otworzyć Ustawienia iPhone → SkładAI → Zdrowie aby zarządzać uprawnieniami? Anuluj aby zobaczyć pełne statystyki."
-      : "Otworzyć ustawienia Health Connect aby zarządzać uprawnieniami? Anuluj aby zobaczyć pełne statystyki.";
+      ? "Otworzyć aplikację Zdrowie?\n\nTam: Udostępnianie → Aplikacje → SkładAI → toggles.\n\nAnuluj aby zobaczyć statystyki dziś."
+      : "Otworzyć ustawienia Health Connect?\n\nAnuluj aby zobaczyć statystyki dziś.";
     if (window.confirm(msg)) {
       health.openSettings();
     } else {
