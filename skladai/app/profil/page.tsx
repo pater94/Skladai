@@ -404,10 +404,37 @@ export default function ProfilPage() {
                   </div>
                   <button
                     onClick={() => {
-                      try { localStorage.setItem("healthKitAsked", "1"); } catch {}
+                      // iOS HealthKit never re-shows the native permission
+                      // dialog once the user has answered — privacy design.
+                      // If we call requestAuthorization after a revoke, iOS
+                      // flashes Settings → SkładAI → Zdrowie briefly then
+                      // drops the user on the app's root Settings page
+                      // (Zdjęcia / Siri / Szukaj / Dane komórkowe), which
+                      // is confusing.
+                      //
+                      // Solution: if we've asked before (localStorage flag
+                      // exists), skip the pointless requestAuthorization
+                      // and go straight to Settings → SkładAI so the user
+                      // can toggle perms manually. Only the FIRST-time
+                      // flow uses requestAccess which triggers the real
+                      // native 4-toggle dialog.
+                      let hasAskedBefore = false;
+                      try {
+                        hasAskedBefore = localStorage.getItem("healthKitAsked") === "1";
+                        localStorage.setItem("healthKitAsked", "1");
+                      } catch {}
                       if (needsInstall) {
                         health.openSettings();
+                        return;
+                      }
+                      if (hasAskedBefore && health.platform === "ios") {
+                        // Reconnect flow on iOS — iOS won't redo the dialog,
+                        // take user straight to Settings where they can
+                        // toggle Kroki/Kalorie/Dystans/Sen individually.
+                        health.openSettings();
                       } else {
+                        // First-time ever, or Android (Health Connect can
+                        // re-prompt) — fire the native dialog.
                         health.requestAccess();
                       }
                     }}

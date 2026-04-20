@@ -47,11 +47,23 @@ export default function ActivityBadges({ theme = "dark" }: ActivityBadgesProps) 
     if (!health.isNative) return;
 
     // Not connected yet OR Android without Health Connect installed:
-    // trigger the connect flow (permission prompt or Play Store deep
-    // link to install Health Connect).
+    // trigger the connect flow. First-time users get the native
+    // 4-toggle permission dialog; reconnect attempts on iOS skip
+    // requestAuthorization (iOS won't re-show the dialog after a
+    // revoke — privacy design — and trying causes Settings to
+    // briefly flash the Health page then drop user on the app's
+    // root Settings page, which is confusing).
     if (!health.isConnected) {
-      try { localStorage.setItem("healthKitAsked", "1"); } catch {}
+      let hasAskedBefore = false;
+      try {
+        hasAskedBefore = localStorage.getItem("healthKitAsked") === "1";
+        localStorage.setItem("healthKitAsked", "1");
+      } catch {}
       if (needsInstall) {
+        health.openSettings();
+        return;
+      }
+      if (hasAskedBefore && health.platform === "ios") {
         health.openSettings();
       } else {
         health.requestAccess();
