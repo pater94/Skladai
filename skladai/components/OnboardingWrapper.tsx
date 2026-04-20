@@ -184,6 +184,26 @@ export default function OnboardingWrapper() {
         identifyUser(session.user.id).catch(() => {});
         setState("hidden");
         window.dispatchEvent(new Event("cloud-sync-done"));
+      } else if (event === "SIGNED_OUT") {
+        // User tapped "Wyloguj się" in Profil. We need to resurface the
+        // login UI so they can sign back in — without this, OnboardingWrapper
+        // stays in "hidden" state forever and Profil has no "Zaloguj się"
+        // entry point; only a fresh install brings the user back.
+        //
+        // Check the persisted onboarded flag: if the user has already been
+        // through the tutorial slides once, show ONLY the login slide
+        // (state = "login"). If for some reason the flag is gone, fall back
+        // to the full onboarding so they aren't locked out.
+        isOnboarded()
+          .then((ob) => {
+            if (cancelled) return;
+            devLog("[Onboarding] SIGNED_OUT — surfacing", ob ? "login" : "full", "screen");
+            setState(ob ? "login" : "full");
+          })
+          .catch(() => {
+            if (cancelled) return;
+            setState("login");
+          });
       }
     });
 

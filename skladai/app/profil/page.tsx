@@ -613,7 +613,13 @@ export default function ProfilPage() {
               onClick={async () => {
                 const supabase = createClient();
                 await supabase.auth.signOut();
-                localStorage.removeItem("onboardingCompleted");
+                // DO NOT remove onboardingCompleted here. That flag lives in
+                // 3 stores (native Preferences, localStorage, cookie) and
+                // removing only the localStorage copy leaves inconsistent
+                // state. We also WANT to keep it: after sign-out the
+                // OnboardingWrapper's SIGNED_OUT handler surfaces the
+                // minimal login slide (state = "login") rather than
+                // dragging the user through the full tutorial again.
                 router.push("/");
               }}
               style={{
