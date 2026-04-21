@@ -678,8 +678,11 @@ export default function ProfilPage() {
               <button
                 onClick={() => {
                   if (deactivatePremiumDemo()) {
+                    // usePremium() now listens for this event and
+                    // re-runs its check, so we don't need the full
+                    // page reload — state updates in place across
+                    // AgentFAB, ScanLimitBanner, and this page.
                     window.dispatchEvent(new Event("premium-changed"));
-                    window.location.reload();
                   }
                 }}
                 style={{

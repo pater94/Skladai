@@ -731,9 +731,14 @@ export default function AgentChat({ open, onClose, isPremium }: Props) {
                 <button
                   onClick={() => {
                     if (activatePremiumDemo()) {
+                      // 1) dismiss the Expert education banner locally
+                      // 2) broadcast so usePremium() (in AgentFAB) re-checks
+                      //    and re-renders AgentChat with isPremium=true
+                      // Do NOT call onClose() — the user wanted to USE
+                      // expert mode in this chat, closing the sheet
+                      // dumps them back to home which feels like the
+                      // button didn't work.
                       dismissExpertEdu();
-                      onClose();
-                      // Force parent to re-check premium on next open
                       window.dispatchEvent(new Event("premium-changed"));
                     }
                   }}

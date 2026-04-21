@@ -298,6 +298,13 @@ function PremiumPageInner() {
               <button
                 onClick={() => {
                   activatePremium(3650);
+                  // Broadcast so every usePremium() consumer (AgentFAB,
+                  // ScanLimitBanner, this page's own hook) re-checks in
+                  // place. The redirect to /dashboard was a blunt way
+                  // to force a re-mount; with the hook listener we can
+                  // stay on the page and it simply flips to "Premium
+                  // aktywny" without any navigation jank.
+                  window.dispatchEvent(new Event("premium-changed"));
                   router.push("/dashboard");
                 }}
                 style={{
