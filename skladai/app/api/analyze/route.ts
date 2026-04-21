@@ -14,10 +14,20 @@ export const maxDuration = 60;
  *
  * Naming convention: "vN" where N is a monotonically increasing integer.
  * Write a one-line changelog comment each bump so reviewing old scans
- * tomorrow stays sane:
+ * stays sane:
  *   v1 — initial prod prompts (through 2026-04-20)
+ *   v2 — (2026-04-21) anti-hallucination: fix 82% cosmetics / 100%
+ *        suplement OCR-fail rate in production sample. Added Claude OCR
+ *        fallback to suplement path (previously went straight to image-
+ *        only with no OCR help). Strengthened image-only fallback
+ *        prompts for food/cosmetics/suplement so when both Vision and
+ *        Claude-OCR produce nothing the model is explicitly required
+ *        to mark label_unreadable=true / "brak danych" rather than
+ *        hallucinate Atwater-consistent nutrition from the product
+ *        category. Rooted in 2 user 👎 feedbacks on food scans where
+ *        ocr_text was NULL but nutrition was fabricated.
  */
-const PROMPT_VERSION = "v1";
+const PROMPT_VERSION = "v2";
 
 // ==================== SCAN LOGGING (fire-and-forget) ====================
 
@@ -155,7 +165,14 @@ async function logScanToSupabase(opts: {
       // Analytics columns
       risk_level: typeof r.risk_level === "string" ? r.risk_level : null,
       has_pregnancy_warning: hasPregnancyWarning,
-      ocr_succeeded: opts.ocrText != null ? opts.ocrText.length > 20 : null,
+      // `ocr_succeeded` semantics: true = usable OCR text (>20 chars)
+      // false = OCR was ATTEMPTED (food/cosmetics/suplement modes) but
+      // came back empty or too short — this is the "admin: OCR failed"
+      // filter's target. null = mode doesn't run OCR (meal, forma,
+      // alcohol, fridge) so the flag is not meaningful.
+      ocr_succeeded: ["food", "cosmetics", "suplement"].includes(opts.mode)
+        ? (typeof opts.ocrText === "string" && opts.ocrText.length > 20)
+        : null,
       is_two_photo: !!opts.image2Base64,
       ingredient_count: ingredientCount,
       harmful_count: harmfulCount,
@@ -1565,13 +1582,72 @@ SZUKAJ LEPSZEGO (search_queries) — KLUCZOWE:
       if (supplOcrText.length > 20) {
         supplUserContent.push({
           type: "text",
-          text: `Google Vision OCR odczytał z etykiety:\n\n---\n${supplOcrText}\n---\n\nUżyj OCR jako główne źródło danych o składnikach i dawkach. Przeanalizuj suplement. Odpowiedz WYŁĄCZNIE JSON.`,
+          text: `Google Vision OCR odczytał z etykiety:\n\n---\n${supplOcrText}\n---\n\n🚫 ABSOLUTNY ZAKAZ HALUCYNACJI 🚫
+Użytkownicy biorą suplementy na podstawie Twojej analizy. Wymyślone dawki = realne ryzyko zdrowotne.
+
+ŹRÓDŁA DANYCH (jedyne dozwolone):
+1. TEKST OCR powyżej (priorytet #1)
+2. Obraz etykiety (do weryfikacji OCR)
+
+ZAKAZANE źródła:
+❌ Twoja wiedza ogólna ("typowy magnez B6 ma X mg" — NIE)
+❌ Skojarzenia z marką ("Olimp/Solgar zwykle daje Y dawki" — NIE)
+❌ Zgadywanie z typu produktu ("skoro to multiwitamina, to pewnie ma Z składników" — NIE)
+
+REGUŁY:
+1. Nazwa i marka = TYLKO z OCR. Brak → "Nieznany suplement" / brand=null
+2. Składniki i dawki = TYLKO te z tabeli w OCR. Jeśli OCR nie zawiera konkretnych liczb (mg / IU / %NRV) → ingredients=[], dose_warning="Nie odczytano dawek — zrób ostrzejsze zdjęcie tabeli składników"
+3. Nie wystawiaj score 8+ jeśli nie widzisz konkretnych form związków (chelat vs tlenek, D3 vs D2)
+4. Pusty JSON ≫ wymyślony JSON
+
+Przeanalizuj suplement. Odpowiedz WYŁĄCZNIE JSON.`,
         });
       } else {
-        supplUserContent.push({
-          type: "text",
-          text: "Odczytaj i przeanalizuj ten suplement diety. Odpowiedz WYŁĄCZNIE JSON.",
-        });
+        // Vision OCR returned nothing usable — try Claude OCR as fallback.
+        // This mirrors the food/cosmetics path; previously suplement went
+        // straight to "image-only, analyze" which caused the 100%
+        // OCR-null rate we saw in the v1 production sample.
+        console.log("[suplement] Vision OCR failed — falling back to Claude OCR");
+        const supplClaudeOcr = await callClaude(
+          apiKey,
+          "Jesteś precyzyjnym czytnikiem etykiet suplementów. Odczytaj DOKŁADNIE CAŁY tekst z tej etykiety suplementu: nazwę, markę, listę składników, dawki (mg / mcg / IU), %NRV, sposób przyjmowania, ostrzeżenia. Przepisz dokładnie — słowo w słowo. Nie pomijaj niczego, nie interpretuj.",
+          [
+            supplImgContent,
+            { type: "text", text: "Odczytaj CAŁY tekst z tej etykiety suplementu. Przepisz dokładnie, włącznie z liczbami i jednostkami." },
+          ],
+          2048,
+          20000
+        );
+
+        if (!supplClaudeOcr.error && supplClaudeOcr.text.length > 30) {
+          supplOcrText = supplClaudeOcr.text;
+          supplUserContent.push({
+            type: "text",
+            text: `AI OCR odczytał z etykiety:\n\n---\n${supplOcrText}\n---\n\nUżyj tego tekstu jako głównego źródła. Zweryfikuj z obrazem. Nazwa, marka, składniki, dawki = TYLKO z tego OCR. Przeanalizuj suplement. Odpowiedz WYŁĄCZNIE JSON.`,
+          });
+        } else {
+          // Total fallback — image-only. Push the hardest anti-hallucination
+          // prompt because we have ZERO ground-truth text. It's better to
+          // return "brak danych" than invent plausible-looking doses.
+          supplUserContent.push({
+            type: "text",
+            text: `⚠️ BRAK OCR — TYLKO OBRAZ ⚠️
+Google Vision i AI OCR NIE odczytały tekstu z etykiety (zdjęcie nieczytelne, zły kąt, blur).
+
+ABSOLUTNY ZAKAZ HALUCYNACJI:
+❌ NIE zgaduj dawek z typu produktu
+❌ NIE dopisuj "typowego" składu na podstawie nazwy
+❌ NIE wystawiaj score jeśli nie widzisz konkretnych liczb w obrazie
+
+CO MASZ ZROBIĆ:
+1. Spróbuj odczytać widoczny tekst z obrazu (nazwa, marka, skład, dawki).
+2. Jeśli widzisz tylko nazwę/markę bez składu — name/brand z obrazu, ingredients=[], dose_warning="Nie odczytano etykiety — zrób ostrzejsze zdjęcie", score=5, verdict_short="Brak etykiety"
+3. Jeśli nawet nazwy nie widać czytelnie — name="Nieznany suplement", wszystkie pola puste, score=null, verdict_short="Brak etykiety"
+4. Pusty JSON ≫ wymyślony JSON
+
+Odpowiedz WYŁĄCZNIE JSON.`,
+          });
+        }
       }
 
       // Budget-aware Claude timeout: same principle as cosmetics/food below.
@@ -1713,13 +1789,50 @@ Zweryfikuj z obrazem. Odpowiedz WYŁĄCZNIE poprawnym JSON.${skinProfileHint}`,
         ocrText = claudeOcr.text;
         userContent.push({
           type: "text",
-          text: `AI OCR odczytał z etykiety:\n\n---\n${ocrText}\n---\n\nUżyj tego tekstu jako źródła danych. Zweryfikuj z obrazem. Nazwa i marka z OCR. Odpowiedz WYŁĄCZNIE poprawnym JSON.${skinProfileHint}`,
+          text: `AI OCR odczytał z etykiety:\n\n---\n${ocrText}\n---\n\n🚫 ABSOLUTNY ZAKAZ HALUCYNACJI 🚫
+Ta aplikacja śledzi kalorie użytkowników. Wymyślone wartości = realne szkody.
+
+ŹRÓDŁA DANYCH (jedyne dozwolone):
+1. TEKST AI OCR powyżej (priorytet #1)
+2. Obraz etykiety (do weryfikacji OCR)
+
+REGUŁY:
+1. Nazwa i marka = z OCR. Brak → name="Nieznany produkt", brand=null
+2. Wartości odżywcze = TYLKO te z tabeli w OCR. Jeśli OCR nie zawiera tabeli wartości odżywczych → wszystkie pola nutrition wpisz "brak danych", verdict_short="Brak etykiety", label_unreadable=true
+3. NIE używaj "typowych" wartości dla kategorii produktów
+4. WALIDACJA ATWATER: kcal ≈ 4×białko + 4×węgle + 9×tłuszcz (±20%). Jeśli liczby się nie zgadzają → OCR błędnie odczytał → wpisz "brak danych"
+5. Pusty JSON ≫ wymyślony JSON
+
+Zweryfikuj z obrazem. Odpowiedz WYŁĄCZNIE JSON.${skinProfileHint}`,
         });
       } else {
-        // Total fallback — image-only
+        // Total fallback — image-only. This is the path that produced
+        // hallucinated nutrition in the v1 production sample (2 user
+        // 👎 feedbacks on food with ocr_text=null). Push the hardest
+        // anti-hallucination guard: prefer "brak danych" over guessing.
+        console.log(`[analyze] mode=${mode} total OCR failure — sending image-only with strict no-hallucinate prompt`);
         userContent.push({
           type: "text",
-          text: `Odczytaj DOKŁADNIE cały tekst z tego zdjęcia etykiety (nazwa, marka, skład, wartości odżywcze), a następnie przeanalizuj produkt. Odpowiedz WYŁĄCZNIE poprawnym JSON.${skinProfileHint}`,
+          text: `⚠️ BRAK OCR — TYLKO OBRAZ ⚠️
+Google Vision i AI OCR NIE odczytały tekstu z etykiety (zdjęcie nieczytelne, zły kąt, blur, odbicia).
+
+🚫 ABSOLUTNY ZAKAZ HALUCYNACJI 🚫
+Ta aplikacja śledzi kalorie użytkowników. Wymyślone wartości wprost szkodzą zdrowiu.
+
+ZAKAZANE:
+❌ NIE zgaduj wartości odżywczych z kategorii produktu ("to chleb, więc ~250 kcal" — NIE)
+❌ NIE dopisuj "typowego" składu na podstawie marki
+❌ NIE wystawiaj konkretnych liczb kcal/białka/tłuszczu/węgli jeśli nie widzisz tabeli w obrazie
+❌ NIE obliczaj wartości z Atwater do wpasowania — brak danych ≫ wymyślone dane
+
+CO MASZ ZROBIĆ:
+1. Spróbuj odczytać widoczny tekst z obrazu (nazwa, marka, skład, tabela wartości odżywczych).
+2. Jeśli widzisz WYRAŹNIE tabelę wartości odżywczych w obrazie → odczytaj DOKŁADNIE co tam jest, bez interpretacji. Sprawdź Atwater. Score normalnie.
+3. Jeśli widzisz tylko NAZWĘ/MARKĘ bez tabeli wartości → wszystkie pola nutrition = "brak danych", verdict_short="Brak etykiety", label_unreadable=true, score=null
+4. Jeśli nawet nazwy nie widać czytelnie → name="Nieznany produkt", wszystko "brak danych", label_unreadable=true, score=null
+5. Pusty JSON ≫ wymyślony JSON
+
+Odpowiedz WYŁĄCZNIE JSON.${skinProfileHint}`,
         });
       }
     }
