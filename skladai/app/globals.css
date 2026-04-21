@@ -177,6 +177,21 @@ body.onboarding-active #scroll-container {
   100% { opacity: 0; transform: scale(1.25); }
 }
 
+/* Food-search input idle attention-grabber. Pulses the mint border +
+   glow every 3s when the input is empty AND unfocused AND not
+   recording. Stops the instant the user engages (focus / type / mic)
+   so it never competes with active UI. */
+@keyframes foodInputPulseBorder {
+  0%, 100% {
+    border-color: rgba(110, 252, 180, 0.25);
+    box-shadow: 0 0 12px rgba(110, 252, 180, 0.08);
+  }
+  50% {
+    border-color: rgba(110, 252, 180, 0.55);
+    box-shadow: 0 0 24px rgba(110, 252, 180, 0.25);
+  }
+}
+
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(4px); }
   to { opacity: 1; transform: translateY(0); }

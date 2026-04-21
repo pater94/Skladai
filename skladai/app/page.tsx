@@ -256,6 +256,11 @@ export default function Home() {
   const [showVoice, setShowVoice] = useState(false);
   const [foodSearchQuery, setFoodSearchQuery] = useState("");
   const [voiceInitialText, setVoiceInitialText] = useState<string | undefined>(undefined);
+  // Focus state drives the pulsing-border CTA animation on the food
+  // search box: the input used to blend into the dark card; now it
+  // pulses mint while empty+unfocused to catch the eye, and goes to
+  // a static mint border the moment the user engages.
+  const [isFoodInputFocused, setIsFoodInputFocused] = useState(false);
   // Remember the last attempted scan so the error banner can offer "Ponów skan"
   const [lastScanArgs, setLastScanArgs] = useState<{ kind: "scan" | "fridge"; base64: string } | null>(null);
   const router = useRouter();
@@ -1015,13 +1020,61 @@ export default function Home() {
 
             {/* Wyszukiwarka — glass dark style (tylko Żywność) */}
             {mode === "food" && (
-              <div className="mt-4 rounded-2xl overflow-hidden" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
+              <div className="mt-4">
+                {/* Hint label above the input — makes it obvious this is
+                    an alternative CTA to the scanner above. Mint accent
+                    matches food mode colour; the trailing gradient line
+                    visually ties it to the box below. */}
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 6,
+                    color: "rgba(110,252,180,0.7)",
+                    fontSize: 11,
+                    fontWeight: 700,
+                    letterSpacing: 1,
+                    textTransform: "uppercase",
+                    marginBottom: 8,
+                    marginLeft: 4,
+                  }}
+                >
+                  ✨ Albo wpisz / powiedz co zjadłeś
+                  <span
+                    style={{
+                      flex: 1,
+                      height: 1,
+                      background:
+                        "linear-gradient(90deg, rgba(110,252,180,0.3), transparent)",
+                    }}
+                  />
+                </div>
+                <div
+                  className="rounded-2xl overflow-hidden"
+                  style={{
+                    background: "rgba(110,252,180,0.04)",
+                    // Animated mint border when idle (empty, unfocused,
+                    // not recording). Otherwise a static mint border so
+                    // the box stays visually "engaged" — not blending
+                    // back into the dark card. Recording path keeps
+                    // the existing red status-pill below.
+                    border: "1.5px solid rgba(110,252,180,0.4)",
+                    boxShadow: "0 0 16px rgba(110,252,180,0.08)",
+                    animation:
+                      !foodSearchQuery && !isFoodInputFocused && !foodVoiceRecording
+                        ? "foodInputPulseBorder 3s ease-in-out infinite"
+                        : "none",
+                    transition: "border-color 0.3s, box-shadow 0.3s",
+                  }}
+                >
                 <div className="flex items-center px-4 py-3 gap-3">
                   <span className="text-white/50 text-[14px]">🔍</span>
                   <input
                     type="text"
                     value={foodSearchQuery}
                     onChange={(e) => setFoodSearchQuery(e.target.value)}
+                    onFocus={() => setIsFoodInputFocused(true)}
+                    onBlur={() => setIsFoodInputFocused(false)}
                     onKeyDown={(e) => {
                       if (e.key === "Enter") {
                         e.preventDefault();
@@ -1091,6 +1144,7 @@ export default function Home() {
                     🎙️ {foodVoiceError}
                   </div>
                 )}
+                </div>
               </div>
             )}
           </div>
