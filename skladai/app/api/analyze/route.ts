@@ -26,8 +26,21 @@ export const maxDuration = 60;
  *        hallucinate Atwater-consistent nutrition from the product
  *        category. Rooted in 2 user 👎 feedbacks on food scans where
  *        ocr_text was NULL but nutrition was fabricated.
+ *   v3 — (2026-04-21 wieczorem, blind improvements przed batch testów):
+ *        - Vision OCR teraz wysyła DUAL feature request: DOCUMENT_TEXT_
+ *          DETECTION (najlepsze dla tabel) + TEXT_DETECTION (lepsze dla
+ *          tekstu na krzywiznach cylindrycznych puszek/butelek), bierze
+ *          dłuższy wynik. Sam koszt billing = 1 unit (oba w jednym call).
+ *          Cel: poprawić OCR success rate dla okrągłych opakowań suplementów
+ *          i kosmetyków, gdzie DOCUMENT_TEXT_DETECTION miał problemy ze
+ *          strukturą.
+ *        - Prompts food/cosmetics/suplement dostały sekcję o opakowaniach
+ *          okrągłych (puszki/butelki/słoiki/tubki) z polem partial_label.
+ *          Gdy AI widzi że etykieta zawija się i część jest niewidoczna,
+ *          ustawia partial_label=true + verdict prosi o drugie zdjęcie
+ *          zamiast halucynować brakujące dane.
  */
-const PROMPT_VERSION = "v2";
+const PROMPT_VERSION = "v3";
 
 // ==================== SCAN LOGGING (fire-and-forget) ====================
 
@@ -390,14 +403,33 @@ PRZYKŁADY KATASTROFALNYCH BŁĘDÓW (NIGDY tego nie rób):
    AI: kalorie=350kcal (zgadnięte z mojej wiedzy o gotowych daniach)  ← ZAKAZANE
 ✅ Poprawnie: nutrition wszystkie "brak danych", verdict_short="Brak etykiety"
 
+PRODUKT W OPAKOWANIU OKRĄGŁYM (puszka, butelka, słoik, tubka):
+Etykiety na opakowaniach cylindrycznych zwykle zawijają się dookoła. Jedno zdjęcie pokazuje tylko ~40% etykiety; reszta (zwłaszcza tabela wartości odżywczych i pełny skład) jest niewidoczna na krzywiźnie po drugiej stronie.
+
+Jeśli widzisz że to opakowanie cylindryczne ORAZ na obrazie brakuje:
+- pełnej tabeli wartości odżywczych, LUB
+- pełnej listy składników (np. lista urywa się "...glukozo-fruktoz" bez znaku interpunkcyjnego), LUB
+- któregokolwiek pola z OCR które jest "obcięte" / "niewidoczne" / "ucięte"
+
+WTEDY:
+- Ustaw partial_label=true
+- verdict_short="Etykieta widoczna częściowo - obróć opakowanie"
+- verdict="Widoczna tylko część etykiety na okrągłym opakowaniu. Aby zrobić pełną analizę, obróć opakowanie i zrób drugie zdjęcie pokazujące tabelę wartości odżywczych i listę składników."
+- W polach nutrition - tylko TE wartości które WIDAĆ. Brakujące = "brak danych". NIE zgaduj.
+- W ingredients - tylko składniki KTÓRE WIDAĆ pełne. NIE dopisuj typowych dla kategorii.
+- score = null (nie da się ocenić niepełnej etykiety rzetelnie)
+
+To jest ZGODNE z anty-halucynacyjną zasadą — partial_label informuje usera że potrzebne drugie zdjęcie, zamiast halucynować brakujące dane.
+
 Odpowiedz WYŁĄCZNIE poprawnym JSON (bez markdown):
 {
   "name": "Nazwa produktu (DOKŁADNIE z odczytu)",
   "brand": "Marka",
   "weight": "Waga",
   "score": 7,
-  "verdict_short": "Dobry/Doskonały/Przeciętny/Słaby/Unikaj",
+  "verdict_short": "Dobry/Doskonały/Przeciętny/Słaby/Unikaj/Brak etykiety/Etykieta widoczna częściowo - obróć opakowanie",
   "verdict": "2-3 zdania Z CHARAKTEREM (patrz styl poniżej)",
+  "partial_label": false,
   "ingredients": [
     {"name": "Nazwa składnika", "original": "Jak na etykiecie", "category": "natural|processed|controversial|harmful", "risk": "safe|caution|warning", "explanation": "Wyjaśnienie po ludzku"}
   ],
@@ -528,6 +560,25 @@ NIE pisz: "To katastrofa!", "prawdziwy agresor", "horror"
 POZIOM 3 (silny alergen MCI/MI, formaldehyd, ryzyko w ciąży):
 Jednoznaczne ostrzeżenie z ⚠️. "⚠️ UWAGA: Produkt zawiera Methylisothiazolinone — jeden z najsilniejszych alergenów kontaktowych."
 
+====== OPAKOWANIA OKRĄGŁE (butelka, słoik, tubka, dezodorant roll-on, perfumy) ======
+
+Listy INCI na cylindrycznych opakowaniach prawie zawsze zawijają się dookoła - jedno zdjęcie pokazuje ~40% etykiety, reszta INCI jest niewidoczna na krzywiźnie z drugiej strony. To NORMALNE dla kosmetyków.
+
+Jeśli widzisz że to opakowanie cylindryczne ORAZ:
+- INCI lista urywa się w połowie (np. "...sodium chloride, parf" bez końcowego ";"), LUB
+- Lista składników wydaje się znacznie krótsza niż typowy kosmetyk tego typu (np. krem z 4 składnikami INCI - to nierealne), LUB
+- Brakuje pól które standardowo są na etykiecie (np. brak pojemności, brak marki, brak listy alergenów)
+
+WTEDY:
+- Ustaw partial_label=true
+- verdict_short="Etykieta widoczna częściowo - obróć opakowanie"
+- verdict="Widoczna tylko część etykiety na okrągłym opakowaniu. Pełna lista INCI jest na krzywiźnie z drugiej strony - obróć produkt i zrób drugie zdjęcie."
+- W ingredients - tylko składniki KTÓRE WIDAĆ na obrazie. NIE dopisuj typowych dla tej marki ani kategorii.
+- score = null (niepełna lista INCI nie pozwala rzetelnie ocenić)
+- ingredient_count, safe_count, caution_count, harmful_count = null
+
+To jest ZGODNE z anty-halucynacyjną zasadą #0 - partial_label informuje usera o potrzebie drugiego zdjęcia, zamiast dopisywać niewidoczne składniki.
+
 ====== FORMAT ODPOWIEDZI ======
 
 Odpowiedz WYŁĄCZNIE JSON (bez markdown):
@@ -538,7 +589,8 @@ Odpowiedz WYŁĄCZNIE JSON (bez markdown):
   "category": "Dokładny typ kosmetyku po polsku",
   "score": 7,
   "risk_level": "LOW|MED|HIGH",
-  "verdict_short": "Dobry/Doskonały/Przeciętny/Słaby/Unikaj",
+  "verdict_short": "Dobry/Doskonały/Przeciętny/Słaby/Unikaj/Etykieta widoczna częściowo - obróć opakowanie",
+  "partial_label": false,
   "verdict": "2-3 zdania — poziom 1/2/3 wg tonacji. Jeśli masz profil skóry, odnieś się do niego.",
   "ingredients": [
     {
@@ -1459,14 +1511,33 @@ Odpowiedz WYŁĄCZNIE poprawnym JSON (bez markdown, bez komentarzy):
     if (mode === "suplement") {
       const supplementAnalysisPrompt = `Jesteś ekspertem od suplementów diety. Przeanalizuj etykietę suplementu i oceń jego wartość.
 
+OPAKOWANIA OKRĄGŁE (słoiki z kapsułkami, butelki z syropem, tubki):
+Etykiety na cylindrycznych opakowaniach suplementów zawijają się dookoła. Typowo widać tylko ~40% etykiety; kluczowa tabela składu z dawkami (mg, IU, %NRV) bywa po drugiej stronie.
+
+Jeśli widzisz że to opakowanie cylindryczne ORAZ:
+- brakuje tabeli składu z konkretnymi dawkami (mg, mcg, IU), LUB
+- widzisz tylko nazwę/markę bez listy aktywnych substancji, LUB
+- lista składników wydaje się obcięta
+
+WTEDY:
+- Ustaw partial_label=true
+- verdict_short="Etykieta widoczna częściowo - obróć opakowanie"
+- verdict="Widoczna tylko część etykiety na okrągłym opakowaniu. Aby ocenić rzetelnie skład i dawki, obróć opakowanie i zrób drugie zdjęcie tabeli składników z dawkami (mg, IU, %NRV)."
+- ingredients = [] (brak rzetelnych dawek = brak oceny składu)
+- score = null (suplement nie da się ocenić bez znajomości dawek)
+- dose_warning="Niepełna etykieta - zrób drugie zdjęcie tabeli składników"
+
+To jest BEZPIECZNE - lepiej poprosić user'a o drugie zdjęcie niż zgadywać dawki witamin/minerałów (zdrowie!).
+
 ODPOWIEDZ WYŁĄCZNIE JSON (bez markdown):
 {
   "name": "Nazwa produktu (po polsku)",
   "brand": "Marka",
   "form": "tabletki/kapsułki/proszek/żel/płyn/inne",
   "score": 7,
-  "verdict_short": "Krótka ocena (max 8 słów)",
+  "verdict_short": "Krótka ocena (max 8 słów) lub 'Etykieta widoczna częściowo - obróć opakowanie'",
   "verdict": "Rzetelna ocena składu (3-4 zdania, konkretna, oparta na nauce)",
+  "partial_label": false,
   "ingredients": [
     {
       "name": "Witamina C (kwas askorbinowy)",
@@ -1537,14 +1608,26 @@ SZUKAJ LEPSZEGO (search_queries) — KLUCZOWE:
           const gvRes = await fetch(`https://vision.googleapis.com/v1/images:annotate?key=${gvKey}`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ requests: [{ image: { content: b64 }, features: [{ type: "DOCUMENT_TEXT_DETECTION", maxResults: 1 }] }] }),
+            // Dual feature request: DOCUMENT_TEXT_DETECTION is best for
+            // structured tables (nutrition/dose), TEXT_DETECTION catches
+            // text on curved surfaces (cylindrical bottles/cans) where
+            // DOCUMENT_TEXT_DETECTION's structural assumptions break.
+            // Both features in one call = same billing as one feature.
+            body: JSON.stringify({ requests: [{ image: { content: b64 }, features: [
+              { type: "DOCUMENT_TEXT_DETECTION", maxResults: 1 },
+              { type: "TEXT_DETECTION", maxResults: 1 },
+            ] }] }),
             signal: ctl.signal,
           });
           clearTimeout(t);
           if (gvRes.ok) {
             const gvData = await gvRes.json();
             const ann = gvData.responses?.[0];
-            return ann?.fullTextAnnotation?.text || ann?.textAnnotations?.[0]?.description || "";
+            const docText = ann?.fullTextAnnotation?.text || "";
+            const sceneText = ann?.textAnnotations?.[0]?.description || "";
+            // Prefer the longer result. TEXT_DETECTION often wins for
+            // supplement bottles where the label wraps around.
+            return docText.length >= sceneText.length ? docText : sceneText;
           }
         } catch {
           clearTimeout(t);
@@ -1703,8 +1786,20 @@ Odpowiedz WYŁĄCZNIE JSON.`,
           {
             method: "POST",
             headers: { "Content-Type": "application/json" },
+            // Dual feature request: DOCUMENT_TEXT_DETECTION (best for
+            // structured tables — nutrition labels) + TEXT_DETECTION
+            // (catches scene text on curved surfaces — cylindrical
+            // cans/bottles, where the document detector's structural
+            // assumptions break). Both features in a single call =
+            // same billing as one. Choose whichever returned more text.
             body: JSON.stringify({
-              requests: [{ image: { content: b64 }, features: [{ type: "DOCUMENT_TEXT_DETECTION", maxResults: 1 }] }],
+              requests: [{
+                image: { content: b64 },
+                features: [
+                  { type: "DOCUMENT_TEXT_DETECTION", maxResults: 1 },
+                  { type: "TEXT_DETECTION", maxResults: 1 },
+                ],
+              }],
             }),
             signal: ctl.signal,
           }
@@ -1713,7 +1808,9 @@ Odpowiedz WYŁĄCZNIE JSON.`,
         if (resp.ok) {
           const data = await resp.json();
           const ann = data.responses?.[0];
-          return ann?.fullTextAnnotation?.text || ann?.textAnnotations?.[0]?.description || "";
+          const docText = ann?.fullTextAnnotation?.text || "";
+          const sceneText = ann?.textAnnotations?.[0]?.description || "";
+          return docText.length >= sceneText.length ? docText : sceneText;
         }
       } catch (err) {
         clearTimeout(t);
