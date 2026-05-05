@@ -3,11 +3,15 @@
 import { useEffect, useState } from "react";
 
 interface ScoreRingProps {
-  score: number;
+  score: number | null | undefined;
   size?: number;
 }
 
-export function getScoreColor(score: number) {
+export function getScoreColor(score: number | null | undefined) {
+  // null/undefined = label was unreadable (v4 enforcement). Neutral gray
+  // with explicit "Brak etykiety" label so user doesn't see a misleading
+  // "Słaby" red score on a scan we couldn't actually evaluate.
+  if (score == null) return { color: "#71717a", bg: "#f4f4f5", gradient: ["#a1a1aa", "#52525b"], label: "Brak etykiety" };
   if (score >= 8) return { color: "#16a34a", bg: "#dcfce7", gradient: ["#4ade80", "#16a34a"], label: "Doskonały" };
   if (score >= 6) return { color: "#65a30d", bg: "#ecfccb", gradient: ["#a3e635", "#65a30d"], label: "Dobry" };
   if (score >= 4) return { color: "#ea580c", bg: "#fff7ed", gradient: ["#fb923c", "#ea580c"], label: "Przeciętny" };
@@ -23,10 +27,12 @@ export default function ScoreRing({ score, size = 120 }: ScoreRingProps) {
   const circumference = 2 * Math.PI * radius;
   const offset = circumference - (progress / 10) * circumference;
 
-  const id = `sg-${size}-${score}`;
+  const id = `sg-${size}-${score ?? "n"}`;
 
   useEffect(() => {
-    const t = setTimeout(() => setProgress(score), 150);
+    // null score → ring stays at 0% (visually empty) instead of erroring
+    const target = typeof score === "number" ? score : 0;
+    const t = setTimeout(() => setProgress(target), 150);
     return () => clearTimeout(t);
   }, [score]);
 
@@ -59,12 +65,23 @@ export default function ScoreRing({ score, size = 120 }: ScoreRingProps) {
         />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center z-20">
-        <span className="font-bold leading-none" style={{ fontSize: size * 0.34, color }}>
-          {score}
-        </span>
-        <span className="font-bold text-gray-300 leading-none" style={{ fontSize: size * 0.11 }}>
-          /10
-        </span>
+        {typeof score === "number" ? (
+          <>
+            <span className="font-bold leading-none" style={{ fontSize: size * 0.34, color }}>
+              {score}
+            </span>
+            <span className="font-bold text-gray-300 leading-none" style={{ fontSize: size * 0.11 }}>
+              /10
+            </span>
+          </>
+        ) : (
+          // Brak etykiety — score=null. Show a question mark instead of
+          // a number so the user immediately sees the scan didn't yield
+          // a usable rating.
+          <span className="font-bold leading-none" style={{ fontSize: size * 0.34, color }}>
+            ?
+          </span>
+        )}
       </div>
     </div>
   );

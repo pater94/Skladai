@@ -39,8 +39,27 @@ export const maxDuration = 60;
  *          Gdy AI widzi że etykieta zawija się i część jest niewidoczna,
  *          ustawia partial_label=true + verdict prosi o drugie zdjęcie
  *          zamiast halucynować brakujące dane.
+ *        Wynik produkcyjny n=29: cosmetics OCR 18% → 100% ✓,
+ *        suplement OCR 0% → 13% (mała próbka), partial_label używany
+ *        TYLKO 1/29 razy ✗ — model ignorował instrukcję.
+ *
+ *   v4 — (2026-04-26, server-side enforcement):
+ *        partial_label / score=null w v3 były instrukcjami w promptcie
+ *        które AI ignorował (1/29 użycia). 7/8 v3 supplement scans
+ *        miało ocr_text="" ale AI nadal wystawiało score 5-6 i
+ *        wymyślało dawki ("Witamina B1 0.52mg") z obrazu i ze swojej
+ *        wiedzy o brandzie. Identyczny pattern halucynacji co v1 dla
+ *        food (2 user 👎 feedbacks).
+ *        Fix: enforceLabelReadabilityGuard() — nowy server-side helper
+ *        wywoływany po parseJsonResponse + validateNutrition. Gdy mode
+ *        ∈ {food, cosmetics, suplement} AND ocr_text < 30 chars,
+ *        nadpisujemy odpowiedź AI: partial_label=true, score=null,
+ *        czyścimy ingredients/nutrition/dose. AI nie ma jak tego ominąć
+ *        bo nie widzi tej części kodu. Mode-specific cleanup zachowuje
+ *        helpful verdict ("Etykieta nieczytelna - zrób ostrzejsze
+ *        zdjęcie") zamiast zostawiać halucynowany skład.
  */
-const PROMPT_VERSION = "v3";
+const PROMPT_VERSION = "v4";
 
 // ==================== SCAN LOGGING (fire-and-forget) ====================
 
@@ -931,6 +950,94 @@ Odpowiedz WYŁĄCZNIE JSON:
 STYL: zabawny, bezpośredni, mądry kumpel. Oceń realnie ale z humorem.
 Rozpoznaj WSZYSTKO co widzisz — nawet częściowo widoczne produkty.`;
 
+// ==================== ENFORCEMENT: NO HALLUCINATION WITHOUT OCR ====================
+
+/**
+ * v3 production data showed AI ignoring the partial_label / score=null
+ * instructions when OCR was empty. 7/8 supplement scans had ocr_text=""
+ * but AI still produced score 5-6 + invented doses (Witamina B1 0.52mg,
+ * Kolagen wołowy 14g) — exactly the hallucination pattern v2 was meant
+ * to prevent.
+ *
+ * Server-side enforcement: when OCR returned <30 chars AND the mode
+ * runs OCR (food/cosmetics/suplement), we OVERWRITE the AI's response
+ * to force partial_label=true / score=null / cleared composition. The
+ * model can't argue with this — it never sees this code.
+ *
+ * Applied AFTER parseJsonResponse + validateNutrition, BEFORE
+ * logScanToSupabase + NextResponse.json. Mode-specific cleanup keeps
+ * the verdict text helpful (asks user for a sharper photo) instead of
+ * leaving the AI's hallucinated composition in place.
+ */
+function enforceLabelReadabilityGuard(
+  result: Record<string, unknown>,
+  mode: string,
+  ocrText: string | undefined
+): void {
+  const OCR_RUNNING_MODES = ["food", "cosmetics", "suplement"];
+  if (!OCR_RUNNING_MODES.includes(mode)) return;
+
+  const ocrLen = (ocrText || "").length;
+  if (ocrLen >= 30) return; // OCR succeeded enough — trust the AI
+
+  // Empty / near-empty OCR → AI was running image-only. Block any
+  // composition/score/dose that the model invented from product
+  // category, brand recognition, or general knowledge.
+  result.partial_label = true;
+  result.label_unreadable = true;
+  result.score = null;
+
+  const verdict_short = "Etykieta nieczytelna - zrób ostrzejsze zdjęcie";
+  const verdict =
+    "Nie udało się odczytać etykiety. Zrób ostrzejsze zdjęcie - " +
+    "najlepiej prosto, bez zagięć, z dobrym oświetleniem. " +
+    "Pełna analiza wymaga widocznej tabeli składników i wartości odżywczych.";
+
+  result.verdict_short = verdict_short;
+  result.verdict = verdict;
+
+  // Mode-specific: clear out invented data
+  if (mode === "food") {
+    // Wipe nutrition table — AI may have invented Atwater-consistent numbers
+    if (Array.isArray(result.nutrition)) {
+      (result.nutrition as Array<Record<string, unknown>>).forEach((n) => {
+        n.value = "brak danych";
+        if (n.sub) n.sub = "brak danych";
+      });
+    }
+    result.ingredients = [];
+    result.allergens = [];
+    result.sugar_teaspoons = null;
+    result.diabetes_info = null;
+    result.pregnancy_info = { alerts: [], safe_nutrients: [], caffeine_mg: 0 };
+    result.allergy_info = { detected_allergens: [], may_contain: [], is_safe: null };
+  } else if (mode === "cosmetics") {
+    result.ingredients = [];
+    result.warnings = [];
+    result.good_for = [];
+    result.bad_for = [];
+    result.allergens = [];
+    result.ingredient_count = null;
+    result.safe_count = null;
+    result.caution_count = null;
+    result.harmful_count = null;
+    result.risk_level = null;
+    result.avoid_ingredients = [];
+    result.search_queries = [];
+  } else if (mode === "suplement") {
+    // Most critical — invented doses are a health risk
+    result.ingredients = [];
+    result.allergens = [];
+    result.interactions = [];
+    result.who_for = [];
+    result.who_avoid = [];
+    result.avoid_ingredients = [];
+    result.search_queries = [];
+    result.dose_warning =
+      "Nie odczytano dawek z etykiety - zrób ostrzejsze zdjęcie tabeli składników";
+  }
+}
+
 // ==================== HELPER ====================
 
 async function callClaude(
@@ -1754,6 +1861,12 @@ Odpowiedz WYŁĄCZNIE JSON.`,
         if (!result.interactions) result.interactions = [];
         if (!result.who_for) result.who_for = [];
         if (!result.who_avoid) result.who_avoid = [];
+
+        // v4 enforcement: critical for supplements — invented doses
+        // are a health risk. Force partial_label / score=null when OCR
+        // came back empty, regardless of what the model produced.
+        enforceLabelReadabilityGuard(result, "suplement", supplOcrText);
+
         void logScanToSupabase({ mode: "suplement", scanType: "suplement", base64Image: image, image2Base64: image2 || undefined, result, startTime, ocrText: supplOcrText || undefined, request });
         return NextResponse.json(result);
       } catch {
@@ -1975,6 +2088,10 @@ Odpowiedz WYŁĄCZNIE JSON.${skinProfileHint}`,
       if (!result.cons) result.cons = [];
       if (!result.allergens) result.allergens = [];
       if (!result.fun_comparisons) result.fun_comparisons = [];
+
+      // v4 enforcement: when OCR was empty, force partial_label and
+      // null score so AI can't sneak hallucinated nutrition past us.
+      enforceLabelReadabilityGuard(result, isCosmetics ? "cosmetics" : "food", ocrText);
 
       void logScanToSupabase({ mode: isCosmetics ? "cosmetics" : "food", scanType: isCosmetics ? "cosmetics" : "food", base64Image: image, image2Base64: image2 || undefined, result, startTime, ocrText: ocrText || undefined, request });
       return NextResponse.json(result);
