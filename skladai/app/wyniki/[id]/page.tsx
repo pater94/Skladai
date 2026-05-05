@@ -13,6 +13,19 @@ import HealthAlerts from "@/components/HealthAlerts";
 import IngredientPopup from "@/components/IngredientPopup";
 import ScanLimitBanner from "@/components/ScanLimitBanner";
 
+// Translation table for the v5 enforceLabelReadabilityGuard()
+// missing_fields array. Keys come from the backend, values are
+// shown to the user as "Czego zabrakło" bullets.
+const MISSING_FIELD_LABELS: Record<string, string> = {
+  nutrition_table: "Tabela wartości odżywczych (kcal, białko, tłuszcz, węgle)",
+  ingredients_list: "Pełna lista składników",
+  inci_list: "Lista INCI (skład kosmetyku)",
+  dose_table: "Tabela składników z dawkami (mg, IU, %NRV)",
+};
+function translateMissingField(key: string): string {
+  return MISSING_FIELD_LABELS[key] || key;
+}
+
 function FunComparisons({ items, isDark }: { items: string[]; isDark: boolean }): React.JSX.Element {
   if (!items || items.length === 0) return <></>;
   return (
@@ -327,6 +340,259 @@ export default function WynikiPage() {
   const isTextSearch = result.type === "text_search";
   const isForma = scanType === "forma";
   const isSuplement = scanType === "suplement" || result.type === "suplement";
+
+  // === LABEL UNREADABLE / PARTIAL VIEW (v4+ enforceLabelReadabilityGuard) ===
+  // When OCR was empty and we forced score=null, render a dedicated retry
+  // screen instead of the regular results layout (which would show
+  // empty cards + a misleading red "Słaby" ring). Only triggers for the
+  // OCR-running modes; meal / forma / text_search keep their own flows.
+  const isLabelUnreadable = (
+    (result.partial_label === true || result.label_unreadable === true) &&
+    (scanType === "food" || scanType === "cosmetics" || scanType === "suplement")
+  );
+
+  if (isLabelUnreadable) {
+    // Mode-specific accent so the view feels native to the section
+    // user came from (mint = food, purple = cosmetics, blue = suplement).
+    const unreadableAccent = isCosmetics ? "#C084FC" : isSuplement ? "#3b82f6" : "#6efcb4";
+    const unreadableAccentRgb = isCosmetics ? "192,132,252" : isSuplement ? "59,130,246" : "110,252,180";
+    const ctaGradient = isCosmetics
+      ? "linear-gradient(135deg,#C084FC 0%,#9333ea 100%)"
+      : isSuplement
+      ? "linear-gradient(135deg,#60a5fa 0%,#2563eb 100%)"
+      : "linear-gradient(135deg,#6efcb4 0%,#3dd990 100%)";
+    const missingFields: string[] = Array.isArray(result.missing_fields) ? result.missing_fields : [];
+    const retakeHint: string =
+      typeof result.retake_hint === "string" && result.retake_hint.length > 0
+        ? result.retake_hint
+        : "Zrób ostrzejsze zdjęcie etykiety — najlepiej prosto, bez zagięć i odbicia światła.";
+
+    return (
+      <div className="min-h-[100dvh] bg-[#0a0e0c]" style={{ position: "relative", overflow: "hidden" }}>
+        {/* Ambient blob — subtle, top-right, matches other result views */}
+        <div
+          style={{
+            position: "absolute",
+            top: -40,
+            right: -60,
+            width: 220,
+            height: 220,
+            borderRadius: "50%",
+            background: `radial-gradient(circle, rgba(${unreadableAccentRgb},0.08) 0%, transparent 70%)`,
+            filter: "blur(50px)",
+            pointerEvents: "none",
+          }}
+        />
+        {/* Film grain for consistency with rest of app */}
+        <svg
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            width: "100%",
+            height: "100%",
+            pointerEvents: "none",
+            opacity: 0.35,
+            zIndex: 1,
+          }}
+        >
+          <filter id="grainUR">
+            <feTurbulence type="fractalNoise" baseFrequency="0.65" numOctaves="3" stitchTiles="stitch" />
+          </filter>
+          <rect width="100%" height="100%" filter="url(#grainUR)" opacity="0.06" />
+        </svg>
+
+        <div style={{ position: "relative", zIndex: 2 }}>
+          {/* Top bar — back button only, no share for failed scans */}
+          <div className="px-5 pt-[60px] pb-2 flex items-center">
+            <button
+              onClick={() => router.back()}
+              aria-label="Wróć"
+              className="w-10 h-10 rounded-full flex items-center justify-center active:scale-90 transition-transform"
+              style={{
+                background: "rgba(255,255,255,0.05)",
+                border: "1px solid rgba(255,255,255,0.08)",
+                color: "rgba(255,255,255,0.85)",
+                fontSize: 18,
+              }}
+            >
+              ←
+            </button>
+          </div>
+
+          {/* Hero — neutral ScoreRing with "?" + clear status */}
+          <div className="px-5 pt-6 flex flex-col items-center anim-fade-up">
+            <ScoreRing score={null} size={140} />
+            <h1
+              style={{
+                marginTop: 22,
+                fontSize: 28,
+                fontWeight: 900,
+                color: "#ffffff",
+                letterSpacing: "-0.02em",
+                textAlign: "center",
+              }}
+            >
+              Brak etykiety
+            </h1>
+            <p
+              style={{
+                marginTop: 10,
+                fontSize: 14,
+                color: "rgba(255,255,255,0.6)",
+                lineHeight: 1.55,
+                maxWidth: 300,
+                textAlign: "center",
+              }}
+            >
+              Nie udało się odczytać składu z tego zdjęcia. Spróbuj jeszcze raz —
+              zazwyczaj jedno lepsze zdjęcie wystarcza.
+            </p>
+          </div>
+
+          {/* Retake hint — accent-tinted glass card */}
+          <div className="px-5 mt-8 anim-fade-up-1">
+            <div
+              style={{
+                padding: 18,
+                borderRadius: 18,
+                background: `rgba(${unreadableAccentRgb},0.05)`,
+                border: `1px solid rgba(${unreadableAccentRgb},0.18)`,
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
+                <span style={{ fontSize: 22, lineHeight: 1, marginTop: 1 }}>💡</span>
+                <div style={{ flex: 1 }}>
+                  <p
+                    style={{
+                      fontSize: 11,
+                      fontWeight: 800,
+                      color: unreadableAccent,
+                      textTransform: "uppercase",
+                      letterSpacing: 1.2,
+                      marginBottom: 8,
+                    }}
+                  >
+                    Co teraz
+                  </p>
+                  <p
+                    style={{
+                      fontSize: 13.5,
+                      color: "rgba(255,255,255,0.85)",
+                      lineHeight: 1.65,
+                      margin: 0,
+                    }}
+                  >
+                    {retakeHint}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Missing fields — only if backend supplied them */}
+          {missingFields.length > 0 && (
+            <div className="px-5 mt-5 anim-fade-up-2">
+              <p
+                style={{
+                  fontSize: 11,
+                  fontWeight: 800,
+                  color: "rgba(255,255,255,0.4)",
+                  textTransform: "uppercase",
+                  letterSpacing: 1.2,
+                  marginBottom: 12,
+                  paddingLeft: 4,
+                }}
+              >
+                Czego zabrakło
+              </p>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {missingFields.map((f: string, i: number) => (
+                  <div
+                    key={i}
+                    style={{
+                      padding: "12px 14px",
+                      borderRadius: 14,
+                      background: "rgba(255,255,255,0.03)",
+                      border: "1px solid rgba(255,255,255,0.06)",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 12,
+                    }}
+                  >
+                    <span
+                      style={{
+                        width: 22,
+                        height: 22,
+                        borderRadius: "50%",
+                        background: "rgba(239,68,68,0.12)",
+                        border: "1px solid rgba(239,68,68,0.25)",
+                        color: "#fca5a5",
+                        fontSize: 11,
+                        fontWeight: 800,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        flexShrink: 0,
+                      }}
+                    >
+                      ✗
+                    </span>
+                    <span
+                      style={{
+                        fontSize: 13,
+                        color: "rgba(255,255,255,0.78)",
+                        lineHeight: 1.45,
+                      }}
+                    >
+                      {translateMissingField(f)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* CTAs — primary (retake) + subtle (back) */}
+          <div className="px-5 mt-8 pb-12 anim-fade-up-3">
+            <button
+              onClick={() => router.push("/")}
+              className="w-full active:scale-[0.98] transition-transform"
+              style={{
+                padding: "16px 20px",
+                borderRadius: 18,
+                background: ctaGradient,
+                color: "#0a0e0c",
+                fontWeight: 900,
+                fontSize: 15.5,
+                border: "none",
+                boxShadow: `0 8px 28px rgba(${unreadableAccentRgb},0.28)`,
+                cursor: "pointer",
+                letterSpacing: "-0.01em",
+              }}
+            >
+              📷 Zrób ostrzejsze zdjęcie
+            </button>
+            <button
+              onClick={() => router.back()}
+              className="w-full mt-3 py-3 active:opacity-60 transition-opacity"
+              style={{
+                fontSize: 12.5,
+                color: "rgba(255,255,255,0.45)",
+                background: "transparent",
+                border: "none",
+                fontWeight: 600,
+                cursor: "pointer",
+              }}
+            >
+              Wróć
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   const { color, bg, label } = getScoreColor(result.score);
 
   const foodResult = scanType === "food" ? (result as FoodAnalysisResult) : null;

@@ -58,8 +58,25 @@ export const maxDuration = 60;
  *        bo nie widzi tej części kodu. Mode-specific cleanup zachowuje
  *        helpful verdict ("Etykieta nieczytelna - zrób ostrzejsze
  *        zdjęcie") zamiast zostawiać halucynowany skład.
+ *
+ *   v5 — (2026-04-26 wieczorem, actionable retry hints):
+ *        v4 enforcement zostawiało user'a z genericznym "Etykieta
+ *        nieczytelna" bez konkretnej rady. Frontend musi mieć z czym
+ *        pracować żeby pokazać user'owi "co dokładnie poszło źle +
+ *        co teraz zrobić". Wzbogacam enforceLabelReadabilityGuard:
+ *        każdy mode dostaje teraz:
+ *          - missing_fields: array typów których brakuje
+ *            (food: ["nutrition_table", "ingredients_list"],
+ *             cosmetics: ["inci_list"],
+ *             suplement: ["dose_table", "ingredients_list"])
+ *          - retake_hint: konkretny tekst po polsku co fotografować
+ *            (np. "Wyceluj na tabelę składników z dawkami mg/IU/%NRV.
+ *            Zwykle z tyłu lub z boku opakowania, drobnym drukiem.")
+ *        Frontend (wyniki/[id]/page.tsx) renderuje dedykowany
+ *        "Brak etykiety" widok z tymi polami zamiast pokazywać
+ *        domyślny score-result layout z pustymi kartami.
  */
-const PROMPT_VERSION = "v4";
+const PROMPT_VERSION = "v5";
 
 // ==================== SCAN LOGGING (fire-and-forget) ====================
 
@@ -996,7 +1013,8 @@ function enforceLabelReadabilityGuard(
   result.verdict_short = verdict_short;
   result.verdict = verdict;
 
-  // Mode-specific: clear out invented data
+  // Mode-specific: clear out invented data + populate actionable
+  // retry hint for the frontend "Brak etykiety" view.
   if (mode === "food") {
     // Wipe nutrition table — AI may have invented Atwater-consistent numbers
     if (Array.isArray(result.nutrition)) {
@@ -1011,6 +1029,11 @@ function enforceLabelReadabilityGuard(
     result.diabetes_info = null;
     result.pregnancy_info = { alerts: [], safe_nutrients: [], caffeine_mg: 0 };
     result.allergy_info = { detected_allergens: [], may_contain: [], is_safe: null };
+    result.missing_fields = ["nutrition_table", "ingredients_list"];
+    result.retake_hint =
+      "Wyceluj na tabelę wartości odżywczych — zwykle z boku opakowania. " +
+      "Trzymaj telefon prosto, równolegle do etykiety, dobre światło, " +
+      "bez refleksów i zagięć.";
   } else if (mode === "cosmetics") {
     result.ingredients = [];
     result.warnings = [];
@@ -1024,6 +1047,11 @@ function enforceLabelReadabilityGuard(
     result.risk_level = null;
     result.avoid_ingredients = [];
     result.search_queries = [];
+    result.missing_fields = ["inci_list"];
+    result.retake_hint =
+      "Wyceluj na pełną listę INCI — drobnym drukiem, zwykle z tyłu " +
+      "opakowania. Przybliż telefon, włącz dobre światło, postaraj się " +
+      "żeby cała lista zmieściła się w kadrze.";
   } else if (mode === "suplement") {
     // Most critical — invented doses are a health risk
     result.ingredients = [];
@@ -1035,6 +1063,11 @@ function enforceLabelReadabilityGuard(
     result.search_queries = [];
     result.dose_warning =
       "Nie odczytano dawek z etykiety - zrób ostrzejsze zdjęcie tabeli składników";
+    result.missing_fields = ["dose_table", "ingredients_list"];
+    result.retake_hint =
+      "Wyceluj na tabelę składników z konkretnymi dawkami (mg, IU, %NRV). " +
+      "Zwykle z tyłu lub z boku opakowania, drobnym drukiem — przybliż się " +
+      "do etykiety. Bez tych liczb nie da się rzetelnie ocenić suplementu.";
   }
 }
 
