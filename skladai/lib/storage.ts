@@ -1,4 +1,4 @@
-import { ScanHistoryItem, AnalysisResult, ScanMode, UserProfile, DiaryEntry, DailyTotals, MealType } from "./types";
+import { ScanHistoryItem, AnalysisResult, ScanMode, UserProfile, DiaryEntry, DailyTotals, MealType, RecentFood } from "./types";
 import { schedulePush } from "./sync";
 
 /** Notify CloudSync that localStorage changed */
@@ -171,8 +171,105 @@ export function addDiaryEntry(entry: Omit<DiaryEntry, "id" | "timestamp">): Diar
   // Keep max 500 entries
   if (diary.length > 500) diary.splice(0, diary.length - 500);
   localStorage.setItem(DIARY_KEY, JSON.stringify(diary));
+  // Mirror into recent-foods so the home quick-add strip surfaces it
+  bumpRecentFood({
+    productName: full.productName,
+    brand: full.brand,
+    portion_g: full.portion_g,
+    calories: full.calories,
+    protein: full.protein,
+    fat: full.fat,
+    carbs: full.carbs,
+    sugar: full.sugar,
+    salt: full.salt,
+    fiber: full.fiber,
+    score: full.score ?? null,
+  });
   notifyChange();
   return full;
+}
+
+// === RECENT FOODS (quick-add strip on home, populated by addDiaryEntry) ===
+const RECENT_FOODS_KEY = "skladai_recent_foods";
+const RECENT_FOODS_MAX = 12;
+
+/**
+ * Normalize productName for dedup matching. Strip leading emoji (VoiceLog
+ * stores it inline), lowercase, trim. So "🥚 Jajka" and "Jajka" dedup
+ * to the same recent entry.
+ */
+function normalizeProductKey(name: string): string {
+  return name.replace(/^\p{Extended_Pictographic}\s*/u, "").trim().toLowerCase();
+}
+
+export function getRecentFoods(): RecentFood[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = localStorage.getItem(RECENT_FOODS_KEY);
+    if (!raw) return [];
+    const list = JSON.parse(raw) as RecentFood[];
+    // Sort by lastUsedAt desc — newest first
+    return list.sort((a, b) => (b.lastUsedAt > a.lastUsedAt ? 1 : -1));
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Insert-or-bump a recent food. If the product (matched by normalized
+ * name) already exists, we update its portion+nutrition with the most
+ * recent values and bump its lastUsedAt + useCount. Otherwise we
+ * prepend a new entry. List is capped at RECENT_FOODS_MAX.
+ */
+export function bumpRecentFood(
+  input: Omit<RecentFood, "id" | "lastUsedAt" | "useCount">
+): void {
+  if (typeof window === "undefined") return;
+  try {
+    const list = getRecentFoods();
+    const key = normalizeProductKey(input.productName);
+    if (!key) return; // empty product names go nowhere
+    const idx = list.findIndex((f) => normalizeProductKey(f.productName) === key);
+    const now = new Date().toISOString();
+    if (idx >= 0) {
+      // Existing — refresh nutrition (user may have tweaked the portion
+      // last time) and bump frequency
+      const prev = list[idx];
+      list[idx] = {
+        ...prev,
+        ...input,
+        lastUsedAt: now,
+        useCount: prev.useCount + 1,
+      };
+    } else {
+      list.unshift({
+        ...input,
+        id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+        lastUsedAt: now,
+        useCount: 1,
+      });
+    }
+    // Cap to avoid unbounded growth
+    const capped = list.slice(0, RECENT_FOODS_MAX);
+    localStorage.setItem(RECENT_FOODS_KEY, JSON.stringify(capped));
+  } catch {
+    /* localStorage may be full or disabled; recent-foods is non-critical */
+  }
+}
+
+export function removeRecentFood(id: string): void {
+  if (typeof window === "undefined") return;
+  try {
+    const list = getRecentFoods().filter((f) => f.id !== id);
+    localStorage.setItem(RECENT_FOODS_KEY, JSON.stringify(list));
+  } catch {}
+}
+
+export function clearRecentFoods(): void {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.removeItem(RECENT_FOODS_KEY);
+  } catch {}
 }
 
 export function removeDiaryEntry(id: string): void {

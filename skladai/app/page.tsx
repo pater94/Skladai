@@ -17,6 +17,10 @@ import {
   saveMode,
   updateStreak,
   getHistory,
+  getRecentFoods,
+  addDiaryEntry,
+  removeRecentFood,
+  todayStr,
 } from "@/lib/storage";
 import { compressImageSmall, clampBase64Size } from "@/lib/compress";
 
@@ -28,7 +32,7 @@ const CAMERA_CLAMP_KB = (mode: string) =>
 import { isNative, takePhotoForMode } from "@/lib/native-camera";
 import { devLog } from "@/lib/dev-log";
 import ActivityBadges from "@/components/ActivityBadges";
-import type { ScanMode, ScanHistoryItem } from "@/lib/types";
+import type { ScanMode, ScanHistoryItem, RecentFood } from "@/lib/types";
 import { Apple, UtensilsCrossed, Sparkles, Pill } from "lucide-react";
 import { useSpeechToText } from "@/lib/useSpeechToText";
 import { nsSet } from "@/lib/native-storage";
@@ -261,6 +265,13 @@ export default function Home() {
   // pulses mint while empty+unfocused to catch the eye, and goes to
   // a static mint border the moment the user engages.
   const [isFoodInputFocused, setIsFoodInputFocused] = useState(false);
+
+  // Recent foods strip — populated automatically every time user adds
+  // something to the diary. MFP-style 1-tap re-add. Only shown in
+  // food mode (the only mode with a diary).
+  const [recentFoods, setRecentFoods] = useState<RecentFood[]>([]);
+  // Transient toast for quick-add confirmation
+  const [quickAddToast, setQuickAddToast] = useState<string | null>(null);
   // Remember the last attempted scan so the error banner can offer "Ponów skan"
   const [lastScanArgs, setLastScanArgs] = useState<{ kind: "scan" | "fridge"; base64: string } | null>(null);
   const router = useRouter();
@@ -353,6 +364,50 @@ export default function Home() {
     const filtered = all.filter((item) => (item.scanType || "food") === mode);
     setRecentScans(filtered.slice(0, 3));
   }, [mode]);
+
+  // Recent foods strip (food mode only). Reload on local-data-changed
+  // so that VoiceLog adds appear instantly without a route refresh.
+  useEffect(() => {
+    if (mode !== "food") return;
+    const load = () => setRecentFoods(getRecentFoods());
+    load();
+    const onChanged = () => load();
+    window.addEventListener("local-data-changed", onChanged);
+    return () => window.removeEventListener("local-data-changed", onChanged);
+  }, [mode]);
+
+  const handleQuickAddRecent = useCallback((food: RecentFood) => {
+    // Re-add this food to today's diary using the saved portion. We
+    // keep the same productName (with leading emoji) and re-bump
+    // recent-foods so it floats to the top of the strip again.
+    addDiaryEntry({
+      date: todayStr(),
+      mealType: "snack",
+      productName: food.productName,
+      brand: food.brand,
+      score: food.score ?? 5,
+      portion_g: food.portion_g,
+      package_g: food.portion_g,
+      calories: food.calories,
+      protein: food.protein,
+      fat: food.fat,
+      carbs: food.carbs,
+      sugar: food.sugar,
+      salt: food.salt,
+      fiber: food.fiber,
+      scanId: "recent-quickadd",
+    });
+    setRecentFoods(getRecentFoods());
+    const cleanName = food.productName.replace(/^\p{Extended_Pictographic}\s*/u, "");
+    setQuickAddToast(`Dodano: ${cleanName} (${Math.round(food.calories)} kcal)`);
+    window.setTimeout(() => setQuickAddToast(null), 2200);
+  }, []);
+
+  const handleRemoveRecent = useCallback((id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    removeRecentFood(id);
+    setRecentFoods(getRecentFoods());
+  }, []);
 
   useEffect(() => {
     const tips = mode === "cosmetics" ? COSMETIC_TIPS : mode === "meal" ? MEAL_TIPS : FOOD_TIPS;
@@ -1145,8 +1200,163 @@ export default function Home() {
                   </div>
                 )}
                 </div>
+
+                {/* Recent foods quick-add strip (food mode only).
+                    MFP-style: 1 tap = re-add same product with last-used
+                    portion. Populated by addDiaryEntry → bumpRecentFood.
+                    Hidden when empty (first-time user sees nothing). */}
+                {recentFoods.length > 0 && (
+                  <div className="mt-4">
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 6,
+                        color: "rgba(110,252,180,0.7)",
+                        fontSize: 11,
+                        fontWeight: 700,
+                        letterSpacing: 1,
+                        textTransform: "uppercase",
+                        marginBottom: 8,
+                        marginLeft: 4,
+                      }}
+                    >
+                      ⏱️ Ostatnio dodane
+                      <span
+                        style={{
+                          flex: 1,
+                          height: 1,
+                          background:
+                            "linear-gradient(90deg, rgba(110,252,180,0.3), transparent)",
+                        }}
+                      />
+                    </div>
+                    <div
+                      data-scrollable="true"
+                      style={{
+                        display: "flex",
+                        gap: 8,
+                        overflowX: "auto",
+                        paddingBottom: 4,
+                        scrollbarWidth: "none",
+                        msOverflowStyle: "none",
+                        WebkitOverflowScrolling: "touch",
+                      }}
+                    >
+                      {recentFoods.map((f) => {
+                        // Pluck leading emoji from "🥚 Jajka"
+                        const m = f.productName.match(/^(\p{Extended_Pictographic})\s*(.*)$/u);
+                        const emoji = m?.[1] || "🍽️";
+                        const name = m?.[2] || f.productName;
+                        return (
+                          <button
+                            key={f.id}
+                            onClick={() => handleQuickAddRecent(f)}
+                            className="active:scale-[0.96] transition-transform"
+                            style={{
+                              position: "relative",
+                              flexShrink: 0,
+                              minWidth: 132,
+                              maxWidth: 168,
+                              padding: "10px 12px 10px 12px",
+                              borderRadius: 14,
+                              background: "rgba(110,252,180,0.04)",
+                              border: "1px solid rgba(110,252,180,0.18)",
+                              textAlign: "left",
+                              cursor: "pointer",
+                            }}
+                            aria-label={`Dodaj ponownie ${name} (${Math.round(f.calories)} kcal)`}
+                          >
+                            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+                              <span style={{ fontSize: 18, lineHeight: 1, flexShrink: 0 }}>{emoji}</span>
+                              <span
+                                style={{
+                                  flex: 1,
+                                  fontSize: 12,
+                                  fontWeight: 700,
+                                  color: "rgba(255,255,255,0.92)",
+                                  overflow: "hidden",
+                                  textOverflow: "ellipsis",
+                                  whiteSpace: "nowrap",
+                                  letterSpacing: "-0.01em",
+                                }}
+                              >
+                                {name}
+                              </span>
+                              <span
+                                onClick={(e) => handleRemoveRecent(f.id, e)}
+                                role="button"
+                                tabIndex={-1}
+                                aria-label="Usuń z ostatnio dodanych"
+                                style={{
+                                  width: 18,
+                                  height: 18,
+                                  borderRadius: 9,
+                                  background: "rgba(255,255,255,0.06)",
+                                  color: "rgba(255,255,255,0.45)",
+                                  fontSize: 10,
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  flexShrink: 0,
+                                  cursor: "pointer",
+                                  lineHeight: 1,
+                                }}
+                              >
+                                ✕
+                              </span>
+                            </div>
+                            <div
+                              style={{
+                                display: "flex",
+                                alignItems: "baseline",
+                                gap: 6,
+                                color: "#6efcb4",
+                                fontSize: 13,
+                                fontWeight: 800,
+                                letterSpacing: "-0.01em",
+                              }}
+                            >
+                              {Math.round(f.calories)}
+                              <span style={{ fontSize: 9, fontWeight: 700, color: "rgba(110,252,180,0.55)" }}>
+                                kcal · {f.portion_g}g
+                              </span>
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <style jsx>{`
+                      div[data-scrollable]::-webkit-scrollbar { display: none; }
+                    `}</style>
+                  </div>
+                )}
               </div>
             )}
+          </div>
+        )}
+
+        {/* Quick-add toast — fires after handleQuickAddRecent */}
+        {quickAddToast && (
+          <div
+            style={{
+              position: "fixed",
+              bottom: 90,
+              left: "50%",
+              transform: "translateX(-50%)",
+              zIndex: 100,
+              padding: "10px 18px",
+              borderRadius: 999,
+              background: "rgba(110,252,180,0.95)",
+              color: "#0a0e0c",
+              fontSize: 13,
+              fontWeight: 700,
+              boxShadow: "0 8px 24px rgba(110,252,180,0.35)",
+              animation: "fadeInUp 0.3s cubic-bezier(0.22, 1, 0.36, 1)",
+              pointerEvents: "none",
+            }}
+          >
+            ✓ {quickAddToast}
           </div>
         )}
 

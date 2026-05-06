@@ -381,6 +381,32 @@ export interface DiaryEntry {
   timestamp: string; // ISO
 }
 
+/**
+ * Recent food entry — populated automatically every time user adds
+ * something to the diary (via VoiceLog or scan). Powers the
+ * "Ostatnio dodane" quick-add strip on home, MFP-style. Dedup by
+ * product name so the strip doesn't repeat the same item.
+ */
+export interface RecentFood {
+  id: string;
+  productName: string; // includes leading emoji from VoiceLog ("🥚 Jajka")
+  brand: string;
+  // Last-known portion the user picked, for 1-tap re-add
+  portion_g: number;
+  // Nutrition per the saved portion above
+  calories: number;
+  protein: number;
+  fat: number;
+  carbs: number;
+  sugar: number;
+  salt: number;
+  fiber: number;
+  score: number | null;
+  // Tracking
+  lastUsedAt: string; // ISO — drives ordering
+  useCount: number; // raw frequency, for future "favorites" surfacing
+}
+
 export interface DailyTotals {
   date: string;
   calories: number;
