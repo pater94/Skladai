@@ -1076,33 +1076,46 @@ export default function Home() {
             {/* Wyszukiwarka — glass dark style (tylko Żywność) */}
             {mode === "food" && (
               <div className="mt-4">
-                {/* Hint label above the input — makes it obvious this is
-                    an alternative CTA to the scanner above. Mint accent
-                    matches food mode colour; the trailing gradient line
-                    visually ties it to the box below. */}
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 6,
-                    color: "rgba(110,252,180,0.7)",
-                    fontSize: 11,
-                    fontWeight: 700,
-                    letterSpacing: 1,
-                    textTransform: "uppercase",
-                    marginBottom: 8,
-                    marginLeft: 4,
-                  }}
-                >
-                  ✨ Albo wpisz / powiedz co zjadłeś
-                  <span
+                {/* Heading + explainer above the input. Tells user
+                    exactly what this CTA does ("powiedz / napisz → AI
+                    policzy kalorie") instead of leaving the value
+                    proposition to the placeholder. Mint accent +
+                    gradient divider keeps it stylistically tied to
+                    the food-mode visual language. */}
+                <div style={{ marginBottom: 10, marginLeft: 4 }}>
+                  <div
                     style={{
-                      flex: 1,
-                      height: 1,
-                      background:
-                        "linear-gradient(90deg, rgba(110,252,180,0.3), transparent)",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 6,
+                      color: "rgba(110,252,180,0.7)",
+                      fontSize: 11,
+                      fontWeight: 700,
+                      letterSpacing: 1,
+                      textTransform: "uppercase",
                     }}
-                  />
+                  >
+                    <span>💬 Powiedz co zjadłeś</span>
+                    <span
+                      style={{
+                        flex: 1,
+                        height: 1,
+                        background:
+                          "linear-gradient(90deg, rgba(110,252,180,0.3), transparent)",
+                      }}
+                    />
+                  </div>
+                  <div
+                    style={{
+                      fontSize: 11,
+                      color: "rgba(255,255,255,0.45)",
+                      marginTop: 4,
+                      fontWeight: 500,
+                      letterSpacing: 0.1,
+                    }}
+                  >
+                    AI policzy kalorie i makro
+                  </div>
                 </div>
                 <div
                   className="rounded-2xl overflow-hidden"
