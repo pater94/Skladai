@@ -460,11 +460,15 @@ export default function Home() {
         }
 
         const controller = new AbortController();
-        // Vercel serverless functions are capped at maxDuration=60s. Giving
-        // the client a 70s budget leaves ~10s for the server to send a 504
-        // if it dies, without making the user stare at a spinner for 90+
-        // seconds per attempt when the network is bad.
-        const timeout = setTimeout(() => controller.abort(), 70000);
+        // Vercel serverless functions are capped at maxDuration=60s, so we
+        // abort SLIGHTLY EARLIER (55s) and show our own retry UI. The old
+        // 70s budget meant: Vercel killed the function at 60s, then the
+        // client kept waiting 10s longer for a response that would never
+        // come — and during that gap the WKWebView in Capacitor showed
+        // its native "This page couldn't load" page instead of our
+        // friendly retry message. Better to admit failure 5s sooner with
+        // our own UI than to hit the iOS native error screen.
+        const timeout = setTimeout(() => controller.abort(), 55000);
         try {
           const res = await fetch("/api/analyze", {
             method: "POST",
