@@ -3,7 +3,13 @@ import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { randomUUID } from "crypto";
 import type { ScanMode } from "@/lib/types";
 
-export const maxDuration = 60;
+// Pro plan limit is 300s; we set 120s as a deliberate budget cap.
+// Why not 300s: anything that takes 2+ minutes is a UX bug, not a
+// budget problem. Keeping the ceiling at 2× the old Hobby cap gives
+// supplements + multi-step OCR pipelines breathing room (v3 sample
+// showed worst-case 82s for Witamina D+K) without inviting lazy
+// "let it run until it works" thinking.
+export const maxDuration = 120;
 
 /**
  * Prompt version stamped onto every scan_log row.
@@ -59,6 +65,22 @@ export const maxDuration = 60;
  *        helpful verdict ("Etykieta nieczytelna - zrób ostrzejsze
  *        zdjęcie") zamiast zostawiać halucynowany skład.
  *
+ *   v6 — (2026-05-12, Pro plan tune-up):
+ *        Confirmed Vercel Pro active. Tuned the analyze pipeline:
+ *          - maxDuration 60s → 120s (Pro allows up to 300s, but 2×
+ *            old cap is enough; longer = bug not budget)
+ *          - frontend timeout 55s → 110s to match
+ *          - Claude OCR fallback (food/cosmetics + suplement paths):
+ *              model: Sonnet → Haiku-4-5 (3-4× faster, ~10× cheaper)
+ *              timeout: 20s → 12s
+ *              SKIP entirely if elapsed > 35s — for round-packaging
+ *              scans (where v3 sample showed Claude OCR returns 0
+ *              chars anyway), this saves the budget for the main
+ *              analysis call and lets v4 enforceLabelReadabilityGuard
+ *              do its job (partial_label=true + "Brak etykiety" UI).
+ *        Expected impact: avg suplement scan time drops ~10-15s,
+ *        p95 stays under 90s, WKWebView errors disappear.
+ *
  *   v5 — (2026-04-26 wieczorem, actionable retry hints):
  *        v4 enforcement zostawiało user'a z genericznym "Etykieta
  *        nieczytelna" bez konkretnej rady. Frontend musi mieć z czym
@@ -76,7 +98,7 @@ export const maxDuration = 60;
  *        "Brak etykiety" widok z tymi polami zamiast pokazywać
  *        domyślny score-result layout z pustymi kartami.
  */
-const PROMPT_VERSION = "v5";
+const PROMPT_VERSION = "v6";
 
 // ==================== SCAN LOGGING (fire-and-forget) ====================
 
@@ -1826,21 +1848,32 @@ REGUŁY:
 Przeanalizuj suplement. Odpowiedz WYŁĄCZNIE JSON.`,
         });
       } else {
-        // Vision OCR returned nothing usable — try Claude OCR as fallback.
-        // This mirrors the food/cosmetics path; previously suplement went
-        // straight to "image-only, analyze" which caused the 100%
-        // OCR-null rate we saw in the v1 production sample.
-        console.log("[suplement] Vision OCR failed — falling back to Claude OCR");
-        const supplClaudeOcr = await callClaude(
-          apiKey,
-          "Jesteś precyzyjnym czytnikiem etykiet suplementów. Odczytaj DOKŁADNIE CAŁY tekst z tej etykiety suplementu: nazwę, markę, listę składników, dawki (mg / mcg / IU), %NRV, sposób przyjmowania, ostrzeżenia. Przepisz dokładnie — słowo w słowo. Nie pomijaj niczego, nie interpretuj.",
-          [
-            supplImgContent,
-            { type: "text", text: "Odczytaj CAŁY tekst z tej etykiety suplementu. Przepisz dokładnie, włącznie z liczbami i jednostkami." },
-          ],
-          2048,
-          20000
-        );
+        // Vision OCR returned nothing usable — try Claude Haiku as
+        // fallback IF budget allows. v6 changes:
+        //   - model: Sonnet → Haiku (3-4× faster, ~10× cheaper)
+        //   - timeout: 20s → 12s
+        //   - skip if elapsed > 35s — same reasoning as food/cosmetics
+        //     path (don't burn budget on a fallback that often returns
+        //     empty for round packaging anyway)
+        const supplFallbackElapsed = Date.now() - startTime;
+        if (supplFallbackElapsed >= 35000) {
+          console.log(`[suplement Claude OCR] skipped — elapsed ${supplFallbackElapsed}ms`);
+        } else {
+          console.log("[suplement] Vision OCR failed — falling back to Claude Haiku OCR");
+        }
+        const supplClaudeOcr = supplFallbackElapsed < 35000
+          ? await callClaude(
+              apiKey,
+              "Jesteś precyzyjnym czytnikiem etykiet suplementów. Odczytaj DOKŁADNIE CAŁY tekst z tej etykiety suplementu: nazwę, markę, listę składników, dawki (mg / mcg / IU), %NRV, sposób przyjmowania, ostrzeżenia. Przepisz dokładnie — słowo w słowo. Nie pomijaj niczego, nie interpretuj.",
+              [
+                supplImgContent,
+                { type: "text", text: "Odczytaj CAŁY tekst z tej etykiety suplementu. Przepisz dokładnie, włącznie z liczbami i jednostkami." },
+              ],
+              2048,
+              12000,
+              "claude-haiku-4-5"
+            )
+          : { error: true, text: "" };
 
         if (!supplClaudeOcr.error && supplClaudeOcr.text.length > 30) {
           supplOcrText = supplClaudeOcr.text;
@@ -2020,13 +2053,33 @@ REGUŁY:
 Zweryfikuj z obrazem. Odpowiedz WYŁĄCZNIE poprawnym JSON.${skinProfileHint}`,
       });
     } else {
-      // OCR failed — let Claude do the reading with specialized prompt
-      console.log("Google Vision OCR failed or empty — falling back to Claude OCR");
+      // OCR failed — try Claude Haiku as fallback IF budget allows.
+      // v6 changes vs v5:
+      //   - model: Sonnet → Haiku (3-4× faster, ~10× cheaper, accurate
+      //     enough for OCR which is "read this text" not "reason")
+      //   - timeout: 20s → 12s (Haiku rarely needs more for OCR)
+      //   - skip if elapsed > 35s — beyond that we'd risk exceeding the
+      //     120s Vercel cap. Better to fall through to image-only +
+      //     v4 server-side enforcement (which forces partial_label and
+      //     a clear "Brak etykiety" UI) than to time out the whole
+      //     scan and show user a WebView error
+      const fallbackElapsed = Date.now() - startTime;
       const ocrLabel = isCosmetics ? READ_COSMETICS_LABEL : READ_FOOD_LABEL;
-      const claudeOcr = await callClaude(apiKey, ocrLabel, [
-        imageContent,
-        { type: "text", text: "Odczytaj CAŁY tekst z tej etykiety. Przepisz dokładnie." },
-      ], 2048, 20000);
+      const claudeOcr = fallbackElapsed < 35000
+        ? await callClaude(
+            apiKey,
+            ocrLabel,
+            [imageContent, { type: "text", text: "Odczytaj CAŁY tekst z tej etykiety. Przepisz dokładnie." }],
+            2048,
+            12000,
+            "claude-haiku-4-5"
+          )
+        : { error: true, text: "" };
+      if (fallbackElapsed >= 35000) {
+        console.log(`[Claude OCR fallback] skipped — elapsed ${fallbackElapsed}ms too close to budget`);
+      } else {
+        console.log("Google Vision OCR failed or empty — falling back to Claude Haiku OCR");
+      }
 
       if (!claudeOcr.error && claudeOcr.text.length > 30) {
         ocrText = claudeOcr.text;
