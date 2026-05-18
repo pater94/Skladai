@@ -199,3 +199,43 @@ export function getIntroMessageForMode(mode: UserMode | null | undefined): strin
   const effective = (mode ?? "fitness") as UserMode;
   return MODE_PERSONAS[effective].introMessage;
 }
+
+// ────────────────────────────────────────────────────────────────────
+// BOTTOM NAV CONFIG (Etap 2 Krok B)
+// ────────────────────────────────────────────────────────────────────
+// Per-tryb: kolejność tabów + default tab (gdzie user trafia po
+// wyborze trybu) + accent color (fallback gdy route nie ma własnego
+// per-route koloru typu /forma orange, /promile indigo).
+
+export type NavRoute = "/" | "/forma" | "/dashboard" | "/profil";
+
+export interface ModeNavConfig {
+  /** Kolejność wyświetlania tabów w bottom nav */
+  tabs: NavRoute[];
+  /** Default tab po pomyślnym wyborze trybu (router.push) */
+  defaultTab: NavRoute;
+  /** Mode-specific accent — fallback gdy current route nie ma override */
+  navAccentColor: string;
+}
+
+export const MODE_NAV_CONFIG: Record<UserMode, ModeNavConfig> = {
+  fitness: {
+    tabs: ["/", "/forma", "/dashboard", "/profil"],
+    defaultTab: "/",
+    navAccentColor: "#6efcb4",
+  },
+  health: {
+    tabs: ["/", "/dashboard", "/forma", "/profil"],
+    defaultTab: "/dashboard",
+    navAccentColor: "#22d3ee",
+  },
+  cosmetics: {
+    tabs: ["/", "/dashboard", "/forma", "/profil"],
+    defaultTab: "/",
+    navAccentColor: "#C084FC",
+  },
+};
+
+export function getNavConfigForMode(mode: UserMode | null | undefined): ModeNavConfig {
+  return MODE_NAV_CONFIG[(mode ?? "fitness") as UserMode];
+}

@@ -25,20 +25,29 @@ import { setUserMode } from "@/lib/hooks/useUserMode";
 import type { UserMode } from "@/lib/types";
 
 interface Props {
-  onComplete: () => void;
+  /**
+   * Wywołane po wyborze trybu z arg `mode`. OnboardingWrapper decyduje
+   * co dalej (Etap 2 Krok B/D/E):
+   *   - fitness   → router.push(defaultTab) + setState('hidden')
+   *   - health    → setState('health-conditions') [krok D]
+   *   - cosmetics → setState('skin-type') [krok E]
+   * Etap 2 Krok B przekazuje wybrany mode w callbacku — Etap 1
+   * miał `() => void` bez args.
+   */
+  onComplete: (mode: UserMode) => void;
 }
 
 export default function ModePickerScreen({ onComplete }: Props) {
   const handleSelect = (mode: UserMode) => {
     setUserMode(mode, true);
-    onComplete();
+    onComplete(mode);
   };
 
   const handleSkip = () => {
     // Pomiń: zapisujemy domyślny tryb (fitness), ale flag
     // explicitly_chosen=false sygnalizuje że to nie był świadomy wybór.
     setUserMode("fitness", false);
-    onComplete();
+    onComplete("fitness");
   };
 
   return (

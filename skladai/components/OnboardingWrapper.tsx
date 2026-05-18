@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import OnboardingLogin from "./OnboardingLogin";
 import ModePickerScreen from "./ModePickerScreen";
 import { createClient } from "@/lib/supabase";
@@ -11,6 +11,8 @@ import { pullFromCloud } from "@/lib/sync";
 import { nsGet, nsSet, nsSelfTest } from "@/lib/native-storage";
 import { registerOAuthCallbackListener } from "@/lib/native-oauth";
 import { getProfile } from "@/lib/storage";
+import { getNavConfigForMode } from "@/lib/modes";
+import type { UserMode } from "@/lib/types";
 
 const ONBOARDED_KEY = "onboardingCompleted";
 const SESSION_BACKUP_KEY = "skladai_session_backup_v1";
@@ -101,6 +103,7 @@ export default function OnboardingWrapper() {
   // will reject the submission if /privacy redirects / overlays instead
   // of showing the Privacy Policy.
   const pathname = usePathname();
+  const router = useRouter();
   const isPublic = isPublicPath(pathname);
 
   useEffect(() => {
@@ -377,12 +380,22 @@ export default function OnboardingWrapper() {
   if (isPublic) return null;
   if (state === "checking" || state === "hidden") return null;
 
-  // Mode picker — etap 1: full-screen wybór trybu po sign-in
+  // Mode picker — etap 1: full-screen wybór trybu po sign-in.
+  // Etap 2 Krok B: po wyborze router.push do defaultTab dla trybu
+  // (fitness → "/", health → "/dashboard", cosmetics → "/").
+  // Etap 2 Kroki D+E (post): health → setState("health-conditions"),
+  // cosmetics → setState("skin-type"). Tu w Kroku B wszystkie 3 tryby
+  // idą prosto do defaultTab — D/E dorobimy w odpowiednich krokach.
   if (state === "mode-picker") {
     return (
       <ModePickerScreen
-        onComplete={() => {
+        onComplete={(chosenMode: UserMode) => {
           setState("hidden");
+          const target = getNavConfigForMode(chosenMode).defaultTab;
+          // router.push wewnątrz React component callback OK — async
+          // navigation Next.js. Window.scrollTo żeby reset scroll
+          // na nowej stronie.
+          router.push(target);
           window.scrollTo(0, 0);
         }}
       />
