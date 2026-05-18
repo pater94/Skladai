@@ -937,6 +937,31 @@ export default function ProfilPage() {
               >
                 Resetuj limity czatu DEMO
               </button>
+              {/* Reset trybu — etap 1 (testowanie mode pickera) */}
+              <button
+                onClick={() => {
+                  const p = getProfile();
+                  if (p) {
+                    saveProfile({ ...p, mode: null, mode_explicitly_chosen: false });
+                    window.dispatchEvent(new Event("user-mode-changed"));
+                    alert(
+                      "Tryb zresetowany. Następny pomyślny sign-in (lub odświeżenie po " +
+                      "wylogowaniu i zalogowaniu) pokaże ekran wyboru trybu."
+                    );
+                  } else {
+                    alert("Brak profilu — najpierw przejdź onboarding.");
+                  }
+                }}
+                style={{
+                  width: "100%", padding: 10, borderRadius: 10,
+                  background: "rgba(245,158,11,0.08)",
+                  border: "1px dashed rgba(245,158,11,0.5)",
+                  color: "#f59e0b",
+                  fontSize: 12, fontWeight: 700, cursor: "pointer",
+                }}
+              >
+                🔄 Resetuj wybór trybu DEMO
+              </button>
             </div>
             <p style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", marginTop: 10, marginBottom: 0, lineHeight: 1.4 }}>
               Widoczne tylko w wersji testowej. Przed release w sklepach te narzędzia znikają — ustaw IS_DEMO=false w lib/config.ts.
