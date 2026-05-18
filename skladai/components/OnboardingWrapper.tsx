@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
 import OnboardingLogin from "./OnboardingLogin";
 import ModePickerScreen from "./ModePickerScreen";
@@ -87,6 +87,15 @@ export default function OnboardingWrapper() {
   // gdy user nie ma jeszcze `profile.mode`. Render z ModePickerScreen.
   const [state, setState] = useState<"checking" | "hidden" | "full" | "login" | "mode-picker">("checking");
 
+  // Idempotent guard dla enterAppOrShowModePicker. Bez tego mode picker
+  // miga: SIGNED_IN + TOKEN_REFRESHED + INITIAL_SESSION events odpalają
+  // helpera kilka razy w ciągu 100-500ms, każdy z innym snapshotem
+  // profile.mode w localStorage (race między pullFromCloud a saveProfile).
+  // Z refem: pierwsze wywołanie po sign-in decyduje "hidden" vs "mode-picker",
+  // następne bailują out. Reset na SIGNED_OUT (user się wylogował, nowa sesja
+  // może mieć inny mode state).
+  const modeDecisionMadeRef = useRef(false);
+
   // Public routes (privacy, support, delete-account, …) must render their
   // own content without ever seeing the onboarding overlay. Apple Review
   // will reject the submission if /privacy redirects / overlays instead
@@ -109,7 +118,17 @@ export default function OnboardingWrapper() {
     // (gdy brak `profile.mode`) czy od razu ukryć wrapper. Wywołać PO
     // pullFromCloud() żeby istniejący wybór z innego urządzenia był
     // już widoczny w lokalnym profilu.
+    //
+    // GUARD: tylko PIERWSZE wywołanie po mount/sign-out decyduje. Kolejne
+    // calls (z TOKEN_REFRESHED, INITIAL_SESSION, dodatkowych pull cycles)
+    // bailują — bez tego mode picker miga gdy pull cloud kończy się
+    // później niż pierwszy event. Reset flagi przy SIGNED_OUT.
     const enterAppOrShowModePicker = () => {
+      if (modeDecisionMadeRef.current) {
+        devLog("[Onboarding] enterAppOrShowModePicker — already decided, skip");
+        return;
+      }
+      modeDecisionMadeRef.current = true;
       const p = getProfile();
       if (!p || !p.mode) {
         devLog("[Onboarding] No mode set → showing ModePickerScreen");
@@ -238,6 +257,10 @@ export default function OnboardingWrapper() {
         nsSet(SESSION_BACKUP_KEY, "").catch(() => {});
         // Disconnect user from RevenueCat on sign-out
         resetUser().catch(() => {});
+        // Reset mode picker decision flag — next sign-in może być
+        // innym kontem z innym mode state, helper musi móc znowu
+        // zdecydować.
+        modeDecisionMadeRef.current = false;
       }
 
       if (session && (event === "SIGNED_IN" || event === "TOKEN_REFRESHED" || event === "INITIAL_SESSION")) {
