@@ -322,6 +322,20 @@ export default function OnboardingWrapper() {
     // they navigate back out.
   }, [isPublic]);
 
+  // Listen for "request-login" — dispatched by Profil "Zaloguj się"
+  // CTA gdy guest user chce wjechać na auth flow. Bez tego event'u user
+  // który raz kliknął "Pomiń" nie ma path do logowania (state=hidden,
+  // brak SIGNED_OUT bo nigdy nie był zalogowany).
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const handler = () => {
+      devLog("[Onboarding] request-login event → surfacing login screen");
+      setState("login");
+    };
+    window.addEventListener("request-login", handler);
+    return () => window.removeEventListener("request-login", handler);
+  }, []);
+
   // Hide bottom nav while any onboarding screen is visible (full, login,
   // mode-picker). "checking" + "hidden" pozwalają na widzenie main app.
   useEffect(() => {

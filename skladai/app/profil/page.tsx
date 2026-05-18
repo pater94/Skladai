@@ -415,6 +415,66 @@ export default function ProfilPage() {
 
       <div style={{ padding: "0 16px 24px" }}>
 
+        {/* === Guest user CTA (etap 1: fix bug "po Pomiń brak logowania") ===
+            Pokazuje się TYLKO gdy authEmail === null (user wszedł przez
+            "Pomiń" na onboarding loginie). Kliknięcie dispatchuje event
+            "request-login" który OnboardingWrapper łapie → setState("login")
+            → user widzi ekran logowania. */}
+        {!authEmail && (
+          <GlassCard
+            style={{
+              border: "1px solid rgba(110,252,180,0.3)",
+              background: "linear-gradient(180deg, rgba(110,252,180,0.06), rgba(110,252,180,0.02))",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <div
+                style={{
+                  width: 40,
+                  height: 40,
+                  borderRadius: 12,
+                  background: "rgba(110,252,180,0.15)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  flexShrink: 0,
+                  fontSize: 20,
+                }}
+              >
+                ☁️
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: "white", marginBottom: 2 }}>
+                  Korzystasz bez konta
+                </div>
+                <div style={{ fontSize: 11, color: "rgba(255,255,255,0.55)", lineHeight: 1.3 }}>
+                  Zaloguj się żeby synchronizować dane między urządzeniami
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  if (typeof window !== "undefined") {
+                    window.dispatchEvent(new Event("request-login"));
+                  }
+                }}
+                style={{
+                  background: "linear-gradient(135deg, #6efcb4, #3dd990)",
+                  color: "#0a0e0c",
+                  border: "none",
+                  padding: "8px 14px",
+                  borderRadius: 100,
+                  fontSize: 12,
+                  fontWeight: 800,
+                  cursor: "pointer",
+                  flexShrink: 0,
+                }}
+              >
+                Zaloguj się
+              </button>
+            </div>
+          </GlassCard>
+        )}
+
         {/* Activity & Goal */}
         <GlassCard>
           <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 12 }}>
