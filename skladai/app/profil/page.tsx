@@ -902,17 +902,20 @@ export default function ProfilPage() {
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               <button
                 onClick={async () => {
-                  // 1) Kasuj z localStorage (sync) + 2) Capacitor Preferences
-                  //    (async, iOS UserDefaults nie czyści się sam) +
-                  // 3) hard reload — gwarantuje że useEffect'y w mounted
-                  //    komponentach (AgentFAB, ScanLimitBanner, Profil) zaciągną
-                  //    świeży state. Na iOS WKWebView localStorage potrafi
-                  //    zwracać cached value przez kilka ticks po zapisie —
-                  //    reload to obchodzi.
-                  if (!deactivatePremiumDemo()) return;
+                  // v2: alert() blokuje wątek aż user klika OK — daje
+                  //   Patrykowi natychmiastowy sygnał że klik dotarł
+                  //   (gdy alert NIE pojawia się = stary cache JS w WKWebView).
+                  // Plus pełny cleanup: localStorage + Capacitor Preferences
+                  // (UserDefaults) + reload żeby świeży mount na każdej apce.
+                  const ok = deactivatePremiumDemo();
                   try { await nsRemove("skladai_premium"); } catch {}
                   window.dispatchEvent(new Event("premium-changed"));
-                  setTimeout(() => window.location.reload(), 150);
+                  alert(
+                    ok
+                      ? "✓ Premium DEMO zresetowane.\nApka się zaraz odświeży."
+                      : "Reset nie powiódł się (IS_DEMO=false?).\nSprawdź lib/config.ts"
+                  );
+                  if (ok) window.location.reload();
                 }}
                 style={{
                   width: "100%", padding: 10, borderRadius: 10,
@@ -926,15 +929,19 @@ export default function ProfilPage() {
               </button>
               <button
                 onClick={async () => {
-                  if (!resetChatLimitsDemo()) return;
-                  // AgentChat counter keys — czyść też z Preferences
+                  const ok = resetChatLimitsDemo();
                   try {
                     await nsRemove("agent_free_msgs");
                     await nsRemove("agent_daily_msgs");
                     await nsRemove("agent_daily_date");
                   } catch {}
                   window.dispatchEvent(new Event("chat-limits-reset"));
-                  setTimeout(() => window.location.reload(), 150);
+                  alert(
+                    ok
+                      ? "✓ Limity czatu zresetowane.\nApka się zaraz odświeży."
+                      : "Reset nie powiódł się (IS_DEMO=false?)."
+                  );
+                  if (ok) window.location.reload();
                 }}
                 style={{
                   width: "100%", padding: 10, borderRadius: 10,
@@ -955,11 +962,13 @@ export default function ProfilPage() {
                     return;
                   }
                   saveProfile({ ...p, mode: null, mode_explicitly_chosen: false });
-                  // Profil jest w SYNC_KEYS — cloud może mieć stary mode.
-                  // Reload zapewnia że OnboardingWrapper pobierze świeży stan
-                  // i (po następnym SIGNED_IN) pokaże mode picker.
                   window.dispatchEvent(new Event("user-mode-changed"));
-                  setTimeout(() => window.location.reload(), 150);
+                  alert(
+                    "✓ Tryb zresetowany.\n" +
+                    "Apka się zaraz odświeży. Po reload wyloguj się + zaloguj " +
+                    "ponownie żeby zobaczyć ekran wyboru trybu."
+                  );
+                  window.location.reload();
                 }}
                 style={{
                   width: "100%", padding: 10, borderRadius: 10,
