@@ -1,25 +1,44 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Scan, Dumbbell, BarChart3, User } from "lucide-react";
+import { useUserMode } from "@/lib/hooks/useUserMode";
+import { getNavConfigForMode, type NavRoute } from "@/lib/modes";
 
+// Master TAB definitions — keep ALL 4 zawsze. Per-mode reorder via
+// MODE_NAV_CONFIG. NIE usuwać tabów z tej tablicy, BottomNav może
+// fallbackować do oryginalnej kolejności jeśli mode byłby błędny.
 const TABS = [
   { href: "/", icon: Scan, label: "Skanuj" },
   { href: "/forma", icon: Dumbbell, label: "Forma" },
   { href: "/dashboard", icon: BarChart3, label: "Dashboard" },
   { href: "/profil", icon: User, label: "Profil" },
-];
+] as const;
 
-function getThemeColors(pathname: string) {
+// Quick lookup po href dla reorder logic
+const TAB_BY_HREF = new Map<string, (typeof TABS)[number]>(
+  TABS.map((t) => [t.href, t])
+);
+
+/**
+ * Theme color resolution priority (Etap 2 Krok B):
+ *   1. Per-route override (/forma=orange, /biegacz=orange, /promile=indigo)
+ *      → te specjalistyczne strony mają własną tożsamość, NIE nadpisujemy
+ *        ich kolorem trybu (decyzja Q3 = C)
+ *   2. Mode-aware accent (fitness=mint, health=cyan, cosmetics=purple)
+ *      → wszystkie inne strony (Skaner home, Dashboard, Profil, premium itd.)
+ *   3. Brand mint fallback (gdy `mode` jeszcze nie loaded)
+ */
+function getThemeColors(pathname: string, modeAccent: string | null) {
   if (pathname === "/forma" || pathname === "/biegacz") {
     return { active: "#f97316", inactive: "rgba(255,255,255,0.25)" };
   }
   if (pathname === "/promile") {
     return { active: "#818CF8", inactive: "rgba(255,255,255,0.2)" };
   }
-  return { active: "#6efcb4", inactive: "rgba(255,255,255,0.25)" };
+  return { active: modeAccent ?? "#6efcb4", inactive: "rgba(255,255,255,0.25)" };
 }
 
 // Public / static pages where the in-app BottomNav would look out of
@@ -40,6 +59,19 @@ const HIDDEN_PREFIXES = [
 export default function BottomNav() {
   const pathname = usePathname();
   const hidden = HIDDEN_PREFIXES.some((p) => pathname === p || pathname.startsWith(p + "/"));
+
+  // Etap 2 Krok B: mode-aware reorder. Reorder bezpieczny — jeśli
+  // któryś tab z config nie istnieje w master TABS, filter usuwa go.
+  const { mode } = useUserMode();
+  const navConfig = useMemo(() => getNavConfigForMode(mode), [mode]);
+  const orderedTabs = useMemo(() => {
+    const ordered = navConfig.tabs
+      .map((href) => TAB_BY_HREF.get(href))
+      .filter((t): t is (typeof TABS)[number] => t !== undefined);
+    // Defensive: jeśli reorder coś popsuł (np. mode dodał nieistniejący tab),
+    // fallback do master TABS żeby user nie został z pustym nav
+    return ordered.length === TABS.length ? ordered : TABS;
+  }, [navConfig]);
 
   // Track onboarding-active class on body to hide nav during onboarding
   const [onboarding, setOnboarding] = useState(false);
@@ -64,7 +96,7 @@ export default function BottomNav() {
 
   if (hidden || onboarding) return null;
 
-  const theme = getThemeColors(pathname);
+  const theme = getThemeColors(pathname, navConfig.navAccentColor);
 
   return (
     <nav
@@ -92,7 +124,7 @@ export default function BottomNav() {
         display: "flex", justifyContent: "space-around", alignItems: "center",
         height: "100%", padding: "0 8px",
       }}>
-        {TABS.map((tab) => {
+        {orderedTabs.map((tab) => {
           const isActive = tab.href === "/" ? pathname === "/" : pathname.startsWith(tab.href);
           const Icon = tab.icon;
           const color = isActive ? theme.active : theme.inactive;

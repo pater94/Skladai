@@ -1,12 +1,25 @@
 # SkładAI — AUDIT.md
 
-> **Wygenerowano:** 2026-05-18 przez Claude Code dla Patryka
+> **Wygenerowano:** 2026-05-18 przez Claude Code, **odświeżone 2026-05-18**
+> post-Etap 1 (commit `68373df` + hotfixes do `e9a3b9a`).
+>
 > **Cel:** kontekst projektu dla Claude.ai (web) który planuje zmiany,
 > potem przekazuje implementację tutaj. **Single source of truth o stanie
 > kodu na dzień generacji.**
 >
-> **Następna zmiana:** system 3 trybów aplikacji (mode picker po Sign In
-> + sekcja w Profilu + pole `user.mode` w bazie + konsekwencje w UI).
+> **Następna zmiana:** Etap 2 — konsekwencje wybranego trybu
+> (persona Agent AI, bottom nav reorder, default scan category,
+> rozszerzony onboarding `health`+`cosmetics`, mode-aware accent,
+> health alerts, medical disclaimer, smart nudge).
+>
+> **Co już zrobione (Etap 1):**
+>   - 3-mode system zapisany do `UserProfile.mode` + sync do Supabase
+>   - Mode picker po sign-in z idempotent guard (no race flash)
+>   - Sekcja "⚡ Tryb aplikacji" w Profilu z confirm dialog
+>   - "Pomiń" bug fix — guest user CTA "Zaloguj się" w Profilu
+>     + `request-login` window event w `OnboardingWrapper`
+>   - DEMO reset buttons (Premium / chat / mode) z `nsRemove` +
+>     `pushToCloud` + hard reload — działają na iOS WKWebView
 
 ---
 
@@ -28,8 +41,9 @@
 ## 1. ONBOARDING & AUTH FLOW
 
 ### Pliki
-- **`components/OnboardingWrapper.tsx`** — state machine (`"checking" | "hidden" | "full" | "login"`)
+- **`components/OnboardingWrapper.tsx`** — state machine (`"checking" | "hidden" | "full" | "login" | "mode-picker"`). **Etap 1 dodał** `"mode-picker"` + idempotent `modeDecisionMadeRef` (zapobiega race condition flash gdy SIGNED_IN/TOKEN_REFRESHED/INITIAL_SESSION events odpalają helpera kilkukrotnie po sign-in). Plus event listener `"request-login"` (z guest user CTA w Profilu).
 - **`components/OnboardingLogin.tsx`** — UI slide deck (3 slidy + slide loginu) + Apple/Google sign-in + "Pomiń" button
+- **`components/ModePickerScreen.tsx`** — **NOWE w Etapie 1.** Pełnoekranowy wybór trybu (3 karty + Pomiń) z animowanymi ikonami (orbital ring + bg pulse + float). Zapisuje `mode` via `setUserMode()`. Render gated przez `state === "mode-picker"` w OnboardingWrapper.
 - **`lib/native-oauth.ts`** — Capacitor OAuth flow (custom URL scheme `com.skladai.app://oauth-callback` → SFSafariViewController via `@capacitor/browser`)
 - **`lib/native-storage.ts`** — `nsGet`/`nsSet`/`nsRemove` (Capacitor Preferences + localStorage backup)
 - **`lib/supabase.ts`** — klient Supabase z custom `storage` adapter (`supabaseAuthStorage`) który używa Preferences
@@ -80,17 +94,13 @@ onSkip={() => {
 
 ### Status buga "po Pomiń nie da się zalogować"
 
-**NIE NAPRAWIONY** w 100%. Status:
+✅ **NAPRAWIONY w Etapie 1** (commit `0cc3759`).
 
-- Po Pomiń: `state="hidden"`, `OnboardingWrapper` zwraca `null` przy każdym mount. User nie zobaczy ekranu logowania z poziomu apki.
-- W `app/profil/page.tsx` linia 64: `const [authEmail, setAuthEmail] = useState<string | null>(null);` — jest read sesji, pokazuje email jeśli zalogowany
-- **BRAK CTA "Zaloguj się"** w Profilu dla użytkownika który wszedł przez Pomiń. Aby zalogować się musi:
-  - Wylogować się (ale nie jest zalogowany — N/A)
-  - **ALBO** ręcznie wymuszić powrót do onboardingu (brak takiej akcji w UI)
-- Workaround obecny: `OnboardingWrapper` reaguje na `SIGNED_OUT` event z `setState("login")` — ale to działa tylko jeśli user był wcześniej zalogowany, NIE dla skip-flow
-
-**Co trzeba dodać** (do zaplanowania w Claude.ai jeśli chcesz to zrobić przy okazji 3-trybów):
-- W Profilu, gdy `authEmail === null`, pokazać kartę "Zaloguj się żeby synchronizować dane" z przyciskiem który ponownie pokazuje `OnboardingLogin` (lub redirectuje na dedykowany `/zaloguj` route)
+Mechanizm fix:
+- `app/profil/page.tsx` — gdy `authEmail === null`, render dedykowany GlassCard "☁️ Korzystasz bez konta" z gradient pill button "Zaloguj się"
+- Click → `window.dispatchEvent(new Event("request-login"))`
+- `OnboardingWrapper` ma listener który łapie ten event → `setState("login")` → user widzi login screen
+- Po sign-in → mode picker (jeśli mode null) → user trafia normalnie do apki, guest CTA znika
 
 ---
 
@@ -141,7 +151,15 @@ export interface UserProfile {
   onboarding_complete: boolean;
   created_at: string;
   updated_at: string;
+
+  // === Tryby aplikacji (etap 1) ===
+  /** Wybrany tryb. null/undefined = jeszcze nie wybrał (pokazujemy mode picker). */
+  mode?: UserMode | null;
+  /** true gdy user świadomie wybrał tryb; false gdy pominął lub fallback. */
+  mode_explicitly_chosen?: boolean;
 }
+
+export type UserMode = "fitness" | "health" | "cosmetics";
 ```
 
 ### Schema Supabase
@@ -191,20 +209,13 @@ const email = user?.email ?? null;
 
 ### Jak update profilu
 
-`saveProfile(profile)` z `lib/storage.ts:137` — pisze do localStorage + `notifyChange()` event. **NIE** auto-push do Supabase — push robi `CloudSync` komponent z layoutu (debounced).
+`saveProfile(profile)` z `lib/storage.ts:137` — pisze do localStorage + `notifyChange()` event (dispatch `"local-data-changed"`). **NIE** auto-push do Supabase — push robi `CloudSync` komponent z layoutu (debounced). **Dla DEMO reset trybu** w Etapie 1 dodaliśmy explicit `await pushToCloud()` przed reload — bez tego cloud nadpisywał lokalny null mode starym mode przy następnym pull.
 
-**Brakuje**: globalnego hook'a typu:
-```ts
-const { profile, updateProfile } = useProfile();
-```
+**Brakuje**: globalnego hook'a typu `useProfile()` — każdy komponent który pokazuje profile musi sam zarządzać state'em. Wyjątek: **`useUserMode()` z `lib/hooks/useUserMode.ts`** (Etap 1) — event-driven hook do `mode` + `setUserMode()` setter z dispatch `"user-mode-changed"`. **Wzorzec do replikacji** dla innych pól profilu które wymagają reactive sync.
 
-który by ułatwił reactive updates. Aktualnie każdy komponent który pokazuje profile musi sam zarządzać state'em.
+### Implikacje dla 3-trybów — IMPLEMENTED w Etapie 1
 
-### Implikacje dla 3-trybów
-
-Dla pola `user.mode`:
-- **Opcja A** — dodać `mode` do `UserProfile` interface w `lib/types.ts`, leci automatycznie przez istniejący sync (CloudSync push'uje `skladai_profile`). **Zalecane** — zero new infra.
-- **Opcja B** — osobna tabela / klucz. Wymaga rozszerzenia `SYNC_KEYS`. Niepotrzebnie skomplikowane.
+`UserProfile.mode` jest częścią `skladai_profile` jsonb blob który jest w `SYNC_KEYS` — leci automatycznie przez CloudSync push/pull. Zero nowej infra.
 
 ---
 
@@ -213,16 +224,18 @@ Dla pola `user.mode`:
 ### Plik
 **`app/profil/page.tsx`** (734 linie, jedna funkcja `ProfilPage`)
 
-### Kolejność sekcji (od góry)
+### Kolejność sekcji (od góry, post-Etap 1)
 
-1. **Header** (linia 255) — avatar (literka z imienia w kółku z gradient mint→blue) + powitanie + streak + scan count + license badge ("FREE" / "PRO+")
-2. **GlassCard: "Aktywność i cel"** (linia 287-301) — pokazuje current goal + activity level + target_calories
-3. **Apple Health / Health Connect** (linia 303+, conditional `health.isNative`) — toggle "Połączono" / "Połącz" + 3 metrics (kroki, kalorie, sen)
-4. **GlassCard: "Profil zdrowotny"** (linia 467-502) — alergeny, dieta, cukrzyca, ciąża badges
-5. **GlassCard: "Progres do celu"** (linia 506-575) — weight history + wykres + button "Dodaj wagę"
-6. **GlassCard: "Twoje dzienne normy"** (linia 578-631) — collapsible (`normsOpen` state): calories, protein, fat, carbs, salt, sugar, fiber, water
-7. **GlassCard: "Konto"** (linia 634-672) — email, "Wyloguj się" button (jeśli zalogowany), "Usuń konto" link
-8. **GlassCard: "Narzędzia DEMO"** (linia 673+, conditional `IS_DEMO`) — "Resetuj Premium DEMO", "Resetuj limity czatu DEMO"
+1. **Header** — avatar (literka z imienia w kółku z gradient mint→blue) + powitanie + streak + scan count + license badge ("FREE" / "PRO+")
+2. **🔥 Guest user CTA "Korzystasz bez konta"** (NOWE w Etapie 1) — pokazuje się tylko gdy `authEmail === null`. GlassCard z mint border + gradient button "Zaloguj się" → dispatch `request-login` event
+3. **GlassCard: "Aktywność i cel"** — pokazuje current goal + activity level + target_calories
+4. **🔥 GlassCard: "⚡ Tryb aplikacji"** (NOWE w Etapie 1) — 3 ModeRow mini-cards (fitness / health / cosmetics) z confirm dialog na zmianę. Active mode = colored border + ✓
+5. **Apple Health / Health Connect** (conditional `health.isNative`) — toggle "Połączono" / "Połącz" + 3 metrics
+6. **GlassCard: "Profil zdrowotny"** — alergeny, dieta, cukrzyca, ciąża badges
+7. **GlassCard: "Progres do celu"** — weight history + wykres + button "Dodaj wagę"
+8. **GlassCard: "Twoje dzienne normy"** — collapsible: calories, protein, fat, carbs, salt, sugar, fiber, water
+9. **GlassCard: "Konto"** — email, "Wyloguj się" button (jeśli zalogowany), "Usuń konto" link
+10. **GlassCard: "Narzędzia DEMO"** (conditional `IS_DEMO`) — 3 buttony: Resetuj Premium DEMO, Resetuj limity czatu DEMO, **🔥 Resetuj wybór trybu DEMO** (NOWE). Każdy z `nsRemove` + `pushToCloud` (dla mode) + hard reload — działa na iOS WKWebView.
 
 ### Komponent vs inline
 
@@ -264,18 +277,17 @@ Kolory używane w Profilu (powtarzające się patterns):
 
 ## 4. CONDITIONAL UI (Premium / Free)
 
-### Hook
+### Hooki (post-Etap 1)
 
-**`lib/hooks/usePremium.ts`** — jedyny istniejący hook poza `useHealthData` i `useSpeechToText`.
+1. **`lib/hooks/usePremium.ts`** — `{ isPremium, loading, refresh }`.
+   Pattern: RevenueCat → localStorage fallback. Słucha `premium-changed` event.
 
-```ts
-const { isPremium, loading, refresh } = usePremium();
-```
+2. **🔥 `lib/hooks/useUserMode.ts`** (NOWE w Etapie 1) — `{ mode, explicitlyChosen, hasProfile, loading }` + exported `setUserMode(mode, explicit)`.
+   Pattern: czyta `getProfile()?.mode`, słucha `"user-mode-changed"` + `"local-data-changed"` events. Fallback do `"fitness"` gdy brak.
 
-Pattern:
-1. Próbuje `checkPremium()` z RevenueCat (native only — web zwraca false)
-2. Fallback do `isLocalPremium()` z `lib/storage.ts` (localStorage `skladai_premium`)
-3. **Słucha window event `premium-changed`** — każda zmiana stanu premium (DEMO activate, RC purchase, logout) dispatchuje ten event, hook re-checkuje. Naprawione w commit `e1fbed0`.
+3. **`lib/useHealthData.ts`** — Apple Health / Health Connect (Capacitor native).
+
+4. **`lib/useSpeechToText.ts`** — Web Speech API.
 
 ### Komponenty używające `usePremium`
 
@@ -283,31 +295,15 @@ Pattern:
 - `components/ScanLimitBanner.tsx` — pokazuje counter scanów
 - (Profil i inne pages odczytują `isPremium` przez prop drilling z głównych komponentów lub direct call)
 
-### Pattern dla "mode" (Twój następny ruch)
+### Pattern dla nowych pól wymagających reactive sync
 
-**Polecam ten sam wzorzec** dla `useUserMode()`:
+Wzorować się na `useUserMode` (Etap 1) lub `usePremium`. Każdy hook:
+1. Czyta źródło prawdy (`getProfile()` lub innego storage)
+2. Słucha dedykowanego window event (`"<feature>-changed"`)
+3. Setter writes do storage + dispatch event
+4. Inne komponenty mountowane z tym hookiem auto-refresh
 
-```ts
-// lib/hooks/useUserMode.ts
-export type UserMode = "standard" | "expert" | "minimal";
-
-export function useUserMode() {
-  const [mode, setMode] = useState<UserMode>("standard");
-  useEffect(() => {
-    const profile = getProfile();
-    setMode(profile?.mode ?? "standard");
-    const handler = () => {
-      const p = getProfile();
-      setMode(p?.mode ?? "standard");
-    };
-    window.addEventListener("user-mode-changed", handler);
-    return () => window.removeEventListener("user-mode-changed", handler);
-  }, []);
-  return mode;
-}
-```
-
-Wtedy `saveProfile({ ...profile, mode: "expert" })` + `dispatchEvent(new Event("user-mode-changed"))` propaguje wszędzie.
+Zaleta: zero global state library, działa cross-component bez Context provider, dziedziczy z reload bo storage source-of-truth.
 
 ---
 
@@ -573,22 +569,28 @@ Jeśli Claude.ai potrzebuje skierować Patryka do konkretnego pliku przy planowa
 | Co chcesz zmienić | Plik |
 |---|---|
 | Onboarding slides / Apple/Google sign-in / Pomiń button | `components/OnboardingLogin.tsx` |
-| Auth state machine / session restore | `components/OnboardingWrapper.tsx` |
-| Profil page (kolejność sekcji, GlassCardy) | `app/profil/page.tsx` |
+| **Mode picker po sign-in (Etap 1)** | `components/ModePickerScreen.tsx` |
+| Auth state machine / session restore + mode picker gating | `components/OnboardingWrapper.tsx` |
+| Profil page (kolejność sekcji, GlassCardy, "Tryb aplikacji") | `app/profil/page.tsx` |
 | Bottom nav (taby, kolejność, theme) | `components/BottomNav.tsx` |
 | Layout root (co się montuje globalnie) | `app/layout.tsx` |
 | Skaner home screen (mode tabs, CTA, Lodówka, Galeria) | `app/page.tsx` |
 | Wynik scan UI | `app/wyniki/[id]/page.tsx` |
 | Agent AI chat (UI + voice + TTS) | `components/AgentChat.tsx` |
+| Agent AI backend (system prompt + ctx builder) | `app/api/chat/route.ts` |
 | Voice → diary entries flow | `components/VoiceLog.tsx` |
+| Skin profile (już istnieje, **NIE duplikować** w UserProfile) | `components/SkinProfileSetup.tsx` + `skladai_skin_profile` localStorage key |
 | Premium paywall (cena, features lista) | `app/premium/page.tsx` |
 | Admin dashboard scanów | `app/admin/page.tsx` |
-| Type `UserProfile` | `lib/types.ts:317` |
+| Type `UserProfile` + `UserMode` | `lib/types.ts:317` |
+| **Modes catalog (Etap 1)** — MODES, MODE_LABELS, animation params | `lib/modes.tsx` (NIE .ts, bo JSX paths) |
 | Profile getter/setter | `lib/storage.ts:124-145` |
 | Premium hook | `lib/hooks/usePremium.ts` |
+| **Mode hook + setter (Etap 1)** | `lib/hooks/useUserMode.ts` |
 | Health (Apple Health / Google Fit) hook | `lib/useHealthData.ts` |
 | Speech-to-text hook | `lib/useSpeechToText.ts` |
 | Anthropic / Vision / OpenAI keys + IS_DEMO flag | `.env.local` + `lib/config.ts` |
+| Mode picker keyframes | `app/globals.css` (`modeAmbientShift`, `modeDotPulse`, `modeIconPulse`, `modeRingSpin`, `modeFloat`) |
 
 ---
 

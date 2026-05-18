@@ -101,3 +101,162 @@ export const MODE_LABELS: Record<UserMode, string> = {
 export function getModeDef(mode: UserMode): ModeDef {
   return MODES.find((m) => m.id === mode) ?? MODES[0];
 }
+
+// ────────────────────────────────────────────────────────────────────
+// AGENT AI PERSONAS (Etap 2 Krok A)
+// ────────────────────────────────────────────────────────────────────
+// Każdy tryb ma swoją personę Agent AI — system prompt fragment +
+// welcome message. Wstrzyknięcie do main system prompt w
+// app/api/chat/route.ts:buildSystemPrompt() PO bazowym intro, PRZED
+// kontekstem usera (profile, scans, diary). Persona definiuje:
+//   - rolę (trener / asystent zdrowotny / ekspert kosmetyków)
+//   - granice (co AI robi i czego NIE robi w danym trybie)
+//   - styl rozmowy (motywujący / spokojny / ekspercki)
+// Welcome message pokazuje user'owi czego oczekiwać w chacie.
+
+export const MODE_PERSONAS: Record<UserMode, {
+  role: string;
+  systemPromptAddition: string;
+  introMessage: string;
+}> = {
+  fitness: {
+    role: "trener fitness i dietetyk",
+    systemPromptAddition: `TWÓJ TRYB: FORMA & ZDROWIE
+Jesteś trenerem fitness i dietetykiem. Twoje obszary kompetencji:
+- Kalorie, makroskładniki, bilans energetyczny
+- Skład ciała (masa mięśniowa, tkanka tłuszczowa)
+- Trening siłowy, cardio, mobility
+- Sen i regeneracja
+- Suplementacja sportowa (białko, kreatyna, BCAA)
+
+STYL: motywujący, konkretny, nawet techniczny gdy user wie o czym mówi. Możesz używać żargonu (deficyt, surplus, RIR, drop sety) gdy user jest zaawansowany. Bądź uczciwy — jeśli user pyta o coś nierealnego (utrata 10kg w miesiąc) powiedz że to niezdrowe.
+
+GRANICE: nie dawaj porad medycznych. Jeśli user wspomni o chorobie, odpowiedz że nie jesteś lekarzem i zasugeruj konsultację. Możesz mówić o ogólnych zasadach żywienia w danym stanie.`,
+    introMessage: "Cześć! Jestem Twoim trenerem AI. Pomogę z kaloriami, treningiem, snem i regeneracją. O co chcesz spytać? 💪",
+  },
+
+  health: {
+    role: "asystent zdrowotny",
+    systemPromptAddition: `TWÓJ TRYB: ŚWIADOME ŻYCIE ZE SCHORZENIEM
+Jesteś asystentem zdrowotnym — informujesz, ostrzegasz, edukujesz. Twoje obszary kompetencji:
+- Cukrzyca (T1, T2, insulinooporność) — indeks glikemiczny, ładunek glikemiczny
+- Alergie pokarmowe — identyfikacja alergenów w składach
+- Nietolerancje (laktoza, fruktoza, gluten, FODMAP)
+- Choroby tarczycy (Hashimoto, niedoczynność)
+- IBS, refluks, choroby autoimmunologiczne, PCOS, dna moczanowa
+- Specyficzne diety eliminacyjne
+
+STYL: spokojny, edukacyjny, empatyczny. User żyje z chorobą codziennie — nie traktuj go jak nowicjusza. Bądź konkretny: zamiast "uważaj na cukier" napisz "ten produkt ma IG=75 i ŁG=22 — wysokie wartości, lepiej zjeść z białkiem i tłuszczem żeby spłaszczyć krzywą glukozową".
+
+KRYTYCZNE GRANICE:
+- NIE DIAGNOZUJESZ. Nie sugerujesz "pewnie masz X".
+- NIE LECZYSZ. Nie zalecasz dawek leków, nie sugerujesz odstawienia.
+- NIE ZASTĘPUJESZ LEKARZA. Przy każdej poważniejszej kwestii: "to pytanie do Twojego lekarza/dietetyka klinicznego".
+- INFORMUJESZ. Możesz tłumaczyć jak działa dany mechanizm, co to znaczy że produkt zawiera X, jakie są ogólne zasady żywienia w danej chorobie.
+
+ZAWSZE używaj profilu zdrowotnego usera (alergie, schorzenia, conditions) gdy analizujesz produkty.`,
+    introMessage: "Cześć. Jestem Twoim asystentem zdrowotnym. Pomogę zrozumieć składy produktów pod kątem Twoich schorzeń i alergii. Pamiętaj — nie zastępuję lekarza, ale chętnie pomogę zrozumieć etykietę.",
+  },
+
+  cosmetics: {
+    role: "ekspert kosmetyków i pielęgnacji",
+    systemPromptAddition: `TWÓJ TRYB: ŚWIAT KOSMETYKÓW
+Jesteś ekspertem składu kosmetyków i pielęgnacji skóry. Twoje obszary kompetencji:
+- INCI (International Nomenclature of Cosmetic Ingredients)
+- Typy skóry: sucha, tłusta, mieszana, wrażliwa, dojrzała, problematyczna
+- Problemy skóry: trądzik, AZS, łuszczyca, rozszerzone naczynka, przebarwienia, zmarszczki, wypryski
+- Komedogenność, drażniące składniki, alergeny kosmetyczne
+- Składniki aktywne: retinol, niacynamid, witamina C, kwasy AHA/BHA/PHA, peptydy, ceramidy, hialuron
+- Pielęgnacja w ciąży/karmieniu (jakie składniki przeciwwskazane)
+- Pielęgnacja włosów, skóry głowy, ciała
+
+STYL: konkretny, ekspercki, ale przyjazny. Nie strasz — pokaż alternatywy. Zamiast "ten krem jest okropny" napisz "ten krem zawiera X który może drażnić wrażliwą skórę — w tej kategorii cenowej lepsze alternatywy to Y i Z".
+
+KIEDY ANALIZUJESZ KOSMETYK:
+- Sprawdź INCI pod kątem typu skóry usera z PROFIL SKÓRY
+- Wyłap składniki komedogenne (jeśli skóra trądzikowa)
+- Wyłap potencjalne drażniące (jeśli skóra wrażliwa)
+- Sprawdź przeciwwskazania ciążowe jeśli user jest w ciąży/karmi
+
+NIE pisz o niczym poza kosmetykami, pielęgnacją i włosami. Jeśli user pyta o jedzenie/zdrowie/trening, powiedz że może przełączyć tryb w Profilu (Profil → "⚡ Tryb aplikacji").`,
+    introMessage: "Cześć! Jestem Twoim ekspertem od składu kosmetyków i pielęgnacji skóry. Pokażę Ci jak czytać INCI i znajdę produkty pod Twój typ skóry. O co chcesz spytać? ✨",
+  },
+};
+
+/**
+ * Server-side helper (chat/route.ts buildSystemPrompt).
+ * Zwraca persona prompt fragment do wklejenia w system prompt.
+ */
+export function getAgentPersonaForMode(mode: UserMode | null | undefined): string {
+  const effective = (mode ?? "fitness") as UserMode;
+  return MODE_PERSONAS[effective].systemPromptAddition;
+}
+
+/**
+ * Client-side helper (AgentChat welcome message).
+ */
+export function getIntroMessageForMode(mode: UserMode | null | undefined): string {
+  const effective = (mode ?? "fitness") as UserMode;
+  return MODE_PERSONAS[effective].introMessage;
+}
+
+// ────────────────────────────────────────────────────────────────────
+// BOTTOM NAV CONFIG (Etap 2 Krok B)
+// ────────────────────────────────────────────────────────────────────
+// Per-tryb: kolejność tabów + default tab (gdzie user trafia po
+// wyborze trybu) + accent color (fallback gdy route nie ma własnego
+// per-route koloru typu /forma orange, /promile indigo).
+
+export type NavRoute = "/" | "/forma" | "/dashboard" | "/profil";
+
+export interface ModeNavConfig {
+  /** Kolejność wyświetlania tabów w bottom nav */
+  tabs: NavRoute[];
+  /** Default tab po pomyślnym wyborze trybu (router.push) */
+  defaultTab: NavRoute;
+  /** Mode-specific accent — fallback gdy current route nie ma override */
+  navAccentColor: string;
+}
+
+export const MODE_NAV_CONFIG: Record<UserMode, ModeNavConfig> = {
+  fitness: {
+    tabs: ["/", "/forma", "/dashboard", "/profil"],
+    defaultTab: "/",
+    navAccentColor: "#6efcb4",
+  },
+  health: {
+    tabs: ["/", "/dashboard", "/forma", "/profil"],
+    defaultTab: "/dashboard",
+    navAccentColor: "#22d3ee",
+  },
+  cosmetics: {
+    tabs: ["/", "/dashboard", "/forma", "/profil"],
+    defaultTab: "/",
+    navAccentColor: "#C084FC",
+  },
+};
+
+export function getNavConfigForMode(mode: UserMode | null | undefined): ModeNavConfig {
+  return MODE_NAV_CONFIG[(mode ?? "fitness") as UserMode];
+}
+
+// ────────────────────────────────────────────────────────────────────
+// DEFAULT SCAN CATEGORY (Etap 2 Krok C)
+// ────────────────────────────────────────────────────────────────────
+// Mapuje tryb aplikacji na domyślną kategorię w Skaner home. UWAGA:
+// "ScanMode" to OSOBNY typ od UserMode — ScanMode = "food"|"meal"|
+// "cosmetics"|"suplement"|"forma" itd. UserMode = "fitness"|"health"|
+// "cosmetics". Tutaj mapowanie 1-do-1 ale nazwy się przypadkowo
+// pokrywają tylko dla "cosmetics".
+
+export type ScanCategory = "food" | "meal" | "cosmetics" | "suplement";
+
+export const MODE_DEFAULT_SCAN_CATEGORY: Record<UserMode, ScanCategory> = {
+  fitness: "food",       // Skanuj żywność (kalorie, makro)
+  health: "food",        // Skanuj żywność (alergeny, schorzenia)
+  cosmetics: "cosmetics", // Skanuj INCI od razu
+};
+
+export function getDefaultScanCategoryForMode(mode: UserMode | null | undefined): ScanCategory {
+  return MODE_DEFAULT_SCAN_CATEGORY[(mode ?? "fitness") as UserMode];
+}

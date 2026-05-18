@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
+import { getAgentPersonaForMode } from "@/lib/modes";
+import type { UserMode } from "@/lib/types";
 
 export const maxDuration = 60;
 
@@ -23,10 +25,17 @@ interface UserProfile {
   bmi?: number;
   activity?: string;
   goal?: string;
+  // Etap 1: tryb aplikacji
+  mode?: UserMode | null;
+  mode_explicitly_chosen?: boolean;
   health?: {
     diabetes?: string | null;
     pregnancy?: string | null;
     allergens?: string[];
+    // Etap 2 Krok D: nowe pole dla schorzeń przewlekłych (ibs, hashimoto,
+    // pcos, reflux, gout, celiac itd.). Allergens zostaje TYLKO dla
+    // pokarmowych alergii (orzechy, ryby, soja, gluten, laktoza...).
+    conditions?: string[];
     diet?: string;
   };
   daily_norms?: {
@@ -209,6 +218,15 @@ function buildSystemPrompt(ctx: UserContext, today: TodayStats): string {
   lines.push("Jesteś Agent AI w aplikacji SkładAI — osobisty doradca zdrowotny użytkownika.");
   lines.push("");
 
+  // === Mode-aware persona (Etap 2 Krok A) ===
+  // Wstrzykujemy persona system prompt fragment PO bazowym intro,
+  // PRZED kontekstem profilu/scanów/diary. Dzięki temu rola Agenta
+  // jest jasno zdefiniowana zanim widzi dane usera — i tone +
+  // granice odpowiedzi dopasowane do trybu.
+  const userMode = (profile?.mode ?? "fitness") as UserMode;
+  lines.push(getAgentPersonaForMode(userMode));
+  lines.push("");
+
   // Profile
   if (profile) {
     lines.push("PROFIL UŻYTKOWNIKA:");
@@ -220,7 +238,9 @@ function buildSystemPrompt(ctx: UserContext, today: TodayStats): string {
     }
     if (p.activity) lines.push(`- Aktywność: ${p.activity}`);
     const allergens = p.health?.allergens || [];
-    if (allergens.length > 0) lines.push(`- Alergie: ${allergens.join(", ")}`);
+    if (allergens.length > 0) lines.push(`- Alergie pokarmowe: ${allergens.join(", ")}`);
+    const conditions = p.health?.conditions || [];
+    if (conditions.length > 0) lines.push(`- Schorzenia przewlekłe: ${conditions.join(", ")}`);
     if (p.health?.diabetes) lines.push(`- Cukrzyca: ${p.health.diabetes}`);
     if (p.health?.pregnancy) lines.push(`- Ciąża/karmienie: ${p.health.pregnancy}`);
     if (p.health?.diet) lines.push(`- Dieta: ${p.health.diet}`);

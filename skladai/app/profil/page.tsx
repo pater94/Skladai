@@ -346,7 +346,7 @@ export default function ProfilPage() {
               ))}
             </div>
 
-            <button onClick={() => setEditing(true)} style={{ width: "100%", padding: 16, borderRadius: 14, border: "none", background: "linear-gradient(135deg, #6efcb4, #3dd990)", color: "#0a0f0d", fontWeight: 800, fontSize: 15, cursor: "pointer", boxShadow: "0 4px 20px rgba(110,252,180,0.2)" }}>
+            <button onClick={() => setEditing(true)} style={{ width: "100%", padding: 16, borderRadius: 14, border: "none", background: "var(--accent-gradient, linear-gradient(135deg, #6efcb4, #3dd990))", color: "#0a0f0d", fontWeight: 800, fontSize: 15, cursor: "pointer", boxShadow: "0 4px 20px rgba(var(--accent-rgb, 110,252,180), 0.2)" }}>
               Rozpocznij →
             </button>
 
@@ -460,7 +460,7 @@ export default function ProfilPage() {
                   }
                 }}
                 style={{
-                  background: "linear-gradient(135deg, #6efcb4, #3dd990)",
+                  background: "var(--accent-gradient, linear-gradient(135deg, #6efcb4, #3dd990))",
                   color: "#0a0e0c",
                   border: "none",
                   padding: "8px 14px",
@@ -793,7 +793,7 @@ export default function ProfilPage() {
                 <input type="date" value={newWeightDate} onChange={(e) => setNewWeightDate(e.target.value)}
                   style={{ width: "100%", padding: "8px 10px", borderRadius: 10, border: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.04)", color: "#fff", fontSize: 13, colorScheme: "dark" }} />
               </div>
-              <button type="button" onClick={handleSaveWeight} style={{ padding: "8px 16px", borderRadius: 10, background: "#6efcb4", color: "#0a0f0d", fontSize: 13, fontWeight: 700, border: "none", cursor: "pointer", flexShrink: 0, WebkitAppearance: "none" }}>
+              <button type="button" onClick={handleSaveWeight} style={{ padding: "8px 16px", borderRadius: 10, background: "var(--accent-main, #6efcb4)", color: "#0a0f0d", fontSize: 13, fontWeight: 700, border: "none", cursor: "pointer", flexShrink: 0, WebkitAppearance: "none" }}>
                 Zapisz
               </button>
             </div>

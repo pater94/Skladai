@@ -1,9 +1,11 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import OnboardingLogin from "./OnboardingLogin";
 import ModePickerScreen from "./ModePickerScreen";
+import HealthConditionsScreen from "./HealthConditionsScreen";
+import SkinProfileSetup from "./SkinProfileSetup";
 import { createClient } from "@/lib/supabase";
 import { devLog } from "@/lib/dev-log";
 import { identifyUser, resetUser } from "@/lib/revenuecat";
@@ -11,6 +13,8 @@ import { pullFromCloud } from "@/lib/sync";
 import { nsGet, nsSet, nsSelfTest } from "@/lib/native-storage";
 import { registerOAuthCallbackListener } from "@/lib/native-oauth";
 import { getProfile } from "@/lib/storage";
+import { getNavConfigForMode } from "@/lib/modes";
+import type { UserMode } from "@/lib/types";
 
 const ONBOARDED_KEY = "onboardingCompleted";
 const SESSION_BACKUP_KEY = "skladai_session_backup_v1";
@@ -83,9 +87,11 @@ export default function OnboardingWrapper() {
   // 'hidden'   = onboarding is done, render nothing
   // 'full'     = show full onboarding (new user)
   // 'login'    = show only login slide (returning user, session lost)
-  // "mode-picker" — etap 1: pokazujemy ekran wyboru trybu po sign-in
-  // gdy user nie ma jeszcze `profile.mode`. Render z ModePickerScreen.
-  const [state, setState] = useState<"checking" | "hidden" | "full" | "login" | "mode-picker">("checking");
+  // State machine (post-Etap 2):
+  //   "mode-picker"        — wybór trybu po sign-in (Etap 1)
+  //   "health-conditions"  — Krok D, po wyborze trybu health (Etap 2)
+  //   "skin-type"          — Krok E, po wyborze trybu cosmetics (Etap 2, todo)
+  const [state, setState] = useState<"checking" | "hidden" | "full" | "login" | "mode-picker" | "health-conditions" | "skin-type">("checking");
 
   // Idempotent guard dla enterAppOrShowModePicker. Bez tego mode picker
   // miga: SIGNED_IN + TOKEN_REFRESHED + INITIAL_SESSION events odpalają
@@ -101,6 +107,7 @@ export default function OnboardingWrapper() {
   // will reject the submission if /privacy redirects / overlays instead
   // of showing the Privacy Policy.
   const pathname = usePathname();
+  const router = useRouter();
   const isPublic = isPublicPath(pathname);
 
   useEffect(() => {
@@ -359,10 +366,30 @@ export default function OnboardingWrapper() {
     return () => window.removeEventListener("request-login", handler);
   }, []);
 
-  // Hide bottom nav while any onboarding screen is visible (full, login,
-  // mode-picker). "checking" + "hidden" pozwalają na widzenie main app.
+  // Etap 2 Krok H: listener dla "show-mode-picker" — dispatchowany przez
+  // ModeNudge ("Wybierz" CTA) i z Profil "Resetuj wybór trybu (DEMO)".
+  // Wymusza ponowne pojawienie się ModePickerScreen niezależnie od
+  // aktualnego state'u (chyba że jesteśmy na public route — wtedy ignore
+  // bo cały wrapper jest nieaktywny). Reset modeDecisionMadeRef żeby
+  // helper enterAppOrShowModePicker mógł znowu zdecydować po wyborze.
   useEffect(() => {
-    const visible = state === "full" || state === "login" || state === "mode-picker";
+    if (typeof window === "undefined") return;
+    const handler = () => {
+      if (isPublic) return;
+      devLog("[Onboarding] show-mode-picker event → surfacing mode picker");
+      modeDecisionMadeRef.current = false;
+      setState("mode-picker");
+      window.scrollTo(0, 0);
+    };
+    window.addEventListener("show-mode-picker", handler);
+    return () => window.removeEventListener("show-mode-picker", handler);
+  }, [isPublic]);
+
+  // Hide bottom nav while any onboarding screen is visible (full, login,
+  // mode-picker, health-conditions, skin-type). "checking" + "hidden"
+  // pozwalają na widzenie main app.
+  useEffect(() => {
+    const visible = state === "full" || state === "login" || state === "mode-picker" || state === "health-conditions" || state === "skin-type";
     if (visible) {
       document.body.classList.add("onboarding-active");
     } else {
@@ -377,12 +404,73 @@ export default function OnboardingWrapper() {
   if (isPublic) return null;
   if (state === "checking" || state === "hidden") return null;
 
-  // Mode picker — etap 1: full-screen wybór trybu po sign-in
+  // Mode picker — etap 1: full-screen wybór trybu po sign-in.
+  // Etap 2 Krok B+D+E: po wyborze trybu zachowanie zależy od mode:
+  //   - fitness    → defaultTab "/" (router.push) + hidden
+  //   - health     → state "health-conditions" (Krok D, pyta o
+  //                  schorzenia + alergie); po zapisaniu defaultTab
+  //                  "/dashboard"
+  //   - cosmetics  → state "skin-type" (Krok E, todo); po zapisaniu
+  //                  defaultTab "/"
   if (state === "mode-picker") {
     return (
       <ModePickerScreen
+        onComplete={(chosenMode: UserMode) => {
+          if (chosenMode === "health") {
+            // Pokaż rozszerzony onboarding zdrowotny PRZED wejściem do app
+            setState("health-conditions");
+            window.scrollTo(0, 0);
+          } else if (chosenMode === "cosmetics") {
+            // Krok E: dla cosmetics → rozszerzony onboarding skin/hair
+            // (SkinProfileSetup już istnieje, reuse `skladai_skin_profile`
+            // localStorage key per decyzja Q1=A). Po zapisie / pomięciu
+            // → defaultTab cosmetics.
+            setState("skin-type");
+            window.scrollTo(0, 0);
+          } else {
+            // fitness: prosto do defaultTab
+            setState("hidden");
+            router.push(getNavConfigForMode(chosenMode).defaultTab);
+            window.scrollTo(0, 0);
+          }
+        }}
+      />
+    );
+  }
+
+  // Health conditions onboarding (Krok D) — po wyborze trybu health
+  if (state === "health-conditions") {
+    return (
+      <HealthConditionsScreen
         onComplete={() => {
           setState("hidden");
+          router.push(getNavConfigForMode("health").defaultTab);
+          window.scrollTo(0, 0);
+        }}
+        onSkip={() => {
+          setState("hidden");
+          router.push(getNavConfigForMode("health").defaultTab);
+          window.scrollTo(0, 0);
+        }}
+      />
+    );
+  }
+
+  // Skin profile onboarding (Krok E) — po wyborze trybu cosmetics.
+  // Reuse SkinProfileSetup (3 kroki: typ skóry / problemy / włosy) który
+  // zapisuje do `skladai_skin_profile` (decyzja Q1=A: NIE duplikujemy
+  // do UserProfile.skin, mamy osobny localStorage key od dawna).
+  if (state === "skin-type") {
+    return (
+      <SkinProfileSetup
+        onComplete={() => {
+          setState("hidden");
+          router.push(getNavConfigForMode("cosmetics").defaultTab);
+          window.scrollTo(0, 0);
+        }}
+        onSkip={() => {
+          setState("hidden");
+          router.push(getNavConfigForMode("cosmetics").defaultTab);
           window.scrollTo(0, 0);
         }}
       />
