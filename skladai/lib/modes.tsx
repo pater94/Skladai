@@ -239,3 +239,24 @@ export const MODE_NAV_CONFIG: Record<UserMode, ModeNavConfig> = {
 export function getNavConfigForMode(mode: UserMode | null | undefined): ModeNavConfig {
   return MODE_NAV_CONFIG[(mode ?? "fitness") as UserMode];
 }
+
+// ────────────────────────────────────────────────────────────────────
+// DEFAULT SCAN CATEGORY (Etap 2 Krok C)
+// ────────────────────────────────────────────────────────────────────
+// Mapuje tryb aplikacji na domyślną kategorię w Skaner home. UWAGA:
+// "ScanMode" to OSOBNY typ od UserMode — ScanMode = "food"|"meal"|
+// "cosmetics"|"suplement"|"forma" itd. UserMode = "fitness"|"health"|
+// "cosmetics". Tutaj mapowanie 1-do-1 ale nazwy się przypadkowo
+// pokrywają tylko dla "cosmetics".
+
+export type ScanCategory = "food" | "meal" | "cosmetics" | "suplement";
+
+export const MODE_DEFAULT_SCAN_CATEGORY: Record<UserMode, ScanCategory> = {
+  fitness: "food",       // Skanuj żywność (kalorie, makro)
+  health: "food",        // Skanuj żywność (alergeny, schorzenia)
+  cosmetics: "cosmetics", // Skanuj INCI od razu
+};
+
+export function getDefaultScanCategoryForMode(mode: UserMode | null | undefined): ScanCategory {
+  return MODE_DEFAULT_SCAN_CATEGORY[(mode ?? "fitness") as UserMode];
+}

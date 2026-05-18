@@ -36,6 +36,8 @@ import type { ScanMode, ScanHistoryItem, RecentFood } from "@/lib/types";
 import { Apple, UtensilsCrossed, Sparkles, Pill } from "lucide-react";
 import { useSpeechToText } from "@/lib/useSpeechToText";
 import { nsSet } from "@/lib/native-storage";
+import { useUserMode } from "@/lib/hooks/useUserMode";
+import { getDefaultScanCategoryForMode } from "@/lib/modes";
 
 /**
  * Key used to hide the mic's "NEW" badge once the user has actually used
@@ -335,9 +337,25 @@ export default function Home() {
 
   const accent = ACCENT_MAP[mode] || ACCENT_MAP.food;
 
+  // Etap 2 Krok C: domyślna kategoria skanu per tryb aplikacji.
+  // Hierarchia decyzji:
+  //   1. localStorage MODE_KEY (skladai_mode) — user świadomie wybrał
+  //      kategorię w skanerze kiedyś → szanujemy ten wybór
+  //   2. Default per UserMode — gdy localStorage pusty (świeży user lub
+  //      DEMO reset)
+  // Trigger: initial mount + zmiana userMode (jeśli MODE_KEY nadal pusty).
+  const { mode: userMode } = useUserMode();
   useEffect(() => {
-    setMode(getSavedMode());
-  }, []);
+    if (typeof window === "undefined") return;
+    const explicitSavedMode = localStorage.getItem("skladai_mode");
+    if (explicitSavedMode) {
+      // User świadomie wybrał kategorię kiedyś — zostaw
+      setMode(explicitSavedMode as ScanMode);
+    } else {
+      // Brak preferencji — użyj domyślnej per UserMode
+      setMode(getDefaultScanCategoryForMode(userMode) as ScanMode);
+    }
+  }, [userMode]);
 
   // Lock body scroll when PhotoPreview is open
   useEffect(() => {
