@@ -314,6 +314,15 @@ export interface SupplementAnalysisResult {
 export type AnalysisResult = FoodAnalysisResult | CosmeticsAnalysisResult | MealAnalysisResult | TextSearchResult | CheckFormResult | SupplementAnalysisResult;
 
 // === Profil użytkownika ===
+/**
+ * Tryb aplikacji wybierany przez usera po Sign In albo w Profilu.
+ * Wpływa (etap 2+) na UI, kolejność tabów, persona Agent AI.
+ *   - fitness   → "Forma & Zdrowie" (mint #6efcb4) — domyślny
+ *   - health    → "Świadome życie ze schorzeniem" (cyjan #22d3ee)
+ *   - cosmetics → "Świat kosmetyków" (fiolet #C084FC)
+ */
+export type UserMode = "fitness" | "health" | "cosmetics";
+
 export interface UserProfile {
   // Basic
   name?: string;
@@ -354,6 +363,12 @@ export interface UserProfile {
   onboarding_complete: boolean;
   created_at: string;
   updated_at: string;
+
+  // === Tryby aplikacji (etap 1: mode picker po sign in) ===
+  /** Wybrany tryb. null/undefined = jeszcze nie wybrał (pokazujemy mode picker). */
+  mode?: UserMode | null;
+  /** true gdy user świadomie wybrał tryb; false gdy pominął i dostał default. */
+  mode_explicitly_chosen?: boolean;
 }
 
 // === Dziennik jedzenia ===
