@@ -8,6 +8,8 @@ import AppInit from "@/components/AppInit";
 import AgentFAB from "@/components/AgentFAB";
 import SafeBoundary from "@/components/SafeBoundary";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import MedicalDisclaimer from "@/components/MedicalDisclaimer";
+import ModeNudge from "@/components/ModeNudge";
 
 export const metadata: Metadata = {
   title: "SkładAI — Sprawdź co naprawdę jesz",
@@ -75,6 +77,11 @@ export default function RootLayout({
               import) and the full AgentChat tree — any crash here must NOT
               take the rest of the app down with it. */}
           <SafeBoundary name="AgentFAB"><AgentFAB /></SafeBoundary>
+          {/* Etap 2 Krok H: mode-aware bottom disclaimer (tylko health) +
+              7-dniowy nudge dla userów którzy nie wybrali świadomie trybu.
+              Oba self-guard w środku (sprawdzają pathname / mode / profil). */}
+          <SafeBoundary name="MedicalDisclaimer"><MedicalDisclaimer /></SafeBoundary>
+          <SafeBoundary name="ModeNudge"><ModeNudge /></SafeBoundary>
         </ThemeProvider>
         {/* Block iOS rubber-band bounce on non-scrollable areas */}
         <script dangerouslySetInnerHTML={{ __html: `

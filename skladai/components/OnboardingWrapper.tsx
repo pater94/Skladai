@@ -365,6 +365,25 @@ export default function OnboardingWrapper() {
     return () => window.removeEventListener("request-login", handler);
   }, []);
 
+  // Etap 2 Krok H: listener dla "show-mode-picker" — dispatchowany przez
+  // ModeNudge ("Wybierz" CTA) i z Profil "Resetuj wybór trybu (DEMO)".
+  // Wymusza ponowne pojawienie się ModePickerScreen niezależnie od
+  // aktualnego state'u (chyba że jesteśmy na public route — wtedy ignore
+  // bo cały wrapper jest nieaktywny). Reset modeDecisionMadeRef żeby
+  // helper enterAppOrShowModePicker mógł znowu zdecydować po wyborze.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const handler = () => {
+      if (isPublic) return;
+      devLog("[Onboarding] show-mode-picker event → surfacing mode picker");
+      modeDecisionMadeRef.current = false;
+      setState("mode-picker");
+      window.scrollTo(0, 0);
+    };
+    window.addEventListener("show-mode-picker", handler);
+    return () => window.removeEventListener("show-mode-picker", handler);
+  }, [isPublic]);
+
   // Hide bottom nav while any onboarding screen is visible (full, login,
   // mode-picker, health-conditions, skin-type). "checking" + "hidden"
   // pozwalają na widzenie main app.
