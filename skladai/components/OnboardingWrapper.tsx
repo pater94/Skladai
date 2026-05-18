@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import OnboardingLogin from "./OnboardingLogin";
 import ModePickerScreen from "./ModePickerScreen";
 import HealthConditionsScreen from "./HealthConditionsScreen";
+import SkinProfileSetup from "./SkinProfileSetup";
 import { createClient } from "@/lib/supabase";
 import { devLog } from "@/lib/dev-log";
 import { identifyUser, resetUser } from "@/lib/revenuecat";
@@ -420,10 +421,11 @@ export default function OnboardingWrapper() {
             setState("health-conditions");
             window.scrollTo(0, 0);
           } else if (chosenMode === "cosmetics") {
-            // TODO: Krok E doda "skin-type" screen tutaj.
-            // Na razie cosmetics zachowuje się jak fitness (od razu defaultTab).
-            setState("hidden");
-            router.push(getNavConfigForMode(chosenMode).defaultTab);
+            // Krok E: dla cosmetics → rozszerzony onboarding skin/hair
+            // (SkinProfileSetup już istnieje, reuse `skladai_skin_profile`
+            // localStorage key per decyzja Q1=A). Po zapisie / pomięciu
+            // → defaultTab cosmetics.
+            setState("skin-type");
             window.scrollTo(0, 0);
           } else {
             // fitness: prosto do defaultTab
@@ -448,6 +450,27 @@ export default function OnboardingWrapper() {
         onSkip={() => {
           setState("hidden");
           router.push(getNavConfigForMode("health").defaultTab);
+          window.scrollTo(0, 0);
+        }}
+      />
+    );
+  }
+
+  // Skin profile onboarding (Krok E) — po wyborze trybu cosmetics.
+  // Reuse SkinProfileSetup (3 kroki: typ skóry / problemy / włosy) który
+  // zapisuje do `skladai_skin_profile` (decyzja Q1=A: NIE duplikujemy
+  // do UserProfile.skin, mamy osobny localStorage key od dawna).
+  if (state === "skin-type") {
+    return (
+      <SkinProfileSetup
+        onComplete={() => {
+          setState("hidden");
+          router.push(getNavConfigForMode("cosmetics").defaultTab);
+          window.scrollTo(0, 0);
+        }}
+        onSkip={() => {
+          setState("hidden");
+          router.push(getNavConfigForMode("cosmetics").defaultTab);
           window.scrollTo(0, 0);
         }}
       />
