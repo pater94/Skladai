@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import OnboardingLogin from "./OnboardingLogin";
 import ModePickerScreen from "./ModePickerScreen";
+import HealthConditionsScreen from "./HealthConditionsScreen";
 import { createClient } from "@/lib/supabase";
 import { devLog } from "@/lib/dev-log";
 import { identifyUser, resetUser } from "@/lib/revenuecat";
@@ -85,9 +86,11 @@ export default function OnboardingWrapper() {
   // 'hidden'   = onboarding is done, render nothing
   // 'full'     = show full onboarding (new user)
   // 'login'    = show only login slide (returning user, session lost)
-  // "mode-picker" — etap 1: pokazujemy ekran wyboru trybu po sign-in
-  // gdy user nie ma jeszcze `profile.mode`. Render z ModePickerScreen.
-  const [state, setState] = useState<"checking" | "hidden" | "full" | "login" | "mode-picker">("checking");
+  // State machine (post-Etap 2):
+  //   "mode-picker"        — wybór trybu po sign-in (Etap 1)
+  //   "health-conditions"  — Krok D, po wyborze trybu health (Etap 2)
+  //   "skin-type"          — Krok E, po wyborze trybu cosmetics (Etap 2, todo)
+  const [state, setState] = useState<"checking" | "hidden" | "full" | "login" | "mode-picker" | "health-conditions" | "skin-type">("checking");
 
   // Idempotent guard dla enterAppOrShowModePicker. Bez tego mode picker
   // miga: SIGNED_IN + TOKEN_REFRESHED + INITIAL_SESSION events odpalają
@@ -363,9 +366,10 @@ export default function OnboardingWrapper() {
   }, []);
 
   // Hide bottom nav while any onboarding screen is visible (full, login,
-  // mode-picker). "checking" + "hidden" pozwalają na widzenie main app.
+  // mode-picker, health-conditions, skin-type). "checking" + "hidden"
+  // pozwalają na widzenie main app.
   useEffect(() => {
-    const visible = state === "full" || state === "login" || state === "mode-picker";
+    const visible = state === "full" || state === "login" || state === "mode-picker" || state === "health-conditions" || state === "skin-type";
     if (visible) {
       document.body.classList.add("onboarding-active");
     } else {
@@ -381,21 +385,50 @@ export default function OnboardingWrapper() {
   if (state === "checking" || state === "hidden") return null;
 
   // Mode picker — etap 1: full-screen wybór trybu po sign-in.
-  // Etap 2 Krok B: po wyborze router.push do defaultTab dla trybu
-  // (fitness → "/", health → "/dashboard", cosmetics → "/").
-  // Etap 2 Kroki D+E (post): health → setState("health-conditions"),
-  // cosmetics → setState("skin-type"). Tu w Kroku B wszystkie 3 tryby
-  // idą prosto do defaultTab — D/E dorobimy w odpowiednich krokach.
+  // Etap 2 Krok B+D+E: po wyborze trybu zachowanie zależy od mode:
+  //   - fitness    → defaultTab "/" (router.push) + hidden
+  //   - health     → state "health-conditions" (Krok D, pyta o
+  //                  schorzenia + alergie); po zapisaniu defaultTab
+  //                  "/dashboard"
+  //   - cosmetics  → state "skin-type" (Krok E, todo); po zapisaniu
+  //                  defaultTab "/"
   if (state === "mode-picker") {
     return (
       <ModePickerScreen
         onComplete={(chosenMode: UserMode) => {
+          if (chosenMode === "health") {
+            // Pokaż rozszerzony onboarding zdrowotny PRZED wejściem do app
+            setState("health-conditions");
+            window.scrollTo(0, 0);
+          } else if (chosenMode === "cosmetics") {
+            // TODO: Krok E doda "skin-type" screen tutaj.
+            // Na razie cosmetics zachowuje się jak fitness (od razu defaultTab).
+            setState("hidden");
+            router.push(getNavConfigForMode(chosenMode).defaultTab);
+            window.scrollTo(0, 0);
+          } else {
+            // fitness: prosto do defaultTab
+            setState("hidden");
+            router.push(getNavConfigForMode(chosenMode).defaultTab);
+            window.scrollTo(0, 0);
+          }
+        }}
+      />
+    );
+  }
+
+  // Health conditions onboarding (Krok D) — po wyborze trybu health
+  if (state === "health-conditions") {
+    return (
+      <HealthConditionsScreen
+        onComplete={() => {
           setState("hidden");
-          const target = getNavConfigForMode(chosenMode).defaultTab;
-          // router.push wewnątrz React component callback OK — async
-          // navigation Next.js. Window.scrollTo żeby reset scroll
-          // na nowej stronie.
-          router.push(target);
+          router.push(getNavConfigForMode("health").defaultTab);
+          window.scrollTo(0, 0);
+        }}
+        onSkip={() => {
+          setState("hidden");
+          router.push(getNavConfigForMode("health").defaultTab);
           window.scrollTo(0, 0);
         }}
       />
