@@ -14,6 +14,7 @@ import { deactivatePremiumDemo, resetChatLimitsDemo } from "@/lib/demo";
 import { useUserMode, setUserMode } from "@/lib/hooks/useUserMode";
 import { MODES, MODE_LABELS } from "@/lib/modes";
 import { nsRemove } from "@/lib/native-storage";
+import { pushToCloud } from "@/lib/sync";
 
 const AreaChart = dynamic(() => import("recharts").then(m => m.AreaChart), { ssr: false });
 const Area = dynamic(() => import("recharts").then(m => m.Area), { ssr: false });
@@ -961,11 +962,25 @@ export default function ProfilPage() {
                     alert("Brak profilu — najpierw przejdź onboarding.");
                     return;
                   }
+                  // 1) Local: zapisz profile z mode=null
                   saveProfile({ ...p, mode: null, mode_explicitly_chosen: false });
+                  // 2) Cloud: PUSH mode=null do Supabase OD RAZU. Bez tego
+                  //    następne pullFromCloud (po wylogowaniu i zalogowaniu)
+                  //    nadpisuje local null starym mode z cloud → mode picker
+                  //    pomijany. Push synchroniczny (await) zapewnia że
+                  //    cloud jest updated zanim user się wyloguje.
+                  let cloudPushed = false;
+                  try {
+                    await pushToCloud();
+                    cloudPushed = true;
+                  } catch (e) {
+                    console.warn("[DEMO reset mode] cloud push failed:", e);
+                  }
                   window.dispatchEvent(new Event("user-mode-changed"));
                   alert(
-                    "✓ Tryb zresetowany.\n" +
-                    "Apka się zaraz odświeży. Po reload wyloguj się + zaloguj " +
+                    "✓ Tryb zresetowany (local + cloud" +
+                    (cloudPushed ? "" : " — UWAGA: cloud push failed, sprawdź konsolę") +
+                    ").\nApka się zaraz odświeży. Wyloguj się + zaloguj " +
                     "ponownie żeby zobaczyć ekran wyboru trybu."
                   );
                   window.location.reload();
