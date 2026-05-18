@@ -13,6 +13,7 @@ import { IS_DEMO } from "@/lib/config";
 import { deactivatePremiumDemo, resetChatLimitsDemo } from "@/lib/demo";
 import { useUserMode, setUserMode } from "@/lib/hooks/useUserMode";
 import { MODES, MODE_LABELS } from "@/lib/modes";
+import { nsRemove } from "@/lib/native-storage";
 
 const AreaChart = dynamic(() => import("recharts").then(m => m.AreaChart), { ssr: false });
 const Area = dynamic(() => import("recharts").then(m => m.Area), { ssr: false });
@@ -900,14 +901,18 @@ export default function ProfilPage() {
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               <button
-                onClick={() => {
-                  if (deactivatePremiumDemo()) {
-                    // usePremium() now listens for this event and
-                    // re-runs its check, so we don't need the full
-                    // page reload — state updates in place across
-                    // AgentFAB, ScanLimitBanner, and this page.
-                    window.dispatchEvent(new Event("premium-changed"));
-                  }
+                onClick={async () => {
+                  // 1) Kasuj z localStorage (sync) + 2) Capacitor Preferences
+                  //    (async, iOS UserDefaults nie czyści się sam) +
+                  // 3) hard reload — gwarantuje że useEffect'y w mounted
+                  //    komponentach (AgentFAB, ScanLimitBanner, Profil) zaciągną
+                  //    świeży state. Na iOS WKWebView localStorage potrafi
+                  //    zwracać cached value przez kilka ticks po zapisie —
+                  //    reload to obchodzi.
+                  if (!deactivatePremiumDemo()) return;
+                  try { await nsRemove("skladai_premium"); } catch {}
+                  window.dispatchEvent(new Event("premium-changed"));
+                  setTimeout(() => window.location.reload(), 150);
                 }}
                 style={{
                   width: "100%", padding: 10, borderRadius: 10,
@@ -920,12 +925,16 @@ export default function ProfilPage() {
                 Resetuj Premium DEMO
               </button>
               <button
-                onClick={() => {
-                  if (resetChatLimitsDemo()) {
-                    // Chat component listens separately; fire event so
-                    // any mounted AgentChat can resync its usedCount.
-                    window.dispatchEvent(new Event("chat-limits-reset"));
-                  }
+                onClick={async () => {
+                  if (!resetChatLimitsDemo()) return;
+                  // AgentChat counter keys — czyść też z Preferences
+                  try {
+                    await nsRemove("agent_free_msgs");
+                    await nsRemove("agent_daily_msgs");
+                    await nsRemove("agent_daily_date");
+                  } catch {}
+                  window.dispatchEvent(new Event("chat-limits-reset"));
+                  setTimeout(() => window.location.reload(), 150);
                 }}
                 style={{
                   width: "100%", padding: 10, borderRadius: 10,
@@ -939,18 +948,18 @@ export default function ProfilPage() {
               </button>
               {/* Reset trybu — etap 1 (testowanie mode pickera) */}
               <button
-                onClick={() => {
+                onClick={async () => {
                   const p = getProfile();
-                  if (p) {
-                    saveProfile({ ...p, mode: null, mode_explicitly_chosen: false });
-                    window.dispatchEvent(new Event("user-mode-changed"));
-                    alert(
-                      "Tryb zresetowany. Następny pomyślny sign-in (lub odświeżenie po " +
-                      "wylogowaniu i zalogowaniu) pokaże ekran wyboru trybu."
-                    );
-                  } else {
+                  if (!p) {
                     alert("Brak profilu — najpierw przejdź onboarding.");
+                    return;
                   }
+                  saveProfile({ ...p, mode: null, mode_explicitly_chosen: false });
+                  // Profil jest w SYNC_KEYS — cloud może mieć stary mode.
+                  // Reload zapewnia że OnboardingWrapper pobierze świeży stan
+                  // i (po następnym SIGNED_IN) pokaże mode picker.
+                  window.dispatchEvent(new Event("user-mode-changed"));
+                  setTimeout(() => window.location.reload(), 150);
                 }}
                 style={{
                   width: "100%", padding: 10, borderRadius: 10,
