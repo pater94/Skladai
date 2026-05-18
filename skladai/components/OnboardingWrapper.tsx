@@ -3,12 +3,14 @@
 import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import OnboardingLogin from "./OnboardingLogin";
+import ModePickerScreen from "./ModePickerScreen";
 import { createClient } from "@/lib/supabase";
 import { devLog } from "@/lib/dev-log";
 import { identifyUser, resetUser } from "@/lib/revenuecat";
 import { pullFromCloud } from "@/lib/sync";
 import { nsGet, nsSet, nsSelfTest } from "@/lib/native-storage";
 import { registerOAuthCallbackListener } from "@/lib/native-oauth";
+import { getProfile } from "@/lib/storage";
 
 const ONBOARDED_KEY = "onboardingCompleted";
 const SESSION_BACKUP_KEY = "skladai_session_backup_v1";
@@ -81,7 +83,9 @@ export default function OnboardingWrapper() {
   // 'hidden'   = onboarding is done, render nothing
   // 'full'     = show full onboarding (new user)
   // 'login'    = show only login slide (returning user, session lost)
-  const [state, setState] = useState<"checking" | "hidden" | "full" | "login">("checking");
+  // "mode-picker" — etap 1: pokazujemy ekran wyboru trybu po sign-in
+  // gdy user nie ma jeszcze `profile.mode`. Render z ModePickerScreen.
+  const [state, setState] = useState<"checking" | "hidden" | "full" | "login" | "mode-picker">("checking");
 
   // Public routes (privacy, support, delete-account, …) must render their
   // own content without ever seeing the onboarding overlay. Apple Review
@@ -101,11 +105,25 @@ export default function OnboardingWrapper() {
     // Register the native OAuth callback listener (Capacitor only).
     // Catches the com.skladai.app://oauth-callback URL fired after Apple/Google
     // sign-in and exchanges the code for a session in the main WebView.
+    // Helper: po pomyślnym sign-in decyduje czy pokazać mode picker
+    // (gdy brak `profile.mode`) czy od razu ukryć wrapper. Wywołać PO
+    // pullFromCloud() żeby istniejący wybór z innego urządzenia był
+    // już widoczny w lokalnym profilu.
+    const enterAppOrShowModePicker = () => {
+      const p = getProfile();
+      if (!p || !p.mode) {
+        devLog("[Onboarding] No mode set → showing ModePickerScreen");
+        setState("mode-picker");
+      } else {
+        setState("hidden");
+      }
+    };
+
     registerOAuthCallbackListener(supabase, () => {
       devLog("[Onboarding] Native OAuth callback success");
       markOnboarded();
-      pullFromCloud().catch(() => {});
-      setState("hidden");
+      // Pull cloud first so mode from other device is visible before we decide.
+      pullFromCloud().catch(() => {}).finally(enterAppOrShowModePicker);
       window.dispatchEvent(new Event("cloud-sync-done"));
     }).catch((e) => console.warn("[Onboarding] OAuth listener register failed:", e));
 
@@ -161,7 +179,10 @@ export default function OnboardingWrapper() {
         }
         await markOnboarded();
         if (cancelled) return;
-        setState("hidden");
+        // Mode picker gate: jeśli user zalogowany ale jeszcze nie wybrał
+        // trybu (świeży sign-in z innego urządzenia, brak w cloud), pokaż
+        // ekran wyboru. Inaczej ukryj wrapper.
+        enterAppOrShowModePicker();
         window.dispatchEvent(new Event("cloud-sync-done"));
         window.scrollTo(0, 0);
         return;
@@ -221,10 +242,15 @@ export default function OnboardingWrapper() {
 
       if (session && (event === "SIGNED_IN" || event === "TOKEN_REFRESHED" || event === "INITIAL_SESSION")) {
         markOnboarded();
-        pullFromCloud().catch((e) => console.warn("[Onboarding] Pull on auth event failed:", e));
+        // Pull first so mode from cloud (if set on another device) is in
+        // local profile BEFORE we decide whether to show mode picker.
+        pullFromCloud()
+          .catch((e) => console.warn("[Onboarding] Pull on auth event failed:", e))
+          .finally(() => {
+            if (!cancelled) enterAppOrShowModePicker();
+          });
         // Link Supabase user to RevenueCat for premium entitlement tracking
         identifyUser(session.user.id).catch(() => {});
-        setState("hidden");
         window.dispatchEvent(new Event("cloud-sync-done"));
 
         // FIRST-TIME HEALTH PROMPT — ask HealthKit / Health Connect once
@@ -296,9 +322,24 @@ export default function OnboardingWrapper() {
     // they navigate back out.
   }, [isPublic]);
 
-  // Hide bottom nav while any onboarding screen is visible
+  // Listen for "request-login" — dispatched by Profil "Zaloguj się"
+  // CTA gdy guest user chce wjechać na auth flow. Bez tego event'u user
+  // który raz kliknął "Pomiń" nie ma path do logowania (state=hidden,
+  // brak SIGNED_OUT bo nigdy nie był zalogowany).
   useEffect(() => {
-    const visible = state === "full" || state === "login";
+    if (typeof window === "undefined") return;
+    const handler = () => {
+      devLog("[Onboarding] request-login event → surfacing login screen");
+      setState("login");
+    };
+    window.addEventListener("request-login", handler);
+    return () => window.removeEventListener("request-login", handler);
+  }, []);
+
+  // Hide bottom nav while any onboarding screen is visible (full, login,
+  // mode-picker). "checking" + "hidden" pozwalają na widzenie main app.
+  useEffect(() => {
+    const visible = state === "full" || state === "login" || state === "mode-picker";
     if (visible) {
       document.body.classList.add("onboarding-active");
     } else {
@@ -312,6 +353,18 @@ export default function OnboardingWrapper() {
   // `state !== "hidden"` from a prior route would otherwise still render.
   if (isPublic) return null;
   if (state === "checking" || state === "hidden") return null;
+
+  // Mode picker — etap 1: full-screen wybór trybu po sign-in
+  if (state === "mode-picker") {
+    return (
+      <ModePickerScreen
+        onComplete={() => {
+          setState("hidden");
+          window.scrollTo(0, 0);
+        }}
+      />
+    );
+  }
 
   // ALWAYS start from slide 0, regardless of whether this is a brand new
   // user or a returning one whose session got wiped. Earlier we used
