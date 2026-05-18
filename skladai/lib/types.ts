@@ -342,7 +342,15 @@ export interface UserProfile {
   health: {
     diabetes: "type1" | "type2" | null;
     pregnancy: "t1" | "t2" | "t3" | "karmienie" | "planuje" | null;
+    /** Alergie POKARMOWE (orzechy, ryby, soja, gluten, laktoza, fruktoza, jaja) */
     allergens: string[];
+    /**
+     * Etap 2 Krok D: schorzenia przewlekłe (ibs, hashimoto, pcos, reflux,
+     * gout, celiac, insulin_resistance). Allergens trzymamy DOKŁADNIE dla
+     * pokarmowych alergii — conditions dla chorób. Cukrzyca pozostaje w
+     * osobnym polu `diabetes` (backward compat).
+     */
+    conditions?: string[];
     diet: string;
   };
   // Daily norms

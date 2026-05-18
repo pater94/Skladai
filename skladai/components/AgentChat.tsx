@@ -8,6 +8,8 @@ import { IS_DEMO } from "@/lib/config";
 import { activatePremiumDemo, resetChatLimitsDemo } from "@/lib/demo";
 import { useSpeechToText } from "@/lib/useSpeechToText";
 import TTSButton from "@/components/TTSButton";
+import { useUserMode } from "@/lib/hooks/useUserMode";
+import { getIntroMessageForMode } from "@/lib/modes";
 
 interface Props {
   open: boolean;
@@ -56,7 +58,12 @@ function bumpPaidUsed(amount: number) {
   localStorage.setItem(PAID_COUNT_KEY, String(cur + amount));
 }
 
-const WELCOME_MESSAGE = "Cześć! Jestem Twoim Agentem AI. Wiem jaki masz cel, śledzę Twoją aktywność, sen i formę. Zapytaj mnie o dietę, trening, suplementy — pomogę Ci osiągnąć wymarzoną formę 💪";
+// Etap 2 Krok A: WELCOME_MESSAGE jest teraz dynamiczny — zależy od
+// `userMode` z useUserMode() w komponencie. Stała poniżej trzymana
+// jako fallback gdyby hook nie zwrócił mode (SSR / pierwszy mount
+// przed hydratacją). Każdy tryb ma swoją intro message zdefiniowaną
+// w lib/modes.tsx MODE_PERSONAS[mode].introMessage.
+const FALLBACK_WELCOME = "Cześć! Jestem Twoim Agentem AI. Wiem jaki masz cel, śledzę Twoją aktywność, sen i formę. Zapytaj mnie o dietę, trening, suplementy — pomogę Ci osiągnąć wymarzoną formę 💪";
 
 // ── Logo (rounded square + scanner brackets + S) — inline SVG ──
 function ScannerLogo({ size = 40, expert = false }: { size?: number; expert?: boolean }) {
@@ -97,6 +104,10 @@ const SUGGESTIONS = [
 ];
 
 export default function AgentChat({ open, onClose, isPremium }: Props) {
+  // Etap 2 Krok A: mode-aware welcome message. useUserMode() event-driven,
+  // re-renderuje gdy user zmieni tryb w Profilu.
+  const { mode: userMode } = useUserMode();
+  const welcomeMessage = getIntroMessageForMode(userMode) || FALLBACK_WELCOME;
   const router = useRouter();
   const health = useHealthData();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -154,7 +165,7 @@ export default function AgentChat({ open, onClose, isPremium }: Props) {
     // Inject the welcome message once if the chat has no prior messages
     setMessages((prev) => {
       if (prev.length > 0) return prev;
-      return [{ role: "assistant", content: WELCOME_MESSAGE }];
+      return [{ role: "assistant", content: welcomeMessage }];
     });
 
     // Reset transient UI state from previous session
