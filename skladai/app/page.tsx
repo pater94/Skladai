@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Scanner from "@/components/Scanner";
 import PhotoPreview from "@/components/PhotoPreview";
@@ -37,7 +37,7 @@ import { Apple, UtensilsCrossed, Sparkles, Pill } from "lucide-react";
 import { useSpeechToText } from "@/lib/useSpeechToText";
 import { nsSet } from "@/lib/native-storage";
 import { useUserMode } from "@/lib/hooks/useUserMode";
-import { getDefaultScanCategoryForMode } from "@/lib/modes";
+import { getDefaultScanCategoryForMode, getAllowedScanCategoriesForMode } from "@/lib/modes";
 
 /**
  * Key used to hide the mic's "NEW" badge once the user has actually used
@@ -337,25 +337,43 @@ export default function Home() {
 
   const accent = ACCENT_MAP[mode] || ACCENT_MAP.food;
 
-  // Etap 2 Krok C: domyślna kategoria skanu per tryb aplikacji.
+  // Etap 2 Krok C + hotfix post-merge: kategoria skanu per UserMode.
   // Hierarchia decyzji:
   //   1. localStorage MODE_KEY (skladai_mode) — user świadomie wybrał
-  //      kategorię w skanerze kiedyś → szanujemy ten wybór
-  //   2. Default per UserMode — gdy localStorage pusty (świeży user lub
-  //      DEMO reset)
-  // Trigger: initial mount + zmiana userMode (jeśli MODE_KEY nadal pusty).
+  //      kategorię kiedyś → szanujemy ten wybór JEŚLI jest w allowed
+  //      list dla bieżącego userMode
+  //   2. Jeśli zapisany mode NIE jest dozwolony dla userMode (np. user
+  //      przełączył się na cosmetics ale ma localStorage="food") →
+  //      auto-correct do default UserMode + nadpisz localStorage
+  //   3. Brak preferencji → użyj defaultu UserMode
   const { mode: userMode } = useUserMode();
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const explicitSavedMode = localStorage.getItem("skladai_mode");
-    if (explicitSavedMode) {
-      // User świadomie wybrał kategorię kiedyś — zostaw
-      setMode(explicitSavedMode as ScanMode);
+    const allowed = getAllowedScanCategoriesForMode(userMode);
+    const explicitSavedMode = localStorage.getItem("skladai_mode") as ScanMode | null;
+    if (explicitSavedMode && (allowed as readonly string[]).includes(explicitSavedMode)) {
+      setMode(explicitSavedMode);
     } else {
-      // Brak preferencji — użyj domyślnej per UserMode
-      setMode(getDefaultScanCategoryForMode(userMode) as ScanMode);
+      const fallback = getDefaultScanCategoryForMode(userMode) as ScanMode;
+      setMode(fallback);
+      // Nadpisz lokal jeśli był niedozwolony — inaczej user który raz
+      // wybrał food w trybie fitness, przełączył się na cosmetics,
+      // zobaczyłby food jako saved przy następnym powrocie na fitness.
+      if (explicitSavedMode && !(allowed as readonly string[]).includes(explicitSavedMode)) {
+        localStorage.setItem("skladai_mode", fallback);
+      }
     }
   }, [userMode]);
+
+  // Hotfix post-merge: lista dozwolonych kategorii skanu dla bieżącego
+  // UserMode. Używana w renderze tabsów (filter array).
+  // Set<string> bo ScanMode (z lib/types) zawiera "forma" którego
+  // ScanCategory (z lib/modes) nie ma — chcemy żeby filter sprawdzał
+  // string membership bez TS narrowing complaints.
+  const allowedScanCategories = useMemo<Set<string>>(
+    () => new Set(getAllowedScanCategoriesForMode(userMode) as string[]),
+    [userMode]
+  );
 
   // Lock body scroll when PhotoPreview is open
   useEffect(() => {
@@ -755,7 +773,11 @@ export default function Home() {
               { id: "meal" as ScanMode, Icon: UtensilsCrossed, label: "Danie", color: "#FBBF24" },
               { id: "cosmetics" as ScanMode, Icon: Sparkles, label: "Kosmetyk", color: "#C084FC" },
               { id: "suplement" as ScanMode, Icon: Pill, label: "Suplement", color: "#3b82f6" },
-            ]).map((tab) => {
+            ])
+              // Hotfix post-merge: pokazujemy TYLKO kategorie pasujące do
+              // UserMode (fitness/health → food+meal+suplement, cosmetics → kosmetyk).
+              .filter((tab) => allowedScanCategories.has(tab.id))
+              .map((tab) => {
               const isActive = mode === tab.id;
               return (
                 <button
