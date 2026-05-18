@@ -110,12 +110,20 @@ export default function HealthConditionsScreen({ onComplete, onSkip }: Props) {
 
   return (
     <div
+      // POPRAWKA hotfix: data-scrollable="true" wymagane bo app/layout.tsx
+      // ma globalny touchmove preventDefault dla wszystkiego co NIE jest
+      // w [data-scrollable] (anti-bounce na iOS). Bez tej flagi cały scroll
+      // wewnątrz HealthConditionsScreen był blocked → ekran "przycinał się
+      // i pływał we wszystkie strony" (Patryk feedback post-merge).
+      data-scrollable="true"
       style={{
         position: "fixed",
         inset: 0,
         background: "#050a08",
         zIndex: 1000,
         overflow: "auto",
+        WebkitOverflowScrolling: "touch", // momentum scroll na iOS
+        overscrollBehavior: "contain",    // brak scroll chaining do body
       }}
     >
       {/* Ambient cyan orbs */}

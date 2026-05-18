@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { usePremium } from "@/lib/hooks/usePremium";
+import { useUserMode } from "@/lib/hooks/useUserMode";
 import AgentChat from "./AgentChat";
 
 // Routes where the FAB is visible. Profil, /premium and /wyniki/*
@@ -50,6 +51,11 @@ function FabLogo({ size = 32 }: { size?: number }) {
 export default function AgentFAB() {
   const pathname = usePathname();
   const { isPremium, loading } = usePremium();
+  // Hotfix post-merge (Patryk decision): AgentChat (FAB) TYLKO w trybie
+  // fitness. W health/cosmetics chowamy — w przyszłości health dostanie
+  // własną wersję agenta dostrojoną pod porady zdrowotne (osobny komponent
+  // + osobny prompt z medical disclaimer), na razie HIDE.
+  const { mode: userMode, loading: modeLoading } = useUserMode();
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
 
@@ -70,6 +76,9 @@ export default function AgentFAB() {
 
   if (!mounted) return null;
   if (loading) return null;
+  if (modeLoading) return null;
+  // Hotfix: AgentFAB tylko w fitness (TODO: health-specific agent)
+  if (userMode !== "fitness") return null;
   if (onboarding) return null;
   const path = pathname || "";
   if (HIDDEN_PREFIXES.some((p) => path === p || path.startsWith(p + "/"))) return null;

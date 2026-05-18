@@ -220,17 +220,22 @@ export interface ModeNavConfig {
 
 export const MODE_NAV_CONFIG: Record<UserMode, ModeNavConfig> = {
   fitness: {
+    // /forma TYLKO w fitness (Patryk decision post-merge hotfix): CheckForm
+    // to narzędzie typowo fitness (sylwetka, postura). Dla zdrowotnych i
+    // kosmetycznych nie ma kontekstu.
     tabs: ["/", "/forma", "/dashboard", "/profil"],
     defaultTab: "/",
     navAccentColor: "#6efcb4",
   },
   health: {
-    tabs: ["/", "/dashboard", "/forma", "/profil"],
+    // Brak /forma w nav — patrz komentarz fitness.
+    tabs: ["/", "/dashboard", "/profil"],
     defaultTab: "/dashboard",
     navAccentColor: "#22d3ee",
   },
   cosmetics: {
-    tabs: ["/", "/dashboard", "/forma", "/profil"],
+    // Brak /forma w nav — patrz komentarz fitness.
+    tabs: ["/", "/dashboard", "/profil"],
     defaultTab: "/",
     navAccentColor: "#C084FC",
   },
@@ -259,4 +264,31 @@ export const MODE_DEFAULT_SCAN_CATEGORY: Record<UserMode, ScanCategory> = {
 
 export function getDefaultScanCategoryForMode(mode: UserMode | null | undefined): ScanCategory {
   return MODE_DEFAULT_SCAN_CATEGORY[(mode ?? "fitness") as UserMode];
+}
+
+// ────────────────────────────────────────────────────────────────────
+// ALLOWED SCAN CATEGORIES PER MODE (Patryk hotfix post-merge)
+// ────────────────────────────────────────────────────────────────────
+// Decyzja: w Skanerze home pokazujemy TYLKO kategorie pasujące do trybu
+// usera — bez "wszystko dla wszystkich" zatłoczenia tabami.
+//
+//   fitness: Żywność + Danie + Suplement (drop Kosmetyk — nie ma kontekstu)
+//   health:  Żywność + Danie + Suplement (drop Kosmetyk — j.w.)
+//   cosmetics: Kosmetyk only (focus na INCI, suplement w przyszłości jeśli
+//              wpadnie "skin care from inside" feature)
+//
+// Caller: app/page.tsx filtruje tabs przed render oraz auto-correctuje
+// `mode` w state'cie jeśli zapisany w localStorage `skladai_mode` jest
+// niedozwolony dla bieżącego userMode.
+
+export const MODE_ALLOWED_SCAN_CATEGORIES: Record<UserMode, ScanCategory[]> = {
+  fitness:   ["food", "meal", "suplement"],
+  health:    ["food", "meal", "suplement"],
+  cosmetics: ["cosmetics"],
+};
+
+export function getAllowedScanCategoriesForMode(
+  mode: UserMode | null | undefined
+): ScanCategory[] {
+  return MODE_ALLOWED_SCAN_CATEGORIES[(mode ?? "fitness") as UserMode];
 }
