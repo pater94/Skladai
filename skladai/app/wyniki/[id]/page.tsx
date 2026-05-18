@@ -12,6 +12,9 @@ import ResultTabs from "@/components/ResultTabs";
 import HealthAlerts from "@/components/HealthAlerts";
 import IngredientPopup from "@/components/IngredientPopup";
 import ScanLimitBanner from "@/components/ScanLimitBanner";
+import ModeHealthAlerts from "@/components/ModeHealthAlerts";
+import { useUserMode } from "@/lib/hooks/useUserMode";
+import { getHealthAlertsForScan } from "@/lib/healthAlerts";
 
 // Translation table for the v5 enforceLabelReadabilityGuard()
 // missing_fields array. Keys come from the backend, values are
@@ -595,6 +598,14 @@ export default function WynikiPage() {
 
   const { color, bg, label } = getScoreColor(result.score);
 
+  // Etap 2 Krok G: mode-aware health alerts. Tylko mode=health
+  // wywołuje getHealthAlertsForScan (matchuje alergie/conditions/diabetes/
+  // ciążę z profilu na składnikach + nutrition). Pokazane PRZED standardowym
+  // layoutem wyniku jako pierwszy bloc na ekranie.
+  const { mode: userMode } = useUserMode();
+  const modeHealthAlerts =
+    userMode === "health" && profile ? getHealthAlertsForScan(result, profile) : [];
+
   const foodResult = scanType === "food" ? (result as FoodAnalysisResult) : null;
   const textSearchResult = isTextSearch ? (result as TextSearchResult) : null;
   const cosmeticsResult = isCosmetics ? (result as CosmeticsAnalysisResult) : null;
@@ -779,6 +790,13 @@ export default function WynikiPage() {
 
       {/* Content */}
       <div className={`max-w-md mx-auto pb-10 relative z-20 ${isForma ? "px-0 mt-0" : "px-0 mt-0"}`}>
+
+        {/* ─── Etap 2 Krok G: Mode-aware health alerts (tylko mode=health) ─── */}
+        {userMode === "health" && modeHealthAlerts.length > 0 && (
+          <div style={{ padding: "0 16px" }}>
+            <ModeHealthAlerts alerts={modeHealthAlerts} />
+          </div>
+        )}
 
         {/* ─── 1. SCORE CARD ─── */}
         {isForma ? (
