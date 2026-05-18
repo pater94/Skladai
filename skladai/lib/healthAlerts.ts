@@ -80,15 +80,106 @@ export function findNutritionValue(
 // Allergy keyword maps (per allergen ID → search terms)
 // ────────────────────────────────────────────────────────────────────
 
+// POPRAWKA Krok G+ (po failed test C celiac→pszenna): keywords używają
+// STEMÓW polskich (po-rdzenny core) zamiast pełnych form mianownika.
+// Przykład: "pszen" matchuje pszenica/pszenna/pszenny/pszennej, ale
+// nadal NIE matchuje życie/pszczyna/itp. Lista false positives
+// zweryfikowana w scripts/test-stage2-smoke.mjs (false-positive guard).
+//
+// Known limitations:
+//   - "ser " (z trailing space) w lactose keywords może łapać "serce" w
+//     składach (rzadko spotykane). Lepsze niż brak ser/serek/sernik
+//     coverage. Patryk-approved decision.
 const ALLERGEN_KEYWORDS: Record<string, string[]> = {
-  nuts: ["orzech", "orzechy", "nut", "nuts", "migdał", "almond", "nerkowiec", "cashew", "pistacj", "pecan", "hazelnut", "laskow"],
-  fish: ["ryb", "tuna", "łosoś", "salmon", "dorsz", "cod", "makrela", "mackerel", "sardynk", "sardine", "anchois", "tuńczyk"],
-  eggs: ["jajk", "jajo", "jaj ", "egg ", "albumin", "lecytyn", "yolk"],
-  soy: ["soja", "soy ", "sojow", "tofu", "tempeh", "edamame", "soybean"],
-  gluten: ["pszenic", "wheat", "żyto", "rye ", "jęczmień", "barley", "owies", "oats", "gluten", "kasza", "bulgur", "kuskus", "couscous", "manna", "semolina"],
-  shellfish: ["krew", "krewetk", "shrimp", "homar", "lobster", "krab", "crab", "małż", "mussel", "ostryga", "oyster"],
+  nuts: [
+    "orzech", "nut", "nuts",
+    "migdał", "almond",
+    "nerkowiec", "cashew",
+    "pistac", // pistacja/pistacji/pistacjowy
+    "pekan", "pecan",
+    "macadami", // macadamia/macadamii
+    "laskow",   // orzechy laskowe / laskowy
+    "hazelnut",
+    "arachid",  // arachidy/arachidowy (orzeszki ziemne)
+    // UWAGA: "ziem" zbyt szerokie (ziemniaki) — pomijamy
+  ],
+  fish: [
+    "ryb",     // ryby/rybny/rybna
+    "łoso",    // łosoś/łososia/łososiowy — stem bez 'ś' końcowego
+               // (które w odmianach zmienia się na 's' lub znika)
+    "tuńcz", "tuna", // tuńczyk/tuńczyka
+    "sardyn", "sardine",
+    "makrel", "mackerel",
+    "śled",    // śledź/śledzia/śledziowy
+    "dorsz",   // dorsz/dorsza/dorszowy
+    "anchois", "anchovy",
+    "salmon", "cod",
+  ],
+  eggs: [
+    "jaj",     // jaja/jajko/jajek/jajeczny/jajo
+    "egg",
+    "albumin",
+    // USUWAMY "lecytyn" — lecytyna sojowa jest WSZĘDZIE, false positive
+    // dla eggs. Lecytyna jaj występuje rzadko i specyficznie nazwana
+    // ("lecytyna z żółtek jaj") — wymagałaby osobnego matcha.
+    "yolk", "żółtk", // żółtko/żółtka
+  ],
+  soy: [
+    "soj",     // soja/soji/sojowy/sojowa
+    "soy",
+    "tofu", "tempeh", "edamame", "miso",
+    "soybean",
+    // "lecytyna sojowa" — najpewniej trafia w "soj" już, ale dla
+    // pewności mamy też pełny term:
+    "lecytyna sojowa", "soy lecithin",
+  ],
+  gluten: [
+    "pszen",   // pszenica/pszenna/pszenny/pszennej
+    "wheat",
+    "żyto",    // żyto/żyta — bezpieczny stem (NIE "żyt" bo łapie "życie")
+    "żytni",   // żytni/żytnia/żytnie/żytniego — odmiany przymiotnika
+    "rye ",    // rye z spacją — chroni przed false positive RYE w innych słowach
+    "jęczmie", // jęczmień/jęczmienny — wspólny stem (ń→n w odmianach)
+    "barley",
+    "ows",     // owies/owsiany/owsianka/owsa
+    "oats",
+    "gluten",
+    "kasz",    // kasza/kasze/kaszy
+    "bulgur",
+    "kuskus", "couscous",
+    "manna", "semolina",
+    // Typy pszenicy zawierające gluten — niskie false-positive risk:
+    "spelt", "orkisz",
+    "kamut",
+    "durum",
+    "einkorn",
+  ],
+  shellfish: [
+    "krewetk", // krewetka/krewetki — bez standalone "krew" (false pos)
+    "shrimp",
+    "homar", "lobster",
+    "krab", "crab",
+    "małż", "mussel",
+    "ostryg",  // ostryga/ostrygi/ostrygowy — bez końcowego 'a'
+    "oyster",
+    "langust", // langusta/langusty
+  ],
   sesame: ["sezam", "sesame", "tahini"],
   celery: ["seler", "celery", "celeriac"],
+  fructose: [
+    "fruktoz",  // fruktoza/fruktozy/fruktozowy
+    "fructose",
+    // Diakrytyki ó/o nie są zamienne w .includes() — musimy mieć obie:
+    "miód",     // miód (mianownik)
+    "miod",     // miodu/miody/miodowy (odmiany bez ó)
+    "honey",
+    "syrop glukozowo-fruktozowy",
+    "hfcs",
+    "high-fructose corn syrup",
+    "agaw",   // agawa/agawy/agawowy — stem (mianownik kończy się 'a' które
+              // ginie w odmianach: "syrop z agawy")
+    "agave",
+  ],
 };
 
 /**
@@ -209,15 +300,48 @@ export function getHealthAlertsForScan(
     }
   }
 
-  // Nietolerancja laktozy → szukaj mleka, serwatki, kazeiny
+  // Nietolerancja laktozy — POPRAWKA Krok G+: stem-based PL keywords.
+  // "mlek" matchuje mleko/mleka/mleczny/mlekowy. "ser " ma trailing
+  // space — known limitation: może łapać "serce" (rzadkie w składach).
   if (conditions.includes("lactose_intolerance")) {
-    const lactoseKeywords = ["mleko", "milk", "laktoza", "lactose", "serwatk", "whey", "kazein", "casein", "ser ", "śmietan", "cream", "jogurt", "yogurt", "maślank"];
+    const lactoseKeywords = [
+      "mlek",     // mleko/mleka/mleczny
+      "milk",
+      "laktoz",   // laktoza/laktozy
+      "lactose",
+      "serwatk",  // serwatka/serwatkowy
+      "whey",
+      "kazein", "casein",
+      "ser ",     // ser/serek/sernik — known limitation: false positive na "serce"
+      "śmietan",  // śmietana/śmietanka/śmietankowy
+      "cream",
+      "jogurt", "yogurt",
+      "maślank",  // maślanka/maślanki
+      "masło",    // masło — ALE uwaga: "masło orzechowe" nie ma laktozy.
+                  // Akceptujemy edge case — user widzi alert + składnik,
+                  // sam ocenia.
+      "kefir",
+    ];
     const found = findIngredientsByKeywords(allIngredients, lactoseKeywords);
     if (found.length > 0) {
       alerts.push({
         severity: "warning",
         title: "🥛 Zawiera laktozę",
         message: `Wykryto: ${found.join(", ")}. Możesz potrzebować laktazy lub wybrać wersję laktozową.`,
+        ingredients: found,
+      });
+    }
+  }
+
+  // Nietolerancja fruktozy — Krok G+ (nowe): reuse ALLERGEN_KEYWORDS.fructose.
+  // Łapie fruktozę bezpośrednio, miód, syropy HFCS, agawę.
+  if (conditions.includes("fructose_intolerance")) {
+    const found = findIngredientsByKeywords(allIngredients, ALLERGEN_KEYWORDS.fructose);
+    if (found.length > 0) {
+      alerts.push({
+        severity: "warning",
+        title: "🍎 Zawiera fruktozę",
+        message: `Wykryto: ${found.join(", ")}. Możesz potrzebować suplementu ksylozy izomerazy lub unikać.`,
         ingredients: found,
       });
     }
