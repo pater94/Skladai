@@ -7,6 +7,7 @@ import CloudSync from "@/components/CloudSync";
 import AppInit from "@/components/AppInit";
 import AgentFAB from "@/components/AgentFAB";
 import SafeBoundary from "@/components/SafeBoundary";
+import { ThemeProvider } from "@/components/ThemeProvider";
 
 export const metadata: Metadata = {
   title: "SkładAI — Sprawdź co naprawdę jesz",
@@ -45,22 +46,36 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="apple-mobile-web-app-title" content="SkładAI" />
       </head>
-      <body style={{ fontFamily: "-apple-system, 'SF Pro Display', 'Helvetica Neue', system-ui, sans-serif" }}>
-        <div id="scroll-container" data-scrollable="true">
-          {children}
-        </div>
-        <BottomNav />
-        <SWUpdateBanner />
-        {/* OnboardingWrapper is the critical auth path — do NOT wrap it in
-            a SafeBoundary. If it errors out, that's a real problem we need
-            to see. */}
-        <OnboardingWrapper />
-        <SafeBoundary name="CloudSync"><CloudSync /></SafeBoundary>
-        <SafeBoundary name="AppInit"><AppInit /></SafeBoundary>
-        {/* AgentFAB pulls in useHealthData (dynamic @capgo/capacitor-health
-            import) and the full AgentChat tree — any crash here must NOT
-            take the rest of the app down with it. */}
-        <SafeBoundary name="AgentFAB"><AgentFAB /></SafeBoundary>
+      <body
+        style={{
+          fontFamily: "-apple-system, 'SF Pro Display', 'Helvetica Neue', system-ui, sans-serif",
+          // Etap 2 Krok F: SSR-default mode accent na <body>. ThemeProvider
+          // niżej nadpisuje po hydratacji jeśli user ma inny mode. Zapobiega
+          // flash unstyled na pierwszym renderze.
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          ["--accent-main" as any]: "#6efcb4",
+          ["--accent-rgb" as any]: "110,252,180",
+          ["--accent-gradient" as any]: "linear-gradient(135deg, #4ade80, #6efcb4)",
+          ["--accent-bg" as any]: "rgba(110,252,180,0.08)",
+        }}
+      >
+        <ThemeProvider>
+          <div id="scroll-container" data-scrollable="true">
+            {children}
+          </div>
+          <BottomNav />
+          <SWUpdateBanner />
+          {/* OnboardingWrapper is the critical auth path — do NOT wrap it in
+              a SafeBoundary. If it errors out, that's a real problem we need
+              to see. */}
+          <OnboardingWrapper />
+          <SafeBoundary name="CloudSync"><CloudSync /></SafeBoundary>
+          <SafeBoundary name="AppInit"><AppInit /></SafeBoundary>
+          {/* AgentFAB pulls in useHealthData (dynamic @capgo/capacitor-health
+              import) and the full AgentChat tree — any crash here must NOT
+              take the rest of the app down with it. */}
+          <SafeBoundary name="AgentFAB"><AgentFAB /></SafeBoundary>
+        </ThemeProvider>
         {/* Block iOS rubber-band bounce on non-scrollable areas */}
         <script dangerouslySetInnerHTML={{ __html: `
           document.body.addEventListener('touchmove', function(e) {
