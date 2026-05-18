@@ -3,14 +3,16 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
-import { UserProfile } from "@/lib/types";
-import { getProfile, getStreak, getHistory } from "@/lib/storage";
+import { UserProfile, UserMode } from "@/lib/types";
+import { getProfile, getStreak, getHistory, saveProfile } from "@/lib/storage";
 import { ACTIVITY_LEVELS, GOALS, COMMON_ALLERGENS, DIETS, DIABETES_TYPES, TRIMESTERS } from "@/lib/nutrition";
 import ProfileSetup from "@/components/ProfileSetup";
 import { createClient } from "@/lib/supabase";
 import { useHealthData } from "@/lib/useHealthData";
 import { IS_DEMO } from "@/lib/config";
 import { deactivatePremiumDemo, resetChatLimitsDemo } from "@/lib/demo";
+import { useUserMode, setUserMode } from "@/lib/hooks/useUserMode";
+import { MODES, MODE_LABELS } from "@/lib/modes";
 
 const AreaChart = dynamic(() => import("recharts").then(m => m.AreaChart), { ssr: false });
 const Area = dynamic(() => import("recharts").then(m => m.Area), { ssr: false });
@@ -48,6 +50,135 @@ function GlassCard({ children, style }: { children: React.ReactNode; style?: Rea
   );
 }
 
+/* Compact mode row used in "Tryb aplikacji" section (etap 1).
+   Wizualnie zgodne z mockupem (files6.zip skladai-mobile-profil.html):
+   ciemna karta z gradient bg dla active state + mint/cyan/violet ramka,
+   mini-ikona z tymi samymi animacjami co w ModePickerScreen (mniejsza
+   skala), checkbox indicator po prawej. */
+function ModeRow({
+  modeId, label, color, colorRgb, ringSpeed, ringDir, floatDelay, iconPaths,
+  active, onSelect,
+}: {
+  modeId: UserMode;
+  label: string;
+  color: string;
+  colorRgb: string;
+  ringSpeed: number;
+  ringDir: "normal" | "reverse";
+  floatDelay: number;
+  iconPaths: React.ReactNode;
+  active: boolean;
+  onSelect: () => void;
+}) {
+  return (
+    <button
+      onClick={onSelect}
+      aria-pressed={active}
+      data-mode={modeId}
+      style={{
+        width: "100%",
+        display: "flex",
+        alignItems: "center",
+        gap: 10,
+        padding: "10px 12px",
+        borderRadius: 14,
+        background: active
+          ? `linear-gradient(180deg, rgba(${colorRgb}, 0.08), rgba(${colorRgb}, 0.02))`
+          : "rgba(15,22,18,0.6)",
+        border: active
+          ? `1px solid rgba(${colorRgb}, 0.45)`
+          : "1px solid rgba(255,255,255,0.05)",
+        cursor: "pointer",
+        transition: "all 0.2s",
+        textAlign: "left",
+        font: "inherit",
+        color: "inherit",
+      }}
+    >
+      {/* Icon wrap (38×38) */}
+      <div style={{ position: "relative", width: 38, height: 38, flexShrink: 0 }}>
+        {/* Bg pulse */}
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            borderRadius: "50%",
+            background: `radial-gradient(circle, rgba(${colorRgb},0.2), rgba(${colorRgb},0.05) 60%, transparent)`,
+            animation: "modeIconPulse 3s ease-in-out infinite",
+          }}
+        />
+        {/* Orbital ring */}
+        <div
+          style={{
+            position: "absolute",
+            inset: -3,
+            borderRadius: "50%",
+            border: `1px solid rgba(${colorRgb}, 0.22)`,
+            borderTopColor: `rgba(${colorRgb}, 0.65)`,
+            animation: `modeRingSpin ${ringSpeed}s linear infinite`,
+            animationDirection: ringDir,
+          }}
+        />
+        {/* SVG */}
+        <svg
+          width="20"
+          height="20"
+          viewBox="0 0 32 32"
+          style={{
+            position: "absolute",
+            inset: 0,
+            margin: "auto",
+            color: color,
+            stroke: color,
+            fill: "none",
+            strokeWidth: 1.5,
+            strokeLinecap: "round",
+            strokeLinejoin: "round",
+            filter: `drop-shadow(0 1px 6px rgba(${colorRgb}, 0.45))`,
+            animation: "modeFloat 4s ease-in-out infinite",
+            animationDelay: `-${floatDelay}s`,
+          }}
+        >
+          {iconPaths}
+        </svg>
+      </div>
+
+      {/* Name */}
+      <span
+        style={{
+          flex: 1,
+          fontSize: 12.5,
+          fontWeight: 700,
+          color: active ? color : "rgba(255,255,255,0.92)",
+          letterSpacing: "-0.1px",
+        }}
+      >
+        {label}
+      </span>
+
+      {/* Checkbox indicator */}
+      <span
+        style={{
+          width: 20,
+          height: 20,
+          borderRadius: "50%",
+          border: active ? "none" : "1.5px solid rgba(255,255,255,0.15)",
+          background: active ? color : "transparent",
+          color: "#0a0e0c",
+          fontSize: 11,
+          fontWeight: 900,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          flexShrink: 0,
+        }}
+      >
+        {active ? "✓" : ""}
+      </span>
+    </button>
+  );
+}
+
 export default function ProfilPage() {
   const router = useRouter();
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -63,6 +194,7 @@ export default function ProfilPage() {
   const [newWeightDate, setNewWeightDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [authEmail, setAuthEmail] = useState<string | null>(null);
   const health = useHealthData();
+  const { mode: currentMode } = useUserMode();
 
   useEffect(() => {
     (document.getElementById("scroll-container") || window).scrollTo(0, 0);
@@ -298,6 +430,38 @@ export default function ProfilPage() {
               <span style={{ fontSize: 12.5, fontWeight: 700, color: "rgba(255,255,255,0.8)" }}>{r.value}</span>
             </div>
           ))}
+        </GlassCard>
+
+        {/* === Tryb aplikacji (etap 1: 3 tryby) === */}
+        <GlassCard>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 12 }}>
+            <span style={{ fontSize: 14 }}>⚡</span>
+            <span style={{ fontSize: 13, fontWeight: 800, color: "rgba(255,255,255,0.8)" }}>Tryb aplikacji</span>
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
+            {MODES.map((m) => (
+              <ModeRow
+                key={m.id}
+                modeId={m.id}
+                label={m.label}
+                color={m.color}
+                colorRgb={m.colorRgb}
+                ringSpeed={m.ringSpeed}
+                ringDir={m.ringDir}
+                floatDelay={m.floatDelay}
+                iconPaths={m.iconPaths}
+                active={currentMode === m.id}
+                onSelect={() => {
+                  if (currentMode === m.id) return;
+                  const confirmed = window.confirm(
+                    `Zmienić tryb na "${MODE_LABELS[m.id]}"? Aplikacja dostosuje się do Twojego wyboru.`
+                  );
+                  if (!confirmed) return;
+                  setUserMode(m.id, true);
+                }}
+              />
+            ))}
+          </div>
         </GlassCard>
 
         {/* Apple Health (iOS) / Health Connect (Android) — native only */}
