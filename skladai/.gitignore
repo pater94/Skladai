@@ -56,3 +56,8 @@ ios/App/DerivedData/
 
 # www placeholder (generated)
 /www/
+
+# Etap 1 — Playwright artifacts
+playwright-report/
+playwright-results.json
+test-results/

@@ -278,6 +278,7 @@ export default function SkinProfileSetup({ onComplete, onSkip }: Props) {
 
   return (
     <div
+      data-testid="skin-profile-setup"
       style={{
         position: "fixed", inset: 0, zIndex: 150,
         background: "#0a0e0c",

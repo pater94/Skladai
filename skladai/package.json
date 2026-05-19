@@ -12,7 +12,16 @@
     "cap:ios": "npx cap open ios",
     "build:android": "npx cap sync android",
     "build:ios": "npx cap sync ios && node scripts/fix-spm-paths.mjs",
-    "postinstall": "node scripts/fix-spm-paths.mjs"
+    "postinstall": "node scripts/fix-spm-paths.mjs",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:headed": "playwright test --headed",
+    "test:smoke": "playwright test --grep @smoke",
+    "test:critical": "playwright test --grep @critical",
+    "qa": "playwright test",
+    "qa:update-snapshots": "playwright test --update-snapshots",
+    "audit:run": "tsx test/auditor/run-audit.ts",
+    "audit:review": "tsx test/auditor/review-results.ts"
   },
   "dependencies": {
     "@capacitor-community/speech-recognition": "^7.0.1",
@@ -40,6 +49,8 @@
     "recharts": "^3.8.0"
   },
   "devDependencies": {
+    "@anthropic-ai/sdk": "^0.96.0",
+    "@playwright/test": "^1.60.0",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
@@ -49,6 +60,7 @@
     "eslint-config-next": "16.2.1",
     "pngjs": "^7.0.0",
     "tailwindcss": "^4",
+    "tsx": "^4.22.2",
     "typescript": "^5"
   }
 }

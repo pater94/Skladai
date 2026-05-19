@@ -110,6 +110,7 @@ export default function HealthConditionsScreen({ onComplete, onSkip }: Props) {
 
   return (
     <div
+      data-testid="health-conditions-screen"
       // POPRAWKA hotfix: data-scrollable="true" wymagane bo app/layout.tsx
       // ma globalny touchmove preventDefault dla wszystkiego co NIE jest
       // w [data-scrollable] (anti-bounce na iOS). Bez tej flagi cały scroll
@@ -206,6 +207,7 @@ export default function HealthConditionsScreen({ onComplete, onSkip }: Props) {
           {DIABETES_OPTIONS.map((opt) => (
             <Chip
               key={opt.id}
+              id={opt.id}
               emoji={opt.emoji}
               label={opt.label}
               active={diabetes === opt.id}
@@ -220,6 +222,7 @@ export default function HealthConditionsScreen({ onComplete, onSkip }: Props) {
           {CONDITIONS.map((opt) => (
             <Chip
               key={opt.id}
+              id={opt.id}
               emoji={opt.emoji}
               label={opt.label}
               active={conditions.has(opt.id)}
@@ -234,6 +237,7 @@ export default function HealthConditionsScreen({ onComplete, onSkip }: Props) {
           {ALLERGENS.map((opt) => (
             <Chip
               key={opt.id}
+              id={opt.id}
               emoji={opt.emoji}
               label={opt.label}
               active={allergens.has(opt.id)}
@@ -329,15 +333,19 @@ function Chip({
   label,
   active,
   onClick,
+  id,
 }: {
   emoji: string;
   label: string;
   active: boolean;
   onClick: () => void;
+  id?: string;
 }) {
   return (
     <button
       type="button"
+      data-testid={id ? `health-chip-${id}` : undefined}
+      data-active={active ? "true" : "false"}
       onClick={onClick}
       style={{
         position: "relative",

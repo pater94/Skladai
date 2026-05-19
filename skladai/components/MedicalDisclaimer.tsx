@@ -52,6 +52,7 @@ export default function MedicalDisclaimer() {
 
   return (
     <div
+      data-testid="medical-disclaimer"
       role="note"
       aria-label="Informacja medyczna"
       style={{
