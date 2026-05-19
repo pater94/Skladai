@@ -52,6 +52,7 @@ export default function ModePickerScreen({ onComplete }: Props) {
 
   return (
     <div
+      data-testid="mode-picker-screen"
       style={{
         position: "fixed",
         inset: 0,
@@ -216,6 +217,7 @@ function ModeCard({ mode, onClick }: { mode: ModeDef; onClick: () => void }) {
 
   return (
     <button
+      data-testid={`mode-card-${mode.id}`}
       onClick={onClick}
       style={{
         background: "linear-gradient(180deg, rgba(30,40,35,0.6), rgba(15,25,20,0.6))",

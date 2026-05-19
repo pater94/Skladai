@@ -25,7 +25,7 @@ export default function ModeHealthAlerts({ alerts }: Props) {
   if (!alerts || alerts.length === 0) return null;
 
   return (
-    <div style={{ marginBottom: 16, display: "flex", flexDirection: "column", gap: 8 }}>
+    <div data-testid="mode-health-alerts" style={{ marginBottom: 16, display: "flex", flexDirection: "column", gap: 8 }}>
       {alerts.map((alert, i) => (
         <AlertCard key={`${alert.severity}-${i}`} alert={alert} />
       ))}

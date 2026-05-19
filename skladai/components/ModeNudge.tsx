@@ -127,6 +127,7 @@ export default function ModeNudge() {
 
   return (
     <div
+      data-testid="mode-nudge"
       role="status"
       aria-label="Sugestia wyboru trybu"
       style={{
