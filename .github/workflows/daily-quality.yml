@@ -1,0 +1,169 @@
+name: Daily Quality (QA + Audit)
+
+on:
+  schedule:
+    # 06:00 UTC = 08:00 PL summer / 07:00 PL winter
+    - cron: '0 6 * * *'   # Playwright QA suite
+    - cron: '30 6 * * *'  # Ground Truth Audit (po QA)
+  workflow_dispatch:      # Manual trigger z UI
+  push:
+    branches: [main]      # Po każdym merge na main — tylko QA
+    paths:
+      - 'skladai/**'
+      - '!skladai/test/auditor/reports/**'
+
+concurrency:
+  group: daily-quality-${{ github.ref }}
+  cancel-in-progress: false
+
+defaults:
+  run:
+    working-directory: skladai
+
+jobs:
+  # ──────────────────────────────────────────────────────────────────
+  # QA Job: Playwright E2E przeciwko https://www.skladai.com
+  # ──────────────────────────────────────────────────────────────────
+  qa:
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      github.event_name == 'push' ||
+      github.event.schedule == '0 6 * * *'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: skladai/package-lock.json
+
+      - name: Install deps
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium webkit
+
+      # Daj Vercelowi minutę na deploy po push (jeśli push event)
+      - name: Wait for Vercel deploy (post-push only)
+        if: github.event_name == 'push'
+        run: sleep 60
+
+      - name: Run Playwright E2E
+        id: e2e
+        run: npm run qa
+        env:
+          TEST_URL: https://www.skladai.com
+          CI: 'true'
+        continue-on-error: true
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-${{ github.run_number }}
+          path: |
+            skladai/playwright-report/
+            skladai/playwright-results.json
+            skladai/test-results/
+          retention-days: 30
+
+      - name: Parse results
+        if: always()
+        id: parse
+        run: |
+          if [ -f playwright-results.json ]; then
+            PASSED=$(jq '.stats.expected // 0' playwright-results.json)
+            FAILED=$(jq '.stats.unexpected // 0' playwright-results.json)
+            FLAKY=$(jq '.stats.flaky // 0' playwright-results.json)
+            SKIPPED=$(jq '.stats.skipped // 0' playwright-results.json)
+            echo "passed=$PASSED" >> $GITHUB_OUTPUT
+            echo "failed=$FAILED" >> $GITHUB_OUTPUT
+            echo "flaky=$FLAKY" >> $GITHUB_OUTPUT
+            echo "skipped=$SKIPPED" >> $GITHUB_OUTPUT
+          else
+            echo "passed=0" >> $GITHUB_OUTPUT
+            echo "failed=999" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Telegram alert on FAILURE
+        if: steps.e2e.outcome == 'failure' || fromJSON(steps.parse.outputs.failed) > 0
+        run: |
+          MSG="🚨 *QA Failed* — $(date +'%Y-%m-%d')%0A%0APassed: ${{ steps.parse.outputs.passed }}%0AFailed: ${{ steps.parse.outputs.failed }}%0AFlaky: ${{ steps.parse.outputs.flaky }}%0A%0A[Report](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})%0A%0AFix: \`claude \"fix failing tests\"\`"
+          curl -sS -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
+            -d "chat_id=${{ secrets.TELEGRAM_CHAT_ID }}" \
+            -d "parse_mode=Markdown" \
+            --data-urlencode "text=$MSG"
+
+      - name: Telegram report on SUCCESS (daily only — push wzdłuż dnia jest cichy)
+        if: |
+          steps.e2e.outcome == 'success' &&
+          github.event.schedule == '0 6 * * *'
+        run: |
+          MSG="✅ *Daily QA Green* — ${{ steps.parse.outputs.passed }} tests passed (${{ steps.parse.outputs.skipped }} skipped)"
+          curl -sS -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
+            -d "chat_id=${{ secrets.TELEGRAM_CHAT_ID }}" \
+            -d "parse_mode=Markdown" \
+            --data-urlencode "text=$MSG"
+
+      - name: Create GitHub Issue on FAILURE (daily only)
+        if: |
+          steps.e2e.outcome == 'failure' &&
+          github.event.schedule == '0 6 * * *'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `🚨 QA failed — ${new Date().toISOString().slice(0, 10)}`,
+              body: `Run: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}\n\nFix: \`claude "fix failing tests"\``,
+              labels: ['qa-regression', 'needs-attention'],
+            });
+
+      - name: Fail job if tests failed
+        if: fromJSON(steps.parse.outputs.failed) > 0
+        run: exit 1
+
+  # ──────────────────────────────────────────────────────────────────
+  # Audit Job: Ground Truth audit (TYLKO daily 06:30 + manual)
+  # ──────────────────────────────────────────────────────────────────
+  audit:
+    if: |
+      github.event.schedule == '30 6 * * *' ||
+      github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: skladai/package-lock.json
+
+      - name: Install deps
+        run: npm ci
+
+      - name: Run Ground Truth Audit
+        run: npm run audit:run
+        env:
+          AUDITOR_USER_IDS: ${{ secrets.AUDITOR_USER_IDS }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+
+      - name: Upload audit reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: audit-reports-${{ github.run_number }}
+          path: skladai/test/auditor/reports/
+          retention-days: 90
