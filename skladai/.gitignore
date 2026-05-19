@@ -61,3 +61,7 @@ ios/App/DerivedData/
 playwright-report/
 playwright-results.json
 test-results/
+
+# Etap 2 — Auditor reports (gitignored, contain user PII)
+test/auditor/reports/audit-*.json
+
