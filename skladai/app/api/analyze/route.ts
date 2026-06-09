@@ -525,6 +525,7 @@ STYL — MĄDRY KUMPEL:
 6-8: "Solidny wybór, ale ten cukier mógłby być niższy."
 4-5: "9 składników w chlebie to jak CV na 5 stron — za dużo."
 1-3: "Koktajl chemiczny. Cisowianka jest obok na półce. Serio."
+SPÓJNOŚĆ: verdict to komentarz jakościowy. NIE podawaj w nim pozycji składnika na liście ("na 2. miejscu") ani liczb, chyba że DOKŁADNIE zgadzają się z ingredients[]/nutrition[]. Jeśli chcesz wspomnieć pozycję cukru — policz ją z tablicy ingredients PRZED napisaniem. Lepiej ogólnie ("cukier wysoko na liście") niż błędnie ("na drugim miejscu").
 
 PORÓWNANIA: Big Mac=563kcal, Snickers=488, pączek=350, jabłko=52, jajko=78. Spalanie: bieganie ~6kcal/min.
 ŁYŻECZKI: 1 łyżeczka = 4g cukru. Zawsze oblicz.
@@ -554,6 +555,8 @@ const MACRO_ANALYSIS = `Jesteś szybkim czytnikiem wartości odżywczych z etyki
 Ta aplikacja śledzi kalorie użytkowników — wymyślone wartości = realne szkody.
 - Wartości odżywcze = TYLKO te z tabeli WIDOCZNEJ na zdjęciu. NIE zgaduj z nazwy/marki/kategorii.
 - Tabela CZĘSTO obrócona/pod kątem — mentalnie obróć, odczytaj cyfra po cyfrze.
+- ⚠️ Czytaj tabelę WIERSZ PO WIERSZU od góry: każdą wartość przypisz do ETYKIETY w TEJ SAMEJ linii. Szczególna uwaga na sąsiadujące wiersze "Błonnik"/"Błonnik pokarmowy" i "Białko" — to RÓŻNE pola, bardzo łatwo zamienić wartości. Po odczycie sprawdź: czy każda liczba stoi na wysokości swojej etykiety? Błonnik NIE może być większy niż węglowodany.
+- Marka TYLKO z tekstu fizycznie widocznego (logo/nadruk). NIE wnioskuj marki z kategorii/profilu odżywczego. Niewidoczna → null.
 - Podaj wartości NA 100g/100ml (tak jak na etykiecie).
 - WALIDACJA ATWATER: kcal ≈ 4×białko + 4×węgle + 9×tłuszcz (±20%). Jeśli się nie zgadza → błędny odczyt → "brak danych".
 - Jeśli NIE widać tabeli wartości odżywczych → label_unreadable=true, verdict_short="Brak etykiety", nutrition wszystkie "brak danych".
@@ -1319,7 +1322,8 @@ function validateNutrition(result: Record<string, unknown>): void {
   if (!result.nutrition || !Array.isArray(result.nutrition)) return;
 
   const nutr = result.nutrition as Array<{ label: string; value: string }>;
-  let fat = 0, carbs = 0, protein = 0, kcal = 0;
+  let fat = 0, carbs = 0, protein = 0, kcal = 0, fiber = 0;
+  let hasFiber = false;
   let hasAnyValue = false;
 
   const isMissing = (v: string | undefined) =>
@@ -1334,6 +1338,7 @@ function validateNutrition(result: Record<string, unknown>): void {
     if (label.includes("tłuszcz") && !label.includes("nasycone")) fat = val;
     else if (label.includes("węglo")) carbs = val;
     else if (label.includes("biał")) protein = val;
+    else if (label.includes("błonnik")) { fiber = val; hasFiber = true; }
     else if (label.includes("energ") || label.includes("kalor")) kcal = val;
   }
 
@@ -1358,6 +1363,14 @@ function validateNutrition(result: Record<string, unknown>): void {
       invalid = true;
       reason = `Atwater mismatch: kcal=${kcal}, expected≈${expectedKcal.toFixed(0)} (4×${protein}P + 4×${carbs}C + 9×${fat}F)`;
     }
+  }
+
+  // Sanity 2b: błonnik to podzbiór węglowodanów — NIE może przekraczać węgli.
+  // Wyłapuje przesunięcie wiersza Białko↔Błonnik w tabeli (model gubi
+  // wyrównanie sąsiednich wierszy), którego Atwater nie łapie (błonnik poza wzorem).
+  if (!invalid && hasFiber && carbs > 0 && fiber > carbs + 0.5) {
+    invalid = true;
+    reason = `błonnik ${fiber}g > węglowodany ${carbs}g (niemożliwe — prawdopodobnie przesunięty wiersz tabeli)`;
   }
 
   // Sanity 3: kcal alone is suspicious if it's massive (>900/100g is impossible —
@@ -1882,127 +1895,38 @@ SZUKAJ LEPSZEGO (search_queries) — KLUCZOWE:
 - NIE polecaj konkretnych produktów ani marek — podaj TYLKO zapytania do wyszukiwania
 - Bądź życzliwym doradcą — dobry produkt POCHWAL`;
 
-      // Run OCR for supplement label (Claude Sonnet 4.6 — zastąpił martwy
-      // Google Vision 403). Supports dual images.
-      let supplOcrText = "";
-
-      // OCR images (parallel when 2 images)
-      if (secondBase64Data) {
-        const [supplFirstOCR, supplSecondOCR] = await Promise.all([
-          callClaudeVisionOCR(apiKey, base64Data, mediaType, "suplement", 20000),
-          callClaudeVisionOCR(apiKey, secondBase64Data, mediaType, "suplement", 20000),
-        ]);
-        supplOcrText = supplFirstOCR;
-        if (supplSecondOCR) {
-          supplOcrText = supplOcrText + "\n\n--- DRUGA STRONA OPAKOWANIA ---\n\n" + supplSecondOCR;
-          console.log(`[Claude OCR suplement] ${supplFirstOCR.length} + ${supplSecondOCR.length} chars from 2 images`);
-        }
-      } else {
-        supplOcrText = await callClaudeVisionOCR(apiKey, base64Data, mediaType, "suplement", 20000);
-        console.log(`[Claude OCR suplement] ${supplOcrText.length} chars`);
-      }
-
+      // COMBINED 1-call (jak food/cosmetics): Sonnet 4.6 czyta etykietę +
+      // analizuje w JEDNYM wywołaniu. Zastępuje kruchy 2-call pipeline
+      // (OCR Sonnet 20s → analiza) który z budżetem 55s wywalał ~75% skanów
+      // suplementów ("[callClaude] Local timeout after 20000ms"). Wysyłamy
+      // obraz(y) wprost do modelu analizy — bez osobnego kroku OCR.
       const supplImgContent = {
         type: "image" as const,
         source: { type: "base64" as const, media_type: mediaType, data: base64Data },
       };
-
-      // Only send the FIRST image to Claude. The second image is fed to Claude
-      // exclusively via its Google Vision OCR text (concatenated into supplOcrText
-      // above). Sending two full-resolution base64 images to Claude nearly
-      // doubles the upload + inference cost and was a major contributor to the
-      // "analiza bez końca" hang on 2-photo scans.
       const supplUserContent: unknown[] = [supplImgContent];
-      if (supplOcrText.length > 20) {
-        supplUserContent.push({
-          type: "text",
-          text: `Google Vision OCR odczytał z etykiety:\n\n---\n${supplOcrText}\n---\n\n🚫 ABSOLUTNY ZAKAZ HALUCYNACJI 🚫
-Użytkownicy biorą suplementy na podstawie Twojej analizy. Wymyślone dawki = realne ryzyko zdrowotne.
-
-ŹRÓDŁA DANYCH (jedyne dozwolone):
-1. TEKST OCR powyżej (priorytet #1)
-2. Obraz etykiety (do weryfikacji OCR)
-
-ZAKAZANE źródła:
-❌ Twoja wiedza ogólna ("typowy magnez B6 ma X mg" — NIE)
-❌ Skojarzenia z marką ("Olimp/Solgar zwykle daje Y dawki" — NIE)
-❌ Zgadywanie z typu produktu ("skoro to multiwitamina, to pewnie ma Z składników" — NIE)
-
-REGUŁY:
-1. Nazwa i marka = TYLKO z OCR. Brak → "Nieznany suplement" / brand=null
-2. Składniki i dawki = TYLKO te z tabeli w OCR. Jeśli OCR nie zawiera konkretnych liczb (mg / IU / %NRV) → ingredients=[], dose_warning="Nie odczytano dawek — zrób ostrzejsze zdjęcie tabeli składników"
-3. Nie wystawiaj score 8+ jeśli nie widzisz konkretnych form związków (chelat vs tlenek, D3 vs D2)
-4. Pusty JSON ≫ wymyślony JSON
-
-Przeanalizuj suplement. Odpowiedz WYŁĄCZNIE JSON.`,
-        });
-      } else {
-        // Vision OCR returned nothing usable — try Claude Haiku as
-        // fallback IF budget allows. v6 changes:
-        //   - model: Sonnet → Haiku (3-4× faster, ~10× cheaper)
-        //   - timeout: 20s → 12s
-        //   - skip if elapsed > 35s — same reasoning as food/cosmetics
-        //     path (don't burn budget on a fallback that often returns
-        //     empty for round packaging anyway)
-        const supplFallbackElapsed = Date.now() - startTime;
-        if (supplFallbackElapsed >= 35000) {
-          console.log(`[suplement Claude OCR] skipped — elapsed ${supplFallbackElapsed}ms`);
-        } else {
-          console.log("[suplement] Vision OCR failed — falling back to Claude Haiku OCR");
-        }
-        const supplClaudeOcr = supplFallbackElapsed < 35000
-          ? await callClaude(
-              apiKey,
-              "Jesteś precyzyjnym czytnikiem etykiet suplementów. Odczytaj DOKŁADNIE CAŁY tekst z tej etykiety suplementu: nazwę, markę, listę składników, dawki (mg / mcg / IU), %NRV, sposób przyjmowania, ostrzeżenia. Przepisz dokładnie — słowo w słowo. Nie pomijaj niczego, nie interpretuj.",
-              [
-                supplImgContent,
-                { type: "text", text: "Odczytaj CAŁY tekst z tej etykiety suplementu. Przepisz dokładnie, włącznie z liczbami i jednostkami." },
-              ],
-              2048,
-              12000,
-              "claude-haiku-4-5"
-            )
-          : { error: true, text: "" };
-
-        if (!supplClaudeOcr.error && supplClaudeOcr.text.length > 30) {
-          supplOcrText = supplClaudeOcr.text;
-          supplUserContent.push({
-            type: "text",
-            text: `AI OCR odczytał z etykiety:\n\n---\n${supplOcrText}\n---\n\nUżyj tego tekstu jako głównego źródła. Zweryfikuj z obrazem. Nazwa, marka, składniki, dawki = TYLKO z tego OCR. Przeanalizuj suplement. Odpowiedz WYŁĄCZNIE JSON.`,
-          });
-        } else {
-          // Total fallback — image-only. Push the hardest anti-hallucination
-          // prompt because we have ZERO ground-truth text. It's better to
-          // return "brak danych" than invent plausible-looking doses.
-          supplUserContent.push({
-            type: "text",
-            text: `⚠️ BRAK OCR — TYLKO OBRAZ ⚠️
-Google Vision i AI OCR NIE odczytały tekstu z etykiety (zdjęcie nieczytelne, zły kąt, blur).
-
-ABSOLUTNY ZAKAZ HALUCYNACJI:
-❌ NIE zgaduj dawek z typu produktu
-❌ NIE dopisuj "typowego" składu na podstawie nazwy
-❌ NIE wystawiaj score jeśli nie widzisz konkretnych liczb w obrazie
-
-CO MASZ ZROBIĆ:
-1. Spróbuj odczytać widoczny tekst z obrazu (nazwa, marka, skład, dawki).
-2. Jeśli widzisz tylko nazwę/markę bez składu — name/brand z obrazu, ingredients=[], dose_warning="Nie odczytano etykiety — zrób ostrzejsze zdjęcie", score=5, verdict_short="Brak etykiety"
-3. Jeśli nawet nazwy nie widać czytelnie — name="Nieznany suplement", wszystkie pola puste, score=null, verdict_short="Brak etykiety"
-4. Pusty JSON ≫ wymyślony JSON
-
-Odpowiedz WYŁĄCZNIE JSON.`,
-          });
-        }
+      if (secondBase64Data) {
+        supplUserContent.push({ type: "image", source: { type: "base64", media_type: mediaType, data: secondBase64Data } });
       }
+      supplUserContent.push({
+        type: "text",
+        text: `Odczytaj DOKŁADNIE etykietę tego suplementu (nazwa, marka, forma, lista składników z dawkami mg/mcg/IU/%NRV, sposób przyjmowania, ostrzeżenia) i przeanalizuj.
 
-      // Budget-aware Claude timeout: same principle as cosmetics/food below.
-      // Vercel cap 60s, Vision OCR already burned some of it, leave 5s for
-      // JSON serialization and the return trip. Floor 20s so a slow Vision
-      // never starves Claude.
+🚫 ABSOLUTNY ZAKAZ HALUCYNACJI 🚫 Użytkownicy biorą suplementy na podstawie Twojej analizy — wymyślone dawki = realne ryzyko zdrowotne.
+- Nazwa, marka, składniki i dawki = TYLKO to co FAKTYCZNIE WIDZISZ na etykiecie. NIE zgaduj z marki ani typu produktu.
+- Brak czytelnej nazwy → name="Nieznany suplement". Brak czytelnych dawek (mg/IU/%NRV) → ingredients=[], dose_warning="Nie odczytano dawek — zrób ostrzejsze zdjęcie tabeli składników".
+- NIE wystawiaj score 8+ jeśli nie widzisz konkretnych form związków (chelat vs tlenek, D3 vs D2).
+- Pusty JSON ≫ wymyślony JSON.
+
+Odpowiedz WYŁĄCZNIE JSON — pierwszy znak {.`,
+      });
+
+      // Budżet: Vercel Pro 120s (jak food/cosmetics). Jeden call → duży timeout
+      // (dawniej 55s dzielone na 2 calle = źródło timeoutów).
       const supplElapsed = Date.now() - startTime;
-      const supplTimeout = Math.max(20000, Math.min(40000, 55000 - supplElapsed));
-      console.log(`[analyze] mode=suplement elapsed=${supplElapsed}ms claudeTimeout=${supplTimeout}ms`);
-      const res = await callClaude(apiKey, supplementAnalysisPrompt, supplUserContent, 5120, supplTimeout);
+      const supplTimeout = Math.max(40000, Math.min(90000, 110000 - supplElapsed));
+      console.log(`[analyze] mode=suplement combined call, elapsed=${supplElapsed}ms timeout=${supplTimeout}ms`);
+      const res = await callClaude(apiKey, supplementAnalysisPrompt, supplUserContent, 5120, supplTimeout, "claude-sonnet-4-6");
       if (res.error) return NextResponse.json({ error: "Nie udało się przeanalizować. Spróbuj ponownie." }, { status: res.status ?? 500});
       try {
         const result = parseJsonResponse(res.text);
@@ -2017,12 +1941,11 @@ Odpowiedz WYŁĄCZNIE JSON.`,
         if (!result.who_for) result.who_for = [];
         if (!result.who_avoid) result.who_avoid = [];
 
-        // v4 enforcement: critical for supplements — invented doses
-        // are a health risk. Force partial_label / score=null when OCR
-        // came back empty, regardless of what the model produced.
-        enforceLabelReadabilityGuard(result, "suplement", supplOcrText);
-
-        void logScanToSupabase({ mode: "suplement", scanType: "suplement", base64Image: image, image2Base64: image2 || undefined, result, startTime, ocrText: supplOcrText || undefined, request });
+        // Combined 1-call: brak osobnego kroku OCR, więc enforceLabelReadabilityGuard
+        // (zaprojektowany pod stary 2-stage OCR, ocrLen=0 → wymazałby KAŻDY suplement)
+        // NIE ma już zastosowania — polegamy na fladze result.label_unreadable od
+        // modelu, dokładnie jak ścieżka food/cosmetics combined poniżej.
+        void logScanToSupabase({ mode: "suplement", scanType: "suplement", base64Image: image, image2Base64: image2 || undefined, result, startTime, ocrText: undefined, request });
         return NextResponse.json(result);
       } catch {
         void logFailedScan({ mode: "suplement", base64Image: image, error: "Suplement parse failed", startTime, request });
@@ -2060,23 +1983,26 @@ Odpowiedz WYŁĄCZNIE JSON.`,
     const combinedInstruction = isMacro
       ? `Odczytaj z tej etykiety wartości odżywcze, nazwę, markę i wagę. Zwróć WYŁĄCZNIE JSON wg formatu — pierwszy znak {.${preparedFoodRule}${jsonGuard}`
       : isCosmetics
-      ? `NAJPIERW odczytaj DOKŁADNIE cały tekst z obrazu etykiety: nazwę, markę, pełną listę składników INCI. POTEM przeanalizuj produkt.
+      ? `NAJPIERW SPRAWDŹ TYP PRODUKTU: czy to kosmetyk NAKŁADANY NA SKÓRĘ/WŁOSY (pielęgnacyjny lub myjący, pozostaje na ciele lub jest z ciała spłukiwany)? Jeśli to ŚRODEK PIORĄCY / DO PRANIA ("płyn do prania", "mleczko do prania", "kapsułki do prania", "płyn do płukania", "detergent", "do tkanin") albo środek czyszczący do powierzchni — to NIE jest kosmetyk pielęgnacyjny: ustaw category="Produkt do prania/czyszczenia", score=null, verdict_short="Nie kosmetyk pielęgnacyjny", verdict="To produkt do prania/czyszczenia, nie kosmetyk nakładany na skórę — nie oceniam go pod kątem pielęgnacji skóry.", good_for=[], bad_for=[], pregnancy_risk=null, i NIE wymyślaj korzyści dla skóry. Resztę pól wypełnij tym co widać.
+
+W przeciwnym razie odczytaj DOKŁADNIE: nazwę, markę, pełną listę składników INCI, POTEM przeanalizuj produkt.
 
 🚫 ABSOLUTNY ZAKAZ HALUCYNACJI 🚫
 Użytkownicy ufają Twojej ocenie składu kosmetyku.
-- Składniki, nazwa, marka = TYLKO to co FAKTYCZNIE WIDZISZ na obrazie. NIE zgaduj z wiedzy ogólnej, marki ani kategorii.
-- Nazwa niewidoczna → name="Nieznany [typ]"; to NIE jest powód do partial_label.
+- Składniki INCI = TYLKO to co FAKTYCZNIE WIDZISZ na obrazie. NIE zgaduj z wiedzy ogólnej, marki ani kategorii.
+- NAZWA i MARKA = TYLKO z tekstu FIZYCZNIE WIDOCZNEGO na opakowaniu (logo, nadruk nazwy). ZAKAZ wnioskowania marki z kategorii ani podobieństwa do znanych marek. Niewidoczna → brand=null, name="Nieznany [typ]". NIGDY nie dopisuj "(prawdopodobnie X)". Brak nazwy NIE jest powodem do partial_label.
 - label_unreadable=true TYLKO gdy listy składników INCI NIE DA SIĘ odczytać (blur, zły kąt). Wtedy score=null, verdict_short="Brak etykiety", retake_hint.
 - Pusty JSON ≫ wymyślony JSON.${skinProfileHint}${jsonGuard}`
-      : /* food_sklad + legacy food — SKAN SKŁADU (jedno zdjęcie, tabela wartości NIEWYMAGANA) */
-        `To SKAN SKŁADU produktu spożywczego. Odczytaj z etykiety listę składników oraz nazwę (jeśli widoczna), POTEM oceń jakość składu.
+      : /* food_sklad + legacy food — SKAN SKŁADU (jedno zdjęcie) */
+        `To SKAN SKŁADU produktu spożywczego. Twoim celem jest odczytać i ocenić LISTĘ SKŁADNIKÓW (sekcja "Składniki"/"Skład"/"Ingredients"/"Ingredientes").
 
-🚫 ABSOLUTNY ZAKAZ HALUCYNACJI 🚫
-- Składniki = TYLKO to co FAKTYCZNIE WIDZISZ na obrazie. NIE zgaduj z marki/kategorii.
-- Nazwa niewidoczna (fotografujesz tył/bok opakowania) → name="Nieznany produkt" lub opisowa z kategorii (np. "Jogurt naturalny", "Sos chili"). Brak nazwy to NORMALNE — NIE ustawiaj partial_label z tego powodu.
-- Tabela wartości odżywczych NIE jest wymagana w tym trybie. Jeśli widoczna — odczytaj (Atwater: kcal≈4×białko+4×węgle+9×tłuszcz ±20%); jeśli nie — pola nutrition "brak danych" (to OK, NIE błąd).
-- partial_label / label_unreadable = true USTAW TYLKO gdy listy składników NIE DA SIĘ odczytać (rozmazane, ucięte, brak składu na zdjęciu). Jeśli widzisz skład → pełna analiza ze score, NIE partial.
-- Pusty JSON ≫ wymyślony JSON.${preparedFoodRule}${jsonGuard}`;
+🚫 ABSOLUTNY ZAKAZ HALUCYNACJI 🚫 Wymyślony skład lub alergen = realne ryzyko zdrowotne.
+- ingredients wypełniaj WYŁĄCZNIE z sekcji oznaczonej "Składniki"/"Skład"/"Ingredients"/"Ingredientes".
+- ⚠️ Witaminy i minerały z TABELI WARTOŚCI ODŻYWCZYCH ("Wartość odżywcza"/"Información nutricional", w tym wiersze Witaminy/Vitaminas, Minerały/Minerales, wapń, jod, witamina D2, B2, kwas foliowy) to NIE są składniki — NIGDY nie wpisuj ich do ingredients.
+- Jeśli na kadrze NIE MA sekcji składników (widać tylko tabelę wartości / sam front / fragment) → ingredients=[], allergens=[], partial_label=true, label_unreadable=true, score=null, verdict_short="Brak listy składników", retake_hint="Sfotografuj sekcję 'Składniki' na etykiecie". NIE oceniaj składu którego nie widać.
+- NIGDY nie dodawaj składnika "wnioskowanego"/"domniemanego"/"prawdopodobnego" (np. "Mleko (na podstawie wartości odżywczych)"). Widzisz dany składnik = wpisz; nie widzisz = pomiń.
+- NAZWA i MARKA = TYLKO z tekstu FIZYCZNIE WIDOCZNEGO na opakowaniu (logo, nadruk nazwy, blok kontaktowy producenta). ZAKAZ wnioskowania marki/wariantu z profilu odżywczego, zestawu witamin, kategorii ani podobieństwa do znanych marek. Sam adres dystrybutora drobnym drukiem bez logo → brand=null, name="Nieznany produkt". NIGDY nie dopisuj wariantu typu "(prawdopodobnie Actimel)".
+- Jeśli widzisz pełną sekcję składników → pełna analiza ze score. Pusty JSON ≫ wymyślony JSON.${preparedFoodRule}${jsonGuard}`;
 
     const userContent: unknown[] = [imageContent];
     // 2-photo: drugi obraz (np. przód + tył opakowania) idzie do tego samego call
@@ -2131,6 +2057,35 @@ Użytkownicy ufają Twojej ocenie składu kosmetyku.
       }
 
       result.type = isCosmetics ? "cosmetics" : "food";
+
+      // Backstop anty-halucynacja składu (food_sklad). Audyt 06-09 wykazał: przy
+      // zdjęciu samej tabeli wartości model dolepiał ZGADNIĘTE składniki
+      // (np. "Mleko (na podstawie wartości odżywczych)") → fałszywe alergeny +
+      // is_safe=false = realne ryzyko zdrowotne. Usuwamy wpisy oznaczone jako
+      // wnioskowane; jeśli po tym lista pusta → model nie odczytał realnego
+      // składu (tylko zgadywał) → oznacz jako niepełny skan zamiast fałszywej oceny.
+      if (!isCosmetics && !isMacro && Array.isArray(result.ingredients)) {
+        const inferredRe = /wnioskowan|domniemane|na podstawie|prawdopodobnie|domysł|zgadywan|inferred|assumed/i;
+        const ings = result.ingredients as Array<Record<string, unknown>>;
+        const before = ings.length;
+        result.ingredients = ings.filter((ing) => {
+          const hay = `${ing.original || ""} ${ing.name || ""} ${ing.explanation || ""}`;
+          return !inferredRe.test(hay);
+        });
+        const after = (result.ingredients as Array<unknown>).length;
+        if (after < before) console.warn(`[anti-halucynacja] usunięto ${before - after} wnioskowanych składników`);
+        if (before > 0 && after === 0) {
+          result.label_unreadable = true;
+          result.partial_label = true;
+          result.allergens = [];
+          if (result.allergy_info && typeof result.allergy_info === "object") {
+            (result.allergy_info as Record<string, unknown>).detected_allergens = [];
+            (result.allergy_info as Record<string, unknown>).is_safe = null;
+          }
+          result.score = null;
+          result.verdict_short = "Brak listy składników";
+        }
+      }
 
       // Validate nutrition FIRST so the macro-rejection path can set
       // label_unreadable / score=null without being overwritten by the
