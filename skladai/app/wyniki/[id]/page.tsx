@@ -76,20 +76,49 @@ function parseNutritionValue(val: string): number {
   return match ? parseFloat(match[0]) : 0;
 }
 
+/**
+ * Parsuje wagę/objętość opakowania do gramów (≈ml). Obsługuje:
+ *   "200 g" → 200,  "0,5 L" → 500,  "1 L" → 1000,  "1,5 kg" → 1500,
+ *   "330 ml" → 330,  "500g" → 500
+ * Fix: stary `/(\d+)/` brał pierwszą liczbę → "0,5 L" dawało 0 (→ wszystko ×0).
+ * Zwraca null gdy brak sensownej wagi (caller pokazuje per-100g zamiast zgadywać).
+ */
+function parsePackageGrams(weight: string | undefined | null): number | null {
+  if (!weight) return null;
+  const w = weight.toLowerCase().replace(/,/g, ".");
+  // Złap liczbę (z decimalem) + jednostkę
+  const m = w.match(/(\d+\.?\d*)\s*(kg|g|l|ml)?/);
+  if (!m) return null;
+  const num = parseFloat(m[1]);
+  if (!Number.isFinite(num) || num <= 0) return null;
+  const unit = m[2] || "g";
+  switch (unit) {
+    case "kg": return Math.round(num * 1000);
+    case "l":  return Math.round(num * 1000); // 1 L ≈ 1000 ml ≈ 1000 g (woda)
+    case "ml": return Math.round(num);
+    default:   return Math.round(num); // g
+  }
+}
+
 function extractFoodNutrition(food: FoodAnalysisResult) {
   let cal100 = 0, prot100 = 0, fat100 = 0, carb100 = 0, sugar100 = 0, salt100 = 0, fiber100 = 0;
   const nutr = food.nutrition || [];
   for (const n of nutr) {
     const v = parseNutritionValue(n.value);
-    if (n.label.toLowerCase().includes("energ")) cal100 = v;
-    if (n.label.toLowerCase().includes("tluszcz") || n.label.toLowerCase().includes("tłuszcz")) { if (!n.sub) fat100 = v; }
-    if (n.label.toLowerCase().includes("weglo") || n.label.toLowerCase().includes("węglo")) { carb100 = v; if (n.sub) sugar100 = parseNutritionValue(n.sub); }
-    if (n.label.toLowerCase().includes("bial") || n.label.toLowerCase().includes("biał")) prot100 = v;
-    if (n.label.toLowerCase().includes("sol") || n.label.toLowerCase().includes("sól")) salt100 = v;
-    if (n.label.toLowerCase().includes("blonnik") || n.label.toLowerCase().includes("błonnik")) fiber100 = v;
+    const lbl = n.label.toLowerCase();
+    if (lbl.includes("energ")) cal100 = v;
+    // FIX: tłuszcz total = value ZAWSZE (nie tylko gdy brak sub). Sub to
+    // "w tym nasycone" — podpole tego samego wiersza, nie osobny tłuszcz.
+    // Stary `if (!n.sub)` gubił tłuszcz gdy miał nasycone → "Tłuszcz 0g".
+    if (lbl.includes("tluszcz") || lbl.includes("tłuszcz")) fat100 = v;
+    if (lbl.includes("weglo") || lbl.includes("węglo")) { carb100 = v; if (n.sub) sugar100 = parseNutritionValue(n.sub); }
+    if (lbl.includes("bial") || lbl.includes("biał")) prot100 = v;
+    if (lbl.includes("sol") || lbl.includes("sól")) salt100 = v;
+    if (lbl.includes("blonnik") || lbl.includes("błonnik")) fiber100 = v;
   }
-  const wMatch = food.weight?.match(/(\d+)/);
-  const packageG = wMatch ? parseInt(wMatch[1]) : 200;
+  // FIX: parser wagi z jednostkami. Gdy brak — fallback 100 (pokaż per-100g
+  // zamiast zgadywać 200g i mnożyć wszystko ×2).
+  const packageG = parsePackageGrams(food.weight) ?? 100;
   return { cal100, prot100, fat100, carb100, sugar100, salt100, fiber100, packageG };
 }
 
