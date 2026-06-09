@@ -6,18 +6,10 @@ import { UserProfile, DailyTotals } from "@/lib/types";
 import { getProfile, getDailyTotals, getWeekTotals, todayStr, removeDiaryEntry, getStreak, getHistory, saveMode } from "@/lib/storage";
 import { useHealthData } from "@/lib/useHealthData";
 import VoiceLog, { VoiceMicButton } from "@/components/VoiceLog";
-import ActivityBadges from "@/components/ActivityBadges";
 
 type DashView = "today" | "week";
-type MealTypeKey = "breakfast" | "lunch" | "dinner" | "snack";
 
 const MEAL_ICONS: Record<string, string> = { breakfast: "🥣", lunch: "🥗", dinner: "🍽️", snack: "🍿" };
-const MEAL_TYPES: { key: MealTypeKey; icon: string; label: string }[] = [
-  { key: "breakfast", icon: "🌅", label: "Śniadanie" },
-  { key: "lunch", icon: "🌞", label: "Obiad" },
-  { key: "dinner", icon: "🌙", label: "Kolacja" },
-  { key: "snack", icon: "🍪", label: "Przekąska" },
-];
 
 // IMPORTANT: Keep GlassCard and SectionTitle at module scope, NOT inside the
 // component function. Defining them inside DashboardPage would create a new
@@ -52,7 +44,6 @@ export default function DashboardPage() {
   const [showVoice, setShowVoice] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [voiceInitialText, setVoiceInitialText] = useState<string | undefined>(undefined);
-  const [searchMealType, setSearchMealType] = useState<MealTypeKey>("breakfast");
 
   const submitSearch = () => {
     const trimmed = searchQuery.trim();
@@ -194,7 +185,7 @@ export default function DashboardPage() {
             <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", marginTop: 2 }}>{dateStr}</div>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <ActivityBadges theme="light" />
+            {/* Chipy kroki/kcal/sen usunięte z nagłówka — dane w karcie "Aktywność dziś". */}
             {streak > 0 && (
               <div style={{ padding: "6px 14px", borderRadius: 20, background: "rgba(110,252,180,0.08)", border: "1px solid rgba(110,252,180,0.15)", display: "flex", alignItems: "center", gap: 4 }}>
                 <span style={{ fontSize: 12 }}>🔥</span>
@@ -262,86 +253,97 @@ export default function DashboardPage() {
                 ))}
               </div>
             </div>
+
+            {/* Bilans netto — wyróżniona stopka karty "Bilans dnia" (tylko gdy health połączony) */}
+            {health.isNative && health.isConnected && (() => {
+              const net = t.calories - health.kcalBurned;
+              return (
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 13, padding: "10px 12px", background: "rgba(110,252,180,0.08)", border: "1px solid rgba(110,252,180,0.22)", borderRadius: 13 }}>
+                  <div>
+                    <span style={{ fontSize: 13.5, fontWeight: 800, color: "#fff" }}>Bilans netto</span>
+                    <span style={{ fontSize: 11.5, color: "rgba(255,255,255,0.55)", marginLeft: 8 }}>Zjedzone {t.calories} − Spalone {health.kcalBurned}</span>
+                  </div>
+                  <span style={{ fontSize: 18, fontWeight: 800, color: "#6efcb4" }}>{net > 0 ? "+" : ""}{net}<span style={{ fontSize: 11, marginLeft: 2 }}>kcal</span></span>
+                </div>
+              );
+            })()}
           </GlassCard>
 
-          {/* Food search — opens VoiceLog for both text & mic */}
+          {/* Posiłki dziś — płaska lista (bez tabów pór posiłku) */}
           <GlassCard>
-            <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "2px 2px" }}>
-              <span style={{ fontSize: 14, color: "rgba(255,255,255,0.5)" }}>🔍</span>
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    e.preventDefault();
-                    submitSearch();
-                  }
-                }}
-                placeholder="Wpisz lub powiedz co zjadłeś..."
-                style={{
-                  flex: 1,
-                  background: "transparent",
-                  border: "none",
-                  outline: "none",
-                  color: "rgba(255,255,255,0.85)",
-                  fontSize: 13,
-                  fontWeight: 500,
-                  padding: "6px 0",
-                }}
-              />
+            <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
+              <span style={{ fontSize: 16 }}>🍽️</span>
+              <span style={{ fontSize: 13, fontWeight: 800, color: "rgba(255,255,255,0.8)" }}>Posiłki dziś</span>
+            </div>
+
+            {t.entries.length === 0 ? (
+              <div style={{ textAlign: "center", padding: "16px 0" }}>
+                <span style={{ fontSize: 28, display: "block", marginBottom: 8 }}>🍽️</span>
+                <div style={{ fontSize: 13, color: "rgba(255,255,255,0.55)", fontWeight: 500 }}>
+                  Brak posiłków — dodaj posiłek poniżej 👇
+                </div>
+              </div>
+            ) : (
+              t.entries.map((meal) => (
+                <div key={meal.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 12px", marginBottom: 6, borderRadius: 12, background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.04)" }}>
+                  <div style={{ width: 36, height: 36, borderRadius: 10, background: "rgba(110,252,180,0.06)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>
+                    {MEAL_ICONS[meal.mealType] || "🍽️"}
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 12.5, fontWeight: 700, color: "rgba(255,255,255,0.8)" }}>{meal.productName}</div>
+                    <div style={{ fontSize: 10.5, color: "rgba(255,255,255,0.5)", marginTop: 1 }}>{meal.timestamp ? new Date(meal.timestamp).toLocaleTimeString("pl-PL", { hour: "2-digit", minute: "2-digit" }) : ""}</div>
+                  </div>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: "#6efcb4" }}>{meal.calories} kcal</span>
+                  <button onClick={() => handleRemove(meal.id)} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.55)", fontSize: 14, cursor: "pointer", padding: 4 }}>✕</button>
+                </div>
+              ))
+            )}
+          </GlassCard>
+
+          {/* Szybkie dodawanie — kompakt: pole + mikrofon + 📸 skan (jeden rząd, pod posiłkami) */}
+          <GlassCard>
+            <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
+              <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 8, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 12, padding: "8px 12px" }}>
+                <span style={{ fontSize: 13, color: "rgba(255,255,255,0.5)" }}>🔍</span>
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      submitSearch();
+                    }
+                  }}
+                  placeholder="Wpisz lub powiedz co zjadłeś..."
+                  style={{ flex: 1, background: "transparent", border: "none", outline: "none", color: "rgba(255,255,255,0.85)", fontSize: 13, fontWeight: 500, padding: "2px 0" }}
+                />
+              </div>
               {searchQuery.trim().length > 0 ? (
                 <button
                   type="button"
                   onClick={submitSearch}
                   aria-label="Szukaj"
-                  style={{
-                    width: 44,
-                    height: 44,
-                    borderRadius: "9999px",
-                    border: "none",
-                    background: "#6efcb4",
-                    color: "#0a0f0d",
-                    fontSize: 18,
-                    fontWeight: 900,
-                    cursor: "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    flexShrink: 0,
-                    boxShadow: "0 4px 12px rgba(110,252,180,0.25)",
-                  }}
+                  style={{ width: 40, height: 40, borderRadius: "9999px", border: "none", background: "#6efcb4", color: "#0a0f0d", fontSize: 17, fontWeight: 900, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: "0 0 14px rgba(110,252,180,0.34)" }}
                 >
                   →
                 </button>
               ) : (
                 <VoiceMicButton onClick={() => { setVoiceInitialText(undefined); setShowVoice(true); }} accent="green" hideNewBadge />
               )}
+              {/* Kompaktowa ikona skanu — handler bez zmian (saveMode + push do skanera) */}
+              <button
+                type="button"
+                onClick={() => { saveMode("food"); router.push("/"); }}
+                aria-label="Zeskanuj posiłek"
+                style={{ width: 40, height: 40, borderRadius: 12, background: "rgba(110,252,180,0.10)", border: "1px solid rgba(110,252,180,0.25)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontSize: 16, cursor: "pointer" }}
+              >
+                📸
+              </button>
             </div>
-            <button
-              onClick={() => { saveMode("food"); router.push("/"); }}
-              style={{
-                width: "100%",
-                padding: "10px 16px",
-                borderRadius: 10,
-                marginTop: 10,
-                background: "rgba(110,252,180,0.04)",
-                border: "1px solid rgba(110,252,180,0.08)",
-                color: "rgba(110,252,180,0.85)",
-                fontSize: 13,
-                fontWeight: 600,
-                cursor: "pointer",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: 6,
-              }}
-            >
-              📷 Zeskanuj posiłek →
-            </button>
           </GlassCard>
 
-          {/* Activity card — data when connected, CTA otherwise */}
+          {/* Aktywność dziś — poziomy pasek 4 metryk (bez wiersza Bilans netto) */}
           {health.isNative && (
             <div id="aktywnosc-dzis" style={{ scrollMarginTop: 16 }}>
             <GlassCard>
@@ -353,49 +355,31 @@ export default function DashboardPage() {
               </div>
 
               {health.isConnected ? (
-                <>
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
-                    {(() => {
-                      const fmtSleep = (mins: number): string => {
-                        if (!mins || mins <= 0) return "—";
-                        const h = Math.floor(mins / 60);
-                        const m = mins % 60;
-                        return `${h}h ${m}m`;
-                      };
-                      return [
-                        { value: health.steps.toLocaleString("pl-PL"), label: "Kroki", icon: "👟", color: "#6efcb4" },
-                        { value: String(health.kcalBurned), label: "kcal spalone", icon: "🔥", color: "#f97316" },
-                        { value: `${health.distanceKm.toFixed(1)} km`, label: "Dystans", icon: "📍", color: "#3b82f6" },
-                        { value: fmtSleep(health.sleepMinutes), label: "Sen", icon: "😴", color: "#8b5cf6" },
-                      ];
-                    })().map((a, i) => (
-                      <div key={i} style={{ flex: "1 1 calc(50% - 5px)", padding: "12px 8px", borderRadius: 14, textAlign: "center", background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)" }}>
-                        <div style={{ fontSize: 13, marginBottom: 4 }}>{a.icon}</div>
-                        <div style={{ fontSize: 16, fontWeight: 900, color: a.color, letterSpacing: "-0.02em" }}>{a.value}</div>
-                        <div style={{ fontSize: 9.5, color: "rgba(255,255,255,0.7)", marginTop: 2 }}>{a.label}</div>
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Net calorie balance: zjedzone − spalone */}
-                  {(() => {
-                    const net = t.calories - health.kcalBurned;
-                    const netColor = net > 0 ? "#f97316" : "#6efcb4";
-                    return (
-                      <div style={{ marginTop: 12, paddingTop: 12, borderTop: "1px solid rgba(255,255,255,0.06)" }}>
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                          <span style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.6)" }}>Bilans netto</span>
-                          <span style={{ fontSize: 14, fontWeight: 900, color: netColor, letterSpacing: "-0.02em" }}>
-                            {net > 0 ? "+" : ""}{net} kcal
-                          </span>
+                (() => {
+                  const fmtSleep = (mins: number): string => {
+                    if (!mins || mins <= 0) return "—";
+                    const h = Math.floor(mins / 60);
+                    const m = mins % 60;
+                    return `${h}h ${m}m`;
+                  };
+                  const stats = [
+                    { value: health.steps.toLocaleString("pl-PL"), label: "Kroki", icon: "👟", color: "#6efcb4" },
+                    { value: String(health.kcalBurned), label: "Spalone", icon: "🔥", color: "#f97316" },
+                    { value: `${health.distanceKm.toFixed(1)} km`, label: "Dystans", icon: "📍", color: "#3b82f6" },
+                    { value: fmtSleep(health.sleepMinutes), label: "Sen", icon: "😴", color: "#8b5cf6" },
+                  ];
+                  return (
+                    <div style={{ display: "flex" }}>
+                      {stats.map((a, i) => (
+                        <div key={i} style={{ flex: 1, textAlign: "center", padding: "0 4px", borderRight: i < stats.length - 1 ? "1px solid rgba(255,255,255,0.07)" : "none" }}>
+                          <div style={{ fontSize: 14 }}>{a.icon}</div>
+                          <div style={{ fontSize: 16, fontWeight: 800, color: a.color, marginTop: 3, letterSpacing: "-0.02em" }}>{a.value}</div>
+                          <div style={{ fontSize: 10, color: "rgba(255,255,255,0.55)", marginTop: 1 }}>{a.label}</div>
                         </div>
-                        <div style={{ fontSize: 9.5, color: "rgba(255,255,255,0.45)", marginTop: 3 }}>
-                          Zjedzone {t.calories} − Spalone {health.kcalBurned}
-                        </div>
-                      </div>
-                    );
-                  })()}
-                </>
+                      ))}
+                    </div>
+                  );
+                })()
               ) : (() => {
                 // Not connected — inline CTA inside the Aktywność card.
                 const healthLabel = health.platform === "android" ? "Health Connect" : "Apple Health";
@@ -435,87 +419,6 @@ export default function DashboardPage() {
             </GlassCard>
             </div>
           )}
-
-          {/* Meals today */}
-          <GlassCard>
-            <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
-              <span style={{ fontSize: 16 }}>🍽️</span>
-              <span style={{ fontSize: 13, fontWeight: 800, color: "rgba(255,255,255,0.8)" }}>Posiłki dziś</span>
-            </div>
-
-            {/* Compact meal type selector */}
-            <div style={{ display: "flex", gap: 4, marginBottom: 10, background: "rgba(255,255,255,0.02)", borderRadius: 10, padding: 3 }}>
-              {MEAL_TYPES.map((mt) => (
-                <div
-                  key={mt.key}
-                  onClick={() => setSearchMealType(mt.key)}
-                  style={{
-                    flex: 1,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    gap: 4,
-                    padding: "6px 4px",
-                    borderRadius: 8,
-                    cursor: "pointer",
-                    background: searchMealType === mt.key ? "rgba(110,252,180,0.1)" : "transparent",
-                    border: searchMealType === mt.key ? "1px solid rgba(110,252,180,0.15)" : "1px solid transparent",
-                    fontSize: 10.5,
-                    fontWeight: 700,
-                    color: searchMealType === mt.key ? "#6efcb4" : "rgba(255,255,255,0.5)",
-                    whiteSpace: "nowrap" as const,
-                  }}
-                >
-                  <span style={{ fontSize: 11 }}>{mt.icon}</span>
-                  <span>{mt.label}</span>
-                </div>
-              ))}
-            </div>
-
-            {t.entries.length === 0 ? (
-              <div style={{ textAlign: "center", padding: "16px 0" }}>
-                <span style={{ fontSize: 28, display: "block", marginBottom: 8 }}>🍽️</span>
-                <div style={{ fontSize: 13, color: "rgba(255,255,255,0.55)", fontWeight: 500 }}>
-                  Brak posiłków — wpisz co zjadłeś wyżej ☝️
-                </div>
-              </div>
-            ) : (
-              t.entries.map((meal) => (
-                <div key={meal.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 12px", marginBottom: 6, borderRadius: 12, background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.04)" }}>
-                  <div style={{ width: 36, height: 36, borderRadius: 10, background: "rgba(110,252,180,0.06)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>
-                    {MEAL_ICONS[meal.mealType] || "🍽️"}
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 12.5, fontWeight: 700, color: "rgba(255,255,255,0.8)" }}>{meal.productName}</div>
-                    <div style={{ fontSize: 10.5, color: "rgba(255,255,255,0.5)", marginTop: 1 }}>{meal.timestamp ? new Date(meal.timestamp).toLocaleTimeString("pl-PL", { hour: "2-digit", minute: "2-digit" }) : ""}</div>
-                  </div>
-                  <span style={{ fontSize: 12, fontWeight: 700, color: "#6efcb4" }}>{meal.calories} kcal</span>
-                  <button onClick={() => handleRemove(meal.id)} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.55)", fontSize: 14, cursor: "pointer", padding: 4 }}>✕</button>
-                </div>
-              ))
-            )}
-          </GlassCard>
-
-          {/* Critical nutrients */}
-          <GlassCard>
-            <SectionTitle>Krytyczne składniki</SectionTitle>
-            <div style={{ display: "flex", gap: 12 }}>
-              {[
-                { icon: "🍬", label: "Cukier", value: t.sugar, max: n.sugar_max, color: "#FBBF24" },
-                { icon: "🧂", label: "Sól", value: t.salt, max: n.salt_max, color: "#f97316" },
-                { icon: "🥦", label: "Błonnik", value: t.fiber, max: n.fiber_min, color: "#6efcb4" },
-              ].map((nu, i) => (
-                <div key={i} style={{ flex: 1, textAlign: "center" }}>
-                  <div style={{ fontSize: 14, marginBottom: 4 }}>{nu.icon}</div>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.7)" }}>{nu.label}</div>
-                  <div style={{ fontSize: 10, color: nu.color, fontWeight: 600, marginTop: 2 }}>{Math.round(nu.value * 10) / 10}g / {nu.max}g</div>
-                  <div style={{ height: 3, background: "rgba(255,255,255,0.06)", borderRadius: 2, marginTop: 6 }}>
-                    <div style={{ height: "100%", width: `${Math.min((nu.value / nu.max) * 100, 100)}%`, background: nu.color, borderRadius: 2 }} />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </GlassCard>
         </>)}
 
         {/* ═══ WEEK VIEW ═══ */}
