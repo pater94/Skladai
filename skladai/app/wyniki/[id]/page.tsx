@@ -7,7 +7,7 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { ScanHistoryItem, CosmeticsAnalysisResult, FoodAnalysisResult, MealAnalysisResult, TextSearchResult, CheckFormResult, UserProfile, MealType } from "@/lib/types";
 import { getHistoryItem, getProfile, addDiaryEntry, todayStr } from "@/lib/storage";
-import { getScoreColor } from "@/components/ScoreRing";
+import ScoreRing, { getScoreColor } from "@/components/ScoreRing";
 import ResultTabs from "@/components/ResultTabs";
 import HealthAlerts from "@/components/HealthAlerts";
 import IngredientPopup from "@/components/IngredientPopup";
