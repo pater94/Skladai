@@ -318,6 +318,12 @@ export default function WynikiPage() {
   const [mealWeights, setMealWeights] = useState<Record<number, number>>({});
   const [textWeights, setTextWeights] = useState<Record<number, number>>({});
   const [allergensOpen, setAllergensOpen] = useState(false);
+  // Etap 2 Krok G: useUserMode MUSI być tutaj (przed early returnami niżej).
+  // Hook wywoływany warunkowo (po `if (!item) return`) powodował React #310
+  // (Rules of Hooks) — crash "Coś poszło nie tak" gdy wynik był pełny
+  // (label_unreadable=false). modeHealthAlerts (zwykłe obliczenie, nie hook)
+  // liczone niżej gdy result/profile już dostępne.
+  const { mode: userMode } = useUserMode();
 
   useEffect(() => {
     const id = params.id as string;
@@ -599,10 +605,8 @@ export default function WynikiPage() {
   const { color, bg, label } = getScoreColor(result.score);
 
   // Etap 2 Krok G: mode-aware health alerts. Tylko mode=health
-  // wywołuje getHealthAlertsForScan (matchuje alergie/conditions/diabetes/
-  // ciążę z profilu na składnikach + nutrition). Pokazane PRZED standardowym
-  // layoutem wyniku jako pierwszy bloc na ekranie.
-  const { mode: userMode } = useUserMode();
+  // wywołuje getHealthAlertsForScan. userMode pobrany hookiem NA GÓRZE
+  // komponentu (przed early returnami) — tu tylko zwykłe obliczenie.
   const modeHealthAlerts =
     userMode === "health" && profile ? getHealthAlertsForScan(result, profile) : [];
 
