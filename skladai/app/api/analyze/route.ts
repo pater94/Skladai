@@ -326,6 +326,14 @@ async function logFailedScan(opts: {
 
 const READ_FOOD_LABEL = `Jesteś precyzyjnym czytnikiem tekstu. Twoim JEDYNYM zadaniem jest DOKŁADNE odczytanie KAŻDEGO tekstu widocznego na zdjęciu etykiety produktu spożywczego.
 
+⚠️ NAJPIERW SPRAWDŹ — CZY TO W OGÓLE ETYKIETA:
+Jeśli na zdjęciu jest PRZYGOTOWANE JEDZENIE / POSIŁEK NA TALERZU / DANIE W MISCE / KANAPKA / ZUPA / owoce / warzywa luzem (a NIE opakowanie produktu z etykietą) — NIE próbuj czytać etykiety.
+Zamiast tego odpowiedz DOKŁADNIE jedną linią:
+PREPARED_FOOD:: [krótka nazwa dania które widzisz, np. "żurek w chlebie", "jajecznica z kiełbasą", "sałatka grecka"]
+I ZAKOŃCZ odpowiedź. Nie pisz nic więcej.
+
+Jeśli to JEST opakowanie produktu z etykietą (pudełko, butelka, słoik, folia, puszka, tubka) — przejdź do procedury poniżej.
+
 PROCEDURA ODCZYTU — WYKONAJ KROK PO KROKU:
 
 KROK 1 — NAZWA PRODUKTU:
@@ -1108,7 +1116,11 @@ async function callClaude(
   userContent: unknown[],
   maxTokens: number,
   timeoutMs: number,
-  model: string = "claude-sonnet-4-6"
+  model: string = "claude-sonnet-4-6",
+  // Prefill: gdy podany, dodajemy assistant message z tym tekstem żeby
+  // wymusić format odpowiedzi (np. "{" → model zaczyna od JSON, nie prozy).
+  // Zwracany text MA już prependowany prefill (caller dostaje pełny JSON).
+  prefill?: string
 ): Promise<{ error: boolean; text: string; status?: number }> {
   // IMPORTANT: We intentionally do NOT retry on local AbortError timeouts.
   // Vercel's `maxDuration` caps the entire function at 60s — retrying a 45s
@@ -1135,9 +1147,13 @@ async function callClaude(
         body: JSON.stringify({
           model,
           max_tokens: maxTokens,
-          temperature: 0,
+          // temperature:0 dla determinizmu (anti-hallucination). Opus 4.8
+          // deprecował temperature (używa `effort`) → pomijamy dla opus.
+          ...(model.includes("opus-4-8") ? {} : { temperature: 0 }),
           system,
-          messages: [{ role: "user", content: userContent }],
+          messages: prefill
+            ? [{ role: "user", content: userContent }, { role: "assistant", content: prefill }]
+            : [{ role: "user", content: userContent }],
         }),
       });
       clearTimeout(timeout);
@@ -1153,7 +1169,10 @@ async function callClaude(
         return { error: true, text: "", status: response.status };
       }
       const data = await response.json();
-      return { error: false, text: data.content?.[0]?.text || "" };
+      const rawText = data.content?.[0]?.text || "";
+      // Prepend prefill — model kontynuuje od "{", więc pełny JSON =
+      // prefill + odpowiedź. Bez tego JSON.parse dostałby tekst bez "{".
+      return { error: false, text: prefill ? prefill + rawText : rawText };
     } catch (err: unknown) {
       clearTimeout(timeout);
       if (err instanceof Error && err.name === "AbortError") {
@@ -1170,6 +1189,75 @@ async function callClaude(
     }
   }
   return { error: true, text: "", status: 500 };
+}
+
+// ==================== CLAUDE VISION OCR (zastępuje Google Vision) ====================
+// 2026-06-09: Google Vision API zwracał 403 SERVICE_DISABLED (wyłączony w
+// GCloud project) → pipeline ZAWSZE spadał do Haiku fallback → proza
+// "NAZWA: niewidoczna" → 43% food skanów = "Nieznany produkt".
+// A/B test na 6 trudnych etykietach Patryka: Google Vision 0/6, Claude
+// Sonnet 4.6 = 6/6 (czyta rotację, wielojęzyczność, krzywiznę, marki).
+// Decyzja: Claude Sonnet 4.6 staje się PRIMARY silnikiem OCR.
+//
+// Architektura 2-stage zachowana (OCR osobno od analizy) dla
+// anti-hallucination: stage 1 "tylko czytaj litery", stage 2 "interpretuj".
+const READ_SUPPLEMENT_LABEL = `Jesteś precyzyjnym czytnikiem etykiet suplementów. Odczytaj DOKŁADNIE CAŁY tekst z tej etykiety suplementu.
+
+PROCEDURA:
+1. NAZWA — największy tekst marketingowy (np. "Magnez B6", "Witamina D3 2000")
+2. MARKA — logo/producent
+3. SKŁADNIKI AKTYWNE + DAWKI — przepisz KAŻDY składnik z jego dawką (mg / mcg / µg / IU) i %NRV/%RWS DOKŁADNIE cyfra po cyfrze
+4. FORMA ZWIĄZKU — ważne: chelat / cytrynian / tlenek / D3 vs D2 / metylowana B12 itp.
+5. SPOSÓB PRZYJMOWANIA — ile kapsułek/tabletek dziennie
+6. OSTRZEŻENIA — przeciwwskazania, "nie przekraczać dawki"
+
+ODPOWIEDŹ (zwięźle, dokładnie):
+NAZWA: [tekst lub "niewidoczna"]
+MARKA: [tekst lub "niewidoczna"]
+PORCJA: [np. "1 kapsułka", "2 tabletki dziennie"]
+SKŁADNIKI I DAWKI:
+[składnik] — [dawka] ([%NRV])
+...
+OSTRZEŻENIA: [tekst]
+
+ZASADY KRYTYCZNE:
+- Przepisuj DOKŁADNIE co widzisz, cyfra po cyfrze. Dawki suplementów = zdrowie usera.
+- NIGDY nie zgaduj dawek których nie widzisz — napisz "niewidoczne"
+- NIE używaj wiedzy ogólnej o typowych dawkach — TYLKO to co na etykiecie
+- Tabela CZĘSTO obrócona/pod kątem — mentalnie obróć, odczytaj niezależnie od orientacji
+- Jeśli etykieta wielojęzyczna — szukaj polskiej, potem angielskiej, potem dowolnej czytelnej`;
+
+/**
+ * Claude Sonnet 4.6 jako silnik OCR. Zastępuje Google Vision (martwy 403).
+ * Zwraca odczytany tekst etykiety LUB:
+ *   - "" gdy error/timeout
+ *   - tekst zaczynający się od "PREPARED_FOOD::" gdy wykryto że to danie
+ *     na talerzu (nie etykieta) — caller przekierowuje do trybu meal.
+ */
+async function callClaudeVisionOCR(
+  apiKey: string,
+  b64: string,
+  mediaType: string,
+  kind: "food" | "cosmetics" | "suplement",
+  budgetMs: number = 22000
+): Promise<string> {
+  const readPrompt =
+    kind === "cosmetics" ? READ_COSMETICS_LABEL :
+    kind === "suplement" ? READ_SUPPLEMENT_LABEL :
+    READ_FOOD_LABEL;
+  const res = await callClaude(
+    apiKey,
+    readPrompt,
+    [
+      { type: "image", source: { type: "base64", media_type: mediaType, data: b64 } },
+      { type: "text", text: "Odczytaj CAŁY tekst z tej etykiety dokładnie według procedury. Przepisz wszystkie liczby i jednostki." },
+    ],
+    2000,
+    budgetMs,
+    "claude-sonnet-4-6"
+  );
+  if (res.error) return "";
+  return res.text || "";
 }
 
 function parseJsonResponse(text: string) {
@@ -1765,59 +1853,24 @@ SZUKAJ LEPSZEGO (search_queries) — KLUCZOWE:
 - NIE polecaj konkretnych produktów ani marek — podaj TYLKO zapytania do wyszukiwania
 - Bądź życzliwym doradcą — dobry produkt POCHWAL`;
 
-      // Run OCR for supplement label (supports dual images)
+      // Run OCR for supplement label (Claude Sonnet 4.6 — zastąpił martwy
+      // Google Vision 403). Supports dual images.
       let supplOcrText = "";
-      const gvKey = process.env.GOOGLE_VISION_API_KEY;
-
-      async function callSupplVisionOCR(b64: string): Promise<string> {
-        if (!gvKey) return "";
-        const ctl = new AbortController();
-        const t = setTimeout(() => ctl.abort(), 12000);
-        try {
-          const gvRes = await fetch(`https://vision.googleapis.com/v1/images:annotate?key=${gvKey}`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            // Dual feature request: DOCUMENT_TEXT_DETECTION is best for
-            // structured tables (nutrition/dose), TEXT_DETECTION catches
-            // text on curved surfaces (cylindrical bottles/cans) where
-            // DOCUMENT_TEXT_DETECTION's structural assumptions break.
-            // Both features in one call = same billing as one feature.
-            body: JSON.stringify({ requests: [{ image: { content: b64 }, features: [
-              { type: "DOCUMENT_TEXT_DETECTION", maxResults: 1 },
-              { type: "TEXT_DETECTION", maxResults: 1 },
-            ] }] }),
-            signal: ctl.signal,
-          });
-          clearTimeout(t);
-          if (gvRes.ok) {
-            const gvData = await gvRes.json();
-            const ann = gvData.responses?.[0];
-            const docText = ann?.fullTextAnnotation?.text || "";
-            const sceneText = ann?.textAnnotations?.[0]?.description || "";
-            // Prefer the longer result. TEXT_DETECTION often wins for
-            // supplement bottles where the label wraps around.
-            return docText.length >= sceneText.length ? docText : sceneText;
-          }
-        } catch {
-          clearTimeout(t);
-          /* Vision OCR hung or errored — suplement falls back to Claude-only reading */
-        }
-        return "";
-      }
 
       // OCR images (parallel when 2 images)
       if (secondBase64Data) {
         const [supplFirstOCR, supplSecondOCR] = await Promise.all([
-          callSupplVisionOCR(base64Data),
-          callSupplVisionOCR(secondBase64Data),
+          callClaudeVisionOCR(apiKey, base64Data, mediaType, "suplement", 20000),
+          callClaudeVisionOCR(apiKey, secondBase64Data, mediaType, "suplement", 20000),
         ]);
         supplOcrText = supplFirstOCR;
         if (supplSecondOCR) {
           supplOcrText = supplOcrText + "\n\n--- DRUGA STRONA OPAKOWANIA ---\n\n" + supplSecondOCR;
-          console.log(`Suplement OCR: ${supplFirstOCR.length} + ${supplSecondOCR.length} chars from 2 images`);
+          console.log(`[Claude OCR suplement] ${supplFirstOCR.length} + ${supplSecondOCR.length} chars from 2 images`);
         }
       } else {
-        supplOcrText = await callSupplVisionOCR(base64Data);
+        supplOcrText = await callClaudeVisionOCR(apiKey, base64Data, mediaType, "suplement", 20000);
+        console.log(`[Claude OCR suplement] ${supplOcrText.length} chars`);
       }
 
       const supplImgContent = {
@@ -1948,211 +2001,53 @@ Odpowiedz WYŁĄCZNIE JSON.`,
       }
     }
 
-    // === FOOD & COSMETICS: Google Vision OCR → Claude Analysis ===
+    // === FOOD & COSMETICS: Combined 1-call (Claude Sonnet 4.6 czyta + analizuje) ===
+    // 2026-06-09: Po wyłączeniu Google Vision (403) przeszliśmy najpierw na
+    // 2-stage Claude OCR + analiza, ale 2× Sonnet powodował timeouty (cosmetics
+    // 504, 35-50s). Combined 1-call: jeden Sonnet 4.6 czyta DOKŁADNIE z obrazu
+    // I analizuje, z prefill "{" wymuszającym JSON (eliminuje "rozgadanie się"
+    // prozą). Szybsze (~20s, nie 35-50s), niezawodne, bez błędu transmisji
+    // OCR→analiza. Sonnet 4.6 udowodnił dokładność OCR w A/B (6/6 trudnych etykiet).
     const isCosmetics = mode === "cosmetics";
-
-    // secondBase64Data is already parsed at the top of the route
-
-    // STEP 1: Google Cloud Vision OCR — specialized text extraction
-    let ocrText = "";
-    const googleVisionKey = process.env.GOOGLE_VISION_API_KEY;
-
-    // Helper to call Vision API. Hard 12s timeout per image — without this
-    // a hung Google Vision response would block the whole pipeline until
-    // Vercel's 60s function kill, which manifests to users as "analiza bez
-    // końca". OCR is non-critical (we can fall back to Claude-only reading),
-    // so we eat the failure quietly and continue.
-    async function callVisionOCR(b64: string): Promise<string> {
-      if (!googleVisionKey) return "";
-      const ctl = new AbortController();
-      const t = setTimeout(() => ctl.abort(), 12000);
-      try {
-        const resp = await fetch(
-          `https://vision.googleapis.com/v1/images:annotate?key=${googleVisionKey}`,
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            // Dual feature request: DOCUMENT_TEXT_DETECTION (best for
-            // structured tables — nutrition labels) + TEXT_DETECTION
-            // (catches scene text on curved surfaces — cylindrical
-            // cans/bottles, where the document detector's structural
-            // assumptions break). Both features in a single call =
-            // same billing as one. Choose whichever returned more text.
-            body: JSON.stringify({
-              requests: [{
-                image: { content: b64 },
-                features: [
-                  { type: "DOCUMENT_TEXT_DETECTION", maxResults: 1 },
-                  { type: "TEXT_DETECTION", maxResults: 1 },
-                ],
-              }],
-            }),
-            signal: ctl.signal,
-          }
-        );
-        clearTimeout(t);
-        if (resp.ok) {
-          const data = await resp.json();
-          const ann = data.responses?.[0];
-          const docText = ann?.fullTextAnnotation?.text || "";
-          const sceneText = ann?.textAnnotations?.[0]?.description || "";
-          return docText.length >= sceneText.length ? docText : sceneText;
-        }
-      } catch (err) {
-        clearTimeout(t);
-        const name = err instanceof Error ? err.name : "";
-        if (name === "AbortError") console.warn("[Vision OCR] Timeout — continuing without OCR");
-        else console.error("Vision OCR error:", err);
-      }
-      return "";
-    }
-
-    // OCR images (parallel when 2 images)
-    if (secondBase64Data) {
-      const [firstOCR, secondOCR] = await Promise.all([
-        callVisionOCR(imageContent.source.data as string),
-        callVisionOCR(secondBase64Data),
-      ]);
-      ocrText = firstOCR;
-      if (secondOCR) {
-        ocrText = ocrText + "\n\n--- DRUGA STRONA OPAKOWANIA ---\n\n" + secondOCR;
-        console.log(`Google Vision OCR: ${firstOCR.length} + ${secondOCR.length} chars from 2 images`);
-      }
-    } else {
-      const firstOCR = await callVisionOCR(imageContent.source.data as string);
-      ocrText = firstOCR;
-      console.log(`Google Vision OCR: extracted ${ocrText.length} chars`);
-    }
-
-    // STEP 2: Claude Sonnet analyzes the OCR text + original image for cross-reference
+    const ocrMediaType = (imageContent.source.media_type as string) || "image/jpeg";
     const analysisPrompt = isCosmetics ? COSMETICS_ANALYSIS : FOOD_ANALYSIS;
 
     const skinProfileHint = isCosmetics && body.skinProfile
       ? `\n\nPROFIL SKÓRY UŻYTKOWNIKA:\nTyp: ${body.skinProfile.skin_type}, Wrażliwość: ${body.skinProfile.sensitivity}, Wiek skóry: ${body.skinProfile.skin_age}\nProblemy: ${body.skinProfile.skin_problems?.join(", ") || "brak"}\nWłosy: ${body.skinProfile.hair_type || "brak"}, Problemy włosów: ${body.skinProfile.hair_problems?.join(", ") || "brak"}\nSPERSONALIZUJ wyniki pod ten profil.`
       : "";
 
-    // Build user message with OCR text + image
-    const userContent: unknown[] = [imageContent];
+    // PREPARED_FOOD (Task #7): food only — gdy zdjęcie to danie na talerzu
+    // (nie etykieta), model zwraca minimalny JSON który client przekształca
+    // w modal "Przełącz na tryb Danie".
+    const preparedFoodRule = !isCosmetics
+      ? `\n\n🍽️ NAJPIERW SPRAWDŹ: jeśli na zdjęciu jest PRZYGOTOWANE DANIE / POSIŁEK NA TALERZU / W MISCE (zupa, kanapka, obiad — NIE opakowanie produktu z etykietą), zwróć WYŁĄCZNIE: {"wrong_mode_detected":"meal","detected_dish":"<krótka polska nazwa dania>"} i NIC więcej.`
+      : "";
 
-    if (ocrText.length > 20) {
-      // We have good OCR text — send it along with the image
-      userContent.push({
-        type: "text",
-        text: `Google Vision OCR odczytał z etykiety następujący tekst:\n\n---\n${ocrText}\n---\n\n🚫 ABSOLUTNY ZAKAZ HALUCYNACJI 🚫
-Ta aplikacja śledzi kalorie użytkowników. Wymyślone wartości = realne szkody.
-
-ŹRÓDŁA DANYCH (jedyne dozwolone):
-1. TEKST OCR powyżej (priorytet #1)
-2. Obraz etykiety (do weryfikacji OCR)
-
-ZAKAZANE źródła:
-❌ Twoja wiedza ogólna o produktach ("typowy chleb ma 250 kcal" — NIE)
-❌ Skojarzenia z nazwą/marką ("à la GYROS to greckie danie, ma X kcal" — NIE)
-❌ Zgadywanie z listy składników ("skoro jest mąka, to musi być Y węgli" — NIE)
-
-REGUŁY:
-1. Nazwa produktu = z OCR. Jeśli OCR nie zawiera nazwy lub jest niepełna ("Gotowe danie à la") → name="Nieznany produkt"
-2. Marka = z OCR. Jeśli brak → brand=null (NIE wymyślaj)
-3. Wartości odżywcze (kcal, białko, tłuszcz, węgle, sól) = TYLKO te z tabeli w OCR. Jeśli OCR nie zawiera tabeli wartości odżywczych → wszystkie pola nutrition wpisz "brak danych", verdict_short="Brak etykiety", verdict="Nie odczytano tabeli wartości odżywczych. Zrób ostrzejsze zdjęcie tabeli na opakowaniu — najlepiej prosto, bez zagięć."
-4. WALIDACJA ATWATER: kcal ≈ 4×białko + 4×węgle + 9×tłuszcz (±20%). Jeśli OCR podał liczby które się NIE ZGADZAJĄ — to OCR błędnie odczytał. Wpisz "brak danych" zamiast wymyślać poprawkę.
-5. NIE używaj domyślnych "typowych" wartości dla kategorii produktów. Pusty JSON ≫ wymyślony JSON.
-
-Zweryfikuj z obrazem. Odpowiedz WYŁĄCZNIE poprawnym JSON.${skinProfileHint}`,
-      });
-    } else {
-      // OCR failed — try Claude Haiku as fallback IF budget allows.
-      // v6 changes vs v5:
-      //   - model: Sonnet → Haiku (3-4× faster, ~10× cheaper, accurate
-      //     enough for OCR which is "read this text" not "reason")
-      //   - timeout: 20s → 12s (Haiku rarely needs more for OCR)
-      //   - skip if elapsed > 35s — beyond that we'd risk exceeding the
-      //     120s Vercel cap. Better to fall through to image-only +
-      //     v4 server-side enforcement (which forces partial_label and
-      //     a clear "Brak etykiety" UI) than to time out the whole
-      //     scan and show user a WebView error
-      const fallbackElapsed = Date.now() - startTime;
-      const ocrLabel = isCosmetics ? READ_COSMETICS_LABEL : READ_FOOD_LABEL;
-      const claudeOcr = fallbackElapsed < 35000
-        ? await callClaude(
-            apiKey,
-            ocrLabel,
-            [imageContent, { type: "text", text: "Odczytaj CAŁY tekst z tej etykiety. Przepisz dokładnie." }],
-            2048,
-            12000,
-            "claude-haiku-4-5"
-          )
-        : { error: true, text: "" };
-      if (fallbackElapsed >= 35000) {
-        console.log(`[Claude OCR fallback] skipped — elapsed ${fallbackElapsed}ms too close to budget`);
-      } else {
-        console.log("Google Vision OCR failed or empty — falling back to Claude Haiku OCR");
-      }
-
-      if (!claudeOcr.error && claudeOcr.text.length > 30) {
-        ocrText = claudeOcr.text;
-        userContent.push({
-          type: "text",
-          text: `AI OCR odczytał z etykiety:\n\n---\n${ocrText}\n---\n\n🚫 ABSOLUTNY ZAKAZ HALUCYNACJI 🚫
-Ta aplikacja śledzi kalorie użytkowników. Wymyślone wartości = realne szkody.
-
-ŹRÓDŁA DANYCH (jedyne dozwolone):
-1. TEKST AI OCR powyżej (priorytet #1)
-2. Obraz etykiety (do weryfikacji OCR)
-
-REGUŁY:
-1. Nazwa i marka = z OCR. Brak → name="Nieznany produkt", brand=null
-2. Wartości odżywcze = TYLKO te z tabeli w OCR. Jeśli OCR nie zawiera tabeli wartości odżywczych → wszystkie pola nutrition wpisz "brak danych", verdict_short="Brak etykiety", label_unreadable=true
-3. NIE używaj "typowych" wartości dla kategorii produktów
-4. WALIDACJA ATWATER: kcal ≈ 4×białko + 4×węgle + 9×tłuszcz (±20%). Jeśli liczby się nie zgadzają → OCR błędnie odczytał → wpisz "brak danych"
-5. Pusty JSON ≫ wymyślony JSON
-
-Zweryfikuj z obrazem. Odpowiedz WYŁĄCZNIE JSON.${skinProfileHint}`,
-        });
-      } else {
-        // Total fallback — image-only. This is the path that produced
-        // hallucinated nutrition in the v1 production sample (2 user
-        // 👎 feedbacks on food with ocr_text=null). Push the hardest
-        // anti-hallucination guard: prefer "brak danych" over guessing.
-        console.log(`[analyze] mode=${mode} total OCR failure — sending image-only with strict no-hallucinate prompt`);
-        userContent.push({
-          type: "text",
-          text: `⚠️ BRAK OCR — TYLKO OBRAZ ⚠️
-Google Vision i AI OCR NIE odczytały tekstu z etykiety (zdjęcie nieczytelne, zły kąt, blur, odbicia).
+    const combinedInstruction = `NAJPIERW odczytaj DOKŁADNIE cały tekst z obrazu etykiety: nazwę, markę, ${isCosmetics ? "pełną listę składników INCI" : "skład oraz tabelę wartości odżywczych — cyfra po cyfrze, uważaj na orientację (etykieta może być obrócona)"}. POTEM przeanalizuj produkt.
 
 🚫 ABSOLUTNY ZAKAZ HALUCYNACJI 🚫
-Ta aplikacja śledzi kalorie użytkowników. Wymyślone wartości wprost szkodzą zdrowiu.
+${isCosmetics ? "Użytkownicy ufają Twojej ocenie składu kosmetyku." : "Ta aplikacja śledzi kalorie użytkowników — wymyślone wartości = realne szkody zdrowotne."}
+- ${isCosmetics ? "Składniki, nazwa, marka" : "Nazwa, marka, wartości odżywcze"} = TYLKO to co FAKTYCZNIE WIDZISZ na obrazie. NIE zgaduj z wiedzy ogólnej, marki ani kategorii produktu.
+- Jeśli widać produkt ale NAZWA jest na froncie (niewidoczna) a Ty widzisz tabelę/skład z tyłu → analizuj normalnie skład i wartości, ustaw name="Nieznany produkt" lub opisową nazwę z kategorii (np. "Sos chili", "Smalec"), partial_label=true.
+- Jeśli ${isCosmetics ? "listy składników INCI" : "ani tabeli wartości ani nazwy"} nie widać czytelnie (blur, zły kąt) → label_unreadable=true, score=null, verdict_short="Brak etykiety", retake_hint z konkretną radą.
+- ${isCosmetics ? "" : "WALIDACJA ATWATER: kcal ≈ 4×białko + 4×węgle + 9×tłuszcz (±20%). Jeśli odczyt się nie zgadza → błędny odczyt, wpisz brak danych.\n- "}Pusty JSON ≫ wymyślony JSON.${preparedFoodRule}${skinProfileHint}
 
-ZAKAZANE:
-❌ NIE zgaduj wartości odżywczych z kategorii produktu ("to chleb, więc ~250 kcal" — NIE)
-❌ NIE dopisuj "typowego" składu na podstawie marki
-❌ NIE wystawiaj konkretnych liczb kcal/białka/tłuszczu/węgli jeśli nie widzisz tabeli w obrazie
-❌ NIE obliczaj wartości z Atwater do wpasowania — brak danych ≫ wymyślone dane
+⚠️ KRYTYCZNE: Twoja odpowiedź MUSI być czystym JSON. Pierwszy znak = "{", ostatni = "}". ŻADNEGO tekstu, komentarza ani wyjaśnienia przed JSON ani po nim. NIE pisz "Analizuję...", NIE opisuj co widzisz prozą — od razu JSON.`;
 
-CO MASZ ZROBIĆ:
-1. Spróbuj odczytać widoczny tekst z obrazu (nazwa, marka, skład, tabela wartości odżywczych).
-2. Jeśli widzisz WYRAŹNIE tabelę wartości odżywczych w obrazie → odczytaj DOKŁADNIE co tam jest, bez interpretacji. Sprawdź Atwater. Score normalnie.
-3. Jeśli widzisz tylko NAZWĘ/MARKĘ bez tabeli wartości → wszystkie pola nutrition = "brak danych", verdict_short="Brak etykiety", label_unreadable=true, score=null
-4. Jeśli nawet nazwy nie widać czytelnie → name="Nieznany produkt", wszystko "brak danych", label_unreadable=true, score=null
-5. Pusty JSON ≫ wymyślony JSON
-
-Odpowiedz WYŁĄCZNIE JSON.${skinProfileHint}`,
-        });
-      }
+    const userContent: unknown[] = [imageContent];
+    // 2-photo: drugi obraz (np. przód + tył opakowania) idzie do tego samego call
+    if (secondBase64Data) {
+      userContent.push({ type: "image", source: { type: "base64", media_type: ocrMediaType, data: secondBase64Data } });
     }
+    userContent.push({ type: "text", text: combinedInstruction });
 
-    // Sonnet for labels (Google Vision does the OCR heavy lifting).
-    // Budget-aware timeout: Vercel maxDuration=60s. We've already burned
-    // some of that on body parsing + Vision OCR. Compute how much is left
-    // and hand Claude the remainder minus a 5s safety margin for the JSON
-    // serialization and network return. Floor at 20s so a slow Vision
-    // doesn't starve Claude entirely. Scan logging is fire-and-forget.
+    // Budżet: jeden call (combined). Vercel maxDuration=120s.
+    // Cosmetics ma długi INCI + rozbudowaną analizę (53s w testach) →
+    // cap 75s z bezpiecznym buforem. Food 55s.
     const elapsed = Date.now() - startTime;
-    const hardBudget = isCosmetics ? 40000 : 32000;
-    const claudeTimeout = Math.max(20000, Math.min(hardBudget, 55000 - elapsed));
-    console.log(`[analyze] mode=${mode} elapsed=${elapsed}ms claudeTimeout=${claudeTimeout}ms`);
-    // 5120 tokens is plenty for the cosmetics/food JSON payloads. 7168 was
-    // excessive and slowed inference without improving results.
-    const result1 = await callClaude(apiKey, analysisPrompt, userContent, 5120, claudeTimeout);
+    const claudeTimeout = Math.max(35000, Math.min(isCosmetics ? 75000 : 55000, 110000 - elapsed));
+    console.log(`[analyze] mode=${mode} combined call, timeout=${claudeTimeout}ms`);
+    const result1 = await callClaude(apiKey, analysisPrompt, userContent, 5120, claudeTimeout, "claude-sonnet-4-6");
 
     if (result1.error) {
       if (result1.status === 429) return NextResponse.json({ error: "Zbyt wiele zapytań. Poczekaj chwilę." }, { status: 429 });
@@ -2165,11 +2060,34 @@ Odpowiedz WYŁĄCZNIE JSON.${skinProfileHint}`,
 
     try {
       const result = parseJsonResponse(step2.text);
+
+      // PREPARED_FOOD (Task #7): model wykrył że to danie, nie etykieta.
+      // Zwróć structured hint — client pokaże modal "Przełącz na tryb Danie".
+      if (!isCosmetics && result.wrong_mode_detected === "meal") {
+        const dishName = String(result.detected_dish || "danie").trim().slice(0, 80) || "danie";
+        console.log(`[analyze] PREPARED_FOOD detected: "${dishName}" — suggesting meal mode`);
+        const wrongModeResult = {
+          type: "food",
+          wrong_mode_detected: "meal",
+          detected_dish: dishName,
+          name: dishName.charAt(0).toUpperCase() + dishName.slice(1),
+          verdict_short: "To wygląda na danie, nie etykietę",
+          verdict: `Na zdjęciu widzę przygotowane danie (${dishName}), a nie etykietę produktu. Przełącz na tryb "Danie" — wtedy oszacuję kalorie i makroskładniki z talerza.`,
+          score: null,
+          label_unreadable: true,
+          partial_label: true,
+          retake_hint: `To danie, nie etykieta sklepowa. Użyj trybu "Danie" żeby policzyć kalorie z talerza.`,
+          ingredients: [], nutrition: [], allergens: [], pros: [], cons: [], fun_comparisons: [],
+        };
+        void logScanToSupabase({ mode: "food", scanType: "food", base64Image: image, result: wrongModeResult, startTime, request });
+        return NextResponse.json(wrongModeResult);
+      }
+
       result.type = isCosmetics ? "cosmetics" : "food";
 
       // Validate nutrition FIRST so the macro-rejection path can set
       // label_unreadable / score=null without being overwritten by the
-      // generic normalization below.
+      // generic normalization below. (Atwater + sanity checks)
       if (!isCosmetics) validateNutrition(result);
 
       // Validation / normalization
@@ -2182,11 +2100,12 @@ Odpowiedz WYŁĄCZNIE JSON.${skinProfileHint}`,
       if (!result.allergens) result.allergens = [];
       if (!result.fun_comparisons) result.fun_comparisons = [];
 
-      // v4 enforcement: when OCR was empty, force partial_label and
-      // null score so AI can't sneak hallucinated nutrition past us.
-      enforceLabelReadabilityGuard(result, isCosmetics ? "cosmetics" : "food", ocrText);
+      // Combined approach: model sam czyta + ustawia label_unreadable gdy
+      // etykieta nieczytelna (instrukcja w combinedInstruction). Nie ma
+      // osobnego OCR, więc enforceLabelReadabilityGuard (oparty na ocrText)
+      // już nie ma zastosowania — model + validateNutrition pilnują jakości.
 
-      void logScanToSupabase({ mode: isCosmetics ? "cosmetics" : "food", scanType: isCosmetics ? "cosmetics" : "food", base64Image: image, image2Base64: image2 || undefined, result, startTime, ocrText: ocrText || undefined, request });
+      void logScanToSupabase({ mode: isCosmetics ? "cosmetics" : "food", scanType: isCosmetics ? "cosmetics" : "food", base64Image: image, image2Base64: image2 || undefined, result, startTime, request });
       return NextResponse.json(result);
     } catch {
       console.error("Failed to parse AI response:", step2.text?.substring(0, 500));
