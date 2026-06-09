@@ -282,10 +282,13 @@ export function getDefaultScanCategoryForMode(mode: UserMode | null | undefined)
 // `mode` w state'cie jeśli zapisany w localStorage `skladai_mode` jest
 // niedozwolony dla bieżącego userMode.
 
-// Kolejność = kolejność tabów. Pierwszy = domyślny po przełączeniu trybu.
+// Kolejność = kolejność opcji w modalu wyboru skanu. Pierwszy = domyślny.
+// Patryk decision: modal pokazuje TYLKO Makro + Skład (Danie i Suplement
+// usunięte z menu — Danie nadal dostępne przez auto-detekcję "to danie"
+// gdy sfotografujesz talerz; meal/suplement modes wciąż istnieją w kodzie).
 export const MODE_ALLOWED_SCAN_CATEGORIES: Record<UserMode, ScanCategory[]> = {
-  fitness:   ["food_macro", "food_sklad", "meal", "suplement"], // Makro pierwszy
-  health:    ["food_sklad", "food_macro", "meal", "suplement"], // Skład pierwszy
+  fitness:   ["food_macro", "food_sklad"], // Makro pierwszy
+  health:    ["food_sklad", "food_macro"], // Skład pierwszy
   cosmetics: ["cosmetics"],
 };
 
