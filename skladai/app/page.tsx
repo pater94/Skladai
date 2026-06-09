@@ -276,6 +276,13 @@ export default function Home() {
   const [quickAddToast, setQuickAddToast] = useState<string | null>(null);
   // Remember the last attempted scan so the error banner can offer "Ponów skan"
   const [lastScanArgs, setLastScanArgs] = useState<{ kind: "scan" | "fridge"; base64: string } | null>(null);
+  // Meal auto-detect (Task #7): gdy /api/analyze wykryje że food-skan to
+  // przygotowane danie (nie etykieta), backend zwraca wrong_mode_detected.
+  // Pokazujemy modal z propozycją przełączenia na tryb "Danie".
+  const [mealSuggestion, setMealSuggestion] = useState<{ dish: string; base64: string } | null>(null);
+  // Pending re-scan po przełączeniu na tryb meal. useEffect odpala scan
+  // dopiero gdy `mode` faktycznie === "meal" (unika race z closure handleScan).
+  const [pendingMealScan, setPendingMealScan] = useState<string | null>(null);
   const router = useRouter();
 
   // ── Inline voice input for the food search bar ──
@@ -554,6 +561,16 @@ export default function Home() {
           }
         }
 
+        // Meal auto-detect (Task #7): backend wykrył że to danie, nie etykieta.
+        // Pokaż modal zamiast wyniku — user decyduje czy przełączyć na "Danie".
+        if (data?.wrong_mode_detected === "meal" && mode === "food") {
+          setMealSuggestion({ dish: data.detected_dish || "danie", base64 });
+          setIsLoading(false);
+          setIsScanning(false);
+          scanLockRef.current = false;
+          return;
+        }
+
         incrementScanCount();
         updateStreak();
         const canvas = document.createElement("canvas");
@@ -593,6 +610,18 @@ export default function Home() {
     },
     [router, mode]
   );
+
+  // Meal auto-detect (Task #7): gdy user kliknął "Tak, policz kalorie",
+  // przełączyliśmy mode→"meal" i ustawiliśmy pendingMealScan. Ten effect
+  // odpala scan dopiero gdy mode FAKTYCZNIE === "meal" (handleScan closure
+  // ma już świeży mode), eliminując race condition.
+  useEffect(() => {
+    if (pendingMealScan && mode === "meal") {
+      const b64 = pendingMealScan;
+      setPendingMealScan(null);
+      handleScan(b64);
+    }
+  }, [pendingMealScan, mode, handleScan]);
 
   const handleFridgeScan = useCallback(
     async (base64: string) => {
@@ -1548,6 +1577,69 @@ export default function Home() {
           onComplete={() => setShowSkinQuiz(false)}
           onSkip={() => setShowSkinQuiz(false)}
         />
+      )}
+
+      {/* ══ Meal auto-detect modal (Task #7) ══ */}
+      {mealSuggestion && (
+        <div
+          style={{
+            position: "fixed", inset: 0, zIndex: 2000,
+            background: "rgba(5,8,6,0.82)", backdropFilter: "blur(8px)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            padding: 24,
+          }}
+          onClick={() => setMealSuggestion(null)}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              maxWidth: 380, width: "100%",
+              background: "linear-gradient(180deg, rgba(30,40,35,0.95), rgba(15,25,20,0.95))",
+              border: "1px solid rgba(251,191,36,0.25)",
+              borderRadius: 24, padding: "28px 22px",
+              textAlign: "center",
+              boxShadow: "0 20px 60px rgba(0,0,0,0.5)",
+            }}
+          >
+            <div style={{ fontSize: 44, marginBottom: 8 }}>🍽️</div>
+            <h2 style={{ fontSize: 19, fontWeight: 800, color: "#fff", marginBottom: 8, letterSpacing: "-0.3px" }}>
+              To wygląda na danie!
+            </h2>
+            <p style={{ fontSize: 13.5, color: "rgba(255,255,255,0.7)", lineHeight: 1.5, marginBottom: 22 }}>
+              Wykryłem <strong style={{ color: "#FBBF24" }}>{mealSuggestion.dish}</strong> — to przygotowane jedzenie, nie etykieta produktu.
+              Przełącz na tryb <strong>Danie</strong>, żeby oszacować kalorie i makro z talerza.
+            </p>
+            <button
+              onClick={() => {
+                const b64 = mealSuggestion.base64;
+                setMealSuggestion(null);
+                setMode("meal");
+                saveMode("meal");
+                setError(null);
+                // useEffect odpali handleScan gdy mode === "meal" (deterministycznie)
+                setPendingMealScan(b64);
+              }}
+              style={{
+                width: "100%", padding: "14px", borderRadius: 14,
+                background: "linear-gradient(135deg, #FBBF24, #F59E0B)",
+                color: "#1a1206", fontSize: 15, fontWeight: 800, border: "none",
+                cursor: "pointer", marginBottom: 10,
+              }}
+            >
+              Tak, policz kalorie z dania
+            </button>
+            <button
+              onClick={() => setMealSuggestion(null)}
+              style={{
+                width: "100%", padding: "12px", borderRadius: 14,
+                background: "transparent", border: "1px solid rgba(255,255,255,0.12)",
+                color: "rgba(255,255,255,0.6)", fontSize: 13.5, fontWeight: 600, cursor: "pointer",
+              }}
+            >
+              Anuluj — zeskanuję etykietę
+            </button>
+          </div>
+        </div>
       )}
 
       {/* ── Hidden fridge input ── */}
