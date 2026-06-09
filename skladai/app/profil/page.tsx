@@ -195,8 +195,40 @@ export default function ProfilPage() {
   const [newWeight, setNewWeight] = useState("");
   const [newWeightDate, setNewWeightDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [authEmail, setAuthEmail] = useState<string | null>(null);
+  const [updating, setUpdating] = useState(false);
   const health = useHealthData();
   const { mode: currentMode } = useUserMode();
+
+  // Build ID (krótki commit SHA z Vercela) — pokazany przy "Aktualizuj".
+  const buildId = process.env.NEXT_PUBLIC_BUILD_ID || "dev";
+
+  // "Aktualizuj aplikację" — wymusza pobranie najnowszej wersji z serwera.
+  // Native WKWebView (Capacitor) potrafi trzymać stary HTML/chunki mimo
+  // nagłówków no-store, więc: wyrejestruj SW + wyczyść Cache API + twardy
+  // reload z cache-bustem (świeży URL omija cache WebView).
+  const handleUpdate = async () => {
+    if (updating) return;
+    setUpdating(true);
+    try {
+      if ("serviceWorker" in navigator) {
+        const regs = await navigator.serviceWorker.getRegistrations();
+        await Promise.all(regs.map((r) => r.unregister()));
+      }
+      if (typeof caches !== "undefined") {
+        const keys = await caches.keys();
+        await Promise.all(keys.map((k) => caches.delete(k)));
+      }
+    } catch {
+      // ignore — twardy reload poniżej i tak pobierze świeży HTML
+    }
+    try {
+      const url = new URL(window.location.origin + "/");
+      url.searchParams.set("_u", String(Date.now()));
+      window.location.replace(url.toString());
+    } catch {
+      window.location.reload();
+    }
+  };
 
   useEffect(() => {
     (document.getElementById("scroll-container") || window).scrollTo(0, 0);
@@ -1001,6 +1033,33 @@ export default function ProfilPage() {
             </p>
           </GlassCard>
         )}
+
+        {/* Aktualizacja aplikacji — wymusza pobranie najnowszej wersji z serwera.
+            Stała opcja (nie DEMO) — przydatna gdy WebView trzyma stary cache. */}
+        <GlassCard>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontSize: 13.5, fontWeight: 800, color: "rgba(255,255,255,0.85)" }}>Wersja aplikacji</div>
+              <div style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", marginTop: 2 }}>build {buildId}</div>
+            </div>
+            <button
+              onClick={handleUpdate}
+              disabled={updating}
+              style={{
+                padding: "10px 16px", borderRadius: 12, flexShrink: 0,
+                background: "rgba(110,252,180,0.1)", border: "1px solid rgba(110,252,180,0.25)",
+                color: "#6efcb4", fontSize: 13, fontWeight: 800,
+                cursor: updating ? "default" : "pointer", opacity: updating ? 0.6 : 1,
+                display: "flex", alignItems: "center", gap: 6, whiteSpace: "nowrap",
+              }}
+            >
+              {updating ? "Aktualizuję…" : "🔄 Aktualizuj"}
+            </button>
+          </div>
+          <p style={{ fontSize: 10.5, color: "rgba(255,255,255,0.4)", marginTop: 8, marginBottom: 0, lineHeight: 1.4 }}>
+            Pobiera najnowszą wersję z serwera (czyści cache i przeładowuje). Użyj jeśli nie widzisz nowych funkcji po aktualizacji.
+          </p>
+        </GlassCard>
 
         {/* Disclaimer */}
         <div style={{ textAlign: "center", marginTop: 8 }}>
