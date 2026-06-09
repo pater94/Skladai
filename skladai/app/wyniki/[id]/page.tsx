@@ -303,8 +303,10 @@ function DiaryPanel({
   );
 }
 
-function ShareCard({ name, score, verdict, isForma }: { name: string; score: number; verdict: string; isForma: boolean }) {
-  const scoreColor = score >= 7 ? "#22c55e" : score >= 4 ? "#f59e0b" : "#ef4444";
+function ShareCard({ name, score, verdict, isForma, macroKcal100 }: { name: string; score: number | null; verdict: string; isForma: boolean; macroKcal100?: number | null }) {
+  // Makro (score null/brak) → pokaż kalorie zamiast oceny /10.
+  const isMacroCard = (typeof score !== "number") && typeof macroKcal100 === "number";
+  const scoreColor = isMacroCard ? "#6efcb4" : (score ?? 0) >= 7 ? "#22c55e" : (score ?? 0) >= 4 ? "#f59e0b" : "#ef4444";
   return (
     <div style={{ width: 400, padding: 32, background: "#0a0e0c", fontFamily: "system-ui, -apple-system, sans-serif" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 24 }}>
@@ -313,14 +315,20 @@ function ShareCard({ name, score, verdict, isForma }: { name: string; score: num
       </div>
       <p style={{ fontSize: 20, fontWeight: 800, color: "#ffffff", marginBottom: 12, lineHeight: 1.3 }}>{name}</p>
       <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
-        <div style={{ width: 52, height: 52, borderRadius: "50%", background: `conic-gradient(${scoreColor} ${score * 36}deg, rgba(255,255,255,0.08) 0deg)`, display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <div style={{ width: 40, height: 40, borderRadius: "50%", background: "#0a0e0c", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, fontWeight: 800, color: scoreColor }}>
-            {score}
-          </div>
-        </div>
-        <span style={{ fontSize: 14, fontWeight: 700, color: scoreColor }}>
-          {isForma ? "Ocena sylwetki" : `Ocena ${score}/10`}
-        </span>
+        {isMacroCard ? (
+          <span style={{ fontSize: 18, fontWeight: 800, color: scoreColor }}>⚡ {macroKcal100} kcal/100g</span>
+        ) : (
+          <>
+            <div style={{ width: 52, height: 52, borderRadius: "50%", background: `conic-gradient(${scoreColor} ${(score ?? 0) * 36}deg, rgba(255,255,255,0.08) 0deg)`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <div style={{ width: 40, height: 40, borderRadius: "50%", background: "#0a0e0c", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, fontWeight: 800, color: scoreColor }}>
+                {score}
+              </div>
+            </div>
+            <span style={{ fontSize: 14, fontWeight: 700, color: scoreColor }}>
+              {isForma ? "Ocena sylwetki" : `Ocena ${score}/10`}
+            </span>
+          </>
+        )}
       </div>
       {verdict && <p style={{ fontSize: 13, color: "rgba(255,255,255,0.55)", lineHeight: 1.6, marginBottom: 20 }}>{verdict.slice(0, 120)}{verdict.length > 120 ? "..." : ""}</p>}
       <div style={{ borderTop: "1px solid rgba(255,255,255,0.08)", paddingTop: 16 }}>
@@ -347,6 +355,8 @@ export default function WynikiPage() {
   const [mealWeights, setMealWeights] = useState<Record<number, number>>({});
   const [textWeights, setTextWeights] = useState<Record<number, number>>({});
   const [allergensOpen, setAllergensOpen] = useState(false);
+  // Przełącznik "Wartości odżywcze": na 100g ↔ całe opakowanie (food_macro).
+  const [nutriBasis, setNutriBasis] = useState<"100g" | "package">("100g");
   // Etap 2 Krok G: useUserMode MUSI być tutaj (przed early returnami niżej).
   // Hook wywoływany warunkowo (po `if (!item) return`) powodował React #310
   // (Rules of Hooks) — crash "Coś poszło nie tak" gdy wynik był pełny
@@ -378,6 +388,16 @@ export default function WynikiPage() {
   const isTextSearch = result.type === "text_search";
   const isForma = scanType === "forma";
   const isSuplement = scanType === "suplement" || result.type === "suplement";
+  // Rozdzielenie skanu żywności (Patryk):
+  //   food_macro → widok makro (kalorie/wartości/dziennik, BEZ score/składu)
+  //   food_sklad → widok składu (score/składniki/ocena, BEZ kalkulatora porcji)
+  //   food (legacy) → oba (jak dotąd)
+  const isMacro = scanType === "food_macro";
+  const isSklad = scanType === "food_sklad";
+  // Czy traktować jak żywność (dla sekcji wspólnych food-only). Legacy "food"
+  // + nowe food_macro/food_sklad. Zachowuje istniejące warunki które
+  // sprawdzały scanType === "food".
+  const isAnyFood = scanType === "food" || isMacro || isSklad;
 
   // === LABEL UNREADABLE / PARTIAL VIEW (v4+ enforceLabelReadabilityGuard) ===
   // When OCR was empty and we forced score=null, render a dedicated retry
@@ -386,7 +406,7 @@ export default function WynikiPage() {
   // OCR-running modes; meal / forma / text_search keep their own flows.
   const isLabelUnreadable = (
     (result.partial_label === true || result.label_unreadable === true) &&
-    (scanType === "food" || scanType === "cosmetics" || scanType === "suplement")
+    (isAnyFood || scanType === "cosmetics" || scanType === "suplement")
   );
 
   if (isLabelUnreadable) {
@@ -639,7 +659,7 @@ export default function WynikiPage() {
   const modeHealthAlerts =
     userMode === "health" && profile ? getHealthAlertsForScan(result, profile) : [];
 
-  const foodResult = scanType === "food" ? (result as FoodAnalysisResult) : null;
+  const foodResult = isAnyFood ? (result as FoodAnalysisResult) : null;
   const textSearchResult = isTextSearch ? (result as TextSearchResult) : null;
   const cosmeticsResult = isCosmetics ? (result as CosmeticsAnalysisResult) : null;
   const mealResult = isMeal ? (result as MealAnalysisResult) : null;
@@ -1515,45 +1535,66 @@ export default function WynikiPage() {
             {/* Glow behind ring */}
             <div style={{ position: "absolute", top: 10, left: "50%", transform: "translateX(-50%)", width: 120, height: 120, borderRadius: "50%", background: `radial-gradient(circle, ${color}15 0%, transparent 70%)`, filter: "blur(20px)" }} />
 
-            {/* Score ring + product info */}
+            {/* Score ring (skład/legacy) LUB kaloryczne koło (makro) + product info */}
             <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-              {/* Animated SVG ring */}
-              <div style={{ position: "relative", width: 100, height: 100, flexShrink: 0 }}>
-                <svg width="100" height="100" viewBox="0 0 100 100">
-                  <circle cx="50" cy="50" r="42" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="6" />
-                  <circle
-                    cx="50" cy="50" r="42" fill="none"
-                    stroke={color} strokeWidth="6" strokeLinecap="round"
-                    strokeDasharray={`${2 * Math.PI * 42}`}
-                    strokeDashoffset={scoreAnim ? `${2 * Math.PI * 42 * (1 - result.score / 10)}` : `${2 * Math.PI * 42}`}
-                    style={{ transition: "stroke-dashoffset 1s ease-out", transform: "rotate(-90deg)", transformOrigin: "50% 50%" }}
-                  />
-                </svg>
+              {isMacro ? (
+                /* MAKRO: koło kaloryczne (per 100g) zamiast oceny */
                 <div style={{
-                  position: "absolute", top: "50%", left: "50%", transform: `translate(-50%, -50%) scale(${scoreAnim ? 1 : 0.5})`,
-                  transition: "transform 0.5s ease-out", textAlign: "center",
+                  position: "relative", width: 100, height: 100, flexShrink: 0, borderRadius: "50%",
+                  background: `radial-gradient(circle, rgba(${accentRgb},0.14), rgba(${accentRgb},0.04))`,
+                  border: `2px solid rgba(${accentRgb},0.3)`,
+                  display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
                 }}>
-                  <span style={{ fontSize: 32, fontWeight: 900, color, lineHeight: 1 }}>{result.score}</span>
-                  <span style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", display: "block" }}>/10</span>
+                  <span style={{ fontSize: 13, lineHeight: 1 }}>🔥</span>
+                  <span style={{ fontSize: 26, fontWeight: 900, color: accentColor, lineHeight: 1.1 }}>
+                    {foodResult ? Math.round(extractFoodNutrition(foodResult).cal100) : "?"}
+                  </span>
+                  <span style={{ fontSize: 10, color: "rgba(255,255,255,0.4)" }}>kcal/100g</span>
                 </div>
-              </div>
+              ) : (
+                /* Animated SVG ring (ocena 0-10) */
+                <div style={{ position: "relative", width: 100, height: 100, flexShrink: 0 }}>
+                  <svg width="100" height="100" viewBox="0 0 100 100">
+                    <circle cx="50" cy="50" r="42" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="6" />
+                    <circle
+                      cx="50" cy="50" r="42" fill="none"
+                      stroke={color} strokeWidth="6" strokeLinecap="round"
+                      strokeDasharray={`${2 * Math.PI * 42}`}
+                      strokeDashoffset={scoreAnim ? `${2 * Math.PI * 42 * (1 - (result.score ?? 0) / 10)}` : `${2 * Math.PI * 42}`}
+                      style={{ transition: "stroke-dashoffset 1s ease-out", transform: "rotate(-90deg)", transformOrigin: "50% 50%" }}
+                    />
+                  </svg>
+                  <div style={{
+                    position: "absolute", top: "50%", left: "50%", transform: `translate(-50%, -50%) scale(${scoreAnim ? 1 : 0.5})`,
+                    transition: "transform 0.5s ease-out", textAlign: "center",
+                  }}>
+                    <span style={{ fontSize: 32, fontWeight: 900, color, lineHeight: 1 }}>{result.score}</span>
+                    <span style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", display: "block" }}>/10</span>
+                  </div>
+                </div>
+              )}
 
               <div style={{ flex: 1, minWidth: 0 }}>
                 <h1 style={{ fontSize: 20, fontWeight: 800, color: "#ffffff", lineHeight: 1.3, marginBottom: 4 }}>{result.name}</h1>
                 <p style={{ fontSize: 12, color: "rgba(255,255,255,0.5)" }}>{subtitle}</p>
                 <div style={{ marginTop: 8, display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-                  <span style={{ fontSize: 10, fontWeight: 700, padding: "4px 12px", borderRadius: 999, backgroundColor: bg, color }}>{result.verdict_short || label}</span>
+                  {/* verdict_short (ocena) — ukryty dla makro (brak oceny) */}
+                  {!isMacro && (
+                    <span style={{ fontSize: 10, fontWeight: 700, padding: "4px 12px", borderRadius: 999, backgroundColor: bg, color }}>{result.verdict_short || label}</span>
+                  )}
                   <span style={{ fontSize: 10, fontWeight: 700, padding: "4px 12px", borderRadius: 999, background: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.55)" }}>
-                    {isTextSearch ? "🔍 Szukaj" : isCosmetics ? "✨ Kosmetyk" : isSuplement ? "💊 Suplement" : "🛒 Żywność"}
+                    {isTextSearch ? "🔍 Szukaj" : isCosmetics ? "✨ Kosmetyk" : isSuplement ? "💊 Suplement" : isMacro ? "⚡ Makro" : "🛒 Żywność"}
                   </span>
                 </div>
               </div>
             </div>
 
-            {/* AI comment */}
-            <div style={{ marginTop: 14, padding: 14, borderRadius: 14, background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.05)" }}>
-              <p style={{ fontSize: 13, color: "rgba(255,255,255,0.65)", lineHeight: 1.6 }}>{result.verdict}</p>
-            </div>
+            {/* AI comment (verdict) — ukryty dla makro (skan kalorii, brak oceny słownej) */}
+            {!isMacro && result.verdict && (
+              <div style={{ marginTop: 14, padding: 14, borderRadius: 14, background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.05)" }}>
+                <p style={{ fontSize: 13, color: "rgba(255,255,255,0.65)", lineHeight: 1.6 }}>{result.verdict}</p>
+              </div>
+            )}
 
             {/* Feedback row: kcal on left, feedback on right */}
             <div style={{ marginTop: 12, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -1593,7 +1634,7 @@ export default function WynikiPage() {
 
         {/* Meal portion editor is now inline in the premium hero card above */}
 
-        {/* ─── PORTION & QUANTITY (food only — not suplement, cosmetics, meal, forma) ─── */}
+        {/* ─── PORTION & QUANTITY (TYLKO legacy food — makro używa czystej tabeli + DiaryPanel) ─── */}
         {scanType === "food" && !isSuplement && !isTextSearch && !isMeal && !isForma && (
           <div className="anim-fade-up-1" style={{ margin: "0 16px 12px" }}>
             <div style={{ padding: 18, borderRadius: 16, background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.06)" }}>
@@ -1648,14 +1689,11 @@ export default function WynikiPage() {
         )}
 
         {/* ─── MACRO TABLE (food only — suplement is not a meal) ─── */}
+        {/* LEGACY food — stara tabela skalowana porcją (zachowana dla starych skanów) */}
         {scanType === "food" && !isSuplement && !isTextSearch && !isMeal && !isForma && (() => {
           const n = foodResult
             ? extractFoodNutrition(foodResult)
             : { cal100: 0, prot100: 0, fat100: 0, carb100: 0, packageG: 100 };
-          // Macro table reflects the actual amount eaten:
-          //   quantity × packageG × (portion%/100). So at 1 piece × 100%
-          //   it equals the calories for the whole package — matching the
-          //   top "⚡ X kcal" header. Sliders/quantity scale linearly from there.
           const packageG = (n as { packageG: number }).packageG ?? 100;
           const multiplier = quantity * (packageG / 100) * (portion / 100);
           const kcal = Math.round(n.cal100 * multiplier);
@@ -1679,6 +1717,65 @@ export default function WynikiPage() {
                     </div>
                   ))}
                 </div>
+              </div>
+            </div>
+          );
+        })()}
+
+        {/* MAKRO — czysta tabela wartości odżywczych z przełącznikiem 100g ↔ całe opakowanie */}
+        {isMacro && foodResult && (() => {
+          const n = extractFoodNutrition(foodResult);
+          const hasWeight = !!parsePackageGrams(foodResult.weight);
+          const packageG = n.packageG;
+          const basisPkg = nutriBasis === "package" && hasWeight;
+          const f = basisPkg ? packageG / 100 : 1; // mnożnik: 100g (1×) lub opakowanie
+          const fmt = (v: number) => {
+            const x = v * f;
+            return Math.round(x * 10) / 10;
+          };
+          const rows = [
+            { icon: "🔥", label: "Kalorie", value: `${Math.round(n.cal100 * f)} kcal` },
+            { icon: "🥩", label: "Białko", value: `${fmt(n.prot100)} g` },
+            { icon: "🧈", label: "Tłuszcz", value: `${fmt(n.fat100)} g` },
+            { icon: "🍞", label: "Węglowodany", value: `${fmt(n.carb100)} g` },
+            { icon: "🧂", label: "Sól", value: `${fmt(n.salt100)} g` },
+          ];
+          return (
+            <div className="anim-fade-up-1" style={{ margin: "0 16px 12px" }}>
+              <div style={{ padding: 18, borderRadius: 16, background: `rgba(${accentRgb},0.04)`, border: `1px solid rgba(${accentRgb},0.1)` }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+                  <p style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.35)", letterSpacing: 1.5, textTransform: "uppercase", margin: 0 }}>Wartości odżywcze</p>
+                  {hasWeight && (
+                    <div style={{ display: "flex", gap: 4, background: "rgba(255,255,255,0.05)", borderRadius: 10, padding: 3 }}>
+                      {([["100g", "Na 100g"], ["package", `Opakowanie ${packageG}g`]] as const).map(([id, lbl]) => (
+                        <button
+                          key={id}
+                          onClick={() => setNutriBasis(id)}
+                          style={{
+                            padding: "5px 10px", borderRadius: 8, border: "none", cursor: "pointer",
+                            fontSize: 11, fontWeight: 700,
+                            background: nutriBasis === id ? `rgba(${accentRgb},0.18)` : "transparent",
+                            color: nutriBasis === id ? "#fff" : "rgba(255,255,255,0.5)",
+                          }}
+                        >
+                          {lbl}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                  {rows.map((row) => (
+                    <div key={row.label} style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                      <span style={{ fontSize: 13, color: "rgba(255,255,255,0.55)" }}>{row.icon} {row.label}</span>
+                      <span style={{ fontSize: 14, fontWeight: 700, color: "#fff" }}>{row.value}</span>
+                    </div>
+                  ))}
+                </div>
+                <p style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", marginTop: 12, marginBottom: 0 }}>
+                  {basisPkg ? `Dla całego opakowania (${foodResult.weight}).` : "Na 100g / 100ml produktu."}
+                  {hasWeight ? "" : " Waga opakowania nieznana — pokazuję na 100g."}
+                </p>
               </div>
             </div>
           );
@@ -1713,7 +1810,8 @@ export default function WynikiPage() {
           </Link>
         )}
 
-        {!isMeal && !isForma && (
+        {/* Taby Skład/Wartości/Ocena — ukryte dla makro (skan kalorii, bez składu/oceny) */}
+        {!isMeal && !isForma && !isMacro && (
           <div className="anim-fade-up-2" style={{ margin: "8px 16px 0" }}>
             <ResultTabs result={result} scanType={scanType} isCosmetics={isCosmetics} onIngredientClick={setSelectedIngredient} />
           </div>
@@ -1985,8 +2083,9 @@ export default function WynikiPage() {
             <ShareCard
               name={result.name}
               score={result.score}
-              verdict={result.verdict || result.tip || ""}
+              verdict={isMacro ? "" : (result.verdict || result.tip || "")}
               isForma={isForma}
+              macroKcal100={isMacro && foodResult ? Math.round(extractFoodNutrition(foodResult).cal100) : null}
             />
           </div>
         </div>

@@ -551,6 +551,43 @@ Sprawdź produkt pod kątem substancji ryzykownych w ciąży/karmieniu:
 Jeśli produkt nie ma żadnych ryzyk → alerts: [], safe_nutrients z listy powyżej jeśli są obecne.`;
 
 
+// MACRO_ANALYSIS (Patryk: rozdzielenie skanu) — LEKKI, SZYBKI prompt dla
+// trybu food_macro. Czyta TYLKO nazwę + markę + wagę + tabelę wartości
+// odżywczych. NIE analizuje składu, NIE ocenia, NIE szuka alergenów —
+// mniej outputu = szybsza inferencja (~10s vs ~25s pełnej analizy).
+// Cel: kalorie/makro do dziennika.
+const MACRO_ANALYSIS = `Jesteś szybkim czytnikiem wartości odżywczych z etykiet. Twoje JEDYNE zadanie: odczytać nazwę produktu, markę, wagę/objętość opakowania i tabelę wartości odżywczych. NIE oceniaj składu, NIE szukaj alergenów, NIE analizuj jakości.
+
+🚫 ABSOLUTNY ZAKAZ HALUCYNACJI 🚫
+Ta aplikacja śledzi kalorie użytkowników — wymyślone wartości = realne szkody.
+- Wartości odżywcze = TYLKO te z tabeli WIDOCZNEJ na zdjęciu. NIE zgaduj z nazwy/marki/kategorii.
+- Tabela CZĘSTO obrócona/pod kątem — mentalnie obróć, odczytaj cyfra po cyfrze.
+- Podaj wartości NA 100g/100ml (tak jak na etykiecie).
+- WALIDACJA ATWATER: kcal ≈ 4×białko + 4×węgle + 9×tłuszcz (±20%). Jeśli się nie zgadza → błędny odczyt → "brak danych".
+- Jeśli NIE widać tabeli wartości odżywczych → label_unreadable=true, verdict_short="Brak etykiety", nutrition wszystkie "brak danych".
+
+🍽️ JEŚLI to PRZYGOTOWANE DANIE NA TALERZU (nie etykieta produktu) → zwróć WYŁĄCZNIE: {"wrong_mode_detected":"meal","detected_dish":"<nazwa dania>"} i NIC więcej.
+
+Odpowiedz WYŁĄCZNIE poprawnym JSON (pierwszy znak {, ostatni }, BEZ tekstu przed/po):
+{
+  "type": "food",
+  "name": "Nazwa produktu (lub Nieznany produkt)",
+  "brand": "Marka lub null",
+  "weight": "Waga/objętość np. 200 g, 0,5 L",
+  "label_unreadable": false,
+  "nutrition": [
+    {"label": "Energia", "value": "X kcal", "icon": "⚡"},
+    {"label": "Tłuszcz", "value": "X g", "icon": "🫧", "sub": "nasycone: X g"},
+    {"label": "Węglowodany", "value": "X g", "icon": "🍞", "sub": "w tym cukry: X g"},
+    {"label": "Białko", "value": "X g", "icon": "💪"},
+    {"label": "Sól", "value": "X g", "icon": "🧂"}
+  ],
+  "sugar_teaspoons": 0
+}
+
+UWAGA: nutrition NA 100g (z etykiety). sugar_teaspoons = cukry/4 (1 łyżeczka = 4g). Jeśli nazwa niewidoczna → "Nieznany produkt". Marka brak → null.`;
+
+
 const COSMETICS_ANALYSIS = `Jesteś PROFESJONALNYM DERMATOLOGIEM i kosmetologiem. Otrzymujesz ODCZYTANY TEKST ze składu INCI + ZDJĘCIE do weryfikacji.
 
 !!! ABSOLUTNIE KRYTYCZNE — PRZECZYTAJ 3 RAZY ZANIM ODPOWIESZ !!!
@@ -2009,8 +2046,11 @@ Odpowiedz WYŁĄCZNIE JSON.`,
     // prozą). Szybsze (~20s, nie 35-50s), niezawodne, bez błędu transmisji
     // OCR→analiza. Sonnet 4.6 udowodnił dokładność OCR w A/B (6/6 trudnych etykiet).
     const isCosmetics = mode === "cosmetics";
+    // food_macro = szybki skan kalorii/makro (lekki MACRO_ANALYSIS prompt).
+    // food_sklad / food (legacy) = pełna analiza składu (FOOD_ANALYSIS).
+    const isMacro = mode === "food_macro";
     const ocrMediaType = (imageContent.source.media_type as string) || "image/jpeg";
-    const analysisPrompt = isCosmetics ? COSMETICS_ANALYSIS : FOOD_ANALYSIS;
+    const analysisPrompt = isCosmetics ? COSMETICS_ANALYSIS : isMacro ? MACRO_ANALYSIS : FOOD_ANALYSIS;
 
     const skinProfileHint = isCosmetics && body.skinProfile
       ? `\n\nPROFIL SKÓRY UŻYTKOWNIKA:\nTyp: ${body.skinProfile.skin_type}, Wrażliwość: ${body.skinProfile.sensitivity}, Wiek skóry: ${body.skinProfile.skin_age}\nProblemy: ${body.skinProfile.skin_problems?.join(", ") || "brak"}\nWłosy: ${body.skinProfile.hair_type || "brak"}, Problemy włosów: ${body.skinProfile.hair_problems?.join(", ") || "brak"}\nSPERSONALIZUJ wyniki pod ten profil.`
@@ -2023,7 +2063,10 @@ Odpowiedz WYŁĄCZNIE JSON.`,
       ? `\n\n🍽️ NAJPIERW SPRAWDŹ: jeśli na zdjęciu jest PRZYGOTOWANE DANIE / POSIŁEK NA TALERZU / W MISCE (zupa, kanapka, obiad — NIE opakowanie produktu z etykietą), zwróć WYŁĄCZNIE: {"wrong_mode_detected":"meal","detected_dish":"<krótka polska nazwa dania>"} i NIC więcej.`
       : "";
 
-    const combinedInstruction = `NAJPIERW odczytaj DOKŁADNIE cały tekst z obrazu etykiety: nazwę, markę, ${isCosmetics ? "pełną listę składników INCI" : "skład oraz tabelę wartości odżywczych — cyfra po cyfrze, uważaj na orientację (etykieta może być obrócona)"}. POTEM przeanalizuj produkt.
+    // Macro: prosta instrukcja (MACRO_ANALYSIS system ma już pełne reguły).
+    const combinedInstruction = isMacro
+      ? `Odczytaj z tej etykiety wartości odżywcze, nazwę, markę i wagę. Zwróć WYŁĄCZNIE JSON wg formatu — pierwszy znak {.${preparedFoodRule}`
+      : `NAJPIERW odczytaj DOKŁADNIE cały tekst z obrazu etykiety: nazwę, markę, ${isCosmetics ? "pełną listę składników INCI" : "skład oraz tabelę wartości odżywczych — cyfra po cyfrze, uważaj na orientację (etykieta może być obrócona)"}. POTEM przeanalizuj produkt.
 
 🚫 ABSOLUTNY ZAKAZ HALUCYNACJI 🚫
 ${isCosmetics ? "Użytkownicy ufają Twojej ocenie składu kosmetyku." : "Ta aplikacja śledzi kalorie użytkowników — wymyślone wartości = realne szkody zdrowotne."}
@@ -2045,9 +2088,12 @@ ${isCosmetics ? "Użytkownicy ufają Twojej ocenie składu kosmetyku." : "Ta apl
     // Cosmetics ma długi INCI + rozbudowaną analizę (53s w testach) →
     // cap 75s z bezpiecznym buforem. Food 55s.
     const elapsed = Date.now() - startTime;
-    const claudeTimeout = Math.max(35000, Math.min(isCosmetics ? 75000 : 55000, 110000 - elapsed));
-    console.log(`[analyze] mode=${mode} combined call, timeout=${claudeTimeout}ms`);
-    const result1 = await callClaude(apiKey, analysisPrompt, userContent, 5120, claudeTimeout, "claude-sonnet-4-6");
+    // Macro: mniejszy output (tylko nutrition) → krótszy timeout, mniej max_tokens = szybciej.
+    const hardCap = isCosmetics ? 75000 : isMacro ? 40000 : 55000;
+    const claudeTimeout = Math.max(30000, Math.min(hardCap, 110000 - elapsed));
+    const maxTokens = isMacro ? 2048 : 5120;
+    console.log(`[analyze] mode=${mode} combined call, timeout=${claudeTimeout}ms maxTokens=${maxTokens}`);
+    const result1 = await callClaude(apiKey, analysisPrompt, userContent, maxTokens, claudeTimeout, "claude-sonnet-4-6");
 
     if (result1.error) {
       if (result1.status === 429) return NextResponse.json({ error: "Zbyt wiele zapytań. Poczekaj chwilę." }, { status: 429 });
@@ -2092,7 +2138,11 @@ ${isCosmetics ? "Użytkownicy ufają Twojej ocenie składu kosmetyku." : "Ta apl
 
       // Validation / normalization
       if (!result.name || result.name.length < 2) result.name = "Nieznany produkt";
-      if (!result.label_unreadable) {
+      // Makro = skan kalorii, BEZ oceny jakości → score zawsze null
+      // (render makro pokazuje kalorie zamiast pierścienia oceny).
+      if (isMacro) {
+        result.score = null;
+      } else if (!result.label_unreadable) {
         if (typeof result.score !== "number" || result.score < 1 || result.score > 10) result.score = 5;
       } // else: keep score=null so the UI can render the "Brak etykiety" state
       if (!result.pros) result.pros = [];

@@ -39,7 +39,7 @@ export default function Scanner({ onScan, isLoading, mode = "food", loadingMessa
   const isSuplement = mode === "suplement";
   const isMealMode = mode === "meal";
   const isDark = isCosmetics || isForma || isSuplement || isMealMode;
-  const showSecondPhotoOption = (mode === "food" || mode === "cosmetics" || mode === "suplement") && !isLoading;
+  const showSecondPhotoOption = (mode === "food" || mode === "food_macro" || mode === "food_sklad" || mode === "cosmetics" || mode === "suplement") && !isLoading;
 
   const handleFile = useCallback(
     async (file: File) => {

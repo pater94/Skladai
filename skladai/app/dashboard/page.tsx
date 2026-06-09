@@ -180,7 +180,7 @@ export default function DashboardPage() {
     const diff = (now.getTime() - d.getTime()) / 86400000;
     return diff <= 7;
   });
-  const weekFoodCount = weekHistory.filter(h => h.scanType === "food").length;
+  const weekFoodCount = weekHistory.filter(h => (h.scanType || "").startsWith("food")).length;
   const weekCosmeticsCount = weekHistory.filter(h => h.scanType === "cosmetics").length;
   const weekSupplementCount = weekHistory.filter(h => h.scanType === "suplement").length;
 

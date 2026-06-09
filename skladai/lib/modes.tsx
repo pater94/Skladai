@@ -254,11 +254,12 @@ export function getNavConfigForMode(mode: UserMode | null | undefined): ModeNavC
 // "cosmetics". Tutaj mapowanie 1-do-1 ale nazwy się przypadkowo
 // pokrywają tylko dla "cosmetics".
 
-export type ScanCategory = "food" | "meal" | "cosmetics" | "suplement";
+// food_macro / food_sklad — rozdzielony skan żywności (patrz lib/types.ts ScanMode).
+export type ScanCategory = "food_macro" | "food_sklad" | "meal" | "cosmetics" | "suplement";
 
 export const MODE_DEFAULT_SCAN_CATEGORY: Record<UserMode, ScanCategory> = {
-  fitness: "food",       // Skanuj żywność (kalorie, makro)
-  health: "food",        // Skanuj żywność (alergeny, schorzenia)
+  fitness: "food_macro",  // fitness liczy kalorie → domyślnie Makro
+  health: "food_sklad",   // health dba o skład/alergeny → domyślnie Skład
   cosmetics: "cosmetics", // Skanuj INCI od razu
 };
 
@@ -281,9 +282,10 @@ export function getDefaultScanCategoryForMode(mode: UserMode | null | undefined)
 // `mode` w state'cie jeśli zapisany w localStorage `skladai_mode` jest
 // niedozwolony dla bieżącego userMode.
 
+// Kolejność = kolejność tabów. Pierwszy = domyślny po przełączeniu trybu.
 export const MODE_ALLOWED_SCAN_CATEGORIES: Record<UserMode, ScanCategory[]> = {
-  fitness:   ["food", "meal", "suplement"],
-  health:    ["food", "meal", "suplement"],
+  fitness:   ["food_macro", "food_sklad", "meal", "suplement"], // Makro pierwszy
+  health:    ["food_sklad", "food_macro", "meal", "suplement"], // Skład pierwszy
   cosmetics: ["cosmetics"],
 };
 
