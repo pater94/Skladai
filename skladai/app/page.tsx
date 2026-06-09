@@ -819,9 +819,12 @@ export default function Home() {
         {/* ══ 2. HEADLINE ══ */}
         {(() => {
           const headlines: Record<string, { line1: string; accent: string; line2: string; sub: string }> = {
-            food:       { line1: "Sprawdź co", accent: "naprawdę", line2: "jesz",              sub: "Zrób zdjęcie etykiety. AI przeanalizuje skład." },
-            food_macro: { line1: "Policz", accent: "kalorie", line2: "i makro",                sub: "Zrób zdjęcie tabeli wartości odżywczych." },
-            food_sklad: { line1: "Sprawdź", accent: "skład", line2: "produktu",                sub: "Zrób zdjęcie etykiety ze składem. AI oceni jakość." },
+            // Patryk decision: STAŁY nagłówek dla wszystkich trybów food (Makro
+            // i Skład) — wybór typu skanu jest w modalu, więc nagłówek nie zmienia
+            // się per pod-tryb. Brand tagline z onboardingu.
+            food:       { line1: "Twój osobisty", accent: "ekspert składu", line2: "", sub: "Zrób zdjęcie etykiety — AI sprawdzi skład i policzy makro." },
+            food_macro: { line1: "Twój osobisty", accent: "ekspert składu", line2: "", sub: "Zrób zdjęcie etykiety — AI sprawdzi skład i policzy makro." },
+            food_sklad: { line1: "Twój osobisty", accent: "ekspert składu", line2: "", sub: "Zrób zdjęcie etykiety — AI sprawdzi skład i policzy makro." },
             meal:       { line1: "Sprawdź co", accent: "naprawdę", line2: "jesz",              sub: "Zrób zdjęcie dania. AI oszacuje kalorie." },
             cosmetics:  { line1: "Sprawdź co", accent: "nakładasz", line2: "na skórę",         sub: "Zrób zdjęcie składu (tył opakowania)" },
             suplement:  { line1: "Sprawdź swój", accent: "suplement", line2: "witaminowy",      sub: "Zrób zdjęcie składu (tył opakowania)" },

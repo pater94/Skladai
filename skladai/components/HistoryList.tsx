@@ -19,7 +19,17 @@ export default function HistoryList({ isCosmetics = false, mode }: HistoryListPr
   const refreshHistory = () => {
     const all = getHistory();
     if (mode && mode !== "text_search") {
-      setHistory(all.filter((item) => (item.scanType || "food") === mode));
+      // W trybach żywności (Makro/Skład) pokazuj WSZYSTKIE skany jedzenia
+      // (food, food_macro, food_sklad) — inaczej po podziale Makro/Skład
+      // filtr exact-match chował stare skany "food" i te z drugiego pod-trybu
+      // → historia wyglądała na pustą. Pozostałe tryby: exact match.
+      const isFoodMode = mode.startsWith("food");
+      setHistory(
+        all.filter((item) => {
+          const t = item.scanType || "food";
+          return isFoodMode ? t.startsWith("food") : t === mode;
+        })
+      );
     } else {
       setHistory(all);
     }
