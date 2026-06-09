@@ -33,7 +33,7 @@ import { isNative, takePhotoForMode } from "@/lib/native-camera";
 import { devLog } from "@/lib/dev-log";
 import ActivityBadges from "@/components/ActivityBadges";
 import type { ScanMode, ScanHistoryItem, RecentFood } from "@/lib/types";
-import { Zap, Leaf, ChevronRight, X, ScanLine } from "lucide-react";
+import { Zap, Leaf, ChevronRight, ChevronLeft, X, ScanLine, Apple, UtensilsCrossed, Pill } from "lucide-react";
 
 // Subtelne ziarno (film grain) dla ekranu wyboru skanu — materiał, nie kolor.
 const SCAN_GRAIN =
@@ -290,10 +290,11 @@ export default function Home() {
   // Pending re-scan po przełączeniu na tryb meal. useEffect odpala scan
   // dopiero gdy `mode` faktycznie === "meal" (unika race z closure handleScan).
   const [pendingMealScan, setPendingMealScan] = useState<string | null>(null);
-  // Modal wyboru typu skanu (Patryk decision): po naciśnięciu SKANUJ/Galeria
-  // pokazujemy modal "Co skanujesz?" (Makro/Skład/Danie/Suplement) zamiast
-  // tabów na górze. scanSourceRef pamięta czy wybór ma otworzyć aparat czy galerię.
+  // Dwupoziomowy chooser (Patryk): SKANUJ → poziom "category" (Żywność /
+  // Danie / Suplement); wybór Żywność → poziom "food" (Makro / Skład). Danie
+  // i Suplement skanują od razu. scanSourceRef = aparat czy galeria.
   const [showScanChoice, setShowScanChoice] = useState(false);
+  const [scanStep, setScanStep] = useState<"category" | "food">("category");
   const scanSourceRef = useRef<"camera" | "gallery">("camera");
   const router = useRouter();
 
@@ -680,6 +681,7 @@ export default function Home() {
       startCapture(((cats[0] as ScanMode) || mode), source);
     } else {
       scanSourceRef.current = source;
+      setScanStep("category"); // zawsze od poziomu kategorii
       setShowScanChoice(true);
     }
   }, [isLoading, isScanning, allowedScanOrder, mode, startCapture]);
@@ -1614,93 +1616,101 @@ export default function Home() {
         </div>
       )}
 
-      {/* ══ Modal wyboru typu skanu (Patryk: zamiast tabów na górze) ══
-          Wyzwalany przyciskiem SKANUJ/Galeria gdy >1 dozwolony tryb.
-          Po wyborze → startCapture(tryb, źródło) → aparat/galeria → 1 zdjęcie. */}
-      {showScanChoice && (
-        <div style={{ position: "fixed", inset: 0, zIndex: 2000, background: "#0a0f0d", display: "flex", flexDirection: "column", overflow: "hidden" }}>
-          {/* Jeden subtelny blask u góry — atmosfera (bez rozlanych plam) */}
-          <div style={{ position: "absolute", top: -120, left: 0, right: 0, height: 240, background: "radial-gradient(120% 100% at 50% 0%, rgba(110,252,180,0.08), transparent 68%)", pointerEvents: "none" }} />
-          {/* Ziarno — materiał na całości */}
-          <div style={{ position: "absolute", inset: 0, backgroundImage: `url('${SCAN_GRAIN}')`, opacity: 0.05, mixBlendMode: "overlay", pointerEvents: "none" }} />
+      {/* ══ Dwupoziomowy chooser (Patryk) ══
+          Poziom "category": Żywność / Danie / Suplement.
+          Wybór Żywność → poziom "food": Makro / Skład.
+          Danie i Suplement → od razu startCapture. Pełny ekran (zakrywa FAB). */}
+      {showScanChoice && (() => {
+        const FOOD_DEFS: Record<string, { accent: string; accentDeep: string; Icon: typeof Zap; title: string; desc: string; tag: string }> = {
+          food_macro: { accent: "#2dd4bf", accentDeep: "#0f9e8e", Icon: Zap, title: "Makro", desc: "Kalorie i makroskładniki z tabeli wartości odżywczych", tag: "tabela wartości" },
+          food_sklad: { accent: "#6efcb4", accentDeep: "#34d399", Icon: Leaf, title: "Skład", desc: "Ocena jakości składu z listy składników", tag: "lista składników" },
+        };
+        const captureMode = (m: ScanMode) => { setShowScanChoice(false); startCapture(m, scanSourceRef.current); };
+        type Card = { key: string; accent: string; accentDeep: string; Icon: typeof Zap; title: string; desc: string; tag: string; onClick: () => void };
+        const cards: Card[] = scanStep === "food"
+          ? allowedScanOrder.filter((id) => FOOD_DEFS[id]).map((id) => ({ key: id, ...FOOD_DEFS[id], onClick: () => captureMode(id as ScanMode) }))
+          : [
+              { key: "food", accent: "#6efcb4", accentDeep: "#34d399", Icon: Apple, title: "Żywność", desc: "Etykieta produktu — policz makro lub oceń skład", tag: "etykieta produktu", onClick: () => setScanStep("food") },
+              { key: "meal", accent: "#fbbf24", accentDeep: "#f59e0b", Icon: UtensilsCrossed, title: "Danie", desc: "Kalorie z gotowego posiłku na talerzu", tag: "talerz z jedzeniem", onClick: () => captureMode("meal" as ScanMode) },
+              { key: "suplement", accent: "#38bdf8", accentDeep: "#0ea5e9", Icon: Pill, title: "Suplement", desc: "Analiza składu, dawek i jakości suplementu", tag: "etykieta suplementu", onClick: () => captureMode("suplement" as ScanMode) },
+            ];
+        return (
+          <div style={{ position: "fixed", inset: 0, zIndex: 2000, background: "#0a0f0d", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+            {/* Jeden subtelny blask u góry */}
+            <div style={{ position: "absolute", top: -120, left: 0, right: 0, height: 240, background: "radial-gradient(120% 100% at 50% 0%, rgba(110,252,180,0.08), transparent 68%)", pointerEvents: "none" }} />
+            {/* Ziarno */}
+            <div style={{ position: "absolute", inset: 0, backgroundImage: `url('${SCAN_GRAIN}')`, opacity: 0.05, mixBlendMode: "overlay", pointerEvents: "none" }} />
 
-          {/* TOP: X + eyebrow + tytuł + podtytuł */}
-          <div style={{ position: "relative", padding: "max(20px, env(safe-area-inset-top)) 20px 0" }}>
-            <button
-              type="button"
-              onClick={() => setShowScanChoice(false)}
-              aria-label="Zamknij"
-              className="scan-opt"
-              style={{ width: 38, height: 38, borderRadius: 99, background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}
-            >
-              <X size={18} color="rgba(255,255,255,0.7)" />
-            </button>
-            <div style={{ marginTop: 26 }}>
-              <div style={{ display: "inline-flex", alignItems: "center", gap: 6, color: "#6efcb4", fontSize: 11.5, fontWeight: 800, letterSpacing: 2, textTransform: "uppercase" }}>
-                <ScanLine size={14} color="#6efcb4" strokeWidth={2.4} /> Skanowanie
+            {/* TOP: wstecz/X + eyebrow + tytuł + podtytuł */}
+            <div style={{ position: "relative", padding: "max(20px, env(safe-area-inset-top)) 20px 0" }}>
+              {scanStep === "food" ? (
+                <button type="button" onClick={() => setScanStep("category")} aria-label="Wstecz" className="scan-opt" style={{ width: 38, height: 38, borderRadius: 99, background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
+                  <ChevronLeft size={20} color="rgba(255,255,255,0.7)" />
+                </button>
+              ) : (
+                <button type="button" onClick={() => setShowScanChoice(false)} aria-label="Zamknij" className="scan-opt" style={{ width: 38, height: 38, borderRadius: 99, background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
+                  <X size={18} color="rgba(255,255,255,0.7)" />
+                </button>
+              )}
+              <div style={{ marginTop: 26 }}>
+                <div style={{ display: "inline-flex", alignItems: "center", gap: 6, color: "#6efcb4", fontSize: 11.5, fontWeight: 800, letterSpacing: 2, textTransform: "uppercase" }}>
+                  <ScanLine size={14} color="#6efcb4" strokeWidth={2.4} /> {scanStep === "food" ? "Żywność" : "Skanowanie"}
+                </div>
+                <div style={{ fontSize: 28, fontWeight: 800, color: "#fff", letterSpacing: -0.6, lineHeight: 1.1, marginTop: 10 }}>
+                  {scanStep === "food" ? <>Makro czy<br />skład?</> : <>Co chcesz<br />zeskanować?</>}
+                </div>
+                <div style={{ fontSize: 15.5, color: "rgba(255,255,255,0.82)", fontWeight: 700, marginTop: 10 }}>{scanStep === "food" ? "Wybierz rodzaj analizy" : "Wybierz kategorię"}</div>
               </div>
-              <div style={{ fontSize: 28, fontWeight: 800, color: "#fff", letterSpacing: -0.6, lineHeight: 1.1, marginTop: 10 }}>Co chcesz<br />zeskanować?</div>
-              <div style={{ fontSize: 15.5, color: "rgba(255,255,255,0.82)", fontWeight: 700, marginTop: 10 }}>Wybierz rodzaj analizy</div>
             </div>
-          </div>
 
-          {/* BODY: dwie karty wyśrodkowane pionowo (kolejność per tryb: health = Skład pierwszy) */}
-          <div style={{ flex: 1, position: "relative", display: "flex", flexDirection: "column", justifyContent: "center", gap: 16, padding: "0 20px" }}>
-            {(() => {
-              const DEFS: Record<string, { accent: string; accentDeep: string; Icon: typeof Zap; title: string; desc: string; tag: string }> = {
-                food_macro: { accent: "#2dd4bf", accentDeep: "#0f9e8e", Icon: Zap, title: "Makro", desc: "Kalorie i makroskładniki z tabeli wartości odżywczych", tag: "tabela wartości" },
-                food_sklad: { accent: "#6efcb4", accentDeep: "#34d399", Icon: Leaf, title: "Skład", desc: "Ocena jakości składu z listy składników", tag: "lista składników" },
-              };
-              return allowedScanOrder.map((id, i) => {
-                const c = DEFS[id];
-                if (!c) return null;
-                return (
-                  <button
-                    key={id}
-                    type="button"
-                    onClick={() => { setShowScanChoice(false); startCapture(id as ScanMode, scanSourceRef.current); }}
-                    className="scan-opt scan-card-in"
-                    style={{
-                      animationDelay: `${120 + i * 80}ms`,
-                      position: "relative", overflow: "hidden", width: "100%", textAlign: "left", cursor: "pointer",
-                      padding: 22, borderRadius: 24, border: "1px solid transparent",
-                      background: `linear-gradient(180deg, rgba(255,255,255,0.055), rgba(255,255,255,0.02)) padding-box, linear-gradient(145deg, ${c.accent}70, rgba(255,255,255,0.06) 42%) border-box`,
-                      boxShadow: "inset 0 1px 0 rgba(255,255,255,0.07), 0 10px 28px rgba(0,0,0,0.35)",
-                    }}
-                  >
-                    <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
-                      <div style={{ width: 58, height: 58, borderRadius: 17, background: `linear-gradient(150deg, ${c.accent}, ${c.accentDeep})`, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: `inset 0 1px 0 rgba(255,255,255,0.45), 0 6px 16px ${c.accentDeep}40` }}>
-                        <c.Icon size={27} color="#06100c" strokeWidth={2.4} />
-                      </div>
-                      <ChevronRight className="scan-arrow" size={22} color="rgba(255,255,255,0.34)" />
+            {/* BODY: karty wyśrodkowane pionowo */}
+            <div style={{ flex: 1, position: "relative", display: "flex", flexDirection: "column", justifyContent: "center", gap: 16, padding: "0 20px" }}>
+              {cards.map((c, i) => (
+                <button
+                  key={c.key}
+                  type="button"
+                  onClick={c.onClick}
+                  className="scan-opt scan-card-in"
+                  style={{
+                    animationDelay: `${100 + i * 80}ms`,
+                    position: "relative", overflow: "hidden", width: "100%", textAlign: "left", cursor: "pointer",
+                    padding: 22, borderRadius: 24, border: "1px solid transparent",
+                    background: `linear-gradient(180deg, rgba(255,255,255,0.055), rgba(255,255,255,0.02)) padding-box, linear-gradient(145deg, ${c.accent}70, rgba(255,255,255,0.06) 42%) border-box`,
+                    boxShadow: "inset 0 1px 0 rgba(255,255,255,0.07), 0 10px 28px rgba(0,0,0,0.35)",
+                  }}
+                >
+                  <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
+                    <div style={{ width: 58, height: 58, borderRadius: 17, background: `linear-gradient(150deg, ${c.accent}, ${c.accentDeep})`, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: `inset 0 1px 0 rgba(255,255,255,0.45), 0 6px 16px ${c.accentDeep}40` }}>
+                      <c.Icon size={27} color="#06100c" strokeWidth={2.4} />
                     </div>
-                    <div style={{ fontSize: 22, fontWeight: 800, color: "#fff", letterSpacing: -0.3, marginTop: 18 }}>{c.title}</div>
-                    <div style={{ fontSize: 14, color: "rgba(255,255,255,0.55)", marginTop: 5, lineHeight: 1.35 }}>{c.desc}</div>
-                    <div style={{ display: "inline-flex", alignItems: "center", gap: 5, marginTop: 14, padding: "5px 11px", borderRadius: 99, background: `${c.accent}1f`, border: `1px solid ${c.accent}33`, color: c.accent, fontSize: 12, fontWeight: 700 }}>
-                      📸 {c.tag}
-                    </div>
-                  </button>
-                );
-              });
-            })()}
-          </div>
+                    <ChevronRight className="scan-arrow" size={22} color="rgba(255,255,255,0.34)" />
+                  </div>
+                  <div style={{ fontSize: 22, fontWeight: 800, color: "#fff", letterSpacing: -0.3, marginTop: 18 }}>{c.title}</div>
+                  <div style={{ fontSize: 14, color: "rgba(255,255,255,0.55)", marginTop: 5, lineHeight: 1.35 }}>{c.desc}</div>
+                  <div style={{ display: "inline-flex", alignItems: "center", gap: 5, marginTop: 14, padding: "5px 11px", borderRadius: 99, background: `${c.accent}1f`, border: `1px solid ${c.accent}33`, color: c.accent, fontSize: 12, fontWeight: 700 }}>
+                    📸 {c.tag}
+                  </div>
+                </button>
+              ))}
+            </div>
 
-          {/* FOOTER */}
-          <div style={{ position: "relative", textAlign: "center", padding: "0 20px max(28px, env(safe-area-inset-bottom))", fontSize: 12.5, color: "rgba(255,255,255,0.42)", fontWeight: 600, letterSpacing: 0.3 }}>
-            ✨ AI Vision przeanalizuje Twoje zdjęcie
-          </div>
+            {/* FOOTER */}
+            <div style={{ position: "relative", textAlign: "center", padding: "0 20px max(28px, env(safe-area-inset-bottom))", fontSize: 12.5, color: "rgba(255,255,255,0.42)", fontWeight: 600, letterSpacing: 0.3 }}>
+              ✨ AI Vision przeanalizuje Twoje zdjęcie
+            </div>
 
-          <style>{`
-            @keyframes scanCardIn { from { transform: translateY(16px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-            .scan-card-in { animation: scanCardIn .55s cubic-bezier(.22,1,.36,1) both; }
-            .scan-opt { transition: transform .14s ease, box-shadow .2s ease; }
-            .scan-opt:active { transform: scale(.98); }
-            .scan-opt:active .scan-arrow { transform: translateX(3px); }
-            .scan-arrow { transition: transform .18s ease; }
-            @media (prefers-reduced-motion: reduce) { .scan-card-in { animation: none; } }
-          `}</style>
-        </div>
-      )}
+            <style>{`
+              @keyframes scanCardIn { from { transform: translateY(16px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+              .scan-card-in { animation: scanCardIn .55s cubic-bezier(.22,1,.36,1) both; }
+              .scan-opt { transition: transform .14s ease, box-shadow .2s ease; }
+              .scan-opt:active { transform: scale(.98); }
+              .scan-opt:active .scan-arrow { transform: translateX(3px); }
+              .scan-arrow { transition: transform .18s ease; }
+              @media (prefers-reduced-motion: reduce) { .scan-card-in { animation: none; } }
+            `}</style>
+          </div>
+        );
+      })()}
 
       {/* ── Hidden fridge input ── */}
       <input ref={fridgeInputRef} type="file" accept="image/*" capture="environment" onChange={onFridgeInputChange} className="hidden" />
