@@ -33,7 +33,7 @@ import { isNative, takePhotoForMode } from "@/lib/native-camera";
 import { devLog } from "@/lib/dev-log";
 import ActivityBadges from "@/components/ActivityBadges";
 import type { ScanMode, ScanHistoryItem, RecentFood } from "@/lib/types";
-import { Apple, UtensilsCrossed, Sparkles, Pill, Zap, Leaf } from "lucide-react";
+import { UtensilsCrossed, Sparkles, Pill, Zap, Leaf } from "lucide-react";
 import { useSpeechToText } from "@/lib/useSpeechToText";
 import { nsSet } from "@/lib/native-storage";
 import { useUserMode } from "@/lib/hooks/useUserMode";
@@ -283,6 +283,11 @@ export default function Home() {
   // Pending re-scan po przełączeniu na tryb meal. useEffect odpala scan
   // dopiero gdy `mode` faktycznie === "meal" (unika race z closure handleScan).
   const [pendingMealScan, setPendingMealScan] = useState<string | null>(null);
+  // Modal wyboru typu skanu (Patryk decision): po naciśnięciu SKANUJ/Galeria
+  // pokazujemy modal "Co skanujesz?" (Makro/Skład/Danie/Suplement) zamiast
+  // tabów na górze. scanSourceRef pamięta czy wybór ma otworzyć aparat czy galerię.
+  const [showScanChoice, setShowScanChoice] = useState(false);
+  const scanSourceRef = useRef<"camera" | "gallery">("camera");
   const router = useRouter();
 
   // ── Inline voice input for the food search bar ──
@@ -462,18 +467,15 @@ export default function Home() {
     return () => clearInterval(interval);
   }, [mode]);
 
-  const handleModeChange = (newMode: ScanMode) => {
-    setMode(newMode);
-    saveMode(newMode);
-    setError(null);
-    setTipIndex(0);
-    if (newMode === "cosmetics" && !hasSkinProfile()) {
-      setShowSkinQuiz(true);
-    }
-  };
+  // (handleModeChange usunięty — taby zastąpione modalem wyboru; logika
+  //  setMode/saveMode/skin-quiz przeniesiona do startCapture.)
 
   const handleScan = useCallback(
-    async (base64: string) => {
+    // modeOverride: gdy skan wystartowany z modala wyboru (Makro/Skład/...),
+    // przekazujemy wybrany tryb explicite — `mode` state może być jeszcze
+    // nieзaktualizowany (async setMode). Fallback do state `mode`.
+    async (base64: string, modeOverride?: ScanMode) => {
+      const scanMode = modeOverride ?? mode;
       // Synchronous lock — prevents double scanning even with rapid calls
       if (scanLockRef.current) return;
       scanLockRef.current = true;
@@ -489,7 +491,7 @@ export default function Home() {
       setIsLoading(true);
       setLoadingMessage(undefined);
 
-      const skinProfile = mode === "cosmetics" ? (() => {
+      const skinProfile = scanMode === "cosmetics" ? (() => {
         try { return JSON.parse(localStorage.getItem("skladai_skin_profile") || "null"); } catch { return null; }
       })() : null;
 
@@ -519,7 +521,7 @@ export default function Home() {
             body: JSON.stringify({
               image: primaryImg,
               ...(secondImg ? { image2: secondImg } : {}),
-              mode,
+              mode: scanMode,
               ...(skinProfile ? { skinProfile } : {}),
             }),
           });
@@ -565,7 +567,7 @@ export default function Home() {
 
         // Meal auto-detect (Task #7): backend wykrył że to danie, nie etykieta.
         // Pokaż modal zamiast wyniku — user decyduje czy przełączyć na "Danie".
-        if (data?.wrong_mode_detected === "meal" && (mode === "food" || mode === "food_macro" || mode === "food_sklad")) {
+        if (data?.wrong_mode_detected === "meal" && (scanMode === "food" || scanMode === "food_macro" || scanMode === "food_sklad")) {
           setMealSuggestion({ dish: data.detected_dish || "danie", base64 });
           setIsLoading(false);
           setIsScanning(false);
@@ -624,6 +626,56 @@ export default function Home() {
       handleScan(b64);
     }
   }, [pendingMealScan, mode, handleScan]);
+
+  // Wspólna funkcja przechwytywania zdjęcia (aparat/galeria) dla wybranego
+  // trybu. Wywoływana z modala wyboru ORAZ bezpośrednio (cosmetics — 1 opcja).
+  // Przekazuje scanMode explicite do handleScan (bez race z async setMode).
+  const startCapture = useCallback(async (scanMode: ScanMode, source: "camera" | "gallery") => {
+    if (isLoading || isScanning) return;
+    setMode(scanMode);
+    saveMode(scanMode);
+    setError(null);
+    // Kosmetyk bez profilu skóry → najpierw quiz personalizacji (dawniej w
+    // handleModeChange przy zmianie tabu). User uzupełnia i skanuje ponownie.
+    if (scanMode === "cosmetics" && !hasSkinProfile()) {
+      setShowSkinQuiz(true);
+      return;
+    }
+    if (isNative()) {
+      if (scanLockRef.current) return;
+      scanLockRef.current = true;
+      setIsScanning(true);
+      try {
+        const base64 = await takePhotoForMode(scanMode, source);
+        const clamped = base64 ? await clampBase64Size(base64, CAMERA_CLAMP_KB(scanMode)) : null;
+        scanLockRef.current = false;
+        setIsScanning(false);
+        if (clamped) handleScan(clamped, scanMode);
+      } catch (err) {
+        setIsScanning(false);
+        scanLockRef.current = false;
+        console.error("[Scan] Native camera/gallery failed, fallback to file input:", err);
+        const id = source === "gallery" ? "gallery-input" : "main-camera-input";
+        (document.getElementById(id) as HTMLInputElement)?.click();
+      }
+    } else {
+      const id = source === "gallery" ? "gallery-input" : "main-camera-input";
+      (document.getElementById(id) as HTMLInputElement)?.click();
+    }
+  }, [isLoading, isScanning, handleScan]);
+
+  // SKANUJ / Galeria: jeśli >1 dozwolony tryb → pokaż modal wyboru;
+  // jeśli 1 (cosmetics) → od razu przechwyć.
+  const openScanFlow = useCallback((source: "camera" | "gallery") => {
+    if (isLoading || isScanning) return;
+    const cats = allowedScanOrder;
+    if (cats.length <= 1) {
+      startCapture(((cats[0] as ScanMode) || mode), source);
+    } else {
+      scanSourceRef.current = source;
+      setShowScanChoice(true);
+    }
+  }, [isLoading, isScanning, allowedScanOrder, mode, startCapture]);
 
   const handleFridgeScan = useCallback(
     async (base64: string) => {
@@ -791,53 +843,13 @@ export default function Home() {
           );
         })()}
 
-        {/* ══ 3. SUB-TABS ══ */}
-        <div
-          className="rounded-2xl p-1 mb-6 anim-fade-up-2"
-          style={{
-            background: "rgba(255,255,255,0.05)",
-            border: "1px solid rgba(255,255,255,0.08)",
-            backdropFilter: "blur(10px)",
-          }}
-        >
-          <div className="flex gap-1">
-            {(() => {
-              // Definicje wszystkich tabów (Żywność rozdzielona na Makro+Skład).
-              const TAB_DEFS: Record<string, { id: ScanMode; Icon: typeof Apple; label: string; color: string }> = {
-                food_macro: { id: "food_macro", Icon: Zap, label: "Makro", color: "#6efcb4" },
-                food_sklad: { id: "food_sklad", Icon: Leaf, label: "Skład", color: "#6efcb4" },
-                meal:       { id: "meal", Icon: UtensilsCrossed, label: "Danie", color: "#FBBF24" },
-                cosmetics:  { id: "cosmetics", Icon: Sparkles, label: "Kosmetyk", color: "#C084FC" },
-                suplement:  { id: "suplement", Icon: Pill, label: "Suplement", color: "#3b82f6" },
-              };
-              // Mapuj po UPORZĄDKOWANEJ liście dozwolonych (kolejność per tryb).
-              return allowedScanOrder
-                .map((id) => TAB_DEFS[id])
-                .filter(Boolean)
-                .map((tab) => {
-              const isActive = mode === tab.id;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => handleModeChange(tab.id)}
-                  className="flex-1 flex items-center justify-center gap-1.5 py-2.5 px-1 text-[12px] rounded-xl font-semibold transition-all duration-300"
-                  style={{
-                    backgroundColor: isActive ? `${tab.color}15` : "transparent",
-                    color: isActive ? tab.color : "rgba(255,255,255,0.55)",
-                    fontWeight: isActive ? 700 : 500,
-                  }}
-                >
-                  <tab.Icon size={15} strokeWidth={2.2} />
-                  {tab.label}
-                </button>
-              );
-            });
-            })()}
-          </div>
-        </div>
+        {/* ══ 3. SUB-TABS — USUNIĘTE ══
+            Patryk decision: wybór typu skanu (Makro/Skład/Danie/Suplement)
+            przeniesiony do modala wyzwalanego przyciskiem SKANUJ (bardziej
+            intuicyjne niż taby na górze). Patrz: showScanChoice modal niżej. */}
 
         {/* ── Morning After (food mode only) ── */}
-        {(mode === "food" || mode === "food_macro" || mode === "food_sklad") && <MorningAfter />}
+        {mode.startsWith("food") && <MorningAfter />}
 
         {/* ══ Loading state ══ */}
         {isLoading && (
@@ -960,39 +972,7 @@ export default function Home() {
             <div className="flex flex-col items-center mb-5">
               <button
                 disabled={isLoading || isScanning}
-                onClick={async () => {
-                  if (isLoading || isScanning) return;
-                  if (isNative()) {
-                    if (scanLockRef.current) return;
-                    scanLockRef.current = true;
-                    setIsScanning(true);
-                    try {
-                      const base64 = await takePhotoForMode(mode, "camera");
-                      const clamped = base64 ? await clampBase64Size(base64, CAMERA_CLAMP_KB(mode)) : null;
-                      scanLockRef.current = false;
-                      setIsScanning(false);
-                      if (clamped) {
-                        if (showPhotoPreview) {
-                          setPhotoSource("camera");
-                          setPhotoPreview(clamped);
-                          setSecondPhotoPreview(null);
-                        } else {
-                          handleScan(clamped);
-                        }
-                      }
-                    } catch (err) {
-                      setIsScanning(false);
-                      scanLockRef.current = false;
-                      console.error("[Scan] Native camera failed, falling back to file input:", err);
-                      // Fallback: use file input (works in WKWebView)
-                      const inp = document.getElementById("main-camera-input") as HTMLInputElement;
-                      inp?.click();
-                    }
-                  } else {
-                    const inp = document.getElementById("main-camera-input") as HTMLInputElement;
-                    inp?.click();
-                  }
-                }}
+                onClick={() => openScanFlow("camera")}
                 className="relative w-[220px] h-[220px] rounded-[36px] flex flex-col items-center justify-center active:scale-[0.96] transition-transform"
                 style={{
                   background: "rgba(255,255,255,0.03)",
@@ -1091,7 +1071,7 @@ export default function Home() {
 
               {/* Sub-buttons: Lodówka (tylko Żywność) + Galeria (zawsze) */}
               <div className="flex gap-3 mt-4 w-full max-w-[280px]">
-                {mode === "food" && (
+                {mode.startsWith("food") && (
                   <button
                     disabled={isLoading || isScanning}
                     onClick={async () => {
@@ -1116,35 +1096,8 @@ export default function Home() {
                 )}
                 <button
                   disabled={isLoading || isScanning}
-                  onClick={async () => {
-                    if (isLoading || isScanning) return;
-                    if (isNative()) {
-                      if (scanLockRef.current) return;
-                      scanLockRef.current = true;
-                      setIsScanning(true);
-                      try {
-                        const base64 = await takePhotoForMode(mode, "gallery");
-                        const clamped = base64 ? await clampBase64Size(base64, CAMERA_CLAMP_KB(mode)) : null;
-                        scanLockRef.current = false;
-                        setIsScanning(false);
-                        if (clamped) {
-                          if (showPhotoPreview) {
-                            setPhotoSource("gallery");
-                            setPhotoPreview(clamped);
-                            setSecondPhotoPreview(null);
-                          } else {
-                            handleScan(clamped);
-                          }
-                        }
-                      } catch (err) {
-                        setIsScanning(false);
-                        scanLockRef.current = false;
-                        console.error("[Gallery] Native gallery failed, falling back to file input:", err);
-                        (document.getElementById("gallery-input") as HTMLInputElement)?.click();
-                      }
-                    } else { (document.getElementById("gallery-input") as HTMLInputElement)?.click(); }
-                  }}
-                  className={`${mode === "food" ? "flex-[0.7]" : "flex-1"} rounded-2xl py-3 px-3 text-center active:scale-[0.96] transition-all disabled:opacity-50`}
+                  onClick={() => openScanFlow("gallery")}
+                  className={`${mode.startsWith("food") ? "flex-[0.7]" : "flex-1"} rounded-2xl py-3 px-3 text-center active:scale-[0.96] transition-all disabled:opacity-50`}
                   style={{ background: `rgba(${accent.rgb},0.04)`, border: `1px solid rgba(${accent.rgb},0.08)` }}
                 >
                   <span className="text-[13px] font-semibold text-white/60 block">🖼️ Galeria</span>
@@ -1153,7 +1106,7 @@ export default function Home() {
             </div>
 
             {/* Wyszukiwarka — glass dark style (tylko Żywność) */}
-            {mode === "food" && (
+            {mode.startsWith("food") && (
               <div className="mt-4">
                 {/* Heading + explainer above the input. Tells user
                     exactly what this CTA does ("powiedz / napisz → AI
@@ -1646,6 +1599,64 @@ export default function Home() {
               }}
             >
               Anuluj — zeskanuję etykietę
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ══ Modal wyboru typu skanu (Patryk: zamiast tabów na górze) ══
+          Wyzwalany przyciskiem SKANUJ/Galeria gdy >1 dozwolony tryb.
+          Po wyborze → startCapture(tryb, źródło) → aparat/galeria → 1 zdjęcie. */}
+      {showScanChoice && (
+        <div
+          style={{ position: "fixed", inset: 0, zIndex: 2000, background: "rgba(5,8,6,0.82)", backdropFilter: "blur(8px)", display: "flex", alignItems: "flex-end", justifyContent: "center" }}
+          onClick={() => setShowScanChoice(false)}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="anim-fade-up-1"
+            style={{ maxWidth: 440, width: "100%", background: "linear-gradient(180deg, rgba(20,28,24,0.98), rgba(10,16,13,0.98))", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "28px 28px 0 0", padding: "10px 18px max(28px, env(safe-area-inset-bottom))", boxShadow: "0 -20px 60px rgba(0,0,0,0.6)" }}
+          >
+            <div style={{ width: 40, height: 4, borderRadius: 99, background: "rgba(255,255,255,0.18)", margin: "0 auto 18px" }} />
+            <h2 style={{ fontSize: 18, fontWeight: 800, color: "#fff", textAlign: "center", marginBottom: 4, letterSpacing: "-0.3px" }}>Co chcesz zeskanować?</h2>
+            <p style={{ fontSize: 12.5, color: "rgba(255,255,255,0.5)", textAlign: "center", marginBottom: 18 }}>Jedno zdjęcie — wybierz rodzaj analizy</p>
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {(() => {
+                const CHOICE_DEFS: Record<string, { Icon: typeof Zap; label: string; desc: string; color: string }> = {
+                  food_macro: { Icon: Zap, label: "Makro", desc: "Kalorie i makroskładniki — zdjęcie tabeli wartości odżywczych", color: "#6efcb4" },
+                  food_sklad: { Icon: Leaf, label: "Skład", desc: "Ocena jakości składu — zdjęcie listy składników", color: "#6efcb4" },
+                  meal:       { Icon: UtensilsCrossed, label: "Danie", desc: "Kalorie z talerza — zdjęcie gotowego posiłku", color: "#FBBF24" },
+                  cosmetics:  { Icon: Sparkles, label: "Kosmetyk", desc: "Ocena składu INCI — zdjęcie tyłu opakowania", color: "#C084FC" },
+                  suplement:  { Icon: Pill, label: "Suplement", desc: "Analiza składu — zdjęcie etykiety", color: "#3b82f6" },
+                };
+                return allowedScanOrder.map((id) => {
+                  const c = CHOICE_DEFS[id];
+                  if (!c) return null;
+                  return (
+                    <button
+                      key={id}
+                      onClick={() => { setShowScanChoice(false); startCapture(id as ScanMode, scanSourceRef.current); }}
+                      className="active:scale-[0.97] transition-transform"
+                      style={{ display: "flex", alignItems: "center", gap: 14, width: "100%", padding: "14px 16px", borderRadius: 16, background: `${c.color}10`, border: `1px solid ${c.color}28`, cursor: "pointer", textAlign: "left" }}
+                    >
+                      <div style={{ width: 44, height: 44, borderRadius: 13, background: `${c.color}18`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                        <c.Icon size={22} strokeWidth={2.2} color={c.color} />
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: 15.5, fontWeight: 800, color: "#fff" }}>{c.label}</div>
+                        <div style={{ fontSize: 11.5, color: "rgba(255,255,255,0.55)", marginTop: 2, lineHeight: 1.35 }}>{c.desc}</div>
+                      </div>
+                      <span style={{ fontSize: 20, color: c.color, opacity: 0.55, fontWeight: 700 }}>›</span>
+                    </button>
+                  );
+                });
+              })()}
+            </div>
+            <button
+              onClick={() => setShowScanChoice(false)}
+              style={{ width: "100%", padding: 13, borderRadius: 14, marginTop: 14, background: "transparent", border: "1px solid rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.55)", fontSize: 13.5, fontWeight: 600, cursor: "pointer" }}
+            >
+              Anuluj
             </button>
           </div>
         </div>
