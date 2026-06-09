@@ -33,7 +33,14 @@ import { isNative, takePhotoForMode } from "@/lib/native-camera";
 import { devLog } from "@/lib/dev-log";
 import ActivityBadges from "@/components/ActivityBadges";
 import type { ScanMode, ScanHistoryItem, RecentFood } from "@/lib/types";
-import { UtensilsCrossed, Sparkles, Pill, Zap, Leaf } from "lucide-react";
+import { Zap, Leaf, ChevronRight, X, ScanLine } from "lucide-react";
+
+// Subtelne ziarno (film grain) dla ekranu wyboru skanu — materiał, nie kolor.
+const SCAN_GRAIN =
+  "data:image/svg+xml;charset=utf-8," +
+  encodeURIComponent(
+    "<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(#n)'/></svg>"
+  );
 import { useSpeechToText } from "@/lib/useSpeechToText";
 import { nsSet } from "@/lib/native-storage";
 import { useUserMode } from "@/lib/hooks/useUserMode";
@@ -1611,57 +1618,87 @@ export default function Home() {
           Wyzwalany przyciskiem SKANUJ/Galeria gdy >1 dozwolony tryb.
           Po wyborze → startCapture(tryb, źródło) → aparat/galeria → 1 zdjęcie. */}
       {showScanChoice && (
-        <div
-          style={{ position: "fixed", inset: 0, zIndex: 2000, background: "rgba(5,8,6,0.82)", backdropFilter: "blur(8px)", display: "flex", alignItems: "flex-end", justifyContent: "center" }}
-          onClick={() => setShowScanChoice(false)}
-        >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            className="anim-fade-up-1"
-            style={{ maxWidth: 440, width: "100%", background: "linear-gradient(180deg, rgba(20,28,24,0.98), rgba(10,16,13,0.98))", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "28px 28px 0 0", padding: "10px 18px max(28px, env(safe-area-inset-bottom))", boxShadow: "0 -20px 60px rgba(0,0,0,0.6)" }}
-          >
-            <div style={{ width: 40, height: 4, borderRadius: 99, background: "rgba(255,255,255,0.18)", margin: "0 auto 18px" }} />
-            <h2 style={{ fontSize: 18, fontWeight: 800, color: "#fff", textAlign: "center", marginBottom: 4, letterSpacing: "-0.3px" }}>Co chcesz zeskanować?</h2>
-            <p style={{ fontSize: 12.5, color: "rgba(255,255,255,0.5)", textAlign: "center", marginBottom: 18 }}>Jedno zdjęcie — wybierz rodzaj analizy</p>
-            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              {(() => {
-                const CHOICE_DEFS: Record<string, { Icon: typeof Zap; label: string; desc: string; color: string }> = {
-                  food_macro: { Icon: Zap, label: "Makro", desc: "Kalorie i makroskładniki — zdjęcie tabeli wartości odżywczych", color: "#6efcb4" },
-                  food_sklad: { Icon: Leaf, label: "Skład", desc: "Ocena jakości składu — zdjęcie listy składników", color: "#6efcb4" },
-                  meal:       { Icon: UtensilsCrossed, label: "Danie", desc: "Kalorie z talerza — zdjęcie gotowego posiłku", color: "#FBBF24" },
-                  cosmetics:  { Icon: Sparkles, label: "Kosmetyk", desc: "Ocena składu INCI — zdjęcie tyłu opakowania", color: "#C084FC" },
-                  suplement:  { Icon: Pill, label: "Suplement", desc: "Analiza składu — zdjęcie etykiety", color: "#3b82f6" },
-                };
-                return allowedScanOrder.map((id) => {
-                  const c = CHOICE_DEFS[id];
-                  if (!c) return null;
-                  return (
-                    <button
-                      key={id}
-                      onClick={() => { setShowScanChoice(false); startCapture(id as ScanMode, scanSourceRef.current); }}
-                      className="active:scale-[0.97] transition-transform"
-                      style={{ display: "flex", alignItems: "center", gap: 14, width: "100%", padding: "14px 16px", borderRadius: 16, background: `${c.color}10`, border: `1px solid ${c.color}28`, cursor: "pointer", textAlign: "left" }}
-                    >
-                      <div style={{ width: 44, height: 44, borderRadius: 13, background: `${c.color}18`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                        <c.Icon size={22} strokeWidth={2.2} color={c.color} />
-                      </div>
-                      <div style={{ flex: 1 }}>
-                        <div style={{ fontSize: 15.5, fontWeight: 800, color: "#fff" }}>{c.label}</div>
-                        <div style={{ fontSize: 11.5, color: "rgba(255,255,255,0.55)", marginTop: 2, lineHeight: 1.35 }}>{c.desc}</div>
-                      </div>
-                      <span style={{ fontSize: 20, color: c.color, opacity: 0.55, fontWeight: 700 }}>›</span>
-                    </button>
-                  );
-                });
-              })()}
-            </div>
+        <div style={{ position: "fixed", inset: 0, zIndex: 2000, background: "#0a0f0d", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+          {/* Jeden subtelny blask u góry — atmosfera (bez rozlanych plam) */}
+          <div style={{ position: "absolute", top: -120, left: 0, right: 0, height: 240, background: "radial-gradient(120% 100% at 50% 0%, rgba(110,252,180,0.08), transparent 68%)", pointerEvents: "none" }} />
+          {/* Ziarno — materiał na całości */}
+          <div style={{ position: "absolute", inset: 0, backgroundImage: `url('${SCAN_GRAIN}')`, opacity: 0.05, mixBlendMode: "overlay", pointerEvents: "none" }} />
+
+          {/* TOP: X + eyebrow + tytuł + podtytuł */}
+          <div style={{ position: "relative", padding: "max(20px, env(safe-area-inset-top)) 20px 0" }}>
             <button
+              type="button"
               onClick={() => setShowScanChoice(false)}
-              style={{ width: "100%", padding: 13, borderRadius: 14, marginTop: 14, background: "transparent", border: "1px solid rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.55)", fontSize: 13.5, fontWeight: 600, cursor: "pointer" }}
+              aria-label="Zamknij"
+              className="scan-opt"
+              style={{ width: 38, height: 38, borderRadius: 99, background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}
             >
-              Anuluj
+              <X size={18} color="rgba(255,255,255,0.7)" />
             </button>
+            <div style={{ marginTop: 26 }}>
+              <div style={{ display: "inline-flex", alignItems: "center", gap: 6, color: "#6efcb4", fontSize: 11.5, fontWeight: 800, letterSpacing: 2, textTransform: "uppercase" }}>
+                <ScanLine size={14} color="#6efcb4" strokeWidth={2.4} /> Skanowanie
+              </div>
+              <div style={{ fontSize: 28, fontWeight: 800, color: "#fff", letterSpacing: -0.6, lineHeight: 1.1, marginTop: 10 }}>Co chcesz<br />zeskanować?</div>
+              <div style={{ fontSize: 15.5, color: "rgba(255,255,255,0.82)", fontWeight: 700, marginTop: 10 }}>Wybierz rodzaj analizy</div>
+            </div>
           </div>
+
+          {/* BODY: dwie karty wyśrodkowane pionowo (kolejność per tryb: health = Skład pierwszy) */}
+          <div style={{ flex: 1, position: "relative", display: "flex", flexDirection: "column", justifyContent: "center", gap: 16, padding: "0 20px" }}>
+            {(() => {
+              const DEFS: Record<string, { accent: string; accentDeep: string; Icon: typeof Zap; title: string; desc: string; tag: string }> = {
+                food_macro: { accent: "#2dd4bf", accentDeep: "#0f9e8e", Icon: Zap, title: "Makro", desc: "Kalorie i makroskładniki z tabeli wartości odżywczych", tag: "tabela wartości" },
+                food_sklad: { accent: "#6efcb4", accentDeep: "#34d399", Icon: Leaf, title: "Skład", desc: "Ocena jakości składu z listy składników", tag: "lista składników" },
+              };
+              return allowedScanOrder.map((id, i) => {
+                const c = DEFS[id];
+                if (!c) return null;
+                return (
+                  <button
+                    key={id}
+                    type="button"
+                    onClick={() => { setShowScanChoice(false); startCapture(id as ScanMode, scanSourceRef.current); }}
+                    className="scan-opt scan-card-in"
+                    style={{
+                      animationDelay: `${120 + i * 80}ms`,
+                      position: "relative", overflow: "hidden", width: "100%", textAlign: "left", cursor: "pointer",
+                      padding: 22, borderRadius: 24, border: "1px solid transparent",
+                      background: `linear-gradient(180deg, rgba(255,255,255,0.055), rgba(255,255,255,0.02)) padding-box, linear-gradient(145deg, ${c.accent}70, rgba(255,255,255,0.06) 42%) border-box`,
+                      boxShadow: "inset 0 1px 0 rgba(255,255,255,0.07), 0 10px 28px rgba(0,0,0,0.35)",
+                    }}
+                  >
+                    <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
+                      <div style={{ width: 58, height: 58, borderRadius: 17, background: `linear-gradient(150deg, ${c.accent}, ${c.accentDeep})`, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: `inset 0 1px 0 rgba(255,255,255,0.45), 0 6px 16px ${c.accentDeep}40` }}>
+                        <c.Icon size={27} color="#06100c" strokeWidth={2.4} />
+                      </div>
+                      <ChevronRight className="scan-arrow" size={22} color="rgba(255,255,255,0.34)" />
+                    </div>
+                    <div style={{ fontSize: 22, fontWeight: 800, color: "#fff", letterSpacing: -0.3, marginTop: 18 }}>{c.title}</div>
+                    <div style={{ fontSize: 14, color: "rgba(255,255,255,0.55)", marginTop: 5, lineHeight: 1.35 }}>{c.desc}</div>
+                    <div style={{ display: "inline-flex", alignItems: "center", gap: 5, marginTop: 14, padding: "5px 11px", borderRadius: 99, background: `${c.accent}1f`, border: `1px solid ${c.accent}33`, color: c.accent, fontSize: 12, fontWeight: 700 }}>
+                      📸 {c.tag}
+                    </div>
+                  </button>
+                );
+              });
+            })()}
+          </div>
+
+          {/* FOOTER */}
+          <div style={{ position: "relative", textAlign: "center", padding: "0 20px max(28px, env(safe-area-inset-bottom))", fontSize: 12.5, color: "rgba(255,255,255,0.42)", fontWeight: 600, letterSpacing: 0.3 }}>
+            ✨ AI Vision przeanalizuje Twoje zdjęcie
+          </div>
+
+          <style>{`
+            @keyframes scanCardIn { from { transform: translateY(16px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+            .scan-card-in { animation: scanCardIn .55s cubic-bezier(.22,1,.36,1) both; }
+            .scan-opt { transition: transform .14s ease, box-shadow .2s ease; }
+            .scan-opt:active { transform: scale(.98); }
+            .scan-opt:active .scan-arrow { transform: translateX(3px); }
+            .scan-arrow { transition: transform .18s ease; }
+            @media (prefers-reduced-motion: reduce) { .scan-card-in { animation: none; } }
+          `}</style>
         </div>
       )}
 
