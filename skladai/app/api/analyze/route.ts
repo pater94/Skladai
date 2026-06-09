@@ -98,7 +98,14 @@ export const maxDuration = 120;
  *        "Brak etykiety" widok z tymi polami zamiast pokazywać
  *        domyślny score-result layout z pustymi kartami.
  */
-const PROMPT_VERSION = "v6";
+// v7 (2026-06-09): bump z v6 do v7 — modele Claude 4 zostają retired 2026-06-15
+// (claude-sonnet-4-20250514, claude-opus-4-8). Migracja na:
+//   - claude-sonnet-4-6 (food/cosmetics/suplement) — $3/$15, 1M context, 64k output
+//   - claude-opus-4-8   (meal/forma/fridge)         — $5/$25 (TANIEJ niż stary opus $15/$75)
+//   - claude-haiku-4-5  (OCR fallback)              — bez zmian
+// Bump PROMPT_VERSION żeby scan_logs.prompt_version umożliwiał porównanie quality
+// stare modele vs nowe na tych samych etykietach.
+const PROMPT_VERSION = "v7";
 
 // ==================== SCAN LOGGING (fire-and-forget) ====================
 
@@ -226,7 +233,7 @@ async function logScanToSupabase(opts: {
       ingredients_raw: opts.ocrText || null,
       ingredients_parsed: ingredientsParsed,
       ai_result: opts.result,
-      ai_model: opts.aiModel || "claude-sonnet-4-20250514",
+      ai_model: opts.aiModel || "claude-sonnet-4-6",
       score: typeof r.score === "number" ? r.score : null,
       product_name: productName,
       brand,
@@ -1101,7 +1108,7 @@ async function callClaude(
   userContent: unknown[],
   maxTokens: number,
   timeoutMs: number,
-  model: string = "claude-sonnet-4-20250514"
+  model: string = "claude-sonnet-4-6"
 ): Promise<{ error: boolean; text: string; status?: number }> {
   // IMPORTANT: We intentionally do NOT retry on local AbortError timeouts.
   // Vercel's `maxDuration` caps the entire function at 60s — retrying a 45s
@@ -1564,7 +1571,7 @@ Odpowiedz WYŁĄCZNIE poprawnym JSON (bez markdown, bez komentarzy):
       const res = await callClaude(apiKey, MEAL_ANALYSIS, [
         imageContent,
         { type: "text", text: "Rozpoznaj co jest na talerzu i oszacuj wartości odżywcze. Odpowiedz JSON." },
-      ], 4096, 45000, "claude-opus-4-20250514");
+      ], 4096, 45000, "claude-opus-4-8");
 
       if (res.error) {
         return NextResponse.json({ error: "Nie udało się przeanalizować. Spróbuj ponownie." }, { status: res.status ?? 500});
@@ -1610,7 +1617,7 @@ Odpowiedz WYŁĄCZNIE poprawnym JSON (bez markdown, bez komentarzy):
             { label: "Węglowodany", value: `${result.total.carbs} g`, icon: "🍞" },
           ];
         }
-        void logScanToSupabase({ mode: "meal", scanType: "meal", base64Image: image, result, aiModel: "claude-opus-4-20250514", startTime, request });
+        void logScanToSupabase({ mode: "meal", scanType: "meal", base64Image: image, result, aiModel: "claude-opus-4-8", startTime, request });
         return NextResponse.json(result);
       } catch {
         void logFailedScan({ mode: "meal", base64Image: image, error: "Meal parse failed", startTime, request });
@@ -1623,7 +1630,7 @@ Odpowiedz WYŁĄCZNIE poprawnym JSON (bez markdown, bez komentarzy):
       const res = await callClaude(apiKey, FRIDGE_SCAN_PROMPT, [
         imageContent,
         { type: "text", text: "Przeanalizuj zawartość tej lodówki. Rozpoznaj produkty, oceń każdy 1-10, daj średnią. Odpowiedz JSON." },
-      ], 4096, 45000, "claude-opus-4-20250514");
+      ], 4096, 45000, "claude-opus-4-8");
 
       if (res.error) return NextResponse.json({ error: "Nie udało się przeanalizować. Spróbuj ponownie." }, { status: res.status ?? 500});
       try {
@@ -1632,7 +1639,7 @@ Odpowiedz WYŁĄCZNIE poprawnym JSON (bez markdown, bez komentarzy):
         if (!result.name) result.name = "Skan lodówki";
         if (!result.brand) result.brand = "";
         if (!result.score && result.fridge_score) result.score = Math.round(result.fridge_score);
-        void logScanToSupabase({ mode: "fridge_scan", scanType: "fridge_scan", base64Image: image, result, aiModel: "claude-opus-4-20250514", startTime, request });
+        void logScanToSupabase({ mode: "fridge_scan", scanType: "fridge_scan", base64Image: image, result, aiModel: "claude-opus-4-8", startTime, request });
         return NextResponse.json(result);
       } catch {
         void logFailedScan({ mode: "fridge_scan", base64Image: image, error: "Fridge parse failed", startTime, request });
@@ -1650,7 +1657,7 @@ Odpowiedz WYŁĄCZNIE poprawnym JSON (bez markdown, bez komentarzy):
       const res = await callClaude(apiKey, CHECKFORM_PROMPT, [
         imageContent,
         { type: "text", text: `Przeanalizuj sylwetkę na zdjęciu.${profileHint}\nOdpowiedz JSON.` },
-      ], 4096, 45000, "claude-opus-4-20250514");
+      ], 4096, 45000, "claude-opus-4-8");
 
       if (res.error) {
         return NextResponse.json({ error: "Nie udało się przeanalizować. Spróbuj ponownie." }, { status: res.status ?? 500});
@@ -1661,7 +1668,7 @@ Odpowiedz WYŁĄCZNIE poprawnym JSON (bez markdown, bez komentarzy):
         result.name = "CheckForm";
         result.brand = "";
         if (!result.score && result.overall_score) result.score = result.overall_score;
-        void logScanToSupabase({ mode: "forma", scanType: "forma", base64Image: image, image2Base64: image2 || undefined, result, aiModel: "claude-opus-4-20250514", startTime, request });
+        void logScanToSupabase({ mode: "forma", scanType: "forma", base64Image: image, image2Base64: image2 || undefined, result, aiModel: "claude-opus-4-8", startTime, request });
         return NextResponse.json(result);
       } catch {
         void logFailedScan({ mode: "forma", base64Image: image, error: "Forma parse failed", startTime, request });
