@@ -41,7 +41,7 @@ export default function ZakupyPage() {
 
     // Auto-add favorites (score >= 8) from history
     const history = getHistory();
-    const favorites = history.filter((h) => h.score >= 8 && h.scanType === "food");
+    const favorites = history.filter((h) => h.score >= 8 && (h.scanType || "").startsWith("food"));
     const existingTexts = new Set(existing.map((i) => i.text.toLowerCase()));
 
     const newFavs: ShoppingItem[] = [];

@@ -33,7 +33,7 @@ import { isNative, takePhotoForMode } from "@/lib/native-camera";
 import { devLog } from "@/lib/dev-log";
 import ActivityBadges from "@/components/ActivityBadges";
 import type { ScanMode, ScanHistoryItem, RecentFood } from "@/lib/types";
-import { Apple, UtensilsCrossed, Sparkles, Pill } from "lucide-react";
+import { Apple, UtensilsCrossed, Sparkles, Pill, Zap, Leaf } from "lucide-react";
 import { useSpeechToText } from "@/lib/useSpeechToText";
 import { nsSet } from "@/lib/native-storage";
 import { useUserMode } from "@/lib/hooks/useUserMode";
@@ -340,7 +340,7 @@ export default function Home() {
   // Only food keeps the 2-photo preview flow. Cosmetics and suplement go
   // straight to OCR → AI analysis after a single photo, matching the user
   // expectation of "take one photo of the ingredients and get a result".
-  const showPhotoPreview = mode === "food";
+  const showPhotoPreview = mode === "food" || mode === "food_macro" || mode === "food_sklad";
 
   const accent = ACCENT_MAP[mode] || ACCENT_MAP.food;
 
@@ -372,13 +372,11 @@ export default function Home() {
     }
   }, [userMode]);
 
-  // Hotfix post-merge: lista dozwolonych kategorii skanu dla bieżącego
-  // UserMode. Używana w renderze tabsów (filter array).
-  // Set<string> bo ScanMode (z lib/types) zawiera "forma" którego
-  // ScanCategory (z lib/modes) nie ma — chcemy żeby filter sprawdzał
-  // string membership bez TS narrowing complaints.
-  const allowedScanCategories = useMemo<Set<string>>(
-    () => new Set(getAllowedScanCategoriesForMode(userMode) as string[]),
+  // Lista dozwolonych kategorii skanu dla bieżącego UserMode — UPORZĄDKOWANA
+  // (kolejność = kolejność tabów, pierwszy = domyślny). Render tabów mapuje
+  // po tej liście, więc np. health pokazuje Skład przed Makro.
+  const allowedScanOrder = useMemo<string[]>(
+    () => getAllowedScanCategoriesForMode(userMode) as string[],
     [userMode]
   );
 
@@ -563,7 +561,7 @@ export default function Home() {
 
         // Meal auto-detect (Task #7): backend wykrył że to danie, nie etykieta.
         // Pokaż modal zamiast wyniku — user decyduje czy przełączyć na "Danie".
-        if (data?.wrong_mode_detected === "meal" && mode === "food") {
+        if (data?.wrong_mode_detected === "meal" && (mode === "food" || mode === "food_macro" || mode === "food_sklad")) {
           setMealSuggestion({ dish: data.detected_dish || "danie", base64 });
           setIsLoading(false);
           setIsScanning(false);
@@ -765,10 +763,12 @@ export default function Home() {
         {/* ══ 2. HEADLINE ══ */}
         {(() => {
           const headlines: Record<string, { line1: string; accent: string; line2: string; sub: string }> = {
-            food:      { line1: "Sprawdź co", accent: "naprawdę", line2: "jesz",              sub: "Zrób zdjęcie etykiety. AI przeanalizuje skład." },
-            meal:      { line1: "Sprawdź co", accent: "naprawdę", line2: "jesz",              sub: "Zrób zdjęcie dania. AI oszacuje kalorie." },
-            cosmetics: { line1: "Sprawdź co", accent: "nakładasz", line2: "na skórę",         sub: "Zrób zdjęcie składu (tył opakowania)" },
-            suplement: { line1: "Sprawdź swój", accent: "suplement", line2: "witaminowy",      sub: "Zrób zdjęcie składu (tył opakowania)" },
+            food:       { line1: "Sprawdź co", accent: "naprawdę", line2: "jesz",              sub: "Zrób zdjęcie etykiety. AI przeanalizuje skład." },
+            food_macro: { line1: "Policz", accent: "kalorie", line2: "i makro",                sub: "Zrób zdjęcie tabeli wartości odżywczych." },
+            food_sklad: { line1: "Sprawdź", accent: "skład", line2: "produktu",                sub: "Zrób zdjęcie etykiety ze składem. AI oceni jakość." },
+            meal:       { line1: "Sprawdź co", accent: "naprawdę", line2: "jesz",              sub: "Zrób zdjęcie dania. AI oszacuje kalorie." },
+            cosmetics:  { line1: "Sprawdź co", accent: "nakładasz", line2: "na skórę",         sub: "Zrób zdjęcie składu (tył opakowania)" },
+            suplement:  { line1: "Sprawdź swój", accent: "suplement", line2: "witaminowy",      sub: "Zrób zdjęcie składu (tył opakowania)" },
           };
           const h = headlines[mode] || headlines.food;
           return (
@@ -797,16 +797,20 @@ export default function Home() {
           }}
         >
           <div className="flex gap-1">
-            {([
-              { id: "food" as ScanMode, Icon: Apple, label: "Żywność", color: "#6efcb4" },
-              { id: "meal" as ScanMode, Icon: UtensilsCrossed, label: "Danie", color: "#FBBF24" },
-              { id: "cosmetics" as ScanMode, Icon: Sparkles, label: "Kosmetyk", color: "#C084FC" },
-              { id: "suplement" as ScanMode, Icon: Pill, label: "Suplement", color: "#3b82f6" },
-            ])
-              // Hotfix post-merge: pokazujemy TYLKO kategorie pasujące do
-              // UserMode (fitness/health → food+meal+suplement, cosmetics → kosmetyk).
-              .filter((tab) => allowedScanCategories.has(tab.id))
-              .map((tab) => {
+            {(() => {
+              // Definicje wszystkich tabów (Żywność rozdzielona na Makro+Skład).
+              const TAB_DEFS: Record<string, { id: ScanMode; Icon: typeof Apple; label: string; color: string }> = {
+                food_macro: { id: "food_macro", Icon: Zap, label: "Makro", color: "#6efcb4" },
+                food_sklad: { id: "food_sklad", Icon: Leaf, label: "Skład", color: "#6efcb4" },
+                meal:       { id: "meal", Icon: UtensilsCrossed, label: "Danie", color: "#FBBF24" },
+                cosmetics:  { id: "cosmetics", Icon: Sparkles, label: "Kosmetyk", color: "#C084FC" },
+                suplement:  { id: "suplement", Icon: Pill, label: "Suplement", color: "#3b82f6" },
+              };
+              // Mapuj po UPORZĄDKOWANEJ liście dozwolonych (kolejność per tryb).
+              return allowedScanOrder
+                .map((id) => TAB_DEFS[id])
+                .filter(Boolean)
+                .map((tab) => {
               const isActive = mode === tab.id;
               return (
                 <button
@@ -823,12 +827,13 @@ export default function Home() {
                   {tab.label}
                 </button>
               );
-            })}
+            });
+            })()}
           </div>
         </div>
 
         {/* ── Morning After (food mode only) ── */}
-        {mode === "food" && <MorningAfter />}
+        {(mode === "food" || mode === "food_macro" || mode === "food_sklad") && <MorningAfter />}
 
         {/* ══ Loading state ══ */}
         {isLoading && (

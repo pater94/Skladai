@@ -1,5 +1,9 @@
 // === Tryb skanowania ===
-export type ScanMode = "food" | "cosmetics" | "meal" | "forma" | "text_search" | "alkomat" | "suplement";
+// food_macro / food_sklad — rozdzielony skan żywności (Patryk decision):
+//   food_macro  = szybki skan kalorii/makro do dziennika (lekki prompt AI)
+//   food_sklad  = pełna analiza składu/jakości (FOOD_ANALYSIS)
+//   food        = LEGACY (stare skany w historii sprzed rozdzielenia) — render jak dotąd
+export type ScanMode = "food" | "food_macro" | "food_sklad" | "cosmetics" | "meal" | "forma" | "text_search" | "alkomat" | "suplement";
 
 // === Żywność ===
 export interface Ingredient {

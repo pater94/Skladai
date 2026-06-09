@@ -55,7 +55,7 @@ export default function HistoryList({ isCosmetics = false, mode }: HistoryListPr
       <div className="space-y-2.5">
         {history.map((item, i) => {
           const { gradient } = getScoreColor(item.score);
-          const typeIcon = item.scanType === "cosmetics" ? "✨" : item.scanType === "meal" ? "🍽️" : item.scanType === "suplement" ? "💊" : item.scanType === "forma" ? "🔥" : "🍎";
+          const typeIcon = item.scanType === "cosmetics" ? "✨" : item.scanType === "meal" ? "🍽️" : item.scanType === "suplement" ? "💊" : item.scanType === "forma" ? "🔥" : item.scanType === "food_macro" ? "⚡" : item.scanType === "food_sklad" ? "🌿" : "🍎";
           return (
             <div
               key={item.id}
