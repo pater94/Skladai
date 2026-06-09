@@ -477,22 +477,14 @@ PRZYKŁADY KATASTROFALNYCH BŁĘDÓW (NIGDY tego nie rób):
 ✅ Poprawnie: nutrition wszystkie "brak danych", verdict_short="Brak etykiety"
 
 PRODUKT W OPAKOWANIU OKRĄGŁYM (puszka, butelka, słoik, tubka):
-Etykiety na opakowaniach cylindrycznych zwykle zawijają się dookoła. Jedno zdjęcie pokazuje tylko ~40% etykiety; reszta (zwłaszcza tabela wartości odżywczych i pełny skład) jest niewidoczna na krzywiźnie po drugiej stronie.
+To jest SKAN SKŁADU — oceniasz jakość składu produktu. Etykiety cylindryczne zawijają się dookoła; jedno zdjęcie pokazuje część etykiety. To NORMALNE i NIE jest błędem.
 
-Jeśli widzisz że to opakowanie cylindryczne ORAZ na obrazie brakuje:
-- pełnej tabeli wartości odżywczych, LUB
-- pełnej listy składników (np. lista urywa się "...glukozo-fruktoz" bez znaku interpunkcyjnego), LUB
-- któregokolwiek pola z OCR które jest "obcięte" / "niewidoczne" / "ucięte"
-
-WTEDY:
-- Ustaw partial_label=true
-- verdict_short="Etykieta widoczna częściowo - obróć opakowanie"
-- verdict="Widoczna tylko część etykiety na okrągłym opakowaniu. Aby zrobić pełną analizę, obróć opakowanie i zrób drugie zdjęcie pokazujące tabelę wartości odżywczych i listę składników."
-- W polach nutrition - tylko TE wartości które WIDAĆ. Brakujące = "brak danych". NIE zgaduj.
-- W ingredients - tylko składniki KTÓRE WIDAĆ pełne. NIE dopisuj typowych dla kategorii.
-- score = null (nie da się ocenić niepełnej etykiety rzetelnie)
-
-To jest ZGODNE z anty-halucynacyjną zasadą — partial_label informuje usera że potrzebne drugie zdjęcie, zamiast halucynować brakujące dane.
+ZASADA NADRZĘDNA: oceniaj na podstawie tego co FAKTYCZNIE WIDZISZ. Skan jednym zdjęciem — nie ma drugiego zdjęcia, więc pracuj z tym co masz.
+- Jeśli widzisz listę składników (choćby częściową) → przeanalizuj ją i WYSTAW score normalnie. NIE ustawiaj partial_label tylko dlatego że tabela wartości odżywczych jest niewidoczna — w tym trybie (skan składu) tabela NIE jest wymagana.
+- Nazwa niewidoczna (fotografujesz tył/bok opakowania) → name="Nieznany produkt" lub opisowa nazwa z kategorii (np. "Jogurt naturalny", "Sos chili"). Brak nazwy to NIE jest powód do partial_label.
+- partial_label=true USTAW TYLKO gdy lista składników jest tak ucięta/rozmazana/nieczytelna że NIE DA SIĘ rzetelnie ocenić składu. Wtedy verdict_short="Etykieta nieczytelna", verdict prosi o ostrzejsze zdjęcie składu, score=null.
+- Tabela wartości odżywczych: odczytaj DOKŁADNIE jeśli widoczna; jeśli niewidoczna — pola nutrition wpisz "brak danych" (to OK, nie zgłaszaj jako błąd).
+- W ingredients - tylko składniki KTÓRE WIDAĆ. NIE dopisuj typowych dla kategorii.
 
 Odpowiedz WYŁĄCZNIE poprawnym JSON (bez markdown):
 {
@@ -2064,18 +2056,27 @@ Odpowiedz WYŁĄCZNIE JSON.`,
       : "";
 
     // Macro: prosta instrukcja (MACRO_ANALYSIS system ma już pełne reguły).
+    const jsonGuard = `\n\n⚠️ KRYTYCZNE: Twoja odpowiedź MUSI być czystym JSON. Pierwszy znak = "{", ostatni = "}". ŻADNEGO tekstu przed JSON ani po nim. NIE pisz "Analizuję...", NIE opisuj prozą — od razu JSON.`;
     const combinedInstruction = isMacro
-      ? `Odczytaj z tej etykiety wartości odżywcze, nazwę, markę i wagę. Zwróć WYŁĄCZNIE JSON wg formatu — pierwszy znak {.${preparedFoodRule}`
-      : `NAJPIERW odczytaj DOKŁADNIE cały tekst z obrazu etykiety: nazwę, markę, ${isCosmetics ? "pełną listę składników INCI" : "skład oraz tabelę wartości odżywczych — cyfra po cyfrze, uważaj na orientację (etykieta może być obrócona)"}. POTEM przeanalizuj produkt.
+      ? `Odczytaj z tej etykiety wartości odżywcze, nazwę, markę i wagę. Zwróć WYŁĄCZNIE JSON wg formatu — pierwszy znak {.${preparedFoodRule}${jsonGuard}`
+      : isCosmetics
+      ? `NAJPIERW odczytaj DOKŁADNIE cały tekst z obrazu etykiety: nazwę, markę, pełną listę składników INCI. POTEM przeanalizuj produkt.
 
 🚫 ABSOLUTNY ZAKAZ HALUCYNACJI 🚫
-${isCosmetics ? "Użytkownicy ufają Twojej ocenie składu kosmetyku." : "Ta aplikacja śledzi kalorie użytkowników — wymyślone wartości = realne szkody zdrowotne."}
-- ${isCosmetics ? "Składniki, nazwa, marka" : "Nazwa, marka, wartości odżywcze"} = TYLKO to co FAKTYCZNIE WIDZISZ na obrazie. NIE zgaduj z wiedzy ogólnej, marki ani kategorii produktu.
-- Jeśli widać produkt ale NAZWA jest na froncie (niewidoczna) a Ty widzisz tabelę/skład z tyłu → analizuj normalnie skład i wartości, ustaw name="Nieznany produkt" lub opisową nazwę z kategorii (np. "Sos chili", "Smalec"), partial_label=true.
-- Jeśli ${isCosmetics ? "listy składników INCI" : "ani tabeli wartości ani nazwy"} nie widać czytelnie (blur, zły kąt) → label_unreadable=true, score=null, verdict_short="Brak etykiety", retake_hint z konkretną radą.
-- ${isCosmetics ? "" : "WALIDACJA ATWATER: kcal ≈ 4×białko + 4×węgle + 9×tłuszcz (±20%). Jeśli odczyt się nie zgadza → błędny odczyt, wpisz brak danych.\n- "}Pusty JSON ≫ wymyślony JSON.${preparedFoodRule}${skinProfileHint}
+Użytkownicy ufają Twojej ocenie składu kosmetyku.
+- Składniki, nazwa, marka = TYLKO to co FAKTYCZNIE WIDZISZ na obrazie. NIE zgaduj z wiedzy ogólnej, marki ani kategorii.
+- Nazwa niewidoczna → name="Nieznany [typ]"; to NIE jest powód do partial_label.
+- label_unreadable=true TYLKO gdy listy składników INCI NIE DA SIĘ odczytać (blur, zły kąt). Wtedy score=null, verdict_short="Brak etykiety", retake_hint.
+- Pusty JSON ≫ wymyślony JSON.${skinProfileHint}${jsonGuard}`
+      : /* food_sklad + legacy food — SKAN SKŁADU (jedno zdjęcie, tabela wartości NIEWYMAGANA) */
+        `To SKAN SKŁADU produktu spożywczego. Odczytaj z etykiety listę składników oraz nazwę (jeśli widoczna), POTEM oceń jakość składu.
 
-⚠️ KRYTYCZNE: Twoja odpowiedź MUSI być czystym JSON. Pierwszy znak = "{", ostatni = "}". ŻADNEGO tekstu, komentarza ani wyjaśnienia przed JSON ani po nim. NIE pisz "Analizuję...", NIE opisuj co widzisz prozą — od razu JSON.`;
+🚫 ABSOLUTNY ZAKAZ HALUCYNACJI 🚫
+- Składniki = TYLKO to co FAKTYCZNIE WIDZISZ na obrazie. NIE zgaduj z marki/kategorii.
+- Nazwa niewidoczna (fotografujesz tył/bok opakowania) → name="Nieznany produkt" lub opisowa z kategorii (np. "Jogurt naturalny", "Sos chili"). Brak nazwy to NORMALNE — NIE ustawiaj partial_label z tego powodu.
+- Tabela wartości odżywczych NIE jest wymagana w tym trybie. Jeśli widoczna — odczytaj (Atwater: kcal≈4×białko+4×węgle+9×tłuszcz ±20%); jeśli nie — pola nutrition "brak danych" (to OK, NIE błąd).
+- partial_label / label_unreadable = true USTAW TYLKO gdy listy składników NIE DA SIĘ odczytać (rozmazane, ucięte, brak składu na zdjęciu). Jeśli widzisz skład → pełna analiza ze score, NIE partial.
+- Pusty JSON ≫ wymyślony JSON.${preparedFoodRule}${jsonGuard}`;
 
     const userContent: unknown[] = [imageContent];
     // 2-photo: drugi obraz (np. przód + tył opakowania) idzie do tego samego call

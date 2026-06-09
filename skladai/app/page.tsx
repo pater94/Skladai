@@ -340,7 +340,11 @@ export default function Home() {
   // Only food keeps the 2-photo preview flow. Cosmetics and suplement go
   // straight to OCR → AI analysis after a single photo, matching the user
   // expectation of "take one photo of the ingredients and get a result".
-  const showPhotoPreview = mode === "food" || mode === "food_macro" || mode === "food_sklad";
+  // Patryk decision: skan żywności = JEDNO zdjęcie, bez ekranu podglądu i
+  // bez opcji drugiego zdjęcia (drugie zdjęcie zawsze wywalało błędy).
+  // Po wyborze Makro/Skład → kamera → jedno zdjęcie → od razu handleScan
+  // (jak cosmetics/suplement). showPhotoPreview=false dla wszystkich trybów.
+  const showPhotoPreview = false;
 
   const accent = ACCENT_MAP[mode] || ACCENT_MAP.food;
 
