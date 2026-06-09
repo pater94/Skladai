@@ -2,6 +2,12 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   turbopack: {},
+  // Build ID wstrzyknięty z Vercela (krótki commit SHA) — pokazywany w Profilu
+  // przy przycisku "Aktualizuj", żeby user mógł zweryfikować że apka wskoczyła
+  // na nowszą wersję. Lokalnie/poza Vercelem → "dev".
+  env: {
+    NEXT_PUBLIC_BUILD_ID: (process.env.VERCEL_GIT_COMMIT_SHA || "dev").slice(0, 7),
+  },
   // Capacitor / WKWebView aggressively caches HTML and old chunks. Force the
   // hybrid app shell, the API responses, and the dynamic result pages to
   // revalidate on every load so users always pick up the latest deploy.
