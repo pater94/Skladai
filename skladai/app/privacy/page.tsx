@@ -106,7 +106,13 @@ export default function PrivacyPolicyPage() {
           </li>
           <li>
             <strong>Dane profilu</strong> — waga, wzrost, wiek, cel (odchudzanie / utrzymanie / masa), poziom
-            aktywności, alergie, typ skóry.
+            aktywności.
+          </li>
+          <li>
+            <strong>Dane zdrowotne (wrażliwe)</strong> — alergie pokarmowe, schorzenia przewlekłe (np. cukrzyca,
+            celiakia, nietolerancje, Hashimoto), ciąża/karmienie oraz typ skóry. Podajesz je dobrowolnie, a
+            służą wyłącznie do personalizacji ostrzeżeń i analiz dla Ciebie. Nie sprzedajemy ich ani nie używamy
+            do reklam.
           </li>
           <li>
             <strong>Zdjęcia</strong> — zdjęcia etykiet produktów, dań oraz sylwetki (CheckForm). Są przetwarzane
@@ -119,8 +125,9 @@ export default function PrivacyPolicyPage() {
             <strong>Dane z dziennika posiłków</strong> — wpisane posiłki, kalorie, makroskładniki.
           </li>
           <li>
-            <strong>Dane aktywności</strong> — kroki i spalone kalorie pobierane z Apple Health lub Google Fit
-            wyłącznie za zgodą użytkownika.
+            <strong>Dane aktywności</strong> — kroki, spalone kalorie, dystans i sen, odczytywane (tylko do
+            odczytu) z <strong>Apple Health</strong> (iOS) lub <strong>Health Connect</strong> (Android) wyłącznie
+            za Twoją wyraźną zgodą. Możesz cofnąć dostęp w dowolnym momencie w ustawieniach systemu.
           </li>
         </ul>
 
@@ -139,13 +146,13 @@ export default function PrivacyPolicyPage() {
         </p>
         <ul style={list}>
           <li>
-            <strong>Anthropic API (Claude AI)</strong> — analiza składu produktów oraz zdjęć.
+            <strong>Anthropic (Claude AI)</strong> — analiza zdjęć etykiet/dań/sylwetki oraz składu produktów.
+            W asystencie AI (czat) do Anthropic może być przekazany kontekst Twojego profilu, w tym dane
+            zdrowotne (schorzenia, alergie), jeśli je podałeś — wyłącznie po to, by spersonalizować odpowiedź.
+            Anthropic przetwarza te dane jako podmiot przetwarzający i nie wykorzystuje ich do trenowania modeli.
           </li>
           <li>
-            <strong>Google Cloud Vision</strong> — OCR rozpoznający tekst z etykiet.
-          </li>
-          <li>
-            <strong>Supabase</strong> — przechowywanie danych użytkownika.
+            <strong>Supabase</strong> — przechowywanie danych użytkownika (serwery w Unii Europejskiej).
           </li>
           <li>
             <strong>Apple / Google</strong> — uwierzytelnianie (Sign In).
@@ -161,6 +168,11 @@ export default function PrivacyPolicyPage() {
         <ul style={list}>
           <li>Dane przechowywane są na serwerach Supabase zlokalizowanych w Unii Europejskiej.</li>
           <li>Dane lokalne (preferencje, sesja) zapisywane są w localStorage przeglądarki / aplikacji.</li>
+          <li>
+            <strong>Okres przechowywania</strong> — dane konta i historię przechowujemy tak długo, jak masz
+            aktywne konto. Po zgłoszeniu usunięcia konta usuwamy Twoje dane z naszych serwerów najpóźniej w
+            ciągu 30 dni. Zdjęcia nie są trwale przechowywane — kasowane są zaraz po analizie.
+          </li>
           <li>Użytkownik może w dowolnym momencie usunąć konto i powiązane z nim dane.</li>
         </ul>
 

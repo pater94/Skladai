@@ -12,7 +12,22 @@ const nextConfig: NextConfig = {
   // hybrid app shell, the API responses, and the dynamic result pages to
   // revalidate on every load so users always pick up the latest deploy.
   async headers() {
+    // Globalne nagłówki bezpieczeństwa (App Store/Play + automaty bezpieczeństwa
+    // je sprawdzają). Świadomie BEZ sztywnego CSP — WebView Capacitora + Next
+    // hydration łatwo zepsuć, a teksty od AI renderujemy jako React text (auto-
+    // escape), więc ryzyko XSS jest niskie. CSP do dodania osobno z testami.
+    const securityHeaders = [
+      { key: "X-Content-Type-Options", value: "nosniff" },
+      { key: "X-Frame-Options", value: "SAMEORIGIN" },
+      { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+      { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains; preload" },
+      { key: "Permissions-Policy", value: "browsing-topics=(), interest-cohort=()" },
+    ];
     return [
+      {
+        source: "/(.*)",
+        headers: securityHeaders,
+      },
       {
         source: "/api/:path*",
         headers: [

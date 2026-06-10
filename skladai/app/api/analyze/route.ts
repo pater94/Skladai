@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { rateLimit, getClientIp } from "@/lib/rateLimit";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { randomUUID } from "crypto";
 import type { ScanMode } from "@/lib/types";
@@ -1435,6 +1436,16 @@ async function extractUserId(request: NextRequest): Promise<string | null> {
 
 export async function POST(request: NextRequest) {
   const startTime = Date.now();
+  // Rate limiting per IP — chroni budżet Anthropic przed spamem/DoS (każdy skan
+  // to płatne wywołanie AI). 10 skanów / minutę / IP to bezpieczny realny limit.
+  const ip = getClientIp(request);
+  const rl = rateLimit(`analyze:${ip}`, 10, 60_000);
+  if (!rl.ok) {
+    return NextResponse.json(
+      { error: "Zbyt wiele skanów w krótkim czasie. Poczekaj chwilę i spróbuj ponownie." },
+      { status: 429, headers: { "Retry-After": String(rl.retryAfter) } }
+    );
+  }
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let body: any;
   try {

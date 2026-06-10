@@ -33,6 +33,13 @@ yarn-error.log*
 # env files (can opt-in for committing if needed)
 .env*
 
+# Claude CLI settings (mogą zawierać sekrety w permissions/logach)
+.claude/
+
+# Android signing keystore — NIGDY do repo (klucz podpisu Play Store)
+*.jks
+*.keystore
+
 # vercel
 .vercel
 

@@ -28,6 +28,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
+import { rateLimit, getClientIp } from "@/lib/rateLimit";
 import crypto from "crypto";
 
 export const maxDuration = 60;
@@ -85,6 +86,14 @@ async function extractUserId(request: NextRequest): Promise<string | null> {
 // ──────────────────────────────────────────────────────────────────────
 
 export async function POST(request: NextRequest) {
+  // Rate limiting per IP — TTS to płatne wywołania. 30/min/IP.
+  const rl = rateLimit(`tts:${getClientIp(request)}`, 30, 60_000);
+  if (!rl.ok) {
+    return NextResponse.json(
+      { error: "Zbyt wiele żądań audio. Poczekaj chwilę." },
+      { status: 429, headers: { "Retry-After": String(rl.retryAfter) } }
+    );
+  }
   // --- parse request ---
   let body: { text?: string; messageId?: string };
   try {

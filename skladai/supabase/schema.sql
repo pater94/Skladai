@@ -108,6 +108,10 @@ create policy "Users can insert own profile"
   on public.profiles for insert
   with check (auth.uid() = id);
 
+create policy "Users can delete own profile"
+  on public.profiles for delete
+  using (auth.uid() = id);
+
 -- Scan logs
 create policy "Users can view own scans"
   on public.scan_logs for select
@@ -117,9 +121,12 @@ create policy "Users can insert scans"
   on public.scan_logs for insert
   with check (auth.uid() = user_id OR user_id is null);
 
-create policy "Anyone can insert anonymous scans"
-  on public.scan_logs for insert
-  with check (user_id is null);
+-- (Serwer zapisuje skany kluczem service_role, który omija RLS — NIE dodajemy
+--  otwartej polityki "Anyone can insert", bo to wektor nadużycia z anon key.)
+
+create policy "Users can delete own scans"
+  on public.scan_logs for delete
+  using (auth.uid() = user_id);
 
 -- Diary entries
 create policy "Users can view own diary"
@@ -177,9 +184,8 @@ create trigger on_auth_user_created
 insert into storage.buckets (id, name, public)
 values ('scans', 'scans', true);
 
-create policy "Anyone can upload scan images"
-  on storage.objects for insert
-  with check (bucket_id = 'scans');
+-- Upload robi serwer (service_role, omija RLS) — NIE dodajemy otwartej polityki
+-- "Anyone can upload", bo pozwalałaby każdemu wrzucić dowolny plik do bucketu.
 
 create policy "Anyone can view scan images"
   on storage.objects for select

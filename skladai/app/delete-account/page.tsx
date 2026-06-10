@@ -8,7 +8,7 @@ export default function DeleteAccount() {
         <div style={{ padding: 20, borderRadius: 16, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", marginBottom: 24 }}>
           <p style={{ fontSize: 14 }}>
             Aby usunąć swoje konto i wszystkie powiązane dane, wyślij wiadomość e-mail na adres:{" "}
-            <a href="mailto:patrykr12345@gmail.com?subject=Usuń moje konto" style={{ color: "#6efcb4", fontWeight: 700 }}>patrykr12345@gmail.com</a>{" "}
+            <a href="mailto:skladai.app@gmail.com?subject=Usuń moje konto" style={{ color: "#6efcb4", fontWeight: 700 }}>skladai.app@gmail.com</a>{" "}
             z tematem <strong style={{ color: "#fff" }}>{'"'}Usuń moje konto{'"'}</strong>.
           </p>
           <p style={{ fontSize: 14, marginTop: 12 }}>
