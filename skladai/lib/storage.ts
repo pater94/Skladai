@@ -128,7 +128,15 @@ export function getProfile(): UserProfile | null {
   try {
     const data = localStorage.getItem(PROFILE_KEY);
     if (!data) return null;
-    return JSON.parse(data) as UserProfile;
+    const profile = JSON.parse(data) as UserProfile;
+    // Migracja: tryb "health" usunięty (zwinięte do 2 trybów). Stary user
+    // health → fitness. Jego profile.health (schorzenia/alergeny) zostaje,
+    // więc funkcje zdrowotne (disclaimer + alerty) działają dalej po profilu.
+    if ((profile as { mode?: string }).mode === "health") {
+      profile.mode = "fitness";
+      try { localStorage.setItem(PROFILE_KEY, JSON.stringify(profile)); } catch {}
+    }
+    return profile;
   } catch {
     return null;
   }

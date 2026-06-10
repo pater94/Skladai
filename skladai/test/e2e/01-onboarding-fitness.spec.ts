@@ -30,10 +30,10 @@ test.describe("Onboarding → fitness mode @smoke @critical", () => {
     const picker = page.getByTestId("mode-picker-screen");
     await expect(picker).toBeVisible({ timeout: 10_000 });
 
-    // Trzy karty
+    // Dwie karty (tryb health zwinięty — Patryk decision)
     await expect(page.getByTestId("mode-card-fitness")).toBeVisible();
-    await expect(page.getByTestId("mode-card-health")).toBeVisible();
     await expect(page.getByTestId("mode-card-cosmetics")).toBeVisible();
+    expect(await page.getByTestId("mode-card-health").count()).toBe(0);
 
     // Kliknij fitness
     await page.getByTestId("mode-card-fitness").click();

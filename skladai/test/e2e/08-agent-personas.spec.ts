@@ -46,15 +46,7 @@ test.describe("Agent personas @smoke", () => {
     /* placeholder — patrz komentarz */
   });
 
-  test("health mode: AgentFAB ukryty (post-hotfix #4)", async ({ page }) => {
-    await setupMode(page, "health");
-    await page.goto("/", { waitUntil: "domcontentloaded" });
-    // Daj OnboardingWrapper + AgentFAB useEffect czas się zsynchronizować
-    await page.waitForTimeout(1500);
-
-    const fab = page.getByRole("button", { name: /Otwórz Agenta AI/i });
-    expect(await fab.count()).toBe(0);
-  });
+  // (Test "health mode: AgentFAB ukryty" usunięty — tryb health zwinięty.)
 
   test("cosmetics mode: AgentFAB ukryty (post-hotfix #4)", async ({ page }) => {
     await setupMode(page, "cosmetics");

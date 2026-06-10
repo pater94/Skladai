@@ -9,6 +9,20 @@ import {
   DIABETES_TYPES, DiabetesType, TRIMESTERS, Trimester,
 } from "@/lib/nutrition";
 
+// Schorzenia przewlekłe (były w usuniętym HealthConditionsScreen). Sterują
+// alertami zdrowotnymi na skanie (lib/healthAlerts.ts) + MedicalDisclaimer.
+const CONDITIONS = [
+  { id: "celiac", label: "Celiakia", emoji: "🌾" },
+  { id: "ibs", label: "IBS", emoji: "🌀" },
+  { id: "reflux", label: "Refluks", emoji: "🔥" },
+  { id: "hashimoto", label: "Hashimoto", emoji: "🦋" },
+  { id: "pcos", label: "PCOS", emoji: "🌸" },
+  { id: "gout", label: "Dna moczanowa", emoji: "💎" },
+  { id: "insulin_resistance", label: "Insulinooporność", emoji: "📈" },
+  { id: "lactose_intolerance", label: "Nietolerancja laktozy", emoji: "🥛" },
+  { id: "fructose_intolerance", label: "Nietolerancja fruktozy", emoji: "🍎" },
+];
+
 interface Props {
   onComplete: (profile: UserProfile) => void;
   onSkip: () => void;
@@ -35,10 +49,14 @@ export default function ProfileSetup({ onComplete, onSkip, existingProfile }: Pr
   const [diabetes, setDiabetes] = useState<DiabetesType | null>(existingProfile?.health?.diabetes || null);
   const [pregnancy, setPregnancy] = useState<Trimester | null>(existingProfile?.health?.pregnancy || null);
   const [allergens, setAllergens] = useState<string[]>(existingProfile?.health?.allergens || []);
+  const [conditions, setConditions] = useState<string[]>(existingProfile?.health?.conditions || []);
   const [diet, setDiet] = useState<Diet>((existingProfile?.health?.diet as Diet) || "none");
 
   const toggleAllergen = (id: string) => {
     setAllergens((prev) => prev.includes(id) ? prev.filter((a) => a !== id) : [...prev, id]);
+  };
+  const toggleCondition = (id: string) => {
+    setConditions((prev) => prev.includes(id) ? prev.filter((c) => c !== id) : [...prev, id]);
   };
 
   const handleComplete = () => {
@@ -60,7 +78,7 @@ export default function ProfileSetup({ onComplete, onSkip, existingProfile }: Pr
       gender, age, weight_kg: weight, height_cm: height, bmi,
       activity, goal,
       bmr, tdee, target_calories: targetCalories,
-      health: { diabetes, pregnancy, allergens, diet },
+      health: { diabetes, pregnancy, allergens, conditions, diet },
       daily_norms,
       onboarding_complete: true,
       created_at: existingProfile?.created_at || new Date().toISOString(),
@@ -312,6 +330,27 @@ export default function ProfileSetup({ onComplete, onSkip, existingProfile }: Pr
                           border: sel ? "1px solid rgba(239,68,68,0.3)" : "1px solid rgba(255,255,255,0.06)",
                         }}>
                         {a.icon} {a.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Schorzenia przewlekłe */}
+              <div>
+                <p style={{ fontSize: 12, fontWeight: 600, color: "rgba(255,255,255,0.5)", marginBottom: 8 }}>🩺 Schorzenia przewlekłe</p>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                  {CONDITIONS.map((c) => {
+                    const sel = conditions.includes(c.id);
+                    return (
+                      <button key={c.id} onClick={() => toggleCondition(c.id)}
+                        style={{
+                          padding: "6px 12px", borderRadius: 20, fontSize: 11, fontWeight: 700, cursor: "pointer", transition: "all 0.2s",
+                          background: sel ? "rgba(34,211,238,0.18)" : "rgba(255,255,255,0.04)",
+                          color: sel ? "#22d3ee" : "rgba(255,255,255,0.55)",
+                          border: sel ? "1px solid rgba(34,211,238,0.3)" : "1px solid rgba(255,255,255,0.06)",
+                        }}>
+                        {c.emoji} {c.label}
                       </button>
                     );
                   })}

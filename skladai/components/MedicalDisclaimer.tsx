@@ -23,6 +23,8 @@
 import { useState } from "react";
 import { usePathname } from "next/navigation";
 import { useUserMode } from "@/lib/hooks/useUserMode";
+import { getProfile } from "@/lib/storage";
+import { profileHasHealthContext } from "@/lib/modes";
 
 const HIDDEN_PATHS = [
   "/privacy",
@@ -38,12 +40,16 @@ const HIDDEN_PATHS = [
 
 export default function MedicalDisclaimer() {
   const pathname = usePathname();
-  const { mode, loading, hasProfile } = useUserMode();
+  // useUserMode tylko po to, by komponent re-renderował się na zmianę profilu
+  // (event-driven) — sam gate jest po profile.health, nie po trybie.
+  const { loading, hasProfile } = useUserMode();
   const [dismissed, setDismissed] = useState(false);
 
   // Wszystkie return-y guard po jednym miejscu — łatwiej debugować.
   if (loading || !hasProfile) return null;
-  if (mode !== "health") return null;
+  // Pokazuj disclaimer gdy user MA kontekst zdrowotny w profilu (schorzenia/
+  // alergie) — zastępuje dawny gate `mode === "health"`.
+  if (!profileHasHealthContext(getProfile())) return null;
   if (dismissed) return null;
   if (!pathname) return null;
   if (HIDDEN_PATHS.some((p) => pathname === p || pathname.startsWith(p + "/"))) {

@@ -4,7 +4,6 @@ import { useState, useEffect, useRef } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import OnboardingLogin from "./OnboardingLogin";
 import ModePickerScreen from "./ModePickerScreen";
-import HealthConditionsScreen from "./HealthConditionsScreen";
 import SkinProfileSetup from "./SkinProfileSetup";
 import { createClient } from "@/lib/supabase";
 import { devLog } from "@/lib/dev-log";
@@ -91,7 +90,7 @@ export default function OnboardingWrapper() {
   //   "mode-picker"        — wybór trybu po sign-in (Etap 1)
   //   "health-conditions"  — Krok D, po wyborze trybu health (Etap 2)
   //   "skin-type"          — Krok E, po wyborze trybu cosmetics (Etap 2, todo)
-  const [state, setState] = useState<"checking" | "hidden" | "full" | "login" | "mode-picker" | "health-conditions" | "skin-type">("checking");
+  const [state, setState] = useState<"checking" | "hidden" | "full" | "login" | "mode-picker" | "skin-type">("checking");
 
   // Idempotent guard dla enterAppOrShowModePicker. Bez tego mode picker
   // miga: SIGNED_IN + TOKEN_REFRESHED + INITIAL_SESSION events odpalają
@@ -389,7 +388,7 @@ export default function OnboardingWrapper() {
   // mode-picker, health-conditions, skin-type). "checking" + "hidden"
   // pozwalają na widzenie main app.
   useEffect(() => {
-    const visible = state === "full" || state === "login" || state === "mode-picker" || state === "health-conditions" || state === "skin-type";
+    const visible = state === "full" || state === "login" || state === "mode-picker" || state === "skin-type";
     if (visible) {
       document.body.classList.add("onboarding-active");
     } else {
@@ -416,19 +415,14 @@ export default function OnboardingWrapper() {
     return (
       <ModePickerScreen
         onComplete={(chosenMode: UserMode) => {
-          if (chosenMode === "health") {
-            // Pokaż rozszerzony onboarding zdrowotny PRZED wejściem do app
-            setState("health-conditions");
-            window.scrollTo(0, 0);
-          } else if (chosenMode === "cosmetics") {
+          if (chosenMode === "cosmetics") {
             // Krok E: dla cosmetics → rozszerzony onboarding skin/hair
-            // (SkinProfileSetup już istnieje, reuse `skladai_skin_profile`
-            // localStorage key per decyzja Q1=A). Po zapisie / pomięciu
-            // → defaultTab cosmetics.
+            // (SkinProfileSetup już istnieje, reuse `skladai_skin_profile`).
             setState("skin-type");
             window.scrollTo(0, 0);
           } else {
-            // fitness: prosto do defaultTab
+            // fitness: prosto do defaultTab. Schorzenia/alergie user ustawia
+            // później w Profilu (po zwinięciu trybu health — Patryk decision).
             setState("hidden");
             router.push(getNavConfigForMode(chosenMode).defaultTab);
             window.scrollTo(0, 0);
@@ -438,23 +432,8 @@ export default function OnboardingWrapper() {
     );
   }
 
-  // Health conditions onboarding (Krok D) — po wyborze trybu health
-  if (state === "health-conditions") {
-    return (
-      <HealthConditionsScreen
-        onComplete={() => {
-          setState("hidden");
-          router.push(getNavConfigForMode("health").defaultTab);
-          window.scrollTo(0, 0);
-        }}
-        onSkip={() => {
-          setState("hidden");
-          router.push(getNavConfigForMode("health").defaultTab);
-          window.scrollTo(0, 0);
-        }}
-      />
-    );
-  }
+  // (Onboarding zdrowotny health usunięty — tryb health zwinięty. Schorzenia/
+  //  alergie user ustawia w Profilu → sekcja "Schorzenia i alergie".)
 
   // Skin profile onboarding (Krok E) — po wyborze trybu cosmetics.
   // Reuse SkinProfileSetup (3 kroki: typ skóry / problemy / włosy) który
