@@ -1,0 +1,49 @@
+name: CI — static checks
+
+# Bramka statycznej analizy: typy, lint, podatności zależności, skan sekretów.
+# Łapie błędy ZANIM trafią do builda sklepowego. Solo-dev commituje na main —
+# ten workflow daje automatyczne "drugie oko".
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  static-checks:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: skladai
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # pełna historia dla skanu sekretów (gitleaks)
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: skladai/package-lock.json
+
+      - name: Install deps
+        run: npm ci
+
+      - name: TypeScript (typy)
+        run: npx tsc --noEmit
+
+      - name: ESLint
+        run: npx eslint . --max-warnings=0
+        continue-on-error: true # na start nie blokuj na warningach — zaostrzyć później
+
+      - name: Audyt zależności
+        run: npm audit --omit=dev --audit-level=high
+        continue-on-error: true # raportuj, nie blokuj (Next patche bywają opóźnione)
+
+      - name: Skan sekretów (gitleaks)
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

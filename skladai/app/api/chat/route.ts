@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { getAgentPersonaForMode } from "@/lib/modes";
+import { rateLimit, getClientIp } from "@/lib/rateLimit";
 import type { UserMode } from "@/lib/types";
 
 export const maxDuration = 60;
@@ -330,6 +331,14 @@ function buildSystemPrompt(ctx: UserContext, today: TodayStats): string {
 // ──────────────────────────────────────────────────────────────────────
 
 export async function POST(request: NextRequest) {
+  // Rate limiting per IP — czat to płatne wywołania AI. 20 wiadomości/min/IP.
+  const rl = rateLimit(`chat:${getClientIp(request)}`, 20, 60_000);
+  if (!rl.ok) {
+    return NextResponse.json(
+      { error: "Zbyt wiele wiadomości. Poczekaj chwilę." },
+      { status: 429, headers: { "Retry-After": String(rl.retryAfter) } }
+    );
+  }
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
     return NextResponse.json({ error: "Brak klucza API." }, { status: 500 });
