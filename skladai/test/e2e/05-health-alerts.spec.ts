@@ -1,33 +1,28 @@
 /**
- * Test 05 — ModeHealthAlerts integration
+ * Test 05 — Health features profile-driven (po zwinięciu trybu health)
  * @critical
  *
- * UWAGA: Logika `getHealthAlertsForScan` ma 21/21 pass w `scripts/test-stage2-smoke.mjs`
- * (unit test). Tutaj sprawdzamy TYLKO integration — że ModeHealthAlerts
- * faktycznie się renderuje na /wyniki gdy mode=health.
- *
- * Strategia: skip pełnego routingu /wyniki/[id] (1962 linii, SafeBoundary
- * przy mock data), test PROFIL-based — assert że MedicalDisclaimer
- * pokazuje się dla health mode (proxy dla "mode-aware UI for health users").
- * Pełne /wyniki sprawdzane manualnie w QA Patryka.
+ * Logika `getHealthAlertsForScan` ma 21/21 pass w unit teście. Tu integration:
+ * funkcje zdrowotne (MedicalDisclaimer + alerty) włączają się gdy PROFIL ma
+ * schorzenia/alergie — niezależnie od trybu (po Patryk decision: 2 tryby).
  */
 
 import { test, expect } from "@playwright/test";
 import { blockExternalNetwork } from "../helpers/mocks";
 
-test.describe("Health mode integration @critical", () => {
+test.describe("Health features profile-driven @critical", () => {
   test.beforeEach(async ({ page }) => {
     await blockExternalNetwork(page);
   });
 
-  test("health mode + conditions → MedicalDisclaimer widoczny na /", async ({ page }) => {
+  test("profil ze schorzeniami → MedicalDisclaimer widoczny na /", async ({ page }) => {
     await page.addInitScript(() => {
       localStorage.setItem("onboardingCompleted", "true");
       localStorage.setItem(
         "skladai_profile",
         JSON.stringify({
           id: "test-user-uuid",
-          mode: "health",
+          mode: "fitness",
           mode_explicitly_chosen: true,
           health: {
             conditions: ["lactose_intolerance", "hashimoto"],
@@ -38,11 +33,11 @@ test.describe("Health mode integration @critical", () => {
     });
     await page.goto("/", { waitUntil: "domcontentloaded" });
 
-    // MedicalDisclaimer renderuje się dla mode=health (po hotfix self-guard)
+    // Disclaimer włącza się bo profil ma schorzenia/alergeny (profile-driven).
     await expect(page.getByTestId("medical-disclaimer")).toBeVisible({ timeout: 10_000 });
   });
 
-  test("fitness mode → MedicalDisclaimer ukryty", async ({ page }) => {
+  test("profil bez schorzeń → MedicalDisclaimer ukryty", async ({ page }) => {
     await page.addInitScript(() => {
       localStorage.setItem("onboardingCompleted", "true");
       localStorage.setItem(
@@ -57,7 +52,7 @@ test.describe("Health mode integration @critical", () => {
     });
     await page.goto("/", { waitUntil: "domcontentloaded" });
 
-    // MedicalDisclaimer self-guard `mode !== "health"` → null
+    // Brak schorzeń → profileHasHealthContext=false → disclaimer null.
     await expect(page.getByTestId("medical-disclaimer")).toBeHidden();
   });
 });

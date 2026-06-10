@@ -40,12 +40,6 @@ const MODE_ACCENTS: Record<UserMode, AccentSet> = {
     gradient: "linear-gradient(135deg, #4ade80, #6efcb4)",
     bg: "rgba(110,252,180,0.08)",
   },
-  health: {
-    main: "#22d3ee",
-    rgb: "34,211,238",
-    gradient: "linear-gradient(135deg, #06b6d4, #22d3ee)",
-    bg: "rgba(34,211,238,0.08)",
-  },
   cosmetics: {
     main: "#C084FC",
     rgb: "192,132,252",

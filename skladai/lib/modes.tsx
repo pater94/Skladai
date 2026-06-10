@@ -11,7 +11,21 @@
  * AI, kolejność tabów) przychodzą w etapie 2+.
  */
 
-import type { UserMode } from "@/lib/types";
+import type { UserMode, UserProfile } from "@/lib/types";
+
+/**
+ * Czy user ma KONTEKST ZDROWOTNY w profilu (cukrzyca / ciąża / alergie
+ * pokarmowe / schorzenia przewlekłe). Zastępuje dawny `mode === "health"`:
+ * po zwinięciu do 2 trybów funkcje zdrowotne (MedicalDisclaimer + alerty
+ * alergenowe/schorzeniowe na /wyniki) włączają się gdy user MA wpisane
+ * schorzenia — niezależnie od trybu. `diet` celowo pominięta (to preferencja,
+ * nie schorzenie wymagające ostrzeżeń).
+ */
+export function profileHasHealthContext(profile: UserProfile | null | undefined): boolean {
+  const h = profile?.health;
+  if (!h) return false;
+  return !!(h.diabetes || h.pregnancy || (h.allergens && h.allergens.length > 0) || (h.conditions && h.conditions.length > 0));
+}
 
 export interface ModeDef {
   id: UserMode;
@@ -55,23 +69,6 @@ export const MODES: ModeDef[] = [
     ),
   },
   {
-    id: "health",
-    label: "Świadome życie ze schorzeniem",
-    desc: "Cukrzyca, alergie, nietolerancje",
-    color: "#22d3ee",
-    colorRgb: "34,211,238",
-    emoji: "🛡️",
-    ringSpeed: 10,
-    ringDir: "reverse",
-    floatDelay: 1.2,
-    iconPaths: (
-      <>
-        <path d="M16 4L6 8V16C6 21.5 10 26 16 28C22 26 26 21.5 26 16V8L16 4Z" />
-        <path d="M9 17H12L13.5 14L15 19L17 15L18.5 17H23" strokeWidth="1.8" />
-      </>
-    ),
-  },
-  {
     id: "cosmetics",
     label: "Świat kosmetyków",
     desc: "INCI, składy, typ skóry",
@@ -94,7 +91,6 @@ export const MODES: ModeDef[] = [
 
 export const MODE_LABELS: Record<UserMode, string> = {
   fitness: "Forma & Zdrowie",
-  health: "Świadome życie ze schorzeniem",
   cosmetics: "Świat kosmetyków",
 };
 
@@ -131,31 +127,10 @@ Jesteś trenerem fitness i dietetykiem. Twoje obszary kompetencji:
 
 STYL: motywujący, konkretny, nawet techniczny gdy user wie o czym mówi. Możesz używać żargonu (deficyt, surplus, RIR, drop sety) gdy user jest zaawansowany. Bądź uczciwy — jeśli user pyta o coś nierealnego (utrata 10kg w miesiąc) powiedz że to niezdrowe.
 
-GRANICE: nie dawaj porad medycznych. Jeśli user wspomni o chorobie, odpowiedz że nie jesteś lekarzem i zasugeruj konsultację. Możesz mówić o ogólnych zasadach żywienia w danym stanie.`,
-    introMessage: "Cześć! Jestem Twoim trenerem AI. Pomogę z kaloriami, treningiem, snem i regeneracją. O co chcesz spytać? 💪",
-  },
+ŚWIADOMOŚĆ ZDROWOTNA: jeśli profil usera zawiera schorzenia/alergie (cukrzyca, gluten, laktoza, Hashimoto, IBS itp.) — ZAWSZE je uwzględniaj analizując produkty: ostrzegaj o jego alergenach, wysokim indeksie glikemicznym przy cukrzycy, składnikach przeciwwskazanych w jego stanie. Bądź konkretny (np. "IG=75 — wysoko, zjedz z białkiem").
 
-  health: {
-    role: "asystent zdrowotny",
-    systemPromptAddition: `TWÓJ TRYB: ŚWIADOME ŻYCIE ZE SCHORZENIEM
-Jesteś asystentem zdrowotnym — informujesz, ostrzegasz, edukujesz. Twoje obszary kompetencji:
-- Cukrzyca (T1, T2, insulinooporność) — indeks glikemiczny, ładunek glikemiczny
-- Alergie pokarmowe — identyfikacja alergenów w składach
-- Nietolerancje (laktoza, fruktoza, gluten, FODMAP)
-- Choroby tarczycy (Hashimoto, niedoczynność)
-- IBS, refluks, choroby autoimmunologiczne, PCOS, dna moczanowa
-- Specyficzne diety eliminacyjne
-
-STYL: spokojny, edukacyjny, empatyczny. User żyje z chorobą codziennie — nie traktuj go jak nowicjusza. Bądź konkretny: zamiast "uważaj na cukier" napisz "ten produkt ma IG=75 i ŁG=22 — wysokie wartości, lepiej zjeść z białkiem i tłuszczem żeby spłaszczyć krzywą glukozową".
-
-KRYTYCZNE GRANICE:
-- NIE DIAGNOZUJESZ. Nie sugerujesz "pewnie masz X".
-- NIE LECZYSZ. Nie zalecasz dawek leków, nie sugerujesz odstawienia.
-- NIE ZASTĘPUJESZ LEKARZA. Przy każdej poważniejszej kwestii: "to pytanie do Twojego lekarza/dietetyka klinicznego".
-- INFORMUJESZ. Możesz tłumaczyć jak działa dany mechanizm, co to znaczy że produkt zawiera X, jakie są ogólne zasady żywienia w danej chorobie.
-
-ZAWSZE używaj profilu zdrowotnego usera (alergie, schorzenia, conditions) gdy analizujesz produkty.`,
-    introMessage: "Cześć. Jestem Twoim asystentem zdrowotnym. Pomogę zrozumieć składy produktów pod kątem Twoich schorzeń i alergii. Pamiętaj — nie zastępuję lekarza, ale chętnie pomogę zrozumieć etykietę.",
+GRANICE: nie dawaj porad medycznych. NIE diagnozujesz, NIE leczysz, NIE zastępujesz lekarza — przy poważniejszych kwestiach kieruj do lekarza/dietetyka. Możesz INFORMOWAĆ o ogólnych zasadach żywienia w danym stanie i tłumaczyć etykiety.`,
+    introMessage: "Cześć! Jestem Twoim trenerem AI. Pomogę z kaloriami, treningiem, snem, a jeśli masz schorzenia czy alergie w profilu — przypilnuję ich przy skanach. O co chcesz spytać? 💪",
   },
 
   cosmetics: {
@@ -227,12 +202,6 @@ export const MODE_NAV_CONFIG: Record<UserMode, ModeNavConfig> = {
     defaultTab: "/",
     navAccentColor: "#6efcb4",
   },
-  health: {
-    // Brak /forma w nav — patrz komentarz fitness.
-    tabs: ["/", "/dashboard", "/profil"],
-    defaultTab: "/dashboard",
-    navAccentColor: "#22d3ee",
-  },
   cosmetics: {
     // Brak /forma w nav — patrz komentarz fitness.
     tabs: ["/", "/dashboard", "/profil"],
@@ -259,7 +228,6 @@ export type ScanCategory = "food_macro" | "food_sklad" | "meal" | "cosmetics" | 
 
 export const MODE_DEFAULT_SCAN_CATEGORY: Record<UserMode, ScanCategory> = {
   fitness: "food_macro",  // fitness liczy kalorie → domyślnie Makro
-  health: "food_sklad",   // health dba o skład/alergeny → domyślnie Skład
   cosmetics: "cosmetics", // Skanuj INCI od razu
 };
 
@@ -289,7 +257,6 @@ export function getDefaultScanCategoryForMode(mode: UserMode | null | undefined)
 // tu po to, by wybór zakładki przetrwał reload (init mode nie resetuje go).
 export const MODE_ALLOWED_SCAN_CATEGORIES: Record<UserMode, ScanCategory[]> = {
   fitness:   ["food_macro", "food_sklad", "meal", "suplement"], // Makro domyślny
-  health:    ["food_sklad", "food_macro", "meal", "suplement"], // Skład domyślny
   cosmetics: ["cosmetics"],
 };
 

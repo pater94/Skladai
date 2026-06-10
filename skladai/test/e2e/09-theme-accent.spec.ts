@@ -8,8 +8,8 @@
  *
  * Source of truth: components/ThemeProvider.tsx — MODE_ACCENTS:
  *   fitness:   #6efcb4 (mint)
- *   health:    #22d3ee (cyan)
  *   cosmetics: #C084FC (violet)
+ * (tryb health zwinięty — Patryk decision.)
  */
 
 import { test, expect } from "@playwright/test";
@@ -18,7 +18,6 @@ import type { UserMode } from "../types";
 
 const EXPECTED: Record<UserMode, string> = {
   fitness: "#6efcb4",
-  health: "#22d3ee",
   cosmetics: "#c084fc", // toLowerCase compare
 };
 

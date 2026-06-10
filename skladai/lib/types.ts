@@ -325,7 +325,11 @@ export type AnalysisResult = FoodAnalysisResult | CosmeticsAnalysisResult | Meal
  *   - health    → "Świadome życie ze schorzeniem" (cyjan #22d3ee)
  *   - cosmetics → "Świat kosmetyków" (fiolet #C084FC)
  */
-export type UserMode = "fitness" | "health" | "cosmetics";
+// Patryk decision: zwinięte do 2 trybów. Tryb "health" (Świadome życie ze
+// schorzeniem) usunięty — funkcje zdrowotne (disclaimer + alerty alergenowe/
+// schorzeniowe) są teraz sterowane PROFILEM (profile.health), nie osobnym
+// trybem. Istniejący userzy "health" migrują do "fitness" (patrz useUserMode).
+export type UserMode = "fitness" | "cosmetics";
 
 export interface UserProfile {
   // Basic

@@ -13,7 +13,7 @@ import HealthAlerts from "@/components/HealthAlerts";
 import IngredientPopup from "@/components/IngredientPopup";
 import ScanLimitBanner from "@/components/ScanLimitBanner";
 import ModeHealthAlerts from "@/components/ModeHealthAlerts";
-import { useUserMode } from "@/lib/hooks/useUserMode";
+import { profileHasHealthContext } from "@/lib/modes";
 import { getHealthAlertsForScan } from "@/lib/healthAlerts";
 
 // Translation table for the v5 enforceLabelReadabilityGuard()
@@ -357,12 +357,6 @@ export default function WynikiPage() {
   const [allergensOpen, setAllergensOpen] = useState(false);
   // Przełącznik "Wartości odżywcze": na 100g ↔ całe opakowanie (food_macro).
   const [nutriBasis, setNutriBasis] = useState<"100g" | "package">("100g");
-  // Etap 2 Krok G: useUserMode MUSI być tutaj (przed early returnami niżej).
-  // Hook wywoływany warunkowo (po `if (!item) return`) powodował React #310
-  // (Rules of Hooks) — crash "Coś poszło nie tak" gdy wynik był pełny
-  // (label_unreadable=false). modeHealthAlerts (zwykłe obliczenie, nie hook)
-  // liczone niżej gdy result/profile już dostępne.
-  const { mode: userMode } = useUserMode();
 
   useEffect(() => {
     const id = params.id as string;
@@ -653,11 +647,10 @@ export default function WynikiPage() {
 
   const { color, bg, label } = getScoreColor(result.score);
 
-  // Etap 2 Krok G: mode-aware health alerts. Tylko mode=health
-  // wywołuje getHealthAlertsForScan. userMode pobrany hookiem NA GÓRZE
-  // komponentu (przed early returnami) — tu tylko zwykłe obliczenie.
+  // Alerty zdrowotne (alergeny/schorzenia) na skanie. Po zwinięciu trybów
+  // gating jest po PROFILU (user ma schorzenia/alergie), nie po trybie health.
   const modeHealthAlerts =
-    userMode === "health" && profile ? getHealthAlertsForScan(result, profile) : [];
+    profile && profileHasHealthContext(profile) ? getHealthAlertsForScan(result, profile) : [];
 
   const foodResult = isAnyFood ? (result as FoodAnalysisResult) : null;
   const textSearchResult = isTextSearch ? (result as TextSearchResult) : null;
@@ -844,8 +837,8 @@ export default function WynikiPage() {
       {/* Content */}
       <div className={`max-w-md mx-auto pb-10 relative z-20 ${isForma ? "px-0 mt-0" : "px-0 mt-0"}`}>
 
-        {/* ─── Etap 2 Krok G: Mode-aware health alerts (tylko mode=health) ─── */}
-        {userMode === "health" && modeHealthAlerts.length > 0 && (
+        {/* ─── Alerty zdrowotne (gdy user ma schorzenia/alergie w profilu) ─── */}
+        {modeHealthAlerts.length > 0 && (
           <div style={{ padding: "0 16px" }}>
             <ModeHealthAlerts alerts={modeHealthAlerts} />
           </div>

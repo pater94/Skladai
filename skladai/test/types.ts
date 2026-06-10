@@ -4,4 +4,4 @@
  * dependencies typu UserProfile.workouts).
  */
 
-export type UserMode = "fitness" | "health" | "cosmetics";
+export type UserMode = "fitness" | "cosmetics";
