@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect, useMemo, useRef } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import Scanner from "@/components/Scanner";
 import PhotoPreview from "@/components/PhotoPreview";
@@ -401,6 +402,26 @@ export default function Home() {
     document.body.style.overflow = isOpen ? "hidden" : "";
     return () => { document.body.style.overflow = ""; };
   }, [photoPreview, isLoading, showPhotoPreview]);
+
+  // Blokada scrolla tła gdy chooser (Makro/Skład) otwarty. Modal jest
+  // portalowany do document.body (ucieka z #scroll-container, który przez
+  // -webkit-overflow-scrolling:touch na iOS przycinał position:fixed), więc
+  // dodatkowo blokujemy scroll kontenera, by tło pod modalem nie jechało.
+  useEffect(() => {
+    const sc = document.getElementById("scroll-container");
+    if (showScanChoice) {
+      document.body.style.overflow = "hidden";
+      if (sc) sc.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+      if (sc) sc.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+      const s = document.getElementById("scroll-container");
+      if (s) s.style.overflow = "";
+    };
+  }, [showScanChoice]);
 
   // Safety: auto-reset stuck scan lock after 10s
   useEffect(() => {
@@ -1651,8 +1672,11 @@ export default function Home() {
         const cards: Card[] = allowedScanOrder
           .filter((id) => FOOD_DEFS[id])
           .map((id) => ({ key: id, ...FOOD_DEFS[id], onClick: () => { setShowScanChoice(false); startCapture(id as ScanMode, scanSourceRef.current); } }));
-        return (
-          <div style={{ position: "fixed", inset: 0, zIndex: 2000, background: "#0a0f0d", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+        // Portal do document.body — ucieka z #scroll-container (który przez
+        // -webkit-overflow-scrolling:touch przycinał position:fixed na iOS i
+        // powodował długi scroll + widoczny bottom-nav). zIndex 10000 > nav (9999).
+        return createPortal(
+          <div style={{ position: "fixed", inset: 0, zIndex: 10000, background: "#0a0f0d", display: "flex", flexDirection: "column", overflow: "hidden" }}>
             {/* Jeden subtelny blask u góry */}
             <div style={{ position: "absolute", top: -120, left: 0, right: 0, height: 240, background: "radial-gradient(120% 100% at 50% 0%, rgba(110,252,180,0.08), transparent 68%)", pointerEvents: "none" }} />
             {/* Ziarno */}
@@ -1673,7 +1697,7 @@ export default function Home() {
             </div>
 
             {/* BODY: karty wyśrodkowane pionowo */}
-            <div style={{ flex: 1, position: "relative", display: "flex", flexDirection: "column", justifyContent: "center", gap: 16, padding: "0 20px" }}>
+            <div style={{ flex: 1, position: "relative", display: "flex", flexDirection: "column", justifyContent: "center", gap: 16, padding: "0 20px", minHeight: 0 }}>
               {cards.map((c, i) => (
                 <button
                   key={c.key}
@@ -1682,6 +1706,7 @@ export default function Home() {
                   className="scan-opt scan-card-in"
                   style={{
                     animationDelay: `${100 + i * 80}ms`,
+                    ["--acc" as string]: c.accent,
                     position: "relative", overflow: "hidden", width: "100%", textAlign: "left", cursor: "pointer",
                     padding: 22, borderRadius: 24, border: "1px solid transparent",
                     background: `linear-gradient(180deg, rgba(255,255,255,0.055), rgba(255,255,255,0.02)) padding-box, linear-gradient(145deg, ${c.accent}70, rgba(255,255,255,0.06) 42%) border-box`,
@@ -1692,7 +1717,7 @@ export default function Home() {
                     <div style={{ width: 58, height: 58, borderRadius: 17, background: `linear-gradient(150deg, ${c.accent}, ${c.accentDeep})`, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: `inset 0 1px 0 rgba(255,255,255,0.45), 0 6px 16px ${c.accentDeep}40` }}>
                       <c.Icon size={27} color="#06100c" strokeWidth={2.4} />
                     </div>
-                    <ChevronRight className="scan-arrow" size={22} color="rgba(255,255,255,0.34)" />
+                    <ChevronRight className="scan-arrow" size={22} color={c.accent} style={{ opacity: 0.85 }} />
                   </div>
                   <div style={{ fontSize: 22, fontWeight: 800, color: "#fff", letterSpacing: -0.3, marginTop: 18 }}>{c.title}</div>
                   <div style={{ fontSize: 14, color: "rgba(255,255,255,0.55)", marginTop: 5, lineHeight: 1.35 }}>{c.desc}</div>
@@ -1703,21 +1728,35 @@ export default function Home() {
               ))}
             </div>
 
-            {/* FOOTER */}
-            <div style={{ position: "relative", textAlign: "center", padding: "0 20px max(28px, env(safe-area-inset-bottom))", fontSize: 12.5, color: "rgba(255,255,255,0.42)", fontWeight: 600, letterSpacing: 0.3 }}>
-              ✨ AI Vision przeanalizuje Twoje zdjęcie
+            {/* FOOTER: hint odkrywalności + tagline */}
+            <div style={{ position: "relative", textAlign: "center", padding: "8px 20px max(24px, env(safe-area-inset-bottom))" }}>
+              <div className="scan-hint" style={{ fontSize: 13.5, fontWeight: 700, color: "rgba(255,255,255,0.72)", marginBottom: 7 }}>
+                <span className="scan-hint-finger" style={{ marginRight: 5 }}>👆</span>Dotknij kategorii, aby zeskanować
+              </div>
+              <div style={{ fontSize: 11.5, color: "rgba(255,255,255,0.4)", fontWeight: 600, letterSpacing: 0.3 }}>
+                ✨ AI Vision przeanalizuje Twoje zdjęcie
+              </div>
             </div>
 
             <style>{`
               @keyframes scanCardIn { from { transform: translateY(16px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-              .scan-card-in { animation: scanCardIn .55s cubic-bezier(.22,1,.36,1) both; }
+              @keyframes scanCardGlow {
+                0%, 100% { box-shadow: inset 0 1px 0 rgba(255,255,255,0.07), 0 10px 28px rgba(0,0,0,0.35); }
+                50%      { box-shadow: inset 0 1px 0 rgba(255,255,255,0.07), 0 10px 28px rgba(0,0,0,0.35), 0 0 26px -4px var(--acc); }
+              }
+              .scan-card-in { animation: scanCardIn .55s cubic-bezier(.22,1,.36,1) both, scanCardGlow 2.8s ease-in-out .7s infinite; }
+              @keyframes scanArrowNudge { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(5px); } }
+              .scan-arrow { animation: scanArrowNudge 1.5s ease-in-out infinite; }
+              @keyframes scanFinger { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+              .scan-hint-finger { display: inline-block; animation: scanFinger 1.4s ease-in-out infinite; }
               .scan-opt { transition: transform .14s ease, box-shadow .2s ease; }
-              .scan-opt:active { transform: scale(.98); }
-              .scan-opt:active .scan-arrow { transform: translateX(3px); }
-              .scan-arrow { transition: transform .18s ease; }
-              @media (prefers-reduced-motion: reduce) { .scan-card-in { animation: none; } }
+              .scan-opt:active { transform: scale(.97); }
+              @media (prefers-reduced-motion: reduce) {
+                .scan-card-in, .scan-arrow, .scan-hint-finger { animation: none; }
+              }
             `}</style>
-          </div>
+          </div>,
+          document.body
         );
       })()}
 
