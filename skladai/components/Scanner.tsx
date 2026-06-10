@@ -14,10 +14,12 @@ interface ScannerProps {
   loadingMessage?: string;
   onFridgeScan?: (base64: string) => void;
   autoOpenGallery?: boolean;
+  autoOpenCamera?: boolean;
 }
 
-export default function Scanner({ onScan, isLoading, mode = "food", loadingMessage, onFridgeScan, autoOpenGallery }: ScannerProps) {
+export default function Scanner({ onScan, isLoading, mode = "food", loadingMessage, onFridgeScan, autoOpenGallery, autoOpenCamera }: ScannerProps) {
   const cameraInputRef = useRef<HTMLInputElement>(null);
+  const autoCamFired = useRef(false);
   const fridgeInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
   const [preview, setPreview] = useState<string | null>(null);
@@ -154,6 +156,16 @@ export default function Scanner({ onScan, isLoading, mode = "food", loadingMessa
     if (isNative()) { handleNativeGallery(); }
     else { galleryInputRef.current?.click(); }
   }, [handleNativeGallery]);
+
+  // Auto-otwórz aparat na mount (np. Forma: "Rozpocznij analizę" → od razu
+  // aparat, bez drugiego kliknięcia). Ref pilnuje by odpalić tylko raz.
+  useEffect(() => {
+    if (autoOpenCamera && !autoCamFired.current) {
+      autoCamFired.current = true;
+      const timer = setTimeout(() => { openCamera(); }, 120);
+      return () => clearTimeout(timer);
+    }
+  }, [autoOpenCamera, openCamera]);
 
   const openFridge = useCallback(() => {
     if (isNative()) { handleNativeFridge(); }

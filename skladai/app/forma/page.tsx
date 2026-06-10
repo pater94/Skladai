@@ -343,6 +343,7 @@ export default function FormaPage() {
   const router = useRouter();
   const [view, setView] = useState<View>("main");
   const [autoOpenGallery, setAutoOpenGallery] = useState(false);
+  const [autoOpenCamera, setAutoOpenCamera] = useState(false);
   const [profile, setProfileState] = useState<ReturnType<typeof getProfile>>(null);
   const [records, setRecords] = useState<StrengthRecord[]>([]);
 
@@ -394,7 +395,7 @@ export default function FormaPage() {
     return bPR + sPR + dPR;
   })();
 
-  const goBack = () => { setView("main"); setAutoOpenGallery(false); };
+  const goBack = () => { setView("main"); setAutoOpenGallery(false); setAutoOpenCamera(false); };
 
   const formatTime = (s: number) => {
     const m = Math.floor(s / 60);
@@ -447,7 +448,8 @@ export default function FormaPage() {
             records={records}
             onRunnerClick={() => router.push("/biegacz")}
             router={router}
-            onGalleryCheckForm={() => { setAutoOpenGallery(true); setView("checkform"); }}
+            onGalleryCheckForm={() => { setAutoOpenCamera(false); setAutoOpenGallery(true); setView("checkform"); }}
+            onCameraCheckForm={() => { setAutoOpenGallery(false); setAutoOpenCamera(true); setView("checkform"); }}
             onTimerOpen={() => setTimerOpen(true)}
           />
         )}
@@ -469,7 +471,7 @@ export default function FormaPage() {
           <StrengthCardView goBack={goBack} records={records} profile={profile} />
         )}
         {view === "checkform" && (
-          <CheckFormView goBack={goBack} router={router} autoOpenGallery={autoOpenGallery} />
+          <CheckFormView goBack={goBack} router={router} autoOpenGallery={autoOpenGallery} autoOpenCamera={autoOpenCamera} />
         )}
       </div>
 
@@ -602,6 +604,7 @@ function MainView({
   onRunnerClick,
   router,
   onGalleryCheckForm,
+  onCameraCheckForm,
   onTimerOpen,
 }: {
   setView: (v: View) => void;
@@ -610,6 +613,7 @@ function MainView({
   onRunnerClick?: () => void;
   router: AppRouterInstance;
   onGalleryCheckForm?: () => void;
+  onCameraCheckForm?: () => void;
   onTimerOpen?: () => void;
 }) {
   const [checkFormHistory, setCheckFormHistory] = useState<CheckFormEntry[]>([]);
@@ -705,7 +709,7 @@ function MainView({
               AI przeanalizuje Twoją sylwetkę
             </p>
             <button
-              onClick={() => setView("checkform")}
+              onClick={() => { if (onCameraCheckForm) onCameraCheckForm(); else setView("checkform"); }}
               className="w-full py-3.5 rounded-2xl font-bold text-white transition-all active:scale-[0.97]"
               style={{
                 background: "linear-gradient(135deg, #f97316, #ea580c)",
@@ -2045,10 +2049,12 @@ function CheckFormView({
   goBack,
   router,
   autoOpenGallery,
+  autoOpenCamera,
 }: {
   goBack: () => void;
   router: AppRouterInstance;
   autoOpenGallery?: boolean;
+  autoOpenCamera?: boolean;
 }) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -2141,7 +2147,7 @@ function CheckFormView({
         Zrób zdjęcie sylwetki, a AI przeanalizuje Twoją kompozycję ciała
       </p>
 
-      <Scanner onScan={handleScan} isLoading={isLoading} mode="forma" autoOpenGallery={autoOpenGallery} />
+      <Scanner onScan={handleScan} isLoading={isLoading} mode="forma" autoOpenGallery={autoOpenGallery} autoOpenCamera={autoOpenCamera} />
 
       <div className="text-center mt-3" style={{
         fontSize: "11px",
