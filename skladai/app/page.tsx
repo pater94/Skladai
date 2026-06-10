@@ -33,7 +33,7 @@ import { isNative, takePhotoForMode } from "@/lib/native-camera";
 import { devLog } from "@/lib/dev-log";
 import ActivityBadges from "@/components/ActivityBadges";
 import type { ScanMode, ScanHistoryItem, RecentFood } from "@/lib/types";
-import { Zap, Leaf, ChevronRight, ChevronLeft, X, ScanLine, Apple, UtensilsCrossed, Pill } from "lucide-react";
+import { Zap, Leaf, ChevronRight, X, ScanLine, Apple, UtensilsCrossed, Pill } from "lucide-react";
 
 // Subtelne ziarno (film grain) dla ekranu wyboru skanu — materiał, nie kolor.
 const SCAN_GRAIN =
@@ -290,11 +290,9 @@ export default function Home() {
   // Pending re-scan po przełączeniu na tryb meal. useEffect odpala scan
   // dopiero gdy `mode` faktycznie === "meal" (unika race z closure handleScan).
   const [pendingMealScan, setPendingMealScan] = useState<string | null>(null);
-  // Dwupoziomowy chooser (Patryk): SKANUJ → poziom "category" (Żywność /
-  // Danie / Suplement); wybór Żywność → poziom "food" (Makro / Skład). Danie
-  // i Suplement skanują od razu. scanSourceRef = aparat czy galeria.
+  // Chooser Makro/Skład (Patryk): zakładka Żywność + SKANUJ → modal z wyborem
+  // Makro/Skład. Danie i Suplement to osobne zakładki — skanują wprost.
   const [showScanChoice, setShowScanChoice] = useState(false);
-  const [scanStep, setScanStep] = useState<"category" | "food">("category");
   const scanSourceRef = useRef<"camera" | "gallery">("camera");
   const router = useRouter();
 
@@ -676,15 +674,15 @@ export default function Home() {
   // jeśli 1 (cosmetics) → od razu przechwyć.
   const openScanFlow = useCallback((source: "camera" | "gallery") => {
     if (isLoading || isScanning) return;
-    const cats = allowedScanOrder;
-    if (cats.length <= 1) {
-      startCapture(((cats[0] as ScanMode) || mode), source);
-    } else {
+    if (mode.startsWith("food")) {
+      // Zakładka Żywność → modal wyboru Makro / Skład.
       scanSourceRef.current = source;
-      setScanStep("category"); // zawsze od poziomu kategorii
       setShowScanChoice(true);
+    } else {
+      // Zakładka Danie / Suplement (lub Kosmetyk) → skan od razu, bez modala.
+      startCapture(mode, source);
     }
-  }, [isLoading, isScanning, allowedScanOrder, mode, startCapture]);
+  }, [isLoading, isScanning, mode, startCapture]);
 
   const handleFridgeScan = useCallback(
     async (base64: string) => {
@@ -855,10 +853,35 @@ export default function Home() {
           );
         })()}
 
-        {/* ══ 3. SUB-TABS — USUNIĘTE ══
-            Patryk decision: wybór typu skanu (Makro/Skład/Danie/Suplement)
-            przeniesiony do modala wyzwalanego przyciskiem SKANUJ (bardziej
-            intuicyjne niż taby na górze). Patrz: showScanChoice modal niżej. */}
+        {/* ══ 3. TABY: Żywność / Danie / Suplement (fitness/health) ══
+            Patryk: Danie i Suplement jako osobne zakładki na głównej. Żywność
+            → modal Makro/Skład (po SKANUJ); Danie/Suplement → skan od razu.
+            Cosmetics: brak tabów (skanuje kosmetyk wprost). */}
+        {userMode !== "cosmetics" && (
+          <div className="rounded-2xl p-1 mb-6 anim-fade-up-2" style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", backdropFilter: "blur(10px)" }}>
+            <div className="flex gap-1">
+              {(() => {
+                const foodDefault = getDefaultScanCategoryForMode(userMode) as ScanMode;
+                const TABS: { key: string; label: string; Icon: typeof Apple; target: ScanMode; color: string; active: boolean }[] = [
+                  { key: "food", label: "Żywność", Icon: Apple, target: foodDefault, color: "#6efcb4", active: mode.startsWith("food") },
+                  { key: "meal", label: "Danie", Icon: UtensilsCrossed, target: "meal" as ScanMode, color: "#FBBF24", active: mode === "meal" },
+                  { key: "suplement", label: "Suplement", Icon: Pill, target: "suplement" as ScanMode, color: "#3b82f6", active: mode === "suplement" },
+                ];
+                return TABS.map((t) => (
+                  <button
+                    key={t.key}
+                    onClick={() => { setMode(t.target); saveMode(t.target); setError(null); }}
+                    className="flex-1 flex items-center justify-center gap-1.5 py-2.5 px-1 text-[12px] rounded-xl font-semibold transition-all duration-300"
+                    style={{ backgroundColor: t.active ? `${t.color}1f` : "transparent", color: t.active ? t.color : "rgba(255,255,255,0.55)", fontWeight: t.active ? 700 : 500 }}
+                  >
+                    <t.Icon size={15} strokeWidth={2.2} />
+                    {t.label}
+                  </button>
+                ));
+              })()}
+            </div>
+          </div>
+        )}
 
         {/* ── Morning After (food mode only) ── */}
         {mode.startsWith("food") && <MorningAfter />}
@@ -1616,24 +1639,18 @@ export default function Home() {
         </div>
       )}
 
-      {/* ══ Dwupoziomowy chooser (Patryk) ══
-          Poziom "category": Żywność / Danie / Suplement.
-          Wybór Żywność → poziom "food": Makro / Skład.
-          Danie i Suplement → od razu startCapture. Pełny ekran (zakrywa FAB). */}
+      {/* ══ Chooser Makro / Skład (Patryk: TYLKO Makro i Skład w tym wyborze) ══
+          Wyzwalany przyciskiem SKANUJ gdy aktywna zakładka Żywność. Danie i
+          Suplement skanują wprost z zakładek (bez modala). Pełny ekran (zakrywa FAB). */}
       {showScanChoice && (() => {
         const FOOD_DEFS: Record<string, { accent: string; accentDeep: string; Icon: typeof Zap; title: string; desc: string; tag: string }> = {
           food_macro: { accent: "#2dd4bf", accentDeep: "#0f9e8e", Icon: Zap, title: "Makro", desc: "Kalorie i makroskładniki z tabeli wartości odżywczych", tag: "tabela wartości" },
           food_sklad: { accent: "#6efcb4", accentDeep: "#34d399", Icon: Leaf, title: "Skład", desc: "Ocena jakości składu z listy składników", tag: "lista składników" },
         };
-        const captureMode = (m: ScanMode) => { setShowScanChoice(false); startCapture(m, scanSourceRef.current); };
         type Card = { key: string; accent: string; accentDeep: string; Icon: typeof Zap; title: string; desc: string; tag: string; onClick: () => void };
-        const cards: Card[] = scanStep === "food"
-          ? allowedScanOrder.filter((id) => FOOD_DEFS[id]).map((id) => ({ key: id, ...FOOD_DEFS[id], onClick: () => captureMode(id as ScanMode) }))
-          : [
-              { key: "food", accent: "#6efcb4", accentDeep: "#34d399", Icon: Apple, title: "Żywność", desc: "Etykieta produktu — policz makro lub oceń skład", tag: "etykieta produktu", onClick: () => setScanStep("food") },
-              { key: "meal", accent: "#fbbf24", accentDeep: "#f59e0b", Icon: UtensilsCrossed, title: "Danie", desc: "Kalorie z gotowego posiłku na talerzu", tag: "talerz z jedzeniem", onClick: () => captureMode("meal" as ScanMode) },
-              { key: "suplement", accent: "#38bdf8", accentDeep: "#0ea5e9", Icon: Pill, title: "Suplement", desc: "Analiza składu, dawek i jakości suplementu", tag: "etykieta suplementu", onClick: () => captureMode("suplement" as ScanMode) },
-            ];
+        const cards: Card[] = allowedScanOrder
+          .filter((id) => FOOD_DEFS[id])
+          .map((id) => ({ key: id, ...FOOD_DEFS[id], onClick: () => { setShowScanChoice(false); startCapture(id as ScanMode, scanSourceRef.current); } }));
         return (
           <div style={{ position: "fixed", inset: 0, zIndex: 2000, background: "#0a0f0d", display: "flex", flexDirection: "column", overflow: "hidden" }}>
             {/* Jeden subtelny blask u góry */}
@@ -1641,25 +1658,17 @@ export default function Home() {
             {/* Ziarno */}
             <div style={{ position: "absolute", inset: 0, backgroundImage: `url('${SCAN_GRAIN}')`, opacity: 0.05, mixBlendMode: "overlay", pointerEvents: "none" }} />
 
-            {/* TOP: wstecz/X + eyebrow + tytuł + podtytuł */}
+            {/* TOP: X + eyebrow + tytuł + podtytuł */}
             <div style={{ position: "relative", padding: "max(20px, env(safe-area-inset-top)) 20px 0" }}>
-              {scanStep === "food" ? (
-                <button type="button" onClick={() => setScanStep("category")} aria-label="Wstecz" className="scan-opt" style={{ width: 38, height: 38, borderRadius: 99, background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
-                  <ChevronLeft size={20} color="rgba(255,255,255,0.7)" />
-                </button>
-              ) : (
-                <button type="button" onClick={() => setShowScanChoice(false)} aria-label="Zamknij" className="scan-opt" style={{ width: 38, height: 38, borderRadius: 99, background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
-                  <X size={18} color="rgba(255,255,255,0.7)" />
-                </button>
-              )}
+              <button type="button" onClick={() => setShowScanChoice(false)} aria-label="Zamknij" className="scan-opt" style={{ width: 38, height: 38, borderRadius: 99, background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
+                <X size={18} color="rgba(255,255,255,0.7)" />
+              </button>
               <div style={{ marginTop: 26 }}>
                 <div style={{ display: "inline-flex", alignItems: "center", gap: 6, color: "#6efcb4", fontSize: 11.5, fontWeight: 800, letterSpacing: 2, textTransform: "uppercase" }}>
-                  <ScanLine size={14} color="#6efcb4" strokeWidth={2.4} /> {scanStep === "food" ? "Żywność" : "Skanowanie"}
+                  <ScanLine size={14} color="#6efcb4" strokeWidth={2.4} /> Skanowanie
                 </div>
-                <div style={{ fontSize: 28, fontWeight: 800, color: "#fff", letterSpacing: -0.6, lineHeight: 1.1, marginTop: 10 }}>
-                  {scanStep === "food" ? <>Makro czy<br />skład?</> : <>Co chcesz<br />zeskanować?</>}
-                </div>
-                <div style={{ fontSize: 15.5, color: "rgba(255,255,255,0.82)", fontWeight: 700, marginTop: 10 }}>{scanStep === "food" ? "Wybierz rodzaj analizy" : "Wybierz kategorię"}</div>
+                <div style={{ fontSize: 28, fontWeight: 800, color: "#fff", letterSpacing: -0.6, lineHeight: 1.1, marginTop: 10 }}>Co chcesz<br />zeskanować?</div>
+                <div style={{ fontSize: 15.5, color: "rgba(255,255,255,0.82)", fontWeight: 700, marginTop: 10 }}>Wybierz rodzaj analizy</div>
               </div>
             </div>
 
