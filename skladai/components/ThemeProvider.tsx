@@ -20,6 +20,7 @@
 
 import { createContext, useContext, useMemo } from "react";
 import { useUserMode } from "@/lib/hooks/useUserMode";
+import { useThemeVariant, type ThemeVariant } from "@/lib/hooks/useThemeVariant";
 import type { UserMode } from "@/lib/types";
 
 interface AccentSet {
@@ -33,18 +34,36 @@ interface AccentSet {
   bg: string;
 }
 
-const MODE_ACCENTS: Record<UserMode, AccentSet> = {
-  fitness: {
-    main: "#6efcb4",
-    rgb: "110,252,180",
-    gradient: "linear-gradient(135deg, #4ade80, #6efcb4)",
-    bg: "rgba(110,252,180,0.08)",
+// Realne hexy (nie var(--…)) — accent.main bywa czytany w JS (getComputedStyle
+// w testach, ewentualne canvas/SVG); wariant motywu wybiera zestaw niżej.
+const MODE_ACCENTS: Record<ThemeVariant, Record<UserMode, AccentSet>> = {
+  classic: {
+    fitness: {
+      main: "#6efcb4",
+      rgb: "110,252,180",
+      gradient: "linear-gradient(135deg, #4ade80, #6efcb4)",
+      bg: "rgba(110,252,180,0.08)",
+    },
+    cosmetics: {
+      main: "#C084FC",
+      rgb: "192,132,252",
+      gradient: "linear-gradient(135deg, #a78bfa, #C084FC)",
+      bg: "rgba(192,132,252,0.08)",
+    },
   },
-  cosmetics: {
-    main: "#C084FC",
-    rgb: "192,132,252",
-    gradient: "linear-gradient(135deg, #a78bfa, #C084FC)",
-    bg: "rgba(192,132,252,0.08)",
+  obsidian: {
+    fitness: {
+      main: "#34d399",
+      rgb: "52,211,153",
+      gradient: "linear-gradient(135deg, #10b981, #34d399)",
+      bg: "rgba(52,211,153,0.08)",
+    },
+    cosmetics: {
+      main: "#a78bfa",
+      rgb: "167,139,250",
+      gradient: "linear-gradient(135deg, #8b5cf6, #a78bfa)",
+      bg: "rgba(167,139,250,0.08)",
+    },
   },
 };
 
@@ -54,14 +73,15 @@ interface ThemeContextValue {
 }
 
 const ThemeContext = createContext<ThemeContextValue>({
-  accent: MODE_ACCENTS.fitness,
+  accent: MODE_ACCENTS.classic.fitness,
   mode: "fitness",
 });
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const { mode } = useUserMode();
+  const { variant } = useThemeVariant();
   const effectiveMode = (mode ?? "fitness") as UserMode;
-  const accent = useMemo(() => MODE_ACCENTS[effectiveMode], [effectiveMode]);
+  const accent = useMemo(() => MODE_ACCENTS[variant][effectiveMode], [variant, effectiveMode]);
 
   return (
     <ThemeContext.Provider value={{ accent, mode: effectiveMode }}>

@@ -46,7 +46,7 @@ function FunComparisons({ items, isDark }: { items: string[]; isDark: boolean })
       <ul className="space-y-2">
         {items.map((c: string, i: number) => (
           <li key={i} style={{ fontSize: 13, color: "rgba(255,255,255,0.55)", lineHeight: 1.6, display: "flex", alignItems: "flex-start", gap: 8 }}>
-            <span style={{ color: "#6efcb4", fontSize: 8, marginTop: 6 }}>●</span>
+            <span style={{ color: "var(--c-mint, #6efcb4)", fontSize: 8, marginTop: 6 }}>●</span>
             <span>{String(c)}</span>
           </li>
         ))}
@@ -306,9 +306,9 @@ function DiaryPanel({
 function ShareCard({ name, score, verdict, isForma, macroKcal100 }: { name: string; score: number | null; verdict: string; isForma: boolean; macroKcal100?: number | null }) {
   // Makro (score null/brak) → pokaż kalorie zamiast oceny /10.
   const isMacroCard = (typeof score !== "number") && typeof macroKcal100 === "number";
-  const scoreColor = isMacroCard ? "#6efcb4" : (score ?? 0) >= 7 ? "#22c55e" : (score ?? 0) >= 4 ? "#f59e0b" : "#ef4444";
+  const scoreColor = isMacroCard ? "var(--c-mint, #6efcb4)" : (score ?? 0) >= 7 ? "#22c55e" : (score ?? 0) >= 4 ? "var(--c-amber-2, #f59e0b)" : "var(--c-red, #ef4444)";
   return (
-    <div style={{ width: 400, padding: 32, background: "#0a0e0c", fontFamily: "system-ui, -apple-system, sans-serif" }}>
+    <div style={{ width: 400, padding: 32, background: "var(--bg, #0a0e0c)", fontFamily: "system-ui, -apple-system, sans-serif" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 24 }}>
         <img src="/icons/icon-192.png" alt="" width={32} height={32} style={{ borderRadius: 8 }} />
         <span style={{ fontSize: 14, fontWeight: 800, color: "rgba(255,255,255,0.7)" }}>SkładAI</span>
@@ -320,7 +320,7 @@ function ShareCard({ name, score, verdict, isForma, macroKcal100 }: { name: stri
         ) : (
           <>
             <div style={{ width: 52, height: 52, borderRadius: "50%", background: `conic-gradient(${scoreColor} ${(score ?? 0) * 36}deg, rgba(255,255,255,0.08) 0deg)`, display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <div style={{ width: 40, height: 40, borderRadius: "50%", background: "#0a0e0c", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, fontWeight: 800, color: scoreColor }}>
+              <div style={{ width: 40, height: 40, borderRadius: "50%", background: "var(--bg, #0a0e0c)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, fontWeight: 800, color: scoreColor }}>
                 {score}
               </div>
             </div>
@@ -370,7 +370,7 @@ export default function WynikiPage() {
   if (!item) {
     return (
       <div className="min-h-[100dvh] flex items-center justify-center bg-[#0a0e0c]">
-        <div style={{ width: 48, height: 48, border: "4px solid rgba(110,252,180,0.3)", borderTopColor: "#6efcb4", borderRadius: "50%", animation: "spinSlow 0.8s linear infinite" }} />
+        <div style={{ width: 48, height: 48, border: "4px solid rgba(var(--c-mint-rgb, 110,252,180),0.3)", borderTopColor: "var(--c-mint, #6efcb4)", borderRadius: "50%", animation: "spinSlow 0.8s linear infinite" }} />
       </div>
     );
   }
@@ -406,13 +406,13 @@ export default function WynikiPage() {
   if (isLabelUnreadable) {
     // Mode-specific accent so the view feels native to the section
     // user came from (mint = food, purple = cosmetics, blue = suplement).
-    const unreadableAccent = isCosmetics ? "#C084FC" : isSuplement ? "#3b82f6" : "#6efcb4";
-    const unreadableAccentRgb = isCosmetics ? "192,132,252" : isSuplement ? "59,130,246" : "110,252,180";
+    const unreadableAccent = isCosmetics ? "var(--c-violet, #C084FC)" : isSuplement ? "var(--c-blue, #3b82f6)" : "var(--c-mint, #6efcb4)";
+    const unreadableAccentRgb = isCosmetics ? "var(--c-violet-rgb, 192,132,252)" : isSuplement ? "var(--c-blue-rgb, 59,130,246)" : "var(--c-mint-rgb, 110,252,180)";
     const ctaGradient = isCosmetics
-      ? "linear-gradient(135deg,#C084FC 0%,#9333ea 100%)"
+      ? "linear-gradient(135deg,var(--c-violet, #C084FC) 0%,#9333ea 100%)"
       : isSuplement
-      ? "linear-gradient(135deg,#60a5fa 0%,#2563eb 100%)"
-      : "linear-gradient(135deg,#6efcb4 0%,#3dd990 100%)";
+      ? "linear-gradient(135deg,var(--c-blue-2, #60a5fa) 0%,var(--c-blue-3, #2563eb) 100%)"
+      : "linear-gradient(135deg,var(--c-mint, #6efcb4) 0%,var(--c-green-2, #3dd990) 100%)";
     const missingFields: string[] = Array.isArray(result.missing_fields) ? result.missing_fields : [];
     const retakeHint: string =
       typeof result.retake_hint === "string" && result.retake_hint.length > 0
@@ -577,8 +577,8 @@ export default function WynikiPage() {
                         width: 22,
                         height: 22,
                         borderRadius: "50%",
-                        background: "rgba(239,68,68,0.12)",
-                        border: "1px solid rgba(239,68,68,0.25)",
+                        background: "rgba(var(--c-red-rgb, 239,68,68),0.12)",
+                        border: "1px solid rgba(var(--c-red-rgb, 239,68,68),0.25)",
                         color: "#fca5a5",
                         fontSize: 11,
                         fontWeight: 800,
@@ -614,7 +614,7 @@ export default function WynikiPage() {
                 padding: "16px 20px",
                 borderRadius: 18,
                 background: ctaGradient,
-                color: "#0a0e0c",
+                color: "var(--bg, #0a0e0c)",
                 fontWeight: 900,
                 fontSize: 15.5,
                 border: "none",
@@ -694,7 +694,7 @@ export default function WynikiPage() {
   const heroClass = isForma ? "" : isMeal ? "meal-hero" : "bg-gradient-to-b from-[#0a1a10] to-[#0a0e0c]";
 
   const accentColor = isCosmetics ? "#C084FC" : isSuplement ? "#3b82f6" : "#6efcb4";
-  const accentRgb = isCosmetics ? "192,132,252" : isSuplement ? "59,130,246" : "110,252,180";
+  const accentRgb = isCosmetics ? "var(--c-violet-rgb, 192,132,252)" : isSuplement ? "var(--c-blue-rgb, 59,130,246)" : "var(--c-mint-rgb, 110,252,180)";
 
   const handleShare = async () => {
     if (!shareRef.current) return;
@@ -759,7 +759,7 @@ export default function WynikiPage() {
           {/* Ambient blob + grain for forma */}
           <div style={{
             position: "absolute", top: -40, right: -60, width: 200, height: 200,
-            borderRadius: "50%", background: "radial-gradient(circle, rgba(249,115,22,0.1) 0%, transparent 70%)",
+            borderRadius: "50%", background: "radial-gradient(circle, rgba(var(--c-orange-rgb, 249,115,22),0.1) 0%, transparent 70%)",
             filter: "blur(50px)", animation: "float1 8s ease-in-out infinite",
           }} />
           <svg style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", pointerEvents: "none", opacity: 0.4, zIndex: 1 }}>
@@ -863,7 +863,7 @@ export default function WynikiPage() {
                 {/* Gradient stripe */}
                 <div style={{
                   position: "absolute", top: 0, left: 0, right: 0, height: 3,
-                  background: "linear-gradient(90deg, transparent, #f97316, transparent)", zIndex: 3,
+                  background: "linear-gradient(90deg, transparent, var(--c-orange, #f97316), transparent)", zIndex: 3,
                 }} />
 
                 {/* Photo area */}
@@ -921,9 +921,9 @@ export default function WynikiPage() {
                   <div style={{
                     position: "absolute", top: 10, left: 10,
                     padding: "4px 10px", borderRadius: 9,
-                    background: "rgba(249,115,22,0.15)", border: "1px solid rgba(249,115,22,0.25)",
+                    background: "rgba(var(--c-orange-rgb, 249,115,22),0.15)", border: "1px solid rgba(var(--c-orange-rgb, 249,115,22),0.25)",
                     backdropFilter: "blur(12px)",
-                    fontSize: 10, fontWeight: 600, color: "#f97316", zIndex: 2,
+                    fontSize: 10, fontWeight: 600, color: "var(--c-orange, #f97316)", zIndex: 2,
                   }}>💪 Forma</div>
                 </div>
 
@@ -958,7 +958,7 @@ export default function WynikiPage() {
                       <div style={{ width: "100%" }}>
                         <textarea rows={2} maxLength={300} placeholder="Co było nie tak?" value={feedbackNote} onChange={(e) => setFeedbackNote(e.target.value)} style={{ width: "100%", padding: "8px 12px", borderRadius: 10, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "#fff", fontSize: 12, resize: "none", outline: "none", fontFamily: "inherit" }} />
                         <div style={{ display: "flex", gap: 8, marginTop: 6 }}>
-                          <button onClick={() => { fetch("/api/feedback", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ scan_id: item.scan_log_id, product_name: result.name, feedback: "bad", feedback_note: feedbackNote || null }) }); setFeedbackSent("sent"); }} style={{ flex: 1, padding: 8, borderRadius: 10, background: "rgba(249,115,22,0.1)", border: "1px solid rgba(249,115,22,0.2)", color: "#f97316", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>Wyślij</button>
+                          <button onClick={() => { fetch("/api/feedback", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ scan_id: item.scan_log_id, product_name: result.name, feedback: "bad", feedback_note: feedbackNote || null }) }); setFeedbackSent("sent"); }} style={{ flex: 1, padding: 8, borderRadius: 10, background: "rgba(var(--c-orange-rgb, 249,115,22),0.1)", border: "1px solid rgba(var(--c-orange-rgb, 249,115,22),0.2)", color: "var(--c-orange, #f97316)", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>Wyślij</button>
                           <button onClick={() => { setFeedbackSent(null); setFeedbackNote(""); }} style={{ padding: "8px 12px", borderRadius: 10, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.55)", fontSize: 12, cursor: "pointer" }}>✕</button>
                         </div>
                       </div>
@@ -984,7 +984,7 @@ export default function WynikiPage() {
         ) : isMeal ? (
           /* --- Premium Hero Card for meal mode --- */
           (() => {
-            const mealColor = "#FBBF24";
+            const mealColor = "var(--c-amber, #FBBF24)";
             const mealItems = mealResult?.items || [];
             const mealScoreColor = result.score >= 7 ? "#22c55e" : result.score >= 4 ? "#f59e0b" : "#ef4444";
             const scoreCircum = 2 * Math.PI * 20;
@@ -1074,7 +1074,7 @@ export default function WynikiPage() {
                     <div style={{
                       position: "absolute", top: 12, left: 12,
                       padding: "5px 12px", borderRadius: 10,
-                      background: "rgba(251,191,36,0.15)", border: "1px solid rgba(251,191,36,0.25)",
+                      background: "rgba(var(--c-amber-rgb, 251,191,36),0.15)", border: "1px solid rgba(var(--c-amber-rgb, 251,191,36),0.25)",
                       backdropFilter: "blur(12px)",
                       fontSize: 11, fontWeight: 600, color: mealColor, zIndex: 2,
                     }}>🍽️ Danie</div>
@@ -1123,7 +1123,7 @@ export default function WynikiPage() {
                           <p style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginBottom: 8, fontWeight: 600 }}>Co było nie tak?</p>
                           <textarea autoFocus rows={2} maxLength={300} placeholder="Np. źle odczytał kalorie, to nie ten produkt..." value={feedbackNote} onChange={(e) => setFeedbackNote(e.target.value)} style={{ width: "100%", padding: "10px 12px", borderRadius: 10, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "#fff", fontSize: 12, resize: "none", outline: "none", fontFamily: "inherit" }} />
                           <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
-                            <button onClick={() => { fetch("/api/feedback", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ scan_id: item.scan_log_id, product_name: result.name, feedback: "bad", feedback_note: feedbackNote || null }) }); setFeedbackSent("sent"); }} style={{ flex: 1, padding: 10, borderRadius: 10, background: "rgba(251,191,36,0.1)", border: "1px solid rgba(251,191,36,0.2)", color: mealColor, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>{feedbackNote.trim() ? "Wyślij" : "Wyślij bez komentarza"}</button>
+                            <button onClick={() => { fetch("/api/feedback", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ scan_id: item.scan_log_id, product_name: result.name, feedback: "bad", feedback_note: feedbackNote || null }) }); setFeedbackSent("sent"); }} style={{ flex: 1, padding: 10, borderRadius: 10, background: "rgba(var(--c-amber-rgb, 251,191,36),0.1)", border: "1px solid rgba(var(--c-amber-rgb, 251,191,36),0.2)", color: mealColor, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>{feedbackNote.trim() ? "Wyślij" : "Wyślij bez komentarza"}</button>
                             <button onClick={() => { setFeedbackSent(null); setFeedbackNote(""); }} style={{ padding: "10px 14px", borderRadius: 10, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.55)", fontSize: 12, cursor: "pointer" }}>✕</button>
                           </div>
                         </div>
@@ -1136,7 +1136,7 @@ export default function WynikiPage() {
                 {/* Total Macros — TABLE style */}
                 <div className="anim-fade-up-1" style={{
                   margin: "0 16px 16px", padding: 18, borderRadius: 16,
-                  background: "rgba(251,191,36,0.05)", border: "1px solid rgba(251,191,36,0.12)",
+                  background: "rgba(var(--c-amber-rgb, 251,191,36),0.05)", border: "1px solid rgba(var(--c-amber-rgb, 251,191,36),0.12)",
                 }}>
                   <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.6)", marginBottom: 14, textTransform: "uppercase", letterSpacing: 1.5 }}>
                     Podsumowanie dania
@@ -1144,9 +1144,9 @@ export default function WynikiPage() {
                   <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
                     {[
                       { label: "Kalorie", value: totalKcal, unit: "kcal", mColor: mealColor, icon: "⚡" },
-                      { label: "Białko", value: totalProtein, unit: "g", mColor: "#60a5fa", icon: "🥩" },
-                      { label: "Tłuszcz", value: totalFat, unit: "g", mColor: "#fb923c", icon: "🫒" },
-                      { label: "Węglowodany", value: totalCarbs, unit: "g", mColor: "#4ade80", icon: "🌾" },
+                      { label: "Białko", value: totalProtein, unit: "g", mColor: "var(--c-blue-2, #60a5fa)", icon: "🥩" },
+                      { label: "Tłuszcz", value: totalFat, unit: "g", mColor: "var(--c-orange-2, #fb923c)", icon: "🫒" },
+                      { label: "Węglowodany", value: totalCarbs, unit: "g", mColor: "var(--c-green, #4ade80)", icon: "🌾" },
                     ].map((m, i) => (
                       <div key={i} style={{
                         display: "flex", alignItems: "center", justifyContent: "space-between",
@@ -1233,9 +1233,9 @@ export default function WynikiPage() {
                             paddingTop: 10, borderTop: "1px solid rgba(255,255,255,0.05)",
                           }}>
                             {[
-                              { label: "Białko", value: scaledP, mColor: "#60a5fa" },
-                              { label: "Tłuszcz", value: scaledF, mColor: "#fb923c" },
-                              { label: "Węgle", value: scaledC, mColor: "#4ade80" },
+                              { label: "Białko", value: scaledP, mColor: "var(--c-blue-2, #60a5fa)" },
+                              { label: "Tłuszcz", value: scaledF, mColor: "var(--c-orange-2, #fb923c)" },
+                              { label: "Węgle", value: scaledC, mColor: "var(--c-green, #4ade80)" },
                             ].map((m, mi) => (
                               <div key={mi} style={{
                                 flex: 1, textAlign: "center",
@@ -1260,7 +1260,7 @@ export default function WynikiPage() {
         ) : isTextSearch && textSearchResult ? (
           /* --- Premium card for voice/text input --- */
           (() => {
-            const mealColor = "#FBBF24";
+            const mealColor = "var(--c-amber, #FBBF24)";
             const tsItems = textSearchResult.items || [];
             const tsScoreColor = result.score >= 7 ? "#22c55e" : result.score >= 4 ? "#f59e0b" : "#ef4444";
 
@@ -1333,9 +1333,9 @@ export default function WynikiPage() {
                     }}>{result.verdict_short || label}</span>
                     <span style={{
                       padding: "3px 10px", borderRadius: 7, fontSize: 11, fontWeight: 500,
-                      background: isMultiItem ? "rgba(251,191,36,0.08)" : "rgba(110,252,180,0.08)",
-                      color: isMultiItem ? "rgba(251,191,36,0.8)" : "rgba(110,252,180,0.8)",
-                      border: isMultiItem ? "1px solid rgba(251,191,36,0.15)" : "1px solid rgba(110,252,180,0.15)",
+                      background: isMultiItem ? "rgba(var(--c-amber-rgb, 251,191,36),0.08)" : "rgba(var(--c-mint-rgb, 110,252,180),0.08)",
+                      color: isMultiItem ? "rgba(var(--c-amber-rgb, 251,191,36),0.8)" : "rgba(var(--c-mint-rgb, 110,252,180),0.8)",
+                      border: isMultiItem ? "1px solid rgba(var(--c-amber-rgb, 251,191,36),0.15)" : "1px solid rgba(var(--c-mint-rgb, 110,252,180),0.15)",
                     }}>{isMultiItem ? "🍽️ Posiłek" : "🍎 Produkt"}</span>
                   </div>
 
@@ -1368,7 +1368,7 @@ export default function WynikiPage() {
                         <p style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginBottom: 8, fontWeight: 600 }}>Co było nie tak?</p>
                         <textarea autoFocus rows={2} maxLength={300} placeholder="Np. źle odczytał kalorie, to nie ten produkt..." value={feedbackNote} onChange={(e) => setFeedbackNote(e.target.value)} style={{ width: "100%", padding: "10px 12px", borderRadius: 10, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "#fff", fontSize: 12, resize: "none", outline: "none", fontFamily: "inherit" }} />
                         <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
-                          <button onClick={() => { fetch("/api/feedback", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ scan_id: item.scan_log_id, product_name: result.name, feedback: "bad", feedback_note: feedbackNote || null }) }); setFeedbackSent("sent"); }} style={{ flex: 1, padding: 10, borderRadius: 10, background: "rgba(251,191,36,0.1)", border: "1px solid rgba(251,191,36,0.2)", color: mealColor, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>{feedbackNote.trim() ? "Wyślij" : "Wyślij bez komentarza"}</button>
+                          <button onClick={() => { fetch("/api/feedback", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ scan_id: item.scan_log_id, product_name: result.name, feedback: "bad", feedback_note: feedbackNote || null }) }); setFeedbackSent("sent"); }} style={{ flex: 1, padding: 10, borderRadius: 10, background: "rgba(var(--c-amber-rgb, 251,191,36),0.1)", border: "1px solid rgba(var(--c-amber-rgb, 251,191,36),0.2)", color: mealColor, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>{feedbackNote.trim() ? "Wyślij" : "Wyślij bez komentarza"}</button>
                           <button onClick={() => { setFeedbackSent(null); setFeedbackNote(""); }} style={{ padding: "10px 14px", borderRadius: 10, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.55)", fontSize: 12, cursor: "pointer" }}>✕</button>
                         </div>
                       </div>
@@ -1380,7 +1380,7 @@ export default function WynikiPage() {
                 {/* Macro table */}
                 <div className="anim-fade-up-1" style={{
                   margin: "0 16px 16px", padding: 18, borderRadius: 16,
-                  background: "rgba(251,191,36,0.05)", border: "1px solid rgba(251,191,36,0.12)",
+                  background: "rgba(var(--c-amber-rgb, 251,191,36),0.05)", border: "1px solid rgba(var(--c-amber-rgb, 251,191,36),0.12)",
                 }}>
                   <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.6)", marginBottom: 14, textTransform: "uppercase", letterSpacing: 1.5 }}>
                     Podsumowanie posiłku
@@ -1388,9 +1388,9 @@ export default function WynikiPage() {
                   <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
                     {[
                       { label: "Kalorie", value: totalKcal, unit: "kcal", mColor: mealColor, icon: "⚡" },
-                      { label: "Białko", value: totalProtein, unit: "g", mColor: "#60a5fa", icon: "🥩" },
-                      { label: "Tłuszcz", value: totalFat, unit: "g", mColor: "#fb923c", icon: "🫒" },
-                      { label: "Węglowodany", value: totalCarbs, unit: "g", mColor: "#4ade80", icon: "🌾" },
+                      { label: "Białko", value: totalProtein, unit: "g", mColor: "var(--c-blue-2, #60a5fa)", icon: "🥩" },
+                      { label: "Tłuszcz", value: totalFat, unit: "g", mColor: "var(--c-orange-2, #fb923c)", icon: "🫒" },
+                      { label: "Węglowodany", value: totalCarbs, unit: "g", mColor: "var(--c-green, #4ade80)", icon: "🌾" },
                     ].map((m, i) => (
                       <div key={i} style={{
                         display: "flex", alignItems: "center", justifyContent: "space-between",
@@ -1466,9 +1466,9 @@ export default function WynikiPage() {
                             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                               <span style={{ fontSize: 10, color: "rgba(255,255,255,0.5)" }}>{minG}g</span>
                               <div style={{ display: "flex", gap: 10 }}>
-                                <span style={{ fontSize: 11, fontWeight: 600, color: "#60a5fa" }}>B:{scaledP}g</span>
-                                <span style={{ fontSize: 11, fontWeight: 600, color: "#fb923c" }}>T:{scaledF}g</span>
-                                <span style={{ fontSize: 11, fontWeight: 600, color: "#4ade80" }}>W:{scaledC}g</span>
+                                <span style={{ fontSize: 11, fontWeight: 600, color: "var(--c-blue-2, #60a5fa)" }}>B:{scaledP}g</span>
+                                <span style={{ fontSize: 11, fontWeight: 600, color: "var(--c-orange-2, #fb923c)" }}>T:{scaledF}g</span>
+                                <span style={{ fontSize: 11, fontWeight: 600, color: "var(--c-green, #4ade80)" }}>W:{scaledC}g</span>
                               </div>
                               <span style={{ fontSize: 10, color: "rgba(255,255,255,0.5)" }}>{maxG}g</span>
                             </div>
@@ -1504,7 +1504,7 @@ export default function WynikiPage() {
                           borderBottom: i < tips.length - 1 ? "1px solid rgba(255,255,255,0.04)" : "none",
                           display: "flex", alignItems: "flex-start", gap: 8, lineHeight: 1.4,
                         }}>
-                          <span style={{ color: "#FBBF24", fontSize: 10, marginTop: 3 }}>●</span> {tip}
+                          <span style={{ color: "var(--c-amber, #FBBF24)", fontSize: 10, marginTop: 3 }}>●</span> {tip}
                         </div>
                       ))}
                     </div>
@@ -1598,7 +1598,7 @@ export default function WynikiPage() {
               </div>
               <div>
                 {feedbackSent === "good" || feedbackSent === "sent" ? (
-                  <p style={{ fontSize: 12, color: "rgba(110,252,180,0.5)" }}>Dzięki! 🙏</p>
+                  <p style={{ fontSize: 12, color: "rgba(var(--c-mint-rgb, 110,252,180),0.5)" }}>Dzięki! 🙏</p>
                 ) : feedbackSent === "bad" ? null : (
                   <div style={{ display: "flex", gap: 6 }}>
                     <button onClick={() => { setFeedbackSent("good"); fetch("/api/feedback", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ scan_id: item.scan_log_id, product_name: result.name, feedback: "good" }) }); }} className="active:scale-95 transition-transform" style={{ padding: "6px 12px", borderRadius: 8, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.55)", fontSize: 11, cursor: "pointer" }}>👍</button>
@@ -1847,7 +1847,7 @@ export default function WynikiPage() {
             {/* Body composition — right after hero card */}
             <div style={{
               margin: "0 16px 12px", padding: 16, borderRadius: 16,
-              background: "rgba(249,115,22,0.04)", border: "1px solid rgba(249,115,22,0.1)",
+              background: "rgba(var(--c-orange-rgb, 249,115,22),0.04)", border: "1px solid rgba(var(--c-orange-rgb, 249,115,22),0.1)",
               backdropFilter: "blur(12px)",
             }}>
               <div style={{ fontSize: 13, fontWeight: 700, color: "rgba(255,255,255,0.8)", marginBottom: 12 }}>🏋️ Kompozycja ciała</div>
@@ -1865,11 +1865,11 @@ export default function WynikiPage() {
 
                 if (!hasProfile) {
                   return (
-                    <div style={{ padding: 14, borderRadius: 12, background: "rgba(249,115,22,0.08)", border: "1px solid rgba(249,115,22,0.15)", textAlign: "center" }}>
+                    <div style={{ padding: 14, borderRadius: 12, background: "rgba(var(--c-orange-rgb, 249,115,22),0.08)", border: "1px solid rgba(var(--c-orange-rgb, 249,115,22),0.15)", textAlign: "center" }}>
                       <p style={{ fontSize: 12, color: "rgba(255,255,255,0.55)", marginBottom: 8 }}>
                         Uzupełnij wagę i wzrost w Profilu żeby zobaczyć szacunek kompozycji ciała
                       </p>
-                      <button onClick={() => router.push("/profil")} style={{ fontSize: 12, color: "#f97316", fontWeight: 600, cursor: "pointer", background: "none", border: "none" }}>
+                      <button onClick={() => router.push("/profil")} style={{ fontSize: 12, color: "var(--c-orange, #f97316)", fontWeight: 600, cursor: "pointer", background: "none", border: "none" }}>
                         Uzupełnij profil →
                       </button>
                     </div>
@@ -1881,11 +1881,11 @@ export default function WynikiPage() {
                     {/* 3 tiles */}
                     <div style={{ display: "flex", gap: 6, marginBottom: 12 }}>
                       <div style={{ flex: 1, textAlign: "center", padding: 10, borderRadius: 12, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.05)" }}>
-                        <div style={{ fontSize: 20, fontWeight: 800, color: "#FBBF24" }}>{bfMid ? `${bfMid}%` : formaResult.body_fat_range}</div>
+                        <div style={{ fontSize: 20, fontWeight: 800, color: "var(--c-amber, #FBBF24)" }}>{bfMid ? `${bfMid}%` : formaResult.body_fat_range}</div>
                         <div style={{ fontSize: 9, color: "rgba(255,255,255,0.45)", marginTop: 3 }}>% tłuszczu</div>
                       </div>
                       <div style={{ flex: 1, textAlign: "center", padding: 10, borderRadius: 12, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.05)" }}>
-                        <div style={{ fontSize: 20, fontWeight: 800, color: "#ef4444" }}>{fatKg ? `~${fatKg}` : "—"} <span style={{ fontSize: 12 }}>kg</span></div>
+                        <div style={{ fontSize: 20, fontWeight: 800, color: "var(--c-red, #ef4444)" }}>{fatKg ? `~${fatKg}` : "—"} <span style={{ fontSize: 12 }}>kg</span></div>
                         <div style={{ fontSize: 9, color: "rgba(255,255,255,0.45)", marginTop: 3 }}>tłuszcz</div>
                       </div>
                       <div style={{ flex: 1, textAlign: "center", padding: 10, borderRadius: 12, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.05)" }}>
@@ -1938,7 +1938,7 @@ export default function WynikiPage() {
                 <div style={{ fontSize: 13, fontWeight: 700, color: "rgba(255,255,255,0.8)", marginBottom: 8 }}>🎯 Do poprawy</div>
                 {formaResult.areas_to_improve.map((a, i) => (
                   <div key={i} style={{ padding: "6px 0", fontSize: 12, color: "rgba(255,255,255,0.55)", borderBottom: i < formaResult.areas_to_improve.length - 1 ? "1px solid rgba(255,255,255,0.04)" : "none", display: "flex", alignItems: "center", gap: 8 }}>
-                    <span style={{ color: "#3b82f6", fontSize: 10 }}>●</span> {a}
+                    <span style={{ color: "var(--c-blue, #3b82f6)", fontSize: 10 }}>●</span> {a}
                   </div>
                 ))}
               </div>
@@ -1954,10 +1954,10 @@ export default function WynikiPage() {
 
             {/* Photo warnings */}
             {formaResult.photo_warnings && formaResult.photo_warnings.length > 0 && (
-              <div style={{ margin: "0 16px 12px", padding: 14, borderRadius: 14, background: "rgba(249,115,22,0.06)", border: "1px solid rgba(249,115,22,0.15)" }}>
-                <p style={{ fontSize: 11, fontWeight: 600, color: "#f97316", marginBottom: 6 }}>📸 Wskazówki do zdjęcia:</p>
+              <div style={{ margin: "0 16px 12px", padding: 14, borderRadius: 14, background: "rgba(var(--c-orange-rgb, 249,115,22),0.06)", border: "1px solid rgba(var(--c-orange-rgb, 249,115,22),0.15)" }}>
+                <p style={{ fontSize: 11, fontWeight: 600, color: "var(--c-orange, #f97316)", marginBottom: 6 }}>📸 Wskazówki do zdjęcia:</p>
                 {formaResult.photo_warnings.map((w, i) => (
-                  <p key={i} style={{ fontSize: 11, color: "rgba(249,115,22,0.7)", margin: "2px 0" }}>{w}</p>
+                  <p key={i} style={{ fontSize: 11, color: "rgba(var(--c-orange-rgb, 249,115,22),0.7)", margin: "2px 0" }}>{w}</p>
                 ))}
               </div>
             )}
@@ -1968,7 +1968,7 @@ export default function WynikiPage() {
                 <div style={{ fontSize: 13, fontWeight: 700, color: "rgba(255,255,255,0.8)", marginBottom: 8 }}>💡 Ciekawostki</div>
                 {funComparisons.map((fact, i) => (
                   <div key={i} style={{ padding: "6px 0", fontSize: 12, color: "rgba(255,255,255,0.55)", borderBottom: i < funComparisons.length - 1 ? "1px solid rgba(255,255,255,0.04)" : "none", display: "flex", alignItems: "center", gap: 8 }}>
-                    <span style={{ color: result.score >= 8 ? "#22c55e" : result.score >= 5 ? "#FBBF24" : "#ef4444", fontSize: 10 }}>●</span> {fact}
+                    <span style={{ color: result.score >= 8 ? "#22c55e" : result.score >= 5 ? "var(--c-amber, #FBBF24)" : "var(--c-red, #ef4444)", fontSize: 10 }}>●</span> {fact}
                   </div>
                 ))}
               </div>
@@ -1979,10 +1979,10 @@ export default function WynikiPage() {
               onClick={() => router.push("/forma")}
               style={{
                 margin: "0 16px 12px", padding: 14, borderRadius: 14,
-                background: "linear-gradient(135deg, rgba(249,115,22,0.15) 0%, rgba(249,115,22,0.05) 100%)",
-                border: "1px solid rgba(249,115,22,0.2)", textAlign: "center",
-                fontSize: 13, fontWeight: 700, color: "#f97316", cursor: "pointer",
-                boxShadow: "0 4px 20px rgba(249,115,22,0.1)",
+                background: "linear-gradient(135deg, rgba(var(--c-orange-rgb, 249,115,22),0.15) 0%, rgba(var(--c-orange-rgb, 249,115,22),0.05) 100%)",
+                border: "1px solid rgba(var(--c-orange-rgb, 249,115,22),0.2)", textAlign: "center",
+                fontSize: 13, fontWeight: 700, color: "var(--c-orange, #f97316)", cursor: "pointer",
+                boxShadow: "0 4px 20px rgba(var(--c-orange-rgb, 249,115,22),0.1)",
               }}
             >
               📸 Zrób nowy CheckForm
@@ -2006,7 +2006,7 @@ export default function WynikiPage() {
                   borderBottom: i < tips.length - 1 ? "1px solid rgba(255,255,255,0.04)" : "none",
                   display: "flex", alignItems: "flex-start", gap: 8, lineHeight: 1.4,
                 }}>
-                  <span style={{ color: "#FBBF24", fontSize: 10, marginTop: 3 }}>●</span> {tip}
+                  <span style={{ color: "var(--c-amber, #FBBF24)", fontSize: 10, marginTop: 3 }}>●</span> {tip}
                 </div>
               ))}
             </div>
@@ -2021,7 +2021,7 @@ export default function WynikiPage() {
                 onClick={() => setAllergensOpen(!allergensOpen)}
                 style={{ width: "100%", padding: "10px 14px", display: "flex", alignItems: "center", justifyContent: "space-between", background: "none", border: "none", cursor: "pointer" }}
               >
-                <span style={{ fontSize: 13, fontWeight: 700, color: "#FBBF24" }}>
+                <span style={{ fontSize: 13, fontWeight: 700, color: "var(--c-amber, #FBBF24)" }}>
                   ⚠️ Alergeny ({result.allergens.length})
                 </span>
                 <span style={{ fontSize: 11, color: "rgba(234,179,8,0.6)" }}>{allergensOpen ? "▲" : "▼"}</span>

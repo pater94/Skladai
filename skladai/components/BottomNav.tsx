@@ -33,12 +33,12 @@ const TAB_BY_HREF = new Map<string, (typeof TABS)[number]>(
  */
 function getThemeColors(pathname: string, modeAccent: string | null) {
   if (pathname === "/forma" || pathname === "/biegacz") {
-    return { active: "#f97316", inactive: "rgba(255,255,255,0.25)" };
+    return { active: "var(--c-orange, #f97316)", inactive: "rgba(255,255,255,0.25)" };
   }
   if (pathname === "/promile") {
     return { active: "#818CF8", inactive: "rgba(255,255,255,0.2)" };
   }
-  return { active: modeAccent ?? "#6efcb4", inactive: "rgba(255,255,255,0.25)" };
+  return { active: modeAccent ?? "var(--c-mint, #6efcb4)", inactive: "rgba(255,255,255,0.25)" };
 }
 
 // Public / static pages where the in-app BottomNav would look out of

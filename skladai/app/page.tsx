@@ -111,10 +111,10 @@ const SUPLEMENT_TIPS = [
 
 /* ── accent config per mode ── */
 const ACCENT_MAP: Record<string, { hex: string; rgb: string }> = {
-  food:      { hex: "#6efcb4", rgb: "110,252,180" },
-  meal:      { hex: "#FBBF24", rgb: "251,191,36" },
-  cosmetics: { hex: "#C084FC", rgb: "192,132,252" },
-  suplement: { hex: "#3b82f6", rgb: "59,130,246" },
+  food:      { hex: "#6efcb4", rgb: "var(--c-mint-rgb, 110,252,180)" },
+  meal:      { hex: "#FBBF24", rgb: "var(--c-amber-rgb, 251,191,36)" },
+  cosmetics: { hex: "#C084FC", rgb: "var(--c-violet-rgb, 192,132,252)" },
+  suplement: { hex: "#3b82f6", rgb: "var(--c-blue-rgb, 59,130,246)" },
 };
 
 /* ── MicButton component ──
@@ -174,10 +174,10 @@ function MicButton({
     onToggle();
   };
 
-  const bg = isRecording ? "rgba(239,68,68,0.18)" : "rgba(110,252,180,0.12)";
+  const bg = isRecording ? "rgba(var(--c-red-rgb, 239,68,68),0.18)" : "rgba(var(--c-mint-rgb, 110,252,180),0.12)";
   const border = isRecording
-    ? "1.5px solid rgba(239,68,68,0.45)"
-    : "1.5px solid rgba(110,252,180,0.25)";
+    ? "1.5px solid rgba(var(--c-red-rgb, 239,68,68),0.45)"
+    : "1.5px solid rgba(var(--c-mint-rgb, 110,252,180),0.25)";
   const stroke = isRecording ? "#ef4444" : "#6efcb4";
 
   return (
@@ -187,15 +187,15 @@ function MicButton({
         <div style={{
           position: "absolute", bottom: "calc(100% + 10px)", right: 0,
           padding: "8px 14px", borderRadius: 10,
-          background: "rgba(110,252,180,0.15)", border: "1px solid rgba(110,252,180,0.25)",
-          color: "#6efcb4", fontSize: 12, fontWeight: 600,
+          background: "rgba(var(--c-mint-rgb, 110,252,180),0.15)", border: "1px solid rgba(var(--c-mint-rgb, 110,252,180),0.25)",
+          color: "var(--c-mint, #6efcb4)", fontSize: 12, fontWeight: 600,
           whiteSpace: "nowrap", zIndex: 10,
           animation: "micTooltipFade 0.3s ease",
         }}>
           Powiedz co zjadłeś!
           <div style={{
             position: "absolute", bottom: -5, right: 18, width: 10, height: 10,
-            background: "rgba(110,252,180,0.15)", border: "1px solid rgba(110,252,180,0.25)",
+            background: "rgba(var(--c-mint-rgb, 110,252,180),0.15)", border: "1px solid rgba(var(--c-mint-rgb, 110,252,180),0.25)",
             borderTop: "none", borderLeft: "none",
             transform: "rotate(45deg)",
           }} />
@@ -206,7 +206,7 @@ function MicButton({
         <span style={{
           position: "absolute", top: -4, right: -4, zIndex: 10,
           fontSize: 8, padding: "2px 6px", borderRadius: 6,
-          background: "#6efcb4", color: "#0a0e0c", fontWeight: 700,
+          background: "var(--c-mint, #6efcb4)", color: "var(--bg, #0a0e0c)", fontWeight: 700,
         }}>NEW</span>
       )}
       {/* Button */}
@@ -242,7 +242,7 @@ function MicButton({
           <span
             style={{
               position: "absolute", inset: -4, borderRadius: "50%",
-              border: "2px solid rgba(239,68,68,0.35)",
+              border: "2px solid rgba(var(--c-red-rgb, 239,68,68),0.35)",
               animation: "foodMicRing 1.4s ease-out infinite",
               pointerEvents: "none",
             }}
@@ -800,28 +800,28 @@ export default function Home() {
 
   function getScoreColor(score: number): string {
     if (score >= 7) return "#22c55e";
-    if (score >= 4) return "#f59e0b";
-    return "#ef4444";
+    if (score >= 4) return "var(--c-amber-2, #f59e0b)";
+    return "var(--c-red, #ef4444)";
   }
 
   return (
-    <div className="min-h-[100dvh] relative overflow-hidden" style={{ background: "#0a0f0d" }}>
+    <div className="min-h-[100dvh] relative overflow-hidden" style={{ background: "var(--bg-panel, #0a0f0d)" }}>
       {/* ── Floating blobs ── */}
       <div
         className="fixed top-[-10%] left-[-5%] w-72 h-72 rounded-full opacity-30 pointer-events-none"
-        style={{ background: "#10b981", filter: "blur(50px)", animation: "float1 9s ease-in-out infinite" }}
+        style={{ background: "var(--c-emerald-2, #10b981)", filter: "blur(50px)", animation: "float1 9s ease-in-out infinite" }}
       />
       <div
         className="fixed top-[30%] right-[-10%] w-60 h-60 rounded-full opacity-25 pointer-events-none"
-        style={{ background: "#06b6d4", filter: "blur(45px)", animation: "float2 8s ease-in-out infinite" }}
+        style={{ background: "var(--c-cyan-2, #06b6d4)", filter: "blur(45px)", animation: "float2 8s ease-in-out infinite" }}
       />
       <div
         className="fixed bottom-[10%] left-[20%] w-56 h-56 rounded-full opacity-20 pointer-events-none"
-        style={{ background: "#34d399", filter: "blur(40px)", animation: "float3 10s ease-in-out infinite" }}
+        style={{ background: "var(--c-emerald, #34d399)", filter: "blur(40px)", animation: "float3 10s ease-in-out infinite" }}
       />
       <div
         className="fixed top-[60%] right-[30%] w-40 h-40 rounded-full opacity-15 pointer-events-none"
-        style={{ background: "#10b981", filter: "blur(50px)", animation: "float1 7s ease-in-out infinite reverse" }}
+        style={{ background: "var(--c-emerald-2, #10b981)", filter: "blur(50px)", animation: "float1 7s ease-in-out infinite reverse" }}
       />
 
       {/* ── Film grain overlay ── */}
@@ -914,7 +914,7 @@ export default function Home() {
 
         {/* ══ Photo Preview (between photo and analysis) ══ */}
         {!isLoading && photoPreview && showPhotoPreview && (
-          <div data-scrollable="true" className="anim-fade-up-2" style={{ position: "fixed", inset: 0, zIndex: 150, background: "#0a0e0c", overflowY: "auto", WebkitOverflowScrolling: "touch", padding: "16px 14px" }}>
+          <div data-scrollable="true" className="anim-fade-up-2" style={{ position: "fixed", inset: 0, zIndex: 150, background: "var(--bg, #0a0e0c)", overflowY: "auto", WebkitOverflowScrolling: "touch", padding: "16px 14px" }}>
             <PhotoPreview
               mode={mode as "food" | "cosmetics" | "suplement"}
               source={photoSource}
@@ -1176,7 +1176,7 @@ export default function Home() {
                       display: "flex",
                       alignItems: "center",
                       gap: 6,
-                      color: "rgba(110,252,180,0.7)",
+                      color: "rgba(var(--c-mint-rgb, 110,252,180),0.7)",
                       fontSize: 11,
                       fontWeight: 700,
                       letterSpacing: 1,
@@ -1189,7 +1189,7 @@ export default function Home() {
                         flex: 1,
                         height: 1,
                         background:
-                          "linear-gradient(90deg, rgba(110,252,180,0.3), transparent)",
+                          "linear-gradient(90deg, rgba(var(--c-mint-rgb, 110,252,180),0.3), transparent)",
                       }}
                     />
                   </div>
@@ -1208,14 +1208,14 @@ export default function Home() {
                 <div
                   className="rounded-2xl overflow-hidden"
                   style={{
-                    background: "rgba(110,252,180,0.04)",
+                    background: "rgba(var(--c-mint-rgb, 110,252,180),0.04)",
                     // Animated mint border when idle (empty, unfocused,
                     // not recording). Otherwise a static mint border so
                     // the box stays visually "engaged" — not blending
                     // back into the dark card. Recording path keeps
                     // the existing red status-pill below.
-                    border: "1.5px solid rgba(110,252,180,0.4)",
-                    boxShadow: "0 0 16px rgba(110,252,180,0.08)",
+                    border: "1.5px solid rgba(var(--c-mint-rgb, 110,252,180),0.4)",
+                    boxShadow: "0 0 16px rgba(var(--c-mint-rgb, 110,252,180),0.08)",
                     animation:
                       !foodSearchQuery && !isFoodInputFocused && !foodVoiceRecording
                         ? "foodInputPulseBorder 3s ease-in-out infinite"
@@ -1254,12 +1254,12 @@ export default function Home() {
                       aria-label="Szukaj"
                       className="w-11 h-11 rounded-full flex items-center justify-center shrink-0 active:scale-95 transition-transform"
                       style={{
-                        background: "#6efcb4",
-                        color: "#0a0f0d",
+                        background: "var(--c-mint, #6efcb4)",
+                        color: "var(--c-ink, #0a0f0d)",
                         fontSize: 18,
                         fontWeight: 900,
                         border: "none",
-                        boxShadow: "0 4px 12px rgba(110,252,180,0.25)",
+                        boxShadow: "0 4px 12px rgba(var(--c-mint-rgb, 110,252,180),0.25)",
                       }}
                     >
                       →
@@ -1277,7 +1277,7 @@ export default function Home() {
                     <span
                       style={{
                         width: 8, height: 8, borderRadius: "50%",
-                        background: "#ef4444",
+                        background: "var(--c-red, #ef4444)",
                         animation: "foodMicPulse 1.2s ease-in-out infinite",
                       }}
                     />
@@ -1291,8 +1291,8 @@ export default function Home() {
                     onClick={resetFoodVoiceError}
                     className="mx-3 mb-3 px-3 py-2 rounded-lg cursor-pointer"
                     style={{
-                      background: "rgba(239,68,68,0.1)",
-                      border: "1px solid rgba(239,68,68,0.25)",
+                      background: "rgba(var(--c-red-rgb, 239,68,68),0.1)",
+                      border: "1px solid rgba(var(--c-red-rgb, 239,68,68),0.25)",
                       fontSize: 11,
                       color: "#fca5a5",
                     }}
@@ -1313,7 +1313,7 @@ export default function Home() {
                         display: "flex",
                         alignItems: "center",
                         gap: 6,
-                        color: "rgba(110,252,180,0.7)",
+                        color: "rgba(var(--c-mint-rgb, 110,252,180),0.7)",
                         fontSize: 11,
                         fontWeight: 700,
                         letterSpacing: 1,
@@ -1328,7 +1328,7 @@ export default function Home() {
                           flex: 1,
                           height: 1,
                           background:
-                            "linear-gradient(90deg, rgba(110,252,180,0.3), transparent)",
+                            "linear-gradient(90deg, rgba(var(--c-mint-rgb, 110,252,180),0.3), transparent)",
                         }}
                       />
                     </div>
@@ -1361,8 +1361,8 @@ export default function Home() {
                               maxWidth: 168,
                               padding: "10px 12px 10px 12px",
                               borderRadius: 14,
-                              background: "rgba(110,252,180,0.04)",
-                              border: "1px solid rgba(110,252,180,0.18)",
+                              background: "rgba(var(--c-mint-rgb, 110,252,180),0.04)",
+                              border: "1px solid rgba(var(--c-mint-rgb, 110,252,180),0.18)",
                               textAlign: "left",
                               cursor: "pointer",
                             }}
@@ -1412,14 +1412,14 @@ export default function Home() {
                                 display: "flex",
                                 alignItems: "baseline",
                                 gap: 6,
-                                color: "#6efcb4",
+                                color: "var(--c-mint, #6efcb4)",
                                 fontSize: 13,
                                 fontWeight: 800,
                                 letterSpacing: "-0.01em",
                               }}
                             >
                               {Math.round(f.calories)}
-                              <span style={{ fontSize: 9, fontWeight: 700, color: "rgba(110,252,180,0.55)" }}>
+                              <span style={{ fontSize: 9, fontWeight: 700, color: "rgba(var(--c-mint-rgb, 110,252,180),0.55)" }}>
                                 kcal · {f.portion_g}g
                               </span>
                             </div>
@@ -1448,11 +1448,11 @@ export default function Home() {
               zIndex: 100,
               padding: "10px 18px",
               borderRadius: 999,
-              background: "rgba(110,252,180,0.95)",
-              color: "#0a0e0c",
+              background: "rgba(var(--c-mint-rgb, 110,252,180),0.95)",
+              color: "var(--bg, #0a0e0c)",
               fontSize: 13,
               fontWeight: 700,
-              boxShadow: "0 8px 24px rgba(110,252,180,0.35)",
+              boxShadow: "0 8px 24px rgba(var(--c-mint-rgb, 110,252,180),0.35)",
               animation: "fadeInUp 0.3s cubic-bezier(0.22, 1, 0.36, 1)",
               pointerEvents: "none",
             }}
@@ -1466,8 +1466,8 @@ export default function Home() {
         {/* ══ Value prop banner (kosmetyk/suplement only) ══ */}
         {(isCosmetics || isSuplement) && !isLoading && (
           <div className="mt-4 rounded-2xl p-4 anim-fade-up-2" style={{
-            background: isCosmetics ? "rgba(192,132,252,0.04)" : "rgba(59,130,246,0.04)",
-            border: `1px solid ${isCosmetics ? "rgba(192,132,252,0.10)" : "rgba(59,130,246,0.10)"}`,
+            background: isCosmetics ? "rgba(var(--c-violet-rgb, 192,132,252),0.04)" : "rgba(var(--c-blue-rgb, 59,130,246),0.04)",
+            border: `1px solid ${isCosmetics ? "rgba(var(--c-violet-rgb, 192,132,252),0.10)" : "rgba(var(--c-blue-rgb, 59,130,246),0.10)"}`,
           }}>
             <div className="flex items-start gap-3">
               <span className="text-lg mt-0.5">💰</span>
@@ -1486,8 +1486,8 @@ export default function Home() {
               href="/suplement-academy"
               className="flex items-center gap-3.5 rounded-2xl p-4 active:scale-[0.97] transition-transform"
               style={{
-                background: "rgba(59,130,246,0.04)",
-                border: "1px solid rgba(59,130,246,0.10)",
+                background: "rgba(var(--c-blue-rgb, 59,130,246),0.04)",
+                border: "1px solid rgba(var(--c-blue-rgb, 59,130,246),0.10)",
               }}
             >
               <div className="w-11 h-11 rounded-xl bg-blue-500/10 flex items-center justify-center text-xl shrink-0">💊</div>
@@ -1532,8 +1532,8 @@ export default function Home() {
           <div
             className="mt-4 p-4 rounded-2xl"
             style={{
-              background: "rgba(239,68,68,0.08)",
-              border: "1px solid rgba(239,68,68,0.15)",
+              background: "rgba(var(--c-red-rgb, 239,68,68),0.08)",
+              border: "1px solid rgba(var(--c-red-rgb, 239,68,68),0.15)",
             }}
           >
             <p className="text-sm text-center font-semibold text-red-400">{error}</p>
@@ -1547,8 +1547,8 @@ export default function Home() {
                 }}
                 className="mt-3 w-full py-2.5 rounded-xl font-bold text-[13px] active:scale-[0.97] transition-all"
                 style={{
-                  background: "rgba(239,68,68,0.12)",
-                  border: "1px solid rgba(239,68,68,0.25)",
+                  background: "rgba(var(--c-red-rgb, 239,68,68),0.12)",
+                  border: "1px solid rgba(var(--c-red-rgb, 239,68,68),0.25)",
                   color: "#fca5a5",
                 }}
               >
@@ -1613,7 +1613,7 @@ export default function Home() {
             style={{
               maxWidth: 380, width: "100%",
               background: "linear-gradient(180deg, rgba(30,40,35,0.95), rgba(15,25,20,0.95))",
-              border: "1px solid rgba(251,191,36,0.25)",
+              border: "1px solid rgba(var(--c-amber-rgb, 251,191,36),0.25)",
               borderRadius: 24, padding: "28px 22px",
               textAlign: "center",
               boxShadow: "0 20px 60px rgba(0,0,0,0.5)",
@@ -1624,7 +1624,7 @@ export default function Home() {
               To wygląda na danie!
             </h2>
             <p style={{ fontSize: 13.5, color: "rgba(255,255,255,0.7)", lineHeight: 1.5, marginBottom: 22 }}>
-              Wykryłem <strong style={{ color: "#FBBF24" }}>{mealSuggestion.dish}</strong> — to przygotowane jedzenie, nie etykieta produktu.
+              Wykryłem <strong style={{ color: "var(--c-amber, #FBBF24)" }}>{mealSuggestion.dish}</strong> — to przygotowane jedzenie, nie etykieta produktu.
               Przełącz na tryb <strong>Danie</strong>, żeby oszacować kalorie i makro z talerza.
             </p>
             <button
@@ -1639,7 +1639,7 @@ export default function Home() {
               }}
               style={{
                 width: "100%", padding: "14px", borderRadius: 14,
-                background: "linear-gradient(135deg, #FBBF24, #F59E0B)",
+                background: "linear-gradient(135deg, var(--c-amber, #FBBF24), var(--c-amber-2, #F59E0B))",
                 color: "#1a1206", fontSize: 15, fontWeight: 800, border: "none",
                 cursor: "pointer", marginBottom: 10,
               }}
@@ -1676,9 +1676,9 @@ export default function Home() {
         // -webkit-overflow-scrolling:touch przycinał position:fixed na iOS i
         // powodował długi scroll + widoczny bottom-nav). zIndex 10000 > nav (9999).
         return createPortal(
-          <div style={{ position: "fixed", inset: 0, zIndex: 10000, background: "#0a0f0d", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+          <div style={{ position: "fixed", inset: 0, zIndex: 10000, background: "var(--bg-panel, #0a0f0d)", display: "flex", flexDirection: "column", overflow: "hidden" }}>
             {/* Jeden subtelny blask u góry */}
-            <div style={{ position: "absolute", top: -120, left: 0, right: 0, height: 240, background: "radial-gradient(120% 100% at 50% 0%, rgba(110,252,180,0.08), transparent 68%)", pointerEvents: "none" }} />
+            <div style={{ position: "absolute", top: -120, left: 0, right: 0, height: 240, background: "radial-gradient(120% 100% at 50% 0%, rgba(var(--c-mint-rgb, 110,252,180),0.08), transparent 68%)", pointerEvents: "none" }} />
             {/* Ziarno */}
             <div style={{ position: "absolute", inset: 0, backgroundImage: `url('${SCAN_GRAIN}')`, opacity: 0.05, mixBlendMode: "overlay", pointerEvents: "none" }} />
 
@@ -1688,7 +1688,7 @@ export default function Home() {
                 <X size={18} color="rgba(255,255,255,0.7)" />
               </button>
               <div style={{ marginTop: 26 }}>
-                <div style={{ display: "inline-flex", alignItems: "center", gap: 6, color: "#6efcb4", fontSize: 11.5, fontWeight: 800, letterSpacing: 2, textTransform: "uppercase" }}>
+                <div style={{ display: "inline-flex", alignItems: "center", gap: 6, color: "var(--c-mint, #6efcb4)", fontSize: 11.5, fontWeight: 800, letterSpacing: 2, textTransform: "uppercase" }}>
                   <ScanLine size={14} color="#6efcb4" strokeWidth={2.4} /> Skanowanie
                 </div>
                 <div style={{ fontSize: 28, fontWeight: 800, color: "#fff", letterSpacing: -0.6, lineHeight: 1.1, marginTop: 10 }}>Co chcesz<br />zeskanować?</div>

@@ -61,6 +61,12 @@ export default function RootLayout({
           ["--accent-bg" as any]: "rgba(110,252,180,0.08)",
         }}
       >
+        {/* Pre-paint: zastosuj zapisany motyw ZANIM wyrenderuje się treść
+            (czyta localStorage — nsSet pisze do obu magazynów). Bez tego
+            użytkownik Obsidianu widziałby mignięcie klasycznej palety. */}
+        <script dangerouslySetInnerHTML={{ __html: `
+          try { if (localStorage.getItem('skladai_theme_variant') === 'obsidian') document.body.classList.add('theme-obsidian'); } catch (e) {}
+        `}} />
         <ThemeProvider>
           <div id="scroll-container" data-scrollable="true">
             {children}

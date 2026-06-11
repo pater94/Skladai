@@ -72,7 +72,7 @@ export default function MedicalDisclaimer() {
         padding: "8px 12px 8px 12px",
         borderRadius: 12,
         background: "rgba(15,23,42,0.78)",
-        border: "1px solid rgba(34,211,238,0.18)",
+        border: "1px solid rgba(var(--c-cyan-rgb, 34,211,238), 0.18)",
         backdropFilter: "blur(14px)",
         WebkitBackdropFilter: "blur(14px)",
         boxShadow: "0 6px 24px rgba(0,0,0,0.32)",

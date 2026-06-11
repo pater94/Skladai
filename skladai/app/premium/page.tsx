@@ -164,7 +164,7 @@ function PremiumPageInner() {
   if (premiumLoading || !offeringsLoaded) {
     return (
       <div className="min-h-[100dvh] bg-[#F5F2EB] flex items-center justify-center">
-        <div style={{ width: 40, height: 40, border: "4px solid rgba(245,158,11,0.3)", borderTopColor: "#f59e0b", borderRadius: "50%", animation: "spinSlow 0.8s linear infinite" }} />
+        <div style={{ width: 40, height: 40, border: "4px solid rgba(245,158,11,0.3)", borderTopColor: "var(--c-amber-2, #f59e0b)", borderRadius: "50%", animation: "spinSlow 0.8s linear infinite" }} />
       </div>
     );
   }
@@ -202,7 +202,7 @@ function PremiumPageInner() {
           <div className="card-elevated rounded-[20px] p-4 mb-4">
             <div className="flex items-center justify-between mb-2">
               <span className="text-[12px] font-bold text-gray-600">Darmowe skany AI</span>
-              <span className="text-[12px] font-bold" style={{ color: scansUsed >= FREE_TOTAL_SCANS ? "#dc2626" : scansUsed >= FREE_TOTAL_SCANS - 5 ? "#f59e0b" : "#22c55e" }}>
+              <span className="text-[12px] font-bold" style={{ color: scansUsed >= FREE_TOTAL_SCANS ? "var(--c-red-3, #dc2626)" : scansUsed >= FREE_TOTAL_SCANS - 5 ? "var(--c-amber-2, #f59e0b)" : "#22c55e" }}>
                 {Math.min(scansUsed, FREE_TOTAL_SCANS)} / {FREE_TOTAL_SCANS}
               </span>
             </div>
@@ -211,9 +211,9 @@ function PremiumPageInner() {
                 height: "100%",
                 width: `${Math.min(100, (scansUsed / FREE_TOTAL_SCANS) * 100)}%`,
                 background: scansUsed >= FREE_TOTAL_SCANS
-                  ? "linear-gradient(90deg,#ef4444,#dc2626)"
+                  ? "linear-gradient(90deg,var(--c-red, #ef4444),var(--c-red-3, #dc2626))"
                   : scansUsed >= FREE_TOTAL_SCANS - 5
-                  ? "linear-gradient(90deg,#f59e0b,#f97316)"
+                  ? "linear-gradient(90deg,var(--c-amber-2, #f59e0b),var(--c-orange, #f97316))"
                   : "linear-gradient(90deg,#22c55e,#16a34a)",
                 transition: "width 0.4s ease",
               }} />
@@ -249,7 +249,7 @@ function PremiumPageInner() {
                     className="w-full text-left relative rounded-[16px] p-4 transition-all"
                     style={{
                       background: isSelected ? "rgba(245,158,11,0.08)" : "rgba(0,0,0,0.02)",
-                      border: isSelected ? "2px solid #f59e0b" : "2px solid rgba(0,0,0,0.06)",
+                      border: isSelected ? "2px solid var(--c-amber-2, #f59e0b)" : "2px solid rgba(0,0,0,0.06)",
                     }}
                   >
                     {isAnnual && (
@@ -273,7 +273,7 @@ function PremiumPageInner() {
                     </div>
                     {/* Selection indicator */}
                     <div className="absolute top-4 left-4 w-5 h-5 rounded-full border-2 flex items-center justify-center"
-                      style={{ borderColor: isSelected ? "#f59e0b" : "rgba(0,0,0,0.15)" }}>
+                      style={{ borderColor: isSelected ? "var(--c-amber-2, #f59e0b)" : "rgba(0,0,0,0.15)" }}>
                       {isSelected && <div className="w-3 h-3 rounded-full bg-amber-500" />}
                     </div>
                   </button>
@@ -311,9 +311,9 @@ function PremiumPageInner() {
                   width: "100%",
                   padding: 12,
                   background: "rgba(245,158,11,0.1)",
-                  border: "1px dashed #f59e0b",
+                  border: "1px dashed var(--c-amber-2, #f59e0b)",
                   borderRadius: 12,
-                  color: "#f59e0b",
+                  color: "var(--c-amber-2, #f59e0b)",
                   fontSize: 13,
                   fontWeight: 700,
                   marginTop: 10,

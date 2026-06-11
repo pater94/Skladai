@@ -11,15 +11,15 @@ interface OnboardingLoginProps {
 }
 
 const cards = [
-  { icon: "💰", title: "Oszczędzaj na zakupach", desc: "Sprawdź skład. Znajdź taniej. Jedz i dbaj o siebie mądrzej.", color: "#FBBF24", bg: "rgba(251,191,36,0.06)" },
-  { icon: "🛡️", title: "Chroń swoje zdrowie", desc: "AI ostrzeże Cię przed alergenami i szkodliwymi składnikami zanim kupisz.", color: "#6efcb4", bg: "rgba(110,252,180,0.06)" },
-  { icon: "📈", title: "Kontroluj formę", desc: "Śledź kalorie, makro i postępy. Lepsza forma zaczyna się od etykiety.", color: "#3b82f6", bg: "rgba(59,130,246,0.06)" },
+  { icon: "💰", title: "Oszczędzaj na zakupach", desc: "Sprawdź skład. Znajdź taniej. Jedz i dbaj o siebie mądrzej.", color: "#FBBF24", bg: "rgba(var(--c-amber-rgb, 251,191,36),0.06)" },
+  { icon: "🛡️", title: "Chroń swoje zdrowie", desc: "AI ostrzeże Cię przed alergenami i szkodliwymi składnikami zanim kupisz.", color: "#6efcb4", bg: "rgba(var(--c-mint-rgb, 110,252,180),0.06)" },
+  { icon: "📈", title: "Kontroluj formę", desc: "Śledź kalorie, makro i postępy. Lepsza forma zaczyna się od etykiety.", color: "#3b82f6", bg: "rgba(var(--c-blue-rgb, 59,130,246),0.06)" },
 ];
 
 function ScannerLogo({ size = 72, filterId = "glow" }: { size?: number; filterId?: string }) {
   return (
     <div style={{ width: size, height: size, margin: "0 auto", position: "relative" }}>
-      <div style={{ position: "absolute", inset: -10, background: "radial-gradient(circle, rgba(110,252,180,0.2), transparent 70%)", animation: "breathe 3s ease-in-out infinite" }} />
+      <div style={{ position: "absolute", inset: -10, background: "radial-gradient(circle, rgba(var(--c-mint-rgb, 110,252,180),0.2), transparent 70%)", animation: "breathe 3s ease-in-out infinite" }} />
       <svg width={size} height={size} viewBox="0 0 512 512" style={{ position: "relative" }}>
         <defs>
           <filter id={filterId}><feGaussianBlur stdDeviation="8" result="b" /><feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge></filter>
@@ -120,7 +120,7 @@ export default function OnboardingLogin({ onSkip, startSlide = 0 }: OnboardingLo
   });
 
   return (
-    <div style={{ position: "fixed", inset: 0, zIndex: 150, background: "#0a0e0c", fontFamily: "'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+    <div style={{ position: "fixed", inset: 0, zIndex: 150, background: "var(--bg, #0a0e0c)", fontFamily: "'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif", display: "flex", flexDirection: "column", overflow: "hidden" }}>
       {/* Safe area top spacer */}
       <div style={{ height: 50, flexShrink: 0 }} />
 
@@ -137,18 +137,18 @@ export default function OnboardingLogin({ onSkip, startSlide = 0 }: OnboardingLo
 
         {/* SLIDE A — Value Cards */}
         <div style={slideBase(0)} data-scrollable="true">
-          <div style={{ position: "absolute", top: -30, left: "50%", transform: "translateX(-50%)", width: 350, height: 220, background: "radial-gradient(ellipse at 30% 40%, rgba(110,252,180,0.08) 0%, transparent 60%), radial-gradient(ellipse at 70% 60%, rgba(59,130,246,0.05) 0%, transparent 50%)", pointerEvents: "none" }} />
+          <div style={{ position: "absolute", top: -30, left: "50%", transform: "translateX(-50%)", width: 350, height: 220, background: "radial-gradient(ellipse at 30% 40%, rgba(var(--c-mint-rgb, 110,252,180),0.08) 0%, transparent 60%), radial-gradient(ellipse at 70% 60%, rgba(var(--c-blue-rgb, 59,130,246),0.05) 0%, transparent 50%)", pointerEvents: "none" }} />
 
           <div style={{ textAlign: "center", marginBottom: 8, position: "relative" }}>
             <div style={{ marginBottom: 12 }}>
               <ScannerLogo size={72} filterId="glowA" />
             </div>
             <div style={{ fontSize: 13, fontWeight: 700, color: "rgba(255,255,255,0.55)", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 6 }}>
-              Skład<span style={{ color: "#6efcb4" }}>AI</span>
+              Skład<span style={{ color: "var(--c-mint, #6efcb4)" }}>AI</span>
             </div>
             <div style={{ fontSize: 22, fontWeight: 900, letterSpacing: "-0.03em", color: "#fff", lineHeight: "28px" }}>
               Twój osobisty{" "}
-              <span style={{ background: "linear-gradient(135deg, #6efcb4, #3b82f6)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>ekspert składu</span>
+              <span style={{ background: "linear-gradient(135deg, var(--c-mint, #6efcb4), var(--c-blue, #3b82f6))", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>ekspert składu</span>
             </div>
           </div>
 
@@ -173,7 +173,7 @@ export default function OnboardingLogin({ onSkip, startSlide = 0 }: OnboardingLo
 
         {/* SLIDE B — Social Proof */}
         <div style={slideBase(1)} data-scrollable="true">
-          <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 280, background: "linear-gradient(180deg, rgba(110,252,180,0.06) 0%, transparent 100%)", pointerEvents: "none" }} />
+          <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 280, background: "linear-gradient(180deg, rgba(var(--c-mint-rgb, 110,252,180),0.06) 0%, transparent 100%)", pointerEvents: "none" }} />
 
           <div style={{ textAlign: "center", marginBottom: 18, position: "relative" }}>
             <div style={{ marginBottom: 12 }}>
@@ -189,9 +189,9 @@ export default function OnboardingLogin({ onSkip, startSlide = 0 }: OnboardingLo
 
           <div style={{ display: "flex", gap: 6, marginBottom: 20 }}>
             {[
-              { num: "2 min", desc: "Wystarczą żeby sprawdzić produkt", color: "#6efcb4" },
-              { num: "~340 zł", desc: "Oszczędzasz rocznie wybierając mądrzej", color: "#FBBF24" },
-              { num: "4 tryby", desc: "Żywność, danie, kosmetyk, suplement", color: "#6efcb4" },
+              { num: "2 min", desc: "Wystarczą żeby sprawdzić produkt", color: "var(--c-mint, #6efcb4)" },
+              { num: "~340 zł", desc: "Oszczędzasz rocznie wybierając mądrzej", color: "var(--c-amber, #FBBF24)" },
+              { num: "4 tryby", desc: "Żywność, danie, kosmetyk, suplement", color: "var(--c-mint, #6efcb4)" },
             ].map((s, i) => (
               <div key={i} style={{ flex: 1, padding: "16px 8px", borderRadius: 14, textAlign: "center", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
                 <div style={{ fontSize: 22, fontWeight: 900, color: s.color, marginBottom: 5, letterSpacing: "-0.02em" }}>{s.num}</div>
@@ -201,7 +201,7 @@ export default function OnboardingLogin({ onSkip, startSlide = 0 }: OnboardingLo
           </div>
 
           <div style={{ padding: "16px 18px", borderRadius: 16, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", position: "relative", minHeight: 110 }}>
-            <div style={{ position: "absolute", top: -6, left: 16, fontSize: 28, color: "rgba(110,252,180,0.35)", fontWeight: 900 }}>&ldquo;</div>
+            <div style={{ position: "absolute", top: -6, left: 16, fontSize: 28, color: "rgba(var(--c-mint-rgb, 110,252,180),0.35)", fontWeight: 900 }}>&ldquo;</div>
             {[
               { text: "Dzięki SkładAI wybieram suplementy mądrzej — znalazłem tańsze zamienniki i odstawiłem te, które nie działają.", author: "— Paweł, użytkownik SkładAI" },
               { text: "Dzięki SkładAI wiem co nakładam na skórę. Znalazłam te same produkty dużo taniej.", author: "— Kasia, użytkowniczka SkładAI" },
@@ -220,7 +220,7 @@ export default function OnboardingLogin({ onSkip, startSlide = 0 }: OnboardingLo
 
         {/* SLIDE C — Login */}
         <div style={slideBase(2)} data-scrollable="true">
-          <div style={{ position: "absolute", top: -20, left: "50%", transform: "translateX(-50%)", width: 300, height: 180, background: "radial-gradient(ellipse, rgba(110,252,180,0.1), transparent 70%)", animation: "breathe 3s ease-in-out infinite", pointerEvents: "none" }} />
+          <div style={{ position: "absolute", top: -20, left: "50%", transform: "translateX(-50%)", width: 300, height: 180, background: "radial-gradient(ellipse, rgba(var(--c-mint-rgb, 110,252,180),0.1), transparent 70%)", animation: "breathe 3s ease-in-out infinite", pointerEvents: "none" }} />
 
           <div style={{ textAlign: "center", marginBottom: 16, position: "relative" }}>
             <div style={{ marginBottom: 12 }}>
@@ -228,7 +228,7 @@ export default function OnboardingLogin({ onSkip, startSlide = 0 }: OnboardingLo
             </div>
             <div style={{ fontSize: 24, fontWeight: 900, color: "#fff", letterSpacing: "-0.03em", lineHeight: "30px", marginBottom: 6 }}>
               Jedz mądrzej.{" "}
-              <span style={{ background: "linear-gradient(135deg, #6efcb4, #3b82f6)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Oszczędzaj więcej.</span>
+              <span style={{ background: "linear-gradient(135deg, var(--c-mint, #6efcb4), var(--c-blue, #3b82f6))", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Oszczędzaj więcej.</span>
             </div>
             <div style={{ fontSize: 14, color: "rgba(255,255,255,0.6)" }}>
               Buduj formę świadomie.
@@ -250,7 +250,7 @@ export default function OnboardingLogin({ onSkip, startSlide = 0 }: OnboardingLo
 
           {/* Error banner */}
           {loginError && (
-            <div style={{ marginBottom: 10, padding: "10px 12px", borderRadius: 12, background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)", fontSize: 12, color: "#fca5a5", lineHeight: 1.5 }}>
+            <div style={{ marginBottom: 10, padding: "10px 12px", borderRadius: 12, background: "rgba(var(--c-red-rgb, 239,68,68),0.1)", border: "1px solid rgba(var(--c-red-rgb, 239,68,68),0.3)", fontSize: 12, color: "#fca5a5", lineHeight: 1.5 }}>
               {loginError}
             </div>
           )}
@@ -298,9 +298,9 @@ export default function OnboardingLogin({ onSkip, startSlide = 0 }: OnboardingLo
           {[0, 1, 2].map(i => (
             <div key={i} onClick={() => setSlide(i)} style={{
               width: slide === i ? 24 : 6, height: 6, borderRadius: 3,
-              background: slide === i ? "#6efcb4" : "rgba(255,255,255,0.1)",
+              background: slide === i ? "var(--c-mint, #6efcb4)" : "rgba(255,255,255,0.1)",
               transition: "all 0.3s ease", cursor: "pointer",
-              boxShadow: slide === i ? "0 0 8px rgba(110,252,180,0.4)" : "none",
+              boxShadow: slide === i ? "0 0 8px rgba(var(--c-mint-rgb, 110,252,180),0.4)" : "none",
             }} />
           ))}
         </div>
@@ -308,9 +308,9 @@ export default function OnboardingLogin({ onSkip, startSlide = 0 }: OnboardingLo
         {slide < 2 && (
           <button onClick={next} style={{
             width: "100%", padding: 16, borderRadius: 14, border: "none",
-            background: "linear-gradient(135deg, #6efcb4, #3dd990)",
-            color: "#0a0f0d", fontWeight: 800, fontSize: 15, cursor: "pointer",
-            boxShadow: "0 4px 20px rgba(110,252,180,0.2)",
+            background: "linear-gradient(135deg, var(--c-mint, #6efcb4), var(--c-green-2, #3dd990))",
+            color: "var(--c-ink, #0a0f0d)", fontWeight: 800, fontSize: 15, cursor: "pointer",
+            boxShadow: "0 4px 20px rgba(var(--c-mint-rgb, 110,252,180),0.2)",
           }}>
             Dalej →
           </button>
@@ -332,7 +332,7 @@ export default function OnboardingLogin({ onSkip, startSlide = 0 }: OnboardingLo
             position: "fixed",
             inset: 0,
             zIndex: 200,
-            background: "#0a0e0c",
+            background: "var(--bg, #0a0e0c)",
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
@@ -346,8 +346,8 @@ export default function OnboardingLogin({ onSkip, startSlide = 0 }: OnboardingLo
             style={{
               width: 48,
               height: 48,
-              border: "3px solid rgba(110,252,180,0.2)",
-              borderTopColor: "#6efcb4",
+              border: "3px solid rgba(var(--c-mint-rgb, 110,252,180),0.2)",
+              borderTopColor: "var(--c-mint, #6efcb4)",
               borderRadius: "50%",
               animation: "skladai-spin 0.8s linear infinite",
             }}

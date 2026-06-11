@@ -184,7 +184,7 @@ export default function Scanner({ onScan, isLoading, mode = "food", loadingMessa
 
   if (isLoading) {
     return (
-      <div className={`rounded-[24px] overflow-hidden anim-fade-scale ${isDark ? "velvet-card" : "card-elevated"}`} style={{ background: "#0a0e0c" }}>
+      <div className={`rounded-[24px] overflow-hidden anim-fade-scale ${isDark ? "velvet-card" : "card-elevated"}`} style={{ background: "var(--bg, #0a0e0c)" }}>
         <AnalyzingAnimation mode={mode} />
       </div>
     );
@@ -251,8 +251,8 @@ export default function Scanner({ onScan, isLoading, mode = "food", loadingMessa
         const themes: Record<string, { gradient: string; iconBg: string; iconStroke1: string; iconStroke2: string; subColor: string; subText: string; emoji: string }> = {
           food: { gradient: "linear-gradient(135deg, #1A3A0A 0%, #2D5A16 50%, #3D7A1F 100%)", iconBg: "rgba(132,204,22,0.12)", iconStroke1: "#BEF264", iconStroke2: "#84CC16", subColor: "rgba(132,204,22,0.9)", subText: "🔬 AI Vision przeanalizuje skład", emoji: "🔬" },
           cosmetics: { gradient: "linear-gradient(135deg, #6B21A8 0%, #9333EA 50%, #A855F7 100%)", iconBg: "rgba(232,121,249,0.12)", iconStroke1: "#F0ABFC", iconStroke2: "#E879F9", subColor: "rgba(232,121,249,0.9)", subText: "🔬 AI Vision przeanalizuje skład kosmetyku", emoji: "✨" },
-          meal: { gradient: "linear-gradient(135deg, #C2410C 0%, #EA580C 50%, #F97316 100%)", iconBg: "rgba(251,191,36,0.12)", iconStroke1: "#FDE68A", iconStroke2: "#FBBF24", subColor: "rgba(251,191,36,0.9)", subText: "🔬 AI Vision rozpozna składniki i kalorie", emoji: "🍽️" },
-          forma: { gradient: "linear-gradient(135deg, #F97316 0%, #EF4444 100%)", iconBg: "rgba(249,115,22,0.12)", iconStroke1: "#FDBA74", iconStroke2: "#F97316", subColor: "rgba(255,255,255,0.9)", subText: "✦ POWERED BY AI VISION", emoji: "🔥" },
+          meal: { gradient: "linear-gradient(135deg, #C2410C 0%, var(--c-orange-3, #EA580C) 50%, var(--c-orange, #F97316) 100%)", iconBg: "rgba(var(--c-amber-rgb, 251,191,36), 0.12)", iconStroke1: "#FDE68A", iconStroke2: "#FBBF24", subColor: "rgba(var(--c-amber-rgb, 251,191,36), 0.9)", subText: "🔬 AI Vision rozpozna składniki i kalorie", emoji: "🍽️" },
+          forma: { gradient: "linear-gradient(135deg, var(--c-orange, #F97316) 0%, var(--c-red, #EF4444) 100%)", iconBg: "rgba(var(--c-orange-rgb, 249,115,22), 0.12)", iconStroke1: "#FDBA74", iconStroke2: "#F97316", subColor: "rgba(255,255,255,0.9)", subText: "✦ POWERED BY AI VISION", emoji: "🔥" },
         };
         const t = themes[mode] || themes.food;
         return (

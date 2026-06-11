@@ -211,7 +211,7 @@ export default function ResultTabs({ result, scanType = "food", isCosmetics: isC
                     : "bg-[#1A3A0A] text-white shadow-md"
                   : isCosmetics || isSuplement ? "text-white/40" : "text-gray-400"
               }`}
-              style={active === tab.id && isSuplement ? { background: "linear-gradient(135deg, #3b82f6, #1d4ed8)" } : {}}
+              style={active === tab.id && isSuplement ? { background: "linear-gradient(135deg, var(--c-blue, #3b82f6), #1d4ed8)" } : {}}
             >
               <span className="text-[12px]">{tab.icon}</span>
               <span className="text-[11px] font-bold">{tab.label}</span>
@@ -315,18 +315,18 @@ export default function ResultTabs({ result, scanType = "food", isCosmetics: isC
             ) : (
               <>
                 {avoidIngredients.length > 0 && (
-                  <div className="rounded-[16px] p-4" style={{ background: "rgba(239,68,68,0.06)", border: "1px solid rgba(239,68,68,0.15)" }}>
+                  <div className="rounded-[16px] p-4" style={{ background: "rgba(var(--c-red-rgb, 239,68,68), 0.06)", border: "1px solid rgba(var(--c-red-rgb, 239,68,68), 0.15)" }}>
                     <p className="text-[11px] font-bold text-red-400 uppercase tracking-widest mb-2">⚠️ Składniki do unikania</p>
                     <div className="flex flex-wrap gap-1.5">
                       {avoidIngredients.map((ing: string, i: number) => (
-                        <span key={i} className="text-[11px] font-bold px-2.5 py-1 rounded-full" style={{ background: "rgba(239,68,68,0.12)", color: "rgba(248,113,113,0.9)" }}>{ing}</span>
+                        <span key={i} className="text-[11px] font-bold px-2.5 py-1 rounded-full" style={{ background: "rgba(var(--c-red-rgb, 239,68,68), 0.12)", color: "rgba(248,113,113,0.9)" }}>{ing}</span>
                       ))}
                     </div>
                   </div>
                 )}
 
                 {searchQueries.length > 0 && (
-                  <div className="rounded-[16px] p-4" style={{ background: "rgba(192,132,252,0.04)", border: "1px solid rgba(192,132,252,0.12)" }}>
+                  <div className="rounded-[16px] p-4" style={{ background: "rgba(var(--c-violet-rgb, 192,132,252), 0.04)", border: "1px solid rgba(var(--c-violet-rgb, 192,132,252), 0.12)" }}>
                     <p className="text-[11px] font-bold text-purple-400 uppercase tracking-widest mb-3">🔍 Szukaj lepszego{purpose ? ` (${purpose})` : ""}</p>
                     <div className="space-y-2">
                       {searchQueries.map((q: string, i: number) => (
@@ -509,7 +509,7 @@ export default function ResultTabs({ result, scanType = "food", isCosmetics: isC
                   {ing.daily_value_percent != null && (
                     <div className="flex items-center gap-2 mb-2">
                       <div className="flex-1 h-1.5 rounded-full bg-white/10 overflow-hidden">
-                        <div className="h-full rounded-full" style={{ width: `${Math.min(ing.daily_value_percent, 100)}%`, background: ing.daily_value_percent > 300 ? "#ef4444" : ing.daily_value_percent > 100 ? "#f59e0b" : "#22c55e" }} />
+                        <div className="h-full rounded-full" style={{ width: `${Math.min(ing.daily_value_percent, 100)}%`, background: ing.daily_value_percent > 300 ? "var(--c-red, #ef4444)" : ing.daily_value_percent > 100 ? "var(--c-amber-2, #f59e0b)" : "#22c55e" }} />
                       </div>
                       <span className="text-[10px] font-bold text-white/55">{ing.daily_value_percent}% NRV</span>
                     </div>
@@ -557,18 +557,18 @@ export default function ResultTabs({ result, scanType = "food", isCosmetics: isC
             ) : (
               <>
                 {avoidIngredients.length > 0 && (
-                  <div className="rounded-[16px] p-4" style={{ background: "rgba(239,68,68,0.06)", border: "1px solid rgba(239,68,68,0.15)" }}>
+                  <div className="rounded-[16px] p-4" style={{ background: "rgba(var(--c-red-rgb, 239,68,68), 0.06)", border: "1px solid rgba(var(--c-red-rgb, 239,68,68), 0.15)" }}>
                     <p className="text-[11px] font-bold text-red-400 uppercase tracking-widest mb-2">⚠️ Składniki do unikania</p>
                     <div className="flex flex-wrap gap-1.5">
                       {avoidIngredients.map((ing: string, i: number) => (
-                        <span key={i} className="text-[11px] font-bold px-2.5 py-1 rounded-full" style={{ background: "rgba(239,68,68,0.12)", color: "rgba(248,113,113,0.9)" }}>{ing}</span>
+                        <span key={i} className="text-[11px] font-bold px-2.5 py-1 rounded-full" style={{ background: "rgba(var(--c-red-rgb, 239,68,68), 0.12)", color: "rgba(248,113,113,0.9)" }}>{ing}</span>
                       ))}
                     </div>
                   </div>
                 )}
 
                 {searchQueries.length > 0 && (
-                  <div className="rounded-[16px] p-4" style={{ background: "rgba(59,130,246,0.04)", border: "1px solid rgba(59,130,246,0.12)" }}>
+                  <div className="rounded-[16px] p-4" style={{ background: "rgba(var(--c-blue-rgb, 59,130,246), 0.04)", border: "1px solid rgba(var(--c-blue-rgb, 59,130,246), 0.12)" }}>
                     <p className="text-[11px] font-bold text-blue-400 uppercase tracking-widest mb-3">🔍 Szukaj lepszego{purpose ? ` (${purpose})` : ""}</p>
                     <div className="space-y-2">
                       {searchQueries.map((q: string, i: number) => (
@@ -599,7 +599,7 @@ export default function ResultTabs({ result, scanType = "food", isCosmetics: isC
         {active === "review" && isSuplement && suppResult && (
           <div className="space-y-3">
             {suppResult.dose_warning && (
-              <div className="rounded-[20px] p-4" style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.2)" }}>
+              <div className="rounded-[20px] p-4" style={{ background: "rgba(var(--c-red-rgb, 239,68,68), 0.1)", border: "1px solid rgba(var(--c-red-rgb, 239,68,68), 0.2)" }}>
                 <div className="flex items-center gap-2 mb-1">
                   <span>⚠️</span>
                   <span className="text-[13px] font-bold text-red-400">Ostrzeżenie o dawce</span>

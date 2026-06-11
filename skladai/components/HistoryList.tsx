@@ -106,9 +106,9 @@ export default function HistoryList({ isCosmetics = false, mode }: HistoryListPr
                 type="button"
                 onClick={(e) => { e.preventDefault(); e.stopPropagation(); setDeleteConfirm(item.id); }}
                 className="absolute top-2 right-2 p-1.5 rounded-lg transition-all active:scale-90 z-10"
-                style={{ background: "rgba(239,68,68,0.12)" }}
+                style={{ background: "rgba(var(--c-red-rgb, 239,68,68), 0.12)" }}
               >
-                <Trash2 size={12} style={{ color: "#ef4444" }} />
+                <Trash2 size={12} style={{ color: "var(--c-red, #ef4444)" }} />
               </button>
             </div>
           );
@@ -145,7 +145,7 @@ export default function HistoryList({ isCosmetics = false, mode }: HistoryListPr
                   type="button"
                   onClick={() => handleDelete(deleteConfirm)}
                   className="flex-1 py-2.5 rounded-xl text-sm font-semibold"
-                  style={{ background: "rgba(239,68,68,0.2)", color: "#ef4444" }}
+                  style={{ background: "rgba(var(--c-red-rgb, 239,68,68), 0.2)", color: "var(--c-red, #ef4444)" }}
                 >
                   Tak, usuń
                 </button>

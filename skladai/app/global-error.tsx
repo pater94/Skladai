@@ -27,7 +27,7 @@ export default function GlobalError({
         style={{
           margin: 0,
           minHeight: "100vh",
-          background: "#0a0e0c",
+          background: "var(--bg, #0a0e0c)",
           color: "#ffffff",
           fontFamily: "system-ui, -apple-system, 'Segoe UI', sans-serif",
           display: "flex",
@@ -84,13 +84,13 @@ export default function GlobalError({
               width: "100%",
               padding: "14px 18px",
               borderRadius: 16,
-              background: "linear-gradient(135deg,#6efcb4 0%,#3dd990 100%)",
-              color: "#0a0e0c",
+              background: "linear-gradient(135deg,var(--c-mint, #6efcb4) 0%,var(--c-green-2, #3dd990) 100%)",
+              color: "var(--c-ink, #0a0e0c)",
               fontWeight: 800,
               fontSize: 14,
               border: "none",
               cursor: "pointer",
-              boxShadow: "0 6px 22px rgba(110,252,180,0.25)",
+              boxShadow: "0 6px 22px rgba(var(--c-mint-rgb, 110,252,180), 0.25)",
             }}
           >
             Spróbuj ponownie

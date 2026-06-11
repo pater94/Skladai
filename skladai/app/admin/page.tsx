@@ -66,8 +66,8 @@ function getScoreColor(score: number | null): string {
 function Chip({ label, tone }: { label: string; tone: "ok" | "warn" | "bad" | "mute" }) {
   const colors: Record<string, { bg: string; fg: string; border: string }> = {
     ok: { bg: "rgba(16,185,129,0.12)", fg: "#6ee7b7", border: "rgba(16,185,129,0.28)" },
-    warn: { bg: "rgba(245,158,11,0.12)", fg: "#fcd34d", border: "rgba(245,158,11,0.28)" },
-    bad: { bg: "rgba(239,68,68,0.12)", fg: "#fca5a5", border: "rgba(239,68,68,0.28)" },
+    warn: { bg: "rgba(245,158,11,0.12)", fg: "var(--c-amber-3, #fcd34d)", border: "rgba(245,158,11,0.28)" },
+    bad: { bg: "rgba(var(--c-red-rgb, 239,68,68), 0.12)", fg: "#fca5a5", border: "rgba(var(--c-red-rgb, 239,68,68), 0.28)" },
     mute: { bg: "rgba(255,255,255,0.04)", fg: "rgba(255,255,255,0.55)", border: "rgba(255,255,255,0.08)" },
   };
   const c = colors[tone];
@@ -181,7 +181,7 @@ export default function AdminPage() {
 
   if (!authenticated) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: "#0a0f0d" }}>
+      <div className="min-h-screen flex items-center justify-center" style={{ background: "var(--bg-panel, #0a0f0d)" }}>
         <form onSubmit={handleLogin} className="p-6 rounded-2xl border border-emerald-900/50 max-w-sm w-full" style={{ background: "#111a14" }}>
           <h1 className="text-xl font-bold text-emerald-400 mb-4">Admin Panel</h1>
           <input
@@ -190,13 +190,13 @@ export default function AdminPage() {
             onChange={(e) => setPassword(e.target.value)}
             placeholder="Haslo administratora"
             className="w-full p-3 rounded-lg border border-emerald-900/50 text-white placeholder-gray-500 mb-3"
-            style={{ background: "#0a0f0d" }}
+            style={{ background: "var(--bg-panel, #0a0f0d)" }}
           />
           {error && <p className="text-red-400 text-sm mb-3">{error}</p>}
           <button
             type="submit"
             className="w-full py-3 rounded-lg font-semibold text-white"
-            style={{ background: "linear-gradient(135deg, #059669, #10b981)" }}
+            style={{ background: "linear-gradient(135deg, #059669, var(--c-emerald-2, #10b981))" }}
           >
             Zaloguj
           </button>
@@ -206,7 +206,7 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="min-h-screen text-white" style={{ background: "#0a0f0d" }}>
+    <div className="min-h-screen text-white" style={{ background: "var(--bg-panel, #0a0f0d)" }}>
       <div className="max-w-7xl mx-auto p-4">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
@@ -268,7 +268,7 @@ export default function AdminPage() {
               value={modeFilter}
               onChange={(e) => { setModeFilter(e.target.value); setPage(1); }}
               className="p-2 rounded-lg border border-emerald-900/50 text-white text-sm"
-              style={{ background: "#0a0f0d" }}
+              style={{ background: "var(--bg-panel, #0a0f0d)" }}
             >
               <option value="all">Wszystkie</option>
               {Object.entries(MODE_LABELS).map(([value, label]) => (
@@ -282,7 +282,7 @@ export default function AdminPage() {
               value={feedbackFilter}
               onChange={(e) => { setFeedbackFilter(e.target.value); setPage(1); }}
               className="p-2 rounded-lg border border-emerald-900/50 text-white text-sm"
-              style={{ background: "#0a0f0d" }}
+              style={{ background: "var(--bg-panel, #0a0f0d)" }}
             >
               <option value="any">Wszystkie</option>
               <option value="good">👍 Dobre</option>
@@ -296,7 +296,7 @@ export default function AdminPage() {
               value={ocrFilter}
               onChange={(e) => { setOcrFilter(e.target.value); setPage(1); }}
               className="p-2 rounded-lg border border-emerald-900/50 text-white text-sm"
-              style={{ background: "#0a0f0d" }}
+              style={{ background: "var(--bg-panel, #0a0f0d)" }}
             >
               <option value="any">Wszystkie</option>
               <option value="true">OCR OK</option>
@@ -312,7 +312,7 @@ export default function AdminPage() {
               value={scoreMin}
               onChange={(e) => { setScoreMin(e.target.value); setPage(1); }}
               className="p-2 rounded-lg border border-emerald-900/50 text-white text-sm w-20"
-              style={{ background: "#0a0f0d" }}
+              style={{ background: "var(--bg-panel, #0a0f0d)" }}
               placeholder="1"
             />
           </div>
@@ -325,7 +325,7 @@ export default function AdminPage() {
               value={scoreMax}
               onChange={(e) => { setScoreMax(e.target.value); setPage(1); }}
               className="p-2 rounded-lg border border-emerald-900/50 text-white text-sm w-20"
-              style={{ background: "#0a0f0d" }}
+              style={{ background: "var(--bg-panel, #0a0f0d)" }}
               placeholder="10"
             />
           </div>
@@ -336,7 +336,7 @@ export default function AdminPage() {
               value={promptVersionFilter}
               onChange={(e) => { setPromptVersionFilter(e.target.value); setPage(1); }}
               className="p-2 rounded-lg border border-emerald-900/50 text-white text-sm w-24"
-              style={{ background: "#0a0f0d" }}
+              style={{ background: "var(--bg-panel, #0a0f0d)" }}
               placeholder="v1"
             />
           </div>
@@ -347,7 +347,7 @@ export default function AdminPage() {
               value={dateFrom}
               onChange={(e) => { setDateFrom(e.target.value); setPage(1); }}
               className="p-2 rounded-lg border border-emerald-900/50 text-white text-sm"
-              style={{ background: "#0a0f0d" }}
+              style={{ background: "var(--bg-panel, #0a0f0d)" }}
             />
           </div>
           <div>
@@ -357,7 +357,7 @@ export default function AdminPage() {
               value={dateTo}
               onChange={(e) => { setDateTo(e.target.value); setPage(1); }}
               className="p-2 rounded-lg border border-emerald-900/50 text-white text-sm"
-              style={{ background: "#0a0f0d" }}
+              style={{ background: "var(--bg-panel, #0a0f0d)" }}
             />
           </div>
         </div>
@@ -392,14 +392,14 @@ export default function AdminPage() {
                       className="border-b border-emerald-900/20 hover:bg-emerald-900/10 transition"
                       style={{
                         background: isBad
-                          ? "rgba(239,68,68,0.06)"
+                          ? "rgba(var(--c-red-rgb, 239,68,68), 0.06)"
                           : isError
                             ? "rgba(245,158,11,0.04)"
                             : undefined,
                         borderLeft: isBad
-                          ? "3px solid #ef4444"
+                          ? "3px solid var(--c-red, #ef4444)"
                           : isError
-                            ? "3px solid #f59e0b"
+                            ? "3px solid var(--c-amber-2, #f59e0b)"
                             : "3px solid transparent",
                       }}
                     >
@@ -509,7 +509,7 @@ export default function AdminPage() {
                   {scan.feedback_note && (
                     <div>
                       <h3 className="text-sm font-medium text-red-400 mb-1">Feedback użytkownika:</h3>
-                      <p className="text-xs text-gray-300 p-3 rounded-lg whitespace-pre-wrap" style={{ background: "#0a0f0d" }}>
+                      <p className="text-xs text-gray-300 p-3 rounded-lg whitespace-pre-wrap" style={{ background: "var(--bg-panel, #0a0f0d)" }}>
                         {scan.feedback_note}
                       </p>
                     </div>
@@ -519,14 +519,14 @@ export default function AdminPage() {
                       <h3 className="text-sm font-medium text-yellow-400 mb-1">
                         OCR (Google Vision / Claude):
                       </h3>
-                      <pre className="text-xs text-gray-300 overflow-x-auto max-h-64 overflow-y-auto p-3 rounded-lg whitespace-pre-wrap" style={{ background: "#0a0f0d" }}>
+                      <pre className="text-xs text-gray-300 overflow-x-auto max-h-64 overflow-y-auto p-3 rounded-lg whitespace-pre-wrap" style={{ background: "var(--bg-panel, #0a0f0d)" }}>
                         {scan.ocr_text}
                       </pre>
                     </div>
                   )}
                   <div>
                     <h3 className="text-sm font-medium text-emerald-400 mb-1">Wynik AI (JSON):</h3>
-                    <pre className="text-xs text-gray-300 overflow-x-auto max-h-96 overflow-y-auto p-3 rounded-lg" style={{ background: "#0a0f0d" }}>
+                    <pre className="text-xs text-gray-300 overflow-x-auto max-h-96 overflow-y-auto p-3 rounded-lg" style={{ background: "var(--bg-panel, #0a0f0d)" }}>
                       {JSON.stringify(scan.ai_result, null, 2)}
                     </pre>
                   </div>

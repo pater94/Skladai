@@ -29,7 +29,7 @@ export default function WynikiError({
     <div
       style={{
         minHeight: "100dvh",
-        background: "#0a0e0c",
+        background: "var(--bg, #0a0e0c)",
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
@@ -53,8 +53,8 @@ export default function WynikiError({
             width: 56,
             height: 56,
             borderRadius: "50%",
-            background: "rgba(110,252,180,0.08)",
-            border: "1px solid rgba(110,252,180,0.2)",
+            background: "rgba(var(--c-mint-rgb, 110,252,180),0.08)",
+            border: "1px solid rgba(var(--c-mint-rgb, 110,252,180),0.2)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -94,13 +94,13 @@ export default function WynikiError({
             width: "100%",
             padding: "14px 18px",
             borderRadius: 16,
-            background: "linear-gradient(135deg,#6efcb4 0%,#3dd990 100%)",
-            color: "#0a0e0c",
+            background: "linear-gradient(135deg,var(--c-mint, #6efcb4) 0%,var(--c-green-2, #3dd990) 100%)",
+            color: "var(--bg, #0a0e0c)",
             fontWeight: 800,
             fontSize: 14,
             border: "none",
             cursor: "pointer",
-            boxShadow: "0 6px 22px rgba(110,252,180,0.25)",
+            boxShadow: "0 6px 22px rgba(var(--c-mint-rgb, 110,252,180),0.25)",
           }}
         >
           Spróbuj ponownie
