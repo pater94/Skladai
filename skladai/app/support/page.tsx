@@ -5,8 +5,8 @@ export const metadata: Metadata = {
   description: "Wsparcie użytkownika aplikacji SkładAI — kontakt, FAQ, pomoc.",
 };
 
-const ACCENT = "#6efcb4";
-const BG = "#0a0e0c";
+const ACCENT = "var(--c-mint, #6efcb4)";
+const BG = "var(--bg, #0a0e0c)";
 const TEXT = "#e6efe9";
 const MUTED = "#8a948f";
 

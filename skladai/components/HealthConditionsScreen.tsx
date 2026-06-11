@@ -57,8 +57,8 @@ const ALLERGENS = [
   { id: "celery", label: "Seler", emoji: "🌿" },
 ] as const;
 
-const ACCENT = "#22d3ee";
-const ACCENT_RGB = "34,211,238";
+const ACCENT = "var(--c-cyan, #22d3ee)";
+const ACCENT_RGB = "var(--c-cyan-rgb, 34,211,238)";
 
 export default function HealthConditionsScreen({ onComplete, onSkip }: Props) {
   const [diabetes, setDiabetes] = useState<string | null>(null);
@@ -177,7 +177,7 @@ export default function HealthConditionsScreen({ onComplete, onSkip }: Props) {
               height: 3,
               borderRadius: 2,
               width: 32,
-              background: `linear-gradient(90deg, #06b6d4, ${ACCENT})`,
+              background: `linear-gradient(90deg, var(--c-cyan-2, #06b6d4), ${ACCENT})`,
               boxShadow: `0 0 8px rgba(${ACCENT_RGB},0.5)`,
             }}
           />
@@ -255,8 +255,8 @@ export default function HealthConditionsScreen({ onComplete, onSkip }: Props) {
             marginTop: 24,
             padding: "14px 18px",
             borderRadius: 16,
-            background: `linear-gradient(135deg, #06b6d4, ${ACCENT})`,
-            color: "#0a0e0c",
+            background: `linear-gradient(135deg, var(--c-cyan-2, #06b6d4), ${ACCENT})`,
+            color: "var(--bg, #0a0e0c)",
             fontWeight: 900,
             fontSize: 15,
             border: "none",
@@ -389,7 +389,7 @@ function Chip({
             height: 14,
             borderRadius: "50%",
             background: ACCENT,
-            color: "#0a0e0c",
+            color: "var(--bg, #0a0e0c)",
             fontSize: 9,
             fontWeight: 900,
             display: "flex",

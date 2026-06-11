@@ -200,18 +200,18 @@ export default function SkinProfileSetup({ onComplete, onSkip }: Props) {
         onClick={() => onSelect(value)}
         style={{
           width: "100%", textAlign: "left", padding: "14px 16px", borderRadius: 16, cursor: "pointer", transition: "all 0.2s",
-          background: active ? "rgba(192,132,252,0.1)" : "rgba(255,255,255,0.04)",
-          border: active ? "1.5px solid #C084FC" : "1px solid rgba(255,255,255,0.06)",
+          background: active ? "rgba(var(--c-violet-rgb, 192,132,252),0.1)" : "rgba(255,255,255,0.04)",
+          border: active ? "1.5px solid var(--c-violet, #C084FC)" : "1px solid rgba(255,255,255,0.06)",
         }}
       >
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div>
             <p style={{ fontWeight: 600, fontSize: 14, color: active ? "#fff" : "rgba(255,255,255,0.7)", margin: 0 }}>{label}</p>
-            {desc && <p style={{ fontSize: 11, marginTop: 2, color: active ? "rgba(192,132,252,0.7)" : "rgba(255,255,255,0.55)", margin: 0 }}>{desc}</p>}
+            {desc && <p style={{ fontSize: 11, marginTop: 2, color: active ? "rgba(var(--c-violet-rgb, 192,132,252),0.7)" : "rgba(255,255,255,0.55)", margin: 0 }}>{desc}</p>}
           </div>
           <div style={{
             width: 20, height: 20, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.2s",
-            border: active ? "2px solid #C084FC" : "2px solid rgba(255,255,255,0.15)",
+            border: active ? "2px solid var(--c-violet, #C084FC)" : "2px solid rgba(255,255,255,0.15)",
             background: active ? "#9333EA" : "transparent",
           }}>
             {active && (
@@ -243,10 +243,10 @@ export default function SkinProfileSetup({ onComplete, onSkip }: Props) {
         style={{
           width: "100%", textAlign: "left", padding: "14px 16px", borderRadius: 16, cursor: "pointer", transition: "all 0.2s",
           background: checked
-            ? "rgba(192,132,252,0.1)"
+            ? "rgba(var(--c-violet-rgb, 192,132,252),0.1)"
             : muted ? "rgba(255,255,255,0.02)" : "rgba(255,255,255,0.04)",
           border: checked
-            ? "1.5px solid #C084FC"
+            ? "1.5px solid var(--c-violet, #C084FC)"
             : muted ? "1px dashed rgba(255,255,255,0.10)" : "1px solid rgba(255,255,255,0.06)",
           marginTop: muted ? 4 : 0,
         }}
@@ -260,7 +260,7 @@ export default function SkinProfileSetup({ onComplete, onSkip }: Props) {
           }}>{label}</p>
           <div style={{
             width: 20, height: 20, borderRadius: 6, display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.2s",
-            border: checked ? "2px solid #C084FC" : "2px solid rgba(255,255,255,0.15)",
+            border: checked ? "2px solid var(--c-violet, #C084FC)" : "2px solid rgba(255,255,255,0.15)",
             background: checked ? "#9333EA" : "transparent",
           }}>
             {checked && (
@@ -281,7 +281,7 @@ export default function SkinProfileSetup({ onComplete, onSkip }: Props) {
       data-testid="skin-profile-setup"
       style={{
         position: "fixed", inset: 0, zIndex: 150,
-        background: "#0a0e0c",
+        background: "var(--bg, #0a0e0c)",
         display: "flex", flexDirection: "column",
         opacity: visible ? 1 : 0,
         transition: "opacity 0.3s ease",
@@ -298,9 +298,9 @@ export default function SkinProfileSetup({ onComplete, onSkip }: Props) {
                 height: 4, borderRadius: 2,
                 transition: "all 0.5s ease",
                 background: i < step
-                  ? "#C084FC"
+                  ? "var(--c-violet, #C084FC)"
                   : i === step
-                  ? "linear-gradient(90deg, #C084FC, #DB2777)"
+                  ? "linear-gradient(90deg, var(--c-violet, #C084FC), #DB2777)"
                   : "rgba(255,255,255,0.08)",
               }}
             />
@@ -415,7 +415,7 @@ export default function SkinProfileSetup({ onComplete, onSkip }: Props) {
       </div>
 
       {/* Footer — fixed at bottom, always visible */}
-      <div style={{ padding: "12px 22px", paddingBottom: "max(32px, env(safe-area-inset-bottom, 32px))", flexShrink: 0, background: "#0a0e0c" }}>
+      <div style={{ padding: "12px 22px", paddingBottom: "max(32px, env(safe-area-inset-bottom, 32px))", flexShrink: 0, background: "var(--bg, #0a0e0c)" }}>
         <div style={{ display: "flex", gap: 12 }}>
           {step > 0 && (
             <button

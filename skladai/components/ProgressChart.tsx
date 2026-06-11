@@ -237,7 +237,7 @@ export default function ProgressChart({
                 label={{
                   value: targetLabel || `Cel: ${targetValue}${label}`,
                   position: "right",
-                  style: { fontSize: 10, fill: "#10B981" },
+                  style: { fontSize: 10, fill: "var(--c-emerald-2, #10B981)" },
                 }}
               />
             )}
@@ -295,14 +295,14 @@ export default function ProgressChart({
           className="rounded-xl p-3 mt-2"
           style={{
             background: predictionText.warning
-              ? "rgba(239,68,68,0.06)"
+              ? "rgba(var(--c-red-rgb, 239,68,68), 0.06)"
               : `${color}0F`,
             border: predictionText.warning
-              ? "1px solid rgba(239,68,68,0.15)"
+              ? "1px solid rgba(var(--c-red-rgb, 239,68,68), 0.15)"
               : `1px solid ${color}20`,
           }}
         >
-          <p style={{ fontSize: "12px", color: predictionText.warning ? "#EF4444" : color }}>
+          <p style={{ fontSize: "12px", color: predictionText.warning ? "var(--c-red, #EF4444)" : color }}>
             {predictionText.warning
               ? "⚠️ Uwaga: obecny trend prowadzi w złą stronę. Rozważ korekty."
               : `📈 ${predictionText.text}`}

@@ -7,11 +7,11 @@ interface AnalyzingAnimationProps {
 }
 
 const MODE_COLORS: Record<string, { accent: string; dark: string; rgb: string; glow: string }> = {
-  food: { accent: "#6efcb4", dark: "#3dd990", rgb: "110,252,180", glow: "rgba(110,252,180,0.12)" },
-  cosmetics: { accent: "#C084FC", dark: "#a855f7", rgb: "192,132,252", glow: "rgba(192,132,252,0.12)" },
-  suplement: { accent: "#3b82f6", dark: "#2563eb", rgb: "59,130,246", glow: "rgba(59,130,246,0.12)" },
-  meal: { accent: "#FBBF24", dark: "#f59e0b", rgb: "251,191,36", glow: "rgba(251,191,36,0.12)" },
-  forma: { accent: "#F97316", dark: "#ea580c", rgb: "249,115,22", glow: "rgba(249,115,22,0.12)" },
+  food: { accent: "#6efcb4", dark: "var(--c-green-2, #3dd990)", rgb: "110,252,180", glow: "rgba(var(--c-mint-rgb, 110,252,180), 0.12)" },
+  cosmetics: { accent: "#C084FC", dark: "#a855f7", rgb: "192,132,252", glow: "rgba(var(--c-violet-rgb, 192,132,252), 0.12)" },
+  suplement: { accent: "#3b82f6", dark: "var(--c-blue-3, #2563eb)", rgb: "59,130,246", glow: "rgba(var(--c-blue-rgb, 59,130,246), 0.12)" },
+  meal: { accent: "#FBBF24", dark: "var(--c-amber-2, #f59e0b)", rgb: "251,191,36", glow: "rgba(var(--c-amber-rgb, 251,191,36), 0.12)" },
+  forma: { accent: "#F97316", dark: "var(--c-orange-3, #ea580c)", rgb: "249,115,22", glow: "rgba(var(--c-orange-rgb, 249,115,22), 0.12)" },
 };
 
 const DEFAULT_STEPS = [

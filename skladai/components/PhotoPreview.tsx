@@ -17,9 +17,9 @@ interface PhotoPreviewProps {
 
 const THEMES = {
   food: {
-    accent: "#6efcb4", accentDark: "#3dd990", accentMid: "#50e89e",
-    accentLight: "rgba(110,252,180,0.10)", accentGlow: "rgba(110,252,180,0.25)",
-    gradStart: "rgba(110,252,180,0.06)", gradEnd: "rgba(110,252,180,0.01)",
+    accent: "#6efcb4", accentDark: "var(--c-green-2, #3dd990)", accentMid: "#50e89e",
+    accentLight: "rgba(var(--c-mint-rgb, 110,252,180), 0.10)", accentGlow: "rgba(var(--c-mint-rgb, 110,252,180), 0.25)",
+    gradStart: "rgba(var(--c-mint-rgb, 110,252,180), 0.06)", gradEnd: "rgba(var(--c-mint-rgb, 110,252,180), 0.01)",
     darkBtn: true,
     checklist: [
       { icon: "🧪", text: "Skład / lista składników", desc: "pełna lista z etykiety" },
@@ -29,9 +29,9 @@ const THEMES = {
     p1: "Składniki", p2: "Wartości odżywcze", analyzeText: "produkt",
   },
   suplement: {
-    accent: "#3b82f6", accentDark: "#1d4ed8", accentMid: "#2563eb",
-    accentLight: "rgba(59,130,246,0.12)", accentGlow: "rgba(59,130,246,0.3)",
-    gradStart: "rgba(59,130,246,0.06)", gradEnd: "rgba(59,130,246,0.01)",
+    accent: "#3b82f6", accentDark: "#1d4ed8", accentMid: "var(--c-blue-3, #2563eb)",
+    accentLight: "rgba(var(--c-blue-rgb, 59,130,246), 0.12)", accentGlow: "rgba(var(--c-blue-rgb, 59,130,246), 0.3)",
+    gradStart: "rgba(var(--c-blue-rgb, 59,130,246), 0.06)", gradEnd: "rgba(var(--c-blue-rgb, 59,130,246), 0.01)",
     darkBtn: false,
     checklist: [
       { icon: "📋", text: "Nazwa suplementu", desc: "np. Witamina D3 2000 IU" },
@@ -43,8 +43,8 @@ const THEMES = {
   },
   cosmetics: {
     accent: "#C084FC", accentDark: "#7c3aed", accentMid: "#a855f7",
-    accentLight: "rgba(192,132,252,0.12)", accentGlow: "rgba(192,132,252,0.3)",
-    gradStart: "rgba(192,132,252,0.06)", gradEnd: "rgba(192,132,252,0.01)",
+    accentLight: "rgba(var(--c-violet-rgb, 192,132,252), 0.12)", accentGlow: "rgba(var(--c-violet-rgb, 192,132,252), 0.3)",
+    gradStart: "rgba(var(--c-violet-rgb, 192,132,252), 0.06)", gradEnd: "rgba(var(--c-violet-rgb, 192,132,252), 0.01)",
     darkBtn: false,
     checklist: [
       { icon: "📋", text: "Nazwa kosmetyku", desc: "marka + typ produktu" },
@@ -62,7 +62,7 @@ export default function PhotoPreview({
   onRetakePhoto1, onRetakePhoto2, onBack,
 }: PhotoPreviewProps) {
   const t = THEMES[mode];
-  const bc = t.darkBtn ? "#0a0f0d" : "#fff";
+  const bc = t.darkBtn ? "var(--c-ink, #0a0f0d)" : "#fff";
   const [checkAnim, setCheckAnim] = useState(0);
 
   useEffect(() => {
@@ -114,7 +114,7 @@ export default function PhotoPreview({
                 </span>
               </div>
               {/* Badge */}
-              <div style={{ position: "absolute", top: 8, right: 8, background: n === 1 ? t.accent : "rgba(255,255,255,0.1)", color: n === 1 && t.darkBtn ? "#0a0f0d" : "#fff", fontSize: 8, fontWeight: 800, padding: "2px 6px", borderRadius: 6 }}>{n + 1}/2</div>
+              <div style={{ position: "absolute", top: 8, right: 8, background: n === 1 ? t.accent : "rgba(255,255,255,0.1)", color: n === 1 && t.darkBtn ? "var(--c-ink, #0a0f0d)" : "#fff", fontSize: 8, fontWeight: 800, padding: "2px 6px", borderRadius: 6 }}>{n + 1}/2</div>
               {/* Checkmark on photo 1 */}
               {n === 0 && <div style={{ position: "absolute", top: 8, left: 8, background: "#22c55e", color: "#fff", fontSize: 9, width: 16, height: 16, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center" }}>✓</div>}
             </div>
@@ -223,7 +223,7 @@ export default function PhotoPreview({
 
       {/* CTA — animated gradient border */}
       <div style={{ position: "relative", borderRadius: 15, padding: 2, background: `linear-gradient(135deg, ${t.accent}, ${t.accentDark}, ${t.accent})`, backgroundSize: "200% 200%", animation: "gradientShift 3s ease infinite", marginBottom: 10 }}>
-        <button type="button" onClick={onAddSecondPhoto} style={{ width: "100%", padding: 15, borderRadius: 13, border: "none", background: "#0a0e0c", color: t.accent, fontWeight: 800, fontSize: 15, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+        <button type="button" onClick={onAddSecondPhoto} style={{ width: "100%", padding: 15, borderRadius: 13, border: "none", background: "var(--bg, #0a0e0c)", color: t.accent, fontWeight: 800, fontSize: 15, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
           {source === "gallery" ? "🖼️" : "📸"} Dodaj drugie zdjęcie
         </button>
       </div>

@@ -141,7 +141,7 @@ export default function ModeNudge() {
         padding: "10px 12px",
         borderRadius: 14,
         background: "rgba(15,23,42,0.92)",
-        border: "1px solid rgba(110,252,180,0.22)",
+        border: "1px solid rgba(var(--c-mint-rgb, 110,252,180),0.22)",
         backdropFilter: "blur(14px)",
         WebkitBackdropFilter: "blur(14px)",
         boxShadow: "0 8px 28px rgba(0,0,0,0.38)",
@@ -178,7 +178,7 @@ export default function ModeNudge() {
         style={{
           padding: "7px 12px",
           borderRadius: 10,
-          background: "linear-gradient(135deg, #4ade80, #6efcb4)",
+          background: "linear-gradient(135deg, var(--c-green, #4ade80), var(--c-mint, #6efcb4))",
           border: "none",
           color: "#06281b",
           fontSize: 11,

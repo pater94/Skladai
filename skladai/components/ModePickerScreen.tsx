@@ -71,7 +71,7 @@ export default function ModePickerScreen({ onComplete }: Props) {
           height: "70%",
           background:
             "radial-gradient(ellipse at 30% 20%, rgba(110,231,167,0.16), transparent 50%)," +
-            "radial-gradient(ellipse at 70% 30%, rgba(34,211,238,0.08), transparent 55%)," +
+            "radial-gradient(ellipse at 70% 30%, rgba(var(--c-cyan-rgb, 34,211,238),0.08), transparent 55%)," +
             "radial-gradient(ellipse at 50% 0%, rgba(167,139,250,0.06), transparent 60%)",
           pointerEvents: "none",
           animation: "modeAmbientShift 20s ease-in-out infinite",
@@ -111,14 +111,14 @@ export default function ModePickerScreen({ onComplete }: Props) {
             style={{
               width: 6,
               height: 6,
-              background: "#6efcb4",
+              background: "var(--c-mint, #6efcb4)",
               borderRadius: "50%",
-              boxShadow: "0 0 10px #6efcb4, 0 0 20px rgba(110,252,180,0.5)",
+              boxShadow: "0 0 10px var(--c-mint, #6efcb4), 0 0 20px rgba(var(--c-mint-rgb, 110,252,180),0.5)",
               animation: "modeDotPulse 2s ease-in-out infinite",
             }}
           />
           <div style={{ fontSize: 18, fontWeight: 900, color: "white", letterSpacing: "-0.5px" }}>
-            Skład<span style={{ color: "#6efcb4" }}>AI</span>
+            Skład<span style={{ color: "var(--c-mint, #6efcb4)" }}>AI</span>
           </div>
         </div>
 
@@ -129,8 +129,8 @@ export default function ModePickerScreen({ onComplete }: Props) {
               height: 3,
               borderRadius: 2,
               width: 32,
-              background: "linear-gradient(90deg, #4ade80, #6efcb4)",
-              boxShadow: "0 0 8px rgba(110,252,180,0.5)",
+              background: "linear-gradient(90deg, var(--c-green, #4ade80), var(--c-mint, #6efcb4))",
+              boxShadow: "0 0 8px rgba(var(--c-mint-rgb, 110,252,180),0.5)",
               transition: "all 0.3s",
             }}
           />
@@ -153,7 +153,7 @@ export default function ModePickerScreen({ onComplete }: Props) {
           Dostosuj{" "}
           <span
             style={{
-              background: "linear-gradient(135deg, #6efcb4 0%, #6ee7a7 50%, #22d3ee 100%)",
+              background: "linear-gradient(135deg, var(--c-mint, #6efcb4) 0%, #6ee7a7 50%, var(--c-cyan, #22d3ee) 100%)",
               WebkitBackgroundClip: "text",
               WebkitTextFillColor: "transparent",
               backgroundClip: "text",

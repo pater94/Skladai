@@ -670,7 +670,7 @@ export default function VoiceLog({ mode, onComplete, onClose, initialOpen = fals
             position: "fixed",
             inset: 0,
             zIndex: 9999,
-            background: "#0a0e0c",
+            background: "var(--bg, #0a0e0c)",
             overflowY: "auto",
             WebkitOverflowScrolling: "touch",
             overscrollBehavior: "contain",
@@ -709,7 +709,7 @@ export default function VoiceLog({ mode, onComplete, onClose, initialOpen = fals
                   onClick={startRecording}
                   style={{
                     width: 80, height: 80, borderRadius: "50%",
-                    background: "rgba(110,252,180,0.15)", border: "2px solid rgba(110,252,180,0.3)",
+                    background: "rgba(var(--c-mint-rgb, 110,252,180), 0.15)", border: "2px solid rgba(var(--c-mint-rgb, 110,252,180), 0.3)",
                     display: "flex", alignItems: "center", justifyContent: "center",
                     cursor: "pointer", transition: "all 0.2s",
                     animation: "voicePulse 1.5s ease-in-out infinite",
@@ -723,7 +723,7 @@ export default function VoiceLog({ mode, onComplete, onClose, initialOpen = fals
                     <line x1="8" y1="21" x2="16" y2="21" />
                   </svg>
                 </button>
-                <p style={{ fontSize: 16, fontWeight: 600, color: "#6efcb4" }}>
+                <p style={{ fontSize: 16, fontWeight: 600, color: "var(--c-mint, #6efcb4)" }}>
                   Kliknij i mów
                 </p>
                 {error && (
@@ -741,9 +741,9 @@ export default function VoiceLog({ mode, onComplete, onClose, initialOpen = fals
                         }}
                         className="px-4 py-2 rounded-xl text-xs font-semibold"
                         style={{
-                          background: "rgba(110,252,180,0.12)",
-                          border: "1px solid rgba(110,252,180,0.35)",
-                          color: "#6efcb4",
+                          background: "rgba(var(--c-mint-rgb, 110,252,180), 0.12)",
+                          border: "1px solid rgba(var(--c-mint-rgb, 110,252,180), 0.35)",
+                          color: "var(--c-mint, #6efcb4)",
                         }}
                       >
                         Otwórz ustawienia
@@ -776,7 +776,7 @@ export default function VoiceLog({ mode, onComplete, onClose, initialOpen = fals
                 {/* Pulsing green circle */}
                 <div style={{
                   width: 80, height: 80, borderRadius: "50%",
-                  background: "rgba(110,252,180,0.15)", border: "2px solid rgba(110,252,180,0.3)",
+                  background: "rgba(var(--c-mint-rgb, 110,252,180), 0.15)", border: "2px solid rgba(var(--c-mint-rgb, 110,252,180), 0.3)",
                   display: "flex", alignItems: "center", justifyContent: "center",
                   animation: "voicePulse 1.5s ease-in-out infinite",
                 }}>
@@ -790,10 +790,10 @@ export default function VoiceLog({ mode, onComplete, onClose, initialOpen = fals
 
                 {/* Live text or "Słucham..." */}
                 <div style={{ minHeight: 28, textAlign: "center", padding: "0 16px" }}>
-                  {transcript && <span style={{ fontSize: 14, fontWeight: 600, color: "#6efcb4" }}>{transcript} </span>}
-                  {interimText && <span style={{ fontSize: 14, color: "rgba(110,252,180,0.6)", fontStyle: "italic" }}>{interimText}</span>}
+                  {transcript && <span style={{ fontSize: 14, fontWeight: 600, color: "var(--c-mint, #6efcb4)" }}>{transcript} </span>}
+                  {interimText && <span style={{ fontSize: 14, color: "rgba(var(--c-mint-rgb, 110,252,180), 0.6)", fontStyle: "italic" }}>{interimText}</span>}
                   {!transcript && !interimText && (
-                    <span style={{ fontSize: 16, fontWeight: 600, color: "#6efcb4" }}>Słucham...</span>
+                    <span style={{ fontSize: 16, fontWeight: 600, color: "var(--c-mint, #6efcb4)" }}>Słucham...</span>
                   )}
                 </div>
 
@@ -805,8 +805,8 @@ export default function VoiceLog({ mode, onComplete, onClose, initialOpen = fals
                   onClick={stopRecording}
                   style={{
                     padding: "10px 28px", borderRadius: 999,
-                    background: "rgba(239,68,68,0.15)", border: "1px solid rgba(239,68,68,0.3)",
-                    color: "#ef4444", fontSize: 13, fontWeight: 700, cursor: "pointer",
+                    background: "rgba(var(--c-red-rgb, 239,68,68), 0.15)", border: "1px solid rgba(var(--c-red-rgb, 239,68,68), 0.3)",
+                    color: "var(--c-red, #ef4444)", fontSize: 13, fontWeight: 700, cursor: "pointer",
                   }}
                   className="active:scale-95 transition-transform"
                 >
@@ -834,15 +834,15 @@ export default function VoiceLog({ mode, onComplete, onClose, initialOpen = fals
             {/* ===== PROCESSING ===== */}
             {phase === "processing" && (
               <div className="flex flex-col items-center gap-4 py-8">
-                <div style={{ width: 40, height: 40, border: "4px solid rgba(251,191,36,0.3)", borderTopColor: "#FBBF24", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
+                <div style={{ width: 40, height: 40, border: "4px solid rgba(var(--c-amber-rgb, 251,191,36), 0.3)", borderTopColor: "var(--c-amber, #FBBF24)", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
                 <p style={{ fontSize: 13, color: "rgba(255,255,255,0.55)" }}>Analizuję: &ldquo;{transcript}&rdquo;</p>
               </div>
             )}
 
             <style>{`
               @keyframes voicePulse {
-                0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(110,252,180,0); }
-                50% { transform: scale(1.15); box-shadow: 0 0 24px rgba(110,252,180,0.2); }
+                0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(var(--c-mint-rgb, 110,252,180), 0); }
+                50% { transform: scale(1.15); box-shadow: 0 0 24px rgba(var(--c-mint-rgb, 110,252,180), 0.2); }
               }
               @keyframes spin { to { transform: rotate(360deg); } }
             `}</style>

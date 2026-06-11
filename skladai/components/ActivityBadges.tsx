@@ -138,15 +138,15 @@ export default function ActivityBadges({ theme = "dark" }: ActivityBadgesProps) 
     >
       <span style={pillStyle}>
         <span style={{ fontSize: "12px", opacity: emojiOpacity }}>👟</span>
-        <span style={{ color: "#6efcb4" }}>{stepsText}</span>
+        <span style={{ color: "var(--c-mint, #6efcb4)" }}>{stepsText}</span>
       </span>
       <span style={pillStyle}>
         <span style={{ fontSize: "12px", opacity: emojiOpacity }}>🔥</span>
-        <span style={{ color: "#f97316" }}>{kcalText}</span>
+        <span style={{ color: "var(--c-orange, #f97316)" }}>{kcalText}</span>
       </span>
       <span style={pillStyle}>
         <span style={{ fontSize: "12px", opacity: emojiOpacity }}>😴</span>
-        <span style={{ color: "#8b5cf6" }}>{sleepText}</span>
+        <span style={{ color: "var(--c-violet-3, #8b5cf6)" }}>{sleepText}</span>
       </span>
     </button>
   );

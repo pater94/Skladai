@@ -103,8 +103,8 @@ export default function DashboardPage() {
 
   if (!loaded) {
     return (
-      <div style={{ minHeight: "100dvh", display: "flex", alignItems: "center", justifyContent: "center", background: "#0a0e0c" }}>
-        <div style={{ width: 48, height: 48, border: "4px solid rgba(110,252,180,0.3)", borderTopColor: "#6efcb4", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
+      <div style={{ minHeight: "100dvh", display: "flex", alignItems: "center", justifyContent: "center", background: "var(--bg, #0a0e0c)" }}>
+        <div style={{ width: 48, height: 48, border: "4px solid rgba(var(--c-mint-rgb, 110,252,180), 0.3)", borderTopColor: "var(--c-mint, #6efcb4)", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
       </div>
     );
   }
@@ -112,13 +112,13 @@ export default function DashboardPage() {
   // ═══ EMPTY STATE (no profile) ═══
   if (!profile) {
     return (
-      <div style={{ minHeight: "100dvh", background: "#0a0e0c", paddingBottom: 100 }}>
+      <div style={{ minHeight: "100dvh", background: "var(--bg, #0a0e0c)", paddingBottom: 100 }}>
         <div style={{ padding: "20px 22px 30px", position: "relative" }}>
-          <div style={{ position: "absolute", top: 0, left: "50%", transform: "translateX(-50%)", width: 300, height: 200, background: "radial-gradient(ellipse, rgba(110,252,180,0.08), transparent 70%)", pointerEvents: "none" }} />
+          <div style={{ position: "absolute", top: 0, left: "50%", transform: "translateX(-50%)", width: 300, height: 200, background: "radial-gradient(ellipse, rgba(var(--c-mint-rgb, 110,252,180), 0.08), transparent 70%)", pointerEvents: "none" }} />
 
           <div style={{ textAlign: "center", paddingTop: 40, paddingBottom: 20 }}>
-            <div style={{ width: 80, height: 80, borderRadius: 24, margin: "0 auto 20px", background: "rgba(110,252,180,0.06)", border: "1.5px solid rgba(110,252,180,0.12)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 36, position: "relative" }}>
-              <div style={{ position: "absolute", inset: -8, background: "radial-gradient(circle, rgba(110,252,180,0.15), transparent 70%)", animation: "breathe 3s ease-in-out infinite" }} />
+            <div style={{ width: 80, height: 80, borderRadius: 24, margin: "0 auto 20px", background: "rgba(var(--c-mint-rgb, 110,252,180), 0.06)", border: "1.5px solid rgba(var(--c-mint-rgb, 110,252,180), 0.12)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 36, position: "relative" }}>
+              <div style={{ position: "absolute", inset: -8, background: "radial-gradient(circle, rgba(var(--c-mint-rgb, 110,252,180), 0.15), transparent 70%)", animation: "breathe 3s ease-in-out infinite" }} />
               <span style={{ position: "relative" }}>📊</span>
             </div>
 
@@ -138,7 +138,7 @@ export default function DashboardPage() {
               </div>
             ))}
 
-            <button onClick={() => router.push("/profil")} style={{ width: "100%", padding: 16, borderRadius: 14, border: "none", background: "linear-gradient(135deg, #6efcb4, #3dd990)", color: "#0a0f0d", fontWeight: 800, fontSize: 15, cursor: "pointer", boxShadow: "0 4px 20px rgba(110,252,180,0.2)", marginTop: 20 }}>
+            <button onClick={() => router.push("/profil")} style={{ width: "100%", padding: 16, borderRadius: 14, border: "none", background: "linear-gradient(135deg, var(--c-mint, #6efcb4), var(--c-green-2, #3dd990))", color: "var(--c-ink, #0a0f0d)", fontWeight: 800, fontSize: 15, cursor: "pointer", boxShadow: "0 4px 20px rgba(var(--c-mint-rgb, 110,252,180), 0.2)", marginTop: 20 }}>
               🎯 Ustaw profil →
             </button>
           </div>
@@ -176,9 +176,9 @@ export default function DashboardPage() {
   const weekSupplementCount = weekHistory.filter(h => h.scanType === "suplement").length;
 
   return (
-    <div style={{ minHeight: "100dvh", background: "#0a0e0c", paddingBottom: 100 }}>
+    <div style={{ minHeight: "100dvh", background: "var(--bg, #0a0e0c)", paddingBottom: 100 }}>
       {/* Header */}
-      <div style={{ padding: "16px 22px 24px", background: "linear-gradient(180deg, rgba(110,252,180,0.08) 0%, transparent 100%)", position: "relative" }}>
+      <div style={{ padding: "16px 22px 24px", background: "linear-gradient(180deg, rgba(var(--c-mint-rgb, 110,252,180), 0.08) 0%, transparent 100%)", position: "relative" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
           <div>
             <div style={{ fontSize: 22, fontWeight: 900, color: "#fff", letterSpacing: "-0.03em" }}>Dashboard</div>
@@ -187,9 +187,9 @@ export default function DashboardPage() {
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             {/* Chipy kroki/kcal/sen usunięte z nagłówka — dane w karcie "Aktywność dziś". */}
             {streak > 0 && (
-              <div style={{ padding: "6px 14px", borderRadius: 20, background: "rgba(110,252,180,0.08)", border: "1px solid rgba(110,252,180,0.15)", display: "flex", alignItems: "center", gap: 4 }}>
+              <div style={{ padding: "6px 14px", borderRadius: 20, background: "rgba(var(--c-mint-rgb, 110,252,180), 0.08)", border: "1px solid rgba(var(--c-mint-rgb, 110,252,180), 0.15)", display: "flex", alignItems: "center", gap: 4 }}>
                 <span style={{ fontSize: 12 }}>🔥</span>
-                <span style={{ fontSize: 12, fontWeight: 800, color: "#6efcb4" }}>{streak} {streak === 1 ? "dzień" : "dni"}</span>
+                <span style={{ fontSize: 12, fontWeight: 800, color: "var(--c-mint, #6efcb4)" }}>{streak} {streak === 1 ? "dzień" : "dni"}</span>
               </div>
             )}
           </div>
@@ -200,10 +200,10 @@ export default function DashboardPage() {
           {(["today", "week"] as DashView[]).map((v) => (
             <div key={v} onClick={() => setView(v)} style={{
               flex: 1, textAlign: "center", padding: 8, borderRadius: 10, cursor: "pointer",
-              background: view === v ? "rgba(110,252,180,0.1)" : "transparent",
-              border: view === v ? "1px solid rgba(110,252,180,0.15)" : "1px solid transparent",
+              background: view === v ? "rgba(var(--c-mint-rgb, 110,252,180), 0.1)" : "transparent",
+              border: view === v ? "1px solid rgba(var(--c-mint-rgb, 110,252,180), 0.15)" : "1px solid transparent",
               fontSize: 12, fontWeight: 700,
-              color: view === v ? "#6efcb4" : "rgba(255,255,255,0.55)",
+              color: view === v ? "var(--c-mint, #6efcb4)" : "rgba(255,255,255,0.55)",
             }}>
               {v === "today" ? "Dziś" : "Tydzień"}
             </div>
@@ -218,7 +218,7 @@ export default function DashboardPage() {
 
           {/* Calorie ring card */}
           <GlassCard style={{ borderRadius: 20, padding: "20px 18px", position: "relative", overflow: "hidden" }}>
-            <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: "linear-gradient(90deg, transparent, rgba(110,252,180,0.3), transparent)" }} />
+            <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: "linear-gradient(90deg, transparent, rgba(var(--c-mint-rgb, 110,252,180), 0.3), transparent)" }} />
             <SectionTitle>Bilans dnia</SectionTitle>
 
             <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
@@ -237,9 +237,9 @@ export default function DashboardPage() {
 
               <div style={{ flex: 1 }}>
                 {[
-                  { label: "Białko", value: t.protein, max: n.protein_max, color: "#3b82f6" },
-                  { label: "Tłuszcz", value: t.fat, max: n.fat_max, color: "#FBBF24" },
-                  { label: "Węgle", value: t.carbs, max: n.carbs_max, color: "#6efcb4" },
+                  { label: "Białko", value: t.protein, max: n.protein_max, color: "var(--c-blue, #3b82f6)" },
+                  { label: "Tłuszcz", value: t.fat, max: n.fat_max, color: "var(--c-amber, #FBBF24)" },
+                  { label: "Węgle", value: t.carbs, max: n.carbs_max, color: "var(--c-mint, #6efcb4)" },
                 ].map((m, i) => (
                   <div key={i} style={{ marginBottom: i < 2 ? 10 : 0 }}>
                     <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
@@ -258,12 +258,12 @@ export default function DashboardPage() {
             {health.isNative && health.isConnected && (() => {
               const net = t.calories - health.kcalBurned;
               return (
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 13, padding: "10px 12px", background: "rgba(110,252,180,0.08)", border: "1px solid rgba(110,252,180,0.22)", borderRadius: 13 }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 13, padding: "10px 12px", background: "rgba(var(--c-mint-rgb, 110,252,180), 0.08)", border: "1px solid rgba(var(--c-mint-rgb, 110,252,180), 0.22)", borderRadius: 13 }}>
                   <div>
                     <span style={{ fontSize: 13.5, fontWeight: 800, color: "#fff" }}>Bilans netto</span>
                     <span style={{ fontSize: 11.5, color: "rgba(255,255,255,0.55)", marginLeft: 8 }}>Zjedzone {t.calories} − Spalone {health.kcalBurned}</span>
                   </div>
-                  <span style={{ fontSize: 18, fontWeight: 800, color: "#6efcb4" }}>{net > 0 ? "+" : ""}{net}<span style={{ fontSize: 11, marginLeft: 2 }}>kcal</span></span>
+                  <span style={{ fontSize: 18, fontWeight: 800, color: "var(--c-mint, #6efcb4)" }}>{net > 0 ? "+" : ""}{net}<span style={{ fontSize: 11, marginLeft: 2 }}>kcal</span></span>
                 </div>
               );
             })()}
@@ -286,14 +286,14 @@ export default function DashboardPage() {
             ) : (
               t.entries.map((meal) => (
                 <div key={meal.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 12px", marginBottom: 6, borderRadius: 12, background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.04)" }}>
-                  <div style={{ width: 36, height: 36, borderRadius: 10, background: "rgba(110,252,180,0.06)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>
+                  <div style={{ width: 36, height: 36, borderRadius: 10, background: "rgba(var(--c-mint-rgb, 110,252,180), 0.06)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>
                     {MEAL_ICONS[meal.mealType] || "🍽️"}
                   </div>
                   <div style={{ flex: 1 }}>
                     <div style={{ fontSize: 12.5, fontWeight: 700, color: "rgba(255,255,255,0.8)" }}>{meal.productName}</div>
                     <div style={{ fontSize: 10.5, color: "rgba(255,255,255,0.5)", marginTop: 1 }}>{meal.timestamp ? new Date(meal.timestamp).toLocaleTimeString("pl-PL", { hour: "2-digit", minute: "2-digit" }) : ""}</div>
                   </div>
-                  <span style={{ fontSize: 12, fontWeight: 700, color: "#6efcb4" }}>{meal.calories} kcal</span>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: "var(--c-mint, #6efcb4)" }}>{meal.calories} kcal</span>
                   <button onClick={() => handleRemove(meal.id)} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.55)", fontSize: 14, cursor: "pointer", padding: 4 }}>✕</button>
                 </div>
               ))
@@ -324,7 +324,7 @@ export default function DashboardPage() {
                   type="button"
                   onClick={submitSearch}
                   aria-label="Szukaj"
-                  style={{ width: 40, height: 40, borderRadius: "9999px", border: "none", background: "#6efcb4", color: "#0a0f0d", fontSize: 17, fontWeight: 900, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: "0 0 14px rgba(110,252,180,0.34)" }}
+                  style={{ width: 40, height: 40, borderRadius: "9999px", border: "none", background: "var(--c-mint, #6efcb4)", color: "var(--c-ink, #0a0f0d)", fontSize: 17, fontWeight: 900, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: "0 0 14px rgba(var(--c-mint-rgb, 110,252,180), 0.34)" }}
                 >
                   →
                 </button>
@@ -336,7 +336,7 @@ export default function DashboardPage() {
                 type="button"
                 onClick={() => { saveMode("food"); router.push("/"); }}
                 aria-label="Zeskanuj posiłek"
-                style={{ width: 40, height: 40, borderRadius: 12, background: "rgba(110,252,180,0.10)", border: "1px solid rgba(110,252,180,0.25)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontSize: 16, cursor: "pointer" }}
+                style={{ width: 40, height: 40, borderRadius: 12, background: "rgba(var(--c-mint-rgb, 110,252,180), 0.10)", border: "1px solid rgba(var(--c-mint-rgb, 110,252,180), 0.25)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontSize: 16, cursor: "pointer" }}
               >
                 📸
               </button>
@@ -363,10 +363,10 @@ export default function DashboardPage() {
                     return `${h}h ${m}m`;
                   };
                   const stats = [
-                    { value: health.steps.toLocaleString("pl-PL"), label: "Kroki", icon: "👟", color: "#6efcb4" },
-                    { value: String(health.kcalBurned), label: "Spalone", icon: "🔥", color: "#f97316" },
-                    { value: `${health.distanceKm.toFixed(1)} km`, label: "Dystans", icon: "📍", color: "#3b82f6" },
-                    { value: fmtSleep(health.sleepMinutes), label: "Sen", icon: "😴", color: "#8b5cf6" },
+                    { value: health.steps.toLocaleString("pl-PL"), label: "Kroki", icon: "👟", color: "var(--c-mint, #6efcb4)" },
+                    { value: String(health.kcalBurned), label: "Spalone", icon: "🔥", color: "var(--c-orange, #f97316)" },
+                    { value: `${health.distanceKm.toFixed(1)} km`, label: "Dystans", icon: "📍", color: "var(--c-blue, #3b82f6)" },
+                    { value: fmtSleep(health.sleepMinutes), label: "Sen", icon: "😴", color: "var(--c-violet-3, #8b5cf6)" },
                   ];
                   return (
                     <div style={{ display: "flex" }}>
@@ -402,7 +402,7 @@ export default function DashboardPage() {
                         width: "100%",
                         padding: 12,
                         borderRadius: 12,
-                        background: "linear-gradient(135deg, #34d399 0%, #10b981 100%)",
+                        background: "linear-gradient(135deg, var(--c-emerald, #34d399) 0%, var(--c-emerald-2, #10b981) 100%)",
                         color: "#fff",
                         fontSize: 13.5,
                         fontWeight: 800,
@@ -442,7 +442,7 @@ export default function DashboardPage() {
                       <div style={{
                         width: "100%", borderRadius: "4px 4px 0 0",
                         height: `${Math.max(pct, 2)}%`,
-                        background: day.calories > 0 ? (day.calories > n.calories ? "linear-gradient(180deg, #f97316, #FBBF24)" : "linear-gradient(180deg, #6efcb4, #3dd990)") : "rgba(255,255,255,0.04)",
+                        background: day.calories > 0 ? (day.calories > n.calories ? "linear-gradient(180deg, var(--c-orange, #f97316), var(--c-amber, #FBBF24))" : "linear-gradient(180deg, var(--c-mint, #6efcb4), var(--c-green-2, #3dd990))") : "rgba(255,255,255,0.04)",
                         transition: "height 0.5s ease",
                       }} />
                     </div>
@@ -452,7 +452,7 @@ export default function DashboardPage() {
               })}
             </div>
             <div style={{ textAlign: "center", fontSize: 11, color: "rgba(255,255,255,0.55)" }}>
-              Średnio: <span style={{ color: "#6efcb4", fontWeight: 700 }}>{avgCal} kcal</span> / dzień
+              Średnio: <span style={{ color: "var(--c-mint, #6efcb4)", fontWeight: 700 }}>{avgCal} kcal</span> / dzień
             </div>
           </GlassCard>
 
@@ -461,9 +461,9 @@ export default function DashboardPage() {
             <GlassCard>
               <SectionTitle>Średnie dzienne makro</SectionTitle>
               {[
-                { label: "Białko", value: Math.round(daysWithData.reduce((s, d) => s + d.protein, 0) / daysWithData.length), max: n.protein_max, color: "#3b82f6" },
-                { label: "Tłuszcz", value: Math.round(daysWithData.reduce((s, d) => s + d.fat, 0) / daysWithData.length), max: n.fat_max, color: "#FBBF24" },
-                { label: "Węgle", value: Math.round(daysWithData.reduce((s, d) => s + d.carbs, 0) / daysWithData.length), max: n.carbs_max, color: "#6efcb4" },
+                { label: "Białko", value: Math.round(daysWithData.reduce((s, d) => s + d.protein, 0) / daysWithData.length), max: n.protein_max, color: "var(--c-blue, #3b82f6)" },
+                { label: "Tłuszcz", value: Math.round(daysWithData.reduce((s, d) => s + d.fat, 0) / daysWithData.length), max: n.fat_max, color: "var(--c-amber, #FBBF24)" },
+                { label: "Węgle", value: Math.round(daysWithData.reduce((s, d) => s + d.carbs, 0) / daysWithData.length), max: n.carbs_max, color: "var(--c-mint, #6efcb4)" },
               ].map((m, i) => (
                 <div key={i} style={{ marginBottom: i < 2 ? 10 : 0 }}>
                   <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
@@ -485,9 +485,9 @@ export default function DashboardPage() {
               {health.isConnected ? (
                 <div style={{ display: "flex", gap: 10 }}>
                   {[
-                    { value: health.weekSteps.toLocaleString("pl-PL"), label: "Kroki", icon: "👟", color: "#6efcb4" },
-                    { value: String(health.weekKcalBurned), label: "kcal spalone", icon: "🔥", color: "#f97316" },
-                    { value: `${health.weekDistanceKm.toFixed(1)} km`, label: "Dystans", icon: "📍", color: "#3b82f6" },
+                    { value: health.weekSteps.toLocaleString("pl-PL"), label: "Kroki", icon: "👟", color: "var(--c-mint, #6efcb4)" },
+                    { value: String(health.weekKcalBurned), label: "kcal spalone", icon: "🔥", color: "var(--c-orange, #f97316)" },
+                    { value: `${health.weekDistanceKm.toFixed(1)} km`, label: "Dystans", icon: "📍", color: "var(--c-blue, #3b82f6)" },
                   ].map((a, i) => (
                     <div key={i} style={{ flex: 1, padding: "12px 8px", borderRadius: 14, textAlign: "center", background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)" }}>
                       <div style={{ fontSize: 13, marginBottom: 4 }}>{a.icon}</div>
@@ -517,7 +517,7 @@ export default function DashboardPage() {
                         width: "100%",
                         padding: 12,
                         borderRadius: 12,
-                        background: "linear-gradient(135deg, #34d399 0%, #10b981 100%)",
+                        background: "linear-gradient(135deg, var(--c-emerald, #34d399) 0%, var(--c-emerald-2, #10b981) 100%)",
                         color: "#fff",
                         fontSize: 13.5,
                         fontWeight: 800,
@@ -538,7 +538,7 @@ export default function DashboardPage() {
           <GlassCard>
             <div style={{ textAlign: "center" }}>
               <div style={{ fontSize: 13, color: "rgba(255,255,255,0.55)", fontWeight: 600, marginBottom: 8 }}>
-                Zeskanowałeś <span style={{ color: "#6efcb4", fontWeight: 800 }}>{weekHistory.length}</span> produktów w tym tygodniu
+                Zeskanowałeś <span style={{ color: "var(--c-mint, #6efcb4)", fontWeight: 800 }}>{weekHistory.length}</span> produktów w tym tygodniu
               </div>
               <div style={{ display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap" }}>
                 {weekFoodCount > 0 && <span style={{ fontSize: 11, color: "rgba(255,255,255,0.55)", padding: "4px 10px", borderRadius: 10, background: "rgba(255,255,255,0.03)" }}>{weekFoodCount} żywność</span>}
@@ -628,8 +628,8 @@ export default function DashboardPage() {
               }}
               style={{
                 width: "100%", padding: 14, borderRadius: 14, border: "none",
-                background: "linear-gradient(135deg, #6efcb4, #3dd990)",
-                color: "#0a0f0d", fontWeight: 800, fontSize: 14, cursor: "pointer",
+                background: "linear-gradient(135deg, var(--c-mint, #6efcb4), var(--c-green-2, #3dd990))",
+                color: "var(--c-ink, #0a0f0d)", fontWeight: 800, fontSize: 14, cursor: "pointer",
                 marginBottom: 8,
               }}
             >

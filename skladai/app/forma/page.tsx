@@ -133,21 +133,21 @@ const MEASUREMENT_FIELDS = [
 ] as const;
 
 const BF_CATEGORIES_MALE = [
-  { max: 6, label: "Niezbędny", color: "#EF4444" },
-  { max: 13, label: "Atletyczny", color: "#3B82F6" },
-  { max: 17, label: "Sprawny", color: "#10B981" },
-  { max: 24, label: "Przeciętny", color: "#F59E0B" },
-  { max: 31, label: "Powyżej przeciętnej", color: "#F97316" },
-  { max: 100, label: "Wysoki", color: "#EF4444" },
+  { max: 6, label: "Niezbędny", color: "var(--c-red, #EF4444)" },
+  { max: 13, label: "Atletyczny", color: "var(--c-blue, #3B82F6)" },
+  { max: 17, label: "Sprawny", color: "var(--c-emerald-2, #10B981)" },
+  { max: 24, label: "Przeciętny", color: "var(--c-amber-2, #F59E0B)" },
+  { max: 31, label: "Powyżej przeciętnej", color: "var(--c-orange, #F97316)" },
+  { max: 100, label: "Wysoki", color: "var(--c-red, #EF4444)" },
 ];
 
 const BF_CATEGORIES_FEMALE = [
-  { max: 14, label: "Niezbędny", color: "#EF4444" },
-  { max: 20, label: "Atletyczny", color: "#3B82F6" },
-  { max: 24, label: "Sprawny", color: "#10B981" },
-  { max: 31, label: "Przeciętny", color: "#F59E0B" },
-  { max: 39, label: "Powyżej przeciętnej", color: "#F97316" },
-  { max: 100, label: "Wysoki", color: "#EF4444" },
+  { max: 14, label: "Niezbędny", color: "var(--c-red, #EF4444)" },
+  { max: 20, label: "Atletyczny", color: "var(--c-blue, #3B82F6)" },
+  { max: 24, label: "Sprawny", color: "var(--c-emerald-2, #10B981)" },
+  { max: 31, label: "Przeciętny", color: "var(--c-amber-2, #F59E0B)" },
+  { max: 39, label: "Powyżej przeciętnej", color: "var(--c-orange, #F97316)" },
+  { max: 100, label: "Wysoki", color: "var(--c-red, #EF4444)" },
 ];
 
 // ──────────────────────────────────────────
@@ -303,7 +303,7 @@ function getBfCategory(bf: number, gender: string): { label: string; color: stri
   for (const c of cats) {
     if (bf <= c.max) return { label: c.label, color: c.color };
   }
-  return { label: "Wysoki", color: "#EF4444" };
+  return { label: "Wysoki", color: "var(--c-red, #EF4444)" };
 }
 
 // ──────────────────────────────────────────
@@ -411,17 +411,17 @@ export default function FormaPage() {
   };
 
   return (
-    <div className="min-h-screen relative overflow-hidden" style={{ background: "#0a0e0c", color: "#fff" }}>
+    <div className="min-h-screen relative overflow-hidden" style={{ background: "var(--bg, #0a0e0c)", color: "#fff" }}>
       {/* Ambient blobs */}
       <div className="pointer-events-none absolute" style={{
         top: "-40px", right: "-60px", width: "220px", height: "220px",
-        background: "radial-gradient(circle, rgba(249,115,22,0.07), transparent 70%)",
+        background: "radial-gradient(circle, rgba(var(--c-orange-rgb, 249,115,22),0.07), transparent 70%)",
         filter: "blur(40px)",
         animation: "floatBlob1 8s ease-in-out infinite",
       }} />
       <div className="pointer-events-none absolute" style={{
         bottom: "120px", left: "-80px", width: "180px", height: "180px",
-        background: "radial-gradient(circle, rgba(249,115,22,0.07), transparent 70%)",
+        background: "radial-gradient(circle, rgba(var(--c-orange-rgb, 249,115,22),0.07), transparent 70%)",
         filter: "blur(50px)",
         animation: "floatBlob2 10s ease-in-out infinite",
       }} />
@@ -485,9 +485,9 @@ export default function FormaPage() {
           width: "56px",
           height: "56px",
           background: timerRunning
-            ? `conic-gradient(#F97316 ${((timerSeconds - timerLeft) / timerSeconds) * 360}deg, #EF4444 ${((timerSeconds - timerLeft) / timerSeconds) * 360}deg)`
-            : "linear-gradient(135deg, #F97316, #EF4444)",
-          boxShadow: "0 6px 24px rgba(249,115,22,0.3)",
+            ? `conic-gradient(var(--c-orange, #F97316) ${((timerSeconds - timerLeft) / timerSeconds) * 360}deg, var(--c-red, #EF4444) ${((timerSeconds - timerLeft) / timerSeconds) * 360}deg)`
+            : "linear-gradient(135deg, var(--c-orange, #F97316), var(--c-red, #EF4444))",
+          boxShadow: "0 6px 24px rgba(var(--c-orange-rgb, 249,115,22),0.3)",
         }}
       >
         <Timer size={24} color="#fff" />
@@ -627,7 +627,7 @@ function MainView({
 
   const recentCheckForms = checkFormHistory.slice(0, 2);
 
-  const getScoreColor = (score: number) => score >= 8 ? "#22c55e" : score >= 5 ? "#f97316" : "#ef4444";
+  const getScoreColor = (score: number) => score >= 8 ? "#22c55e" : score >= 5 ? "var(--c-orange, #f97316)" : "var(--c-red, #ef4444)";
 
   const handleDeleteResult = (id: string) => {
     removeHistoryItem(id);
@@ -647,7 +647,7 @@ function MainView({
           <div>
             <h1 className="flex items-center gap-2" style={{ fontSize: "26px", fontWeight: 900 }}>
               <span>{"🔥"}</span>
-              <span style={{ color: "#f97316" }}>Forma</span>
+              <span style={{ color: "var(--c-orange, #f97316)" }}>Forma</span>
             </h1>
             <p style={{ color: "rgba(255,255,255,0.55)", fontSize: "13px", marginTop: "2px" }}>
               Śledź siłę, pomiary i progres
@@ -660,11 +660,11 @@ function MainView({
               className="flex items-center justify-center transition-all active:scale-95"
               style={{
                 width: "42px", height: "42px", borderRadius: "50%",
-                background: "rgba(249,115,22,0.1)",
-                border: "1px solid rgba(249,115,22,0.15)",
+                background: "rgba(var(--c-orange-rgb, 249,115,22),0.1)",
+                border: "1px solid rgba(var(--c-orange-rgb, 249,115,22),0.15)",
               }}
             >
-              <Timer size={20} style={{ color: "#f97316" }} />
+              <Timer size={20} style={{ color: "var(--c-orange, #f97316)" }} />
             </button>
           </div>
         </div>
@@ -674,7 +674,7 @@ function MainView({
       <div className="relative mt-5 mb-6" style={{ animation: "fadeInUp 0.5s ease both" }}>
         {/* Ambient glow */}
         <div className="absolute inset-0 -z-10" style={{
-          background: "radial-gradient(ellipse at center, rgba(249,115,22,0.12), transparent 70%)",
+          background: "radial-gradient(ellipse at center, rgba(var(--c-orange-rgb, 249,115,22),0.12), transparent 70%)",
           animation: "breathe 4s ease-in-out infinite",
           filter: "blur(20px)",
           transform: "scale(1.2)",
@@ -682,26 +682,26 @@ function MainView({
         <div className="relative" style={{
           padding: "24px",
           borderRadius: "20px",
-          background: "linear-gradient(145deg, rgba(249,115,22,0.1), rgba(249,115,22,0.03))",
-          border: "1.5px solid rgba(249,115,22,0.18)",
+          background: "linear-gradient(145deg, rgba(var(--c-orange-rgb, 249,115,22),0.1), rgba(var(--c-orange-rgb, 249,115,22),0.03))",
+          border: "1.5px solid rgba(var(--c-orange-rgb, 249,115,22),0.18)",
           backdropFilter: "blur(16px)",
           overflow: "hidden",
         }}>
           {/* Scanner corners */}
-          <div className="absolute" style={{ top: 10, left: 10, width: 22, height: 22, borderTop: "2.5px solid #f97316", borderLeft: "2.5px solid #f97316", borderRadius: "4px 0 0 0" }} />
-          <div className="absolute" style={{ top: 10, right: 10, width: 22, height: 22, borderTop: "2.5px solid #f97316", borderRight: "2.5px solid #f97316", borderRadius: "0 4px 0 0" }} />
-          <div className="absolute" style={{ bottom: 10, left: 10, width: 22, height: 22, borderBottom: "2.5px solid #f97316", borderLeft: "2.5px solid #f97316", borderRadius: "0 0 0 4px" }} />
-          <div className="absolute" style={{ bottom: 10, right: 10, width: 22, height: 22, borderBottom: "2.5px solid #f97316", borderRight: "2.5px solid #f97316", borderRadius: "0 0 4px 0" }} />
+          <div className="absolute" style={{ top: 10, left: 10, width: 22, height: 22, borderTop: "2.5px solid var(--c-orange, #f97316)", borderLeft: "2.5px solid var(--c-orange, #f97316)", borderRadius: "4px 0 0 0" }} />
+          <div className="absolute" style={{ top: 10, right: 10, width: 22, height: 22, borderTop: "2.5px solid var(--c-orange, #f97316)", borderRight: "2.5px solid var(--c-orange, #f97316)", borderRadius: "0 4px 0 0" }} />
+          <div className="absolute" style={{ bottom: 10, left: 10, width: 22, height: 22, borderBottom: "2.5px solid var(--c-orange, #f97316)", borderLeft: "2.5px solid var(--c-orange, #f97316)", borderRadius: "0 0 0 4px" }} />
+          <div className="absolute" style={{ bottom: 10, right: 10, width: 22, height: 22, borderBottom: "2.5px solid var(--c-orange, #f97316)", borderRight: "2.5px solid var(--c-orange, #f97316)", borderRadius: "0 0 4px 0" }} />
           {/* Decorative circles */}
-          <div className="absolute pointer-events-none" style={{ top: -20, right: -20, width: 80, height: 80, borderRadius: "50%", background: "rgba(249,115,22,0.06)" }} />
-          <div className="absolute pointer-events-none" style={{ bottom: -10, left: -10, width: 45, height: 45, borderRadius: "50%", background: "rgba(249,115,22,0.04)" }} />
+          <div className="absolute pointer-events-none" style={{ top: -20, right: -20, width: 80, height: 80, borderRadius: "50%", background: "rgba(var(--c-orange-rgb, 249,115,22),0.06)" }} />
+          <div className="absolute pointer-events-none" style={{ bottom: -10, left: -10, width: 45, height: 45, borderRadius: "50%", background: "rgba(var(--c-orange-rgb, 249,115,22),0.04)" }} />
 
           {/* Content */}
           <div className="flex flex-col items-center text-center relative z-10">
             <div className="flex items-center justify-center mb-3" style={{
               width: 52, height: 52, borderRadius: "16px",
-              background: "linear-gradient(135deg, #f97316, #ea580c)",
-              boxShadow: "0 4px 20px rgba(249,115,22,0.3)",
+              background: "linear-gradient(135deg, var(--c-orange, #f97316), var(--c-orange-3, #ea580c))",
+              boxShadow: "0 4px 20px rgba(var(--c-orange-rgb, 249,115,22),0.3)",
               fontSize: "26px",
             }}>{"📸"}</div>
             <h2 style={{ fontSize: "20px", fontWeight: 800, color: "#fff" }}>CheckForm</h2>
@@ -712,9 +712,9 @@ function MainView({
               onClick={() => { if (onCameraCheckForm) onCameraCheckForm(); else setView("checkform"); }}
               className="w-full py-3.5 rounded-2xl font-bold text-white transition-all active:scale-[0.97]"
               style={{
-                background: "linear-gradient(135deg, #f97316, #ea580c)",
+                background: "linear-gradient(135deg, var(--c-orange, #f97316), var(--c-orange-3, #ea580c))",
                 fontSize: "15px",
-                boxShadow: "0 4px 24px rgba(249,115,22,0.4)",
+                boxShadow: "0 4px 24px rgba(var(--c-orange-rgb, 249,115,22),0.4)",
               }}
             >
               {"🎯"} Rozpocznij analizę
@@ -730,7 +730,7 @@ function MainView({
               <button
                 onClick={() => setShowDatePicker(true)}
                 className="transition-all active:scale-95"
-                style={{ fontSize: "12px", color: "#f97316", fontWeight: 600 }}
+                style={{ fontSize: "12px", color: "var(--c-orange, #f97316)", fontWeight: 600 }}
               >
                 z galerii
               </button>
@@ -779,7 +779,7 @@ function MainView({
                 }
               }}
               className="w-full py-3 rounded-xl font-semibold text-white transition-all active:scale-95"
-              style={{ background: "linear-gradient(135deg, #f97316, #ea580c)" }}
+              style={{ background: "linear-gradient(135deg, var(--c-orange, #f97316), var(--c-orange-3, #ea580c))" }}
             >
               Dalej
             </button>
@@ -820,9 +820,9 @@ function MainView({
                 <button
                   onClick={(e) => { e.stopPropagation(); setDeleteConfirm(entry.id); }}
                   className="absolute top-2 right-2 p-1.5 rounded-lg transition-all active:scale-90"
-                  style={{ background: "rgba(239,68,68,0.1)" }}
+                  style={{ background: "rgba(var(--c-red-rgb, 239,68,68),0.1)" }}
                 >
-                  <Trash2 size={12} style={{ color: "#ef4444" }} />
+                  <Trash2 size={12} style={{ color: "var(--c-red, #ef4444)" }} />
                 </button>
               </div>
             ))}
@@ -856,7 +856,7 @@ function MainView({
                     <button
                       onClick={() => handleDeleteResult(deleteConfirm)}
                       className="flex-1 py-2.5 rounded-xl text-sm font-semibold"
-                      style={{ background: "rgba(239,68,68,0.2)", color: "#ef4444" }}
+                      style={{ background: "rgba(var(--c-red-rgb, 239,68,68),0.2)", color: "var(--c-red, #ef4444)" }}
                     >
                       Tak, usuń
                     </button>
@@ -958,7 +958,7 @@ function TimerModal({
       >
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-lg font-bold text-white flex items-center gap-2">
-            <Timer size={20} style={{ color: "#F97316" }} /> Przerwa
+            <Timer size={20} style={{ color: "var(--c-orange, #F97316)" }} /> Przerwa
           </h2>
           <button onClick={onClose} className="p-1">
             <X size={20} style={{ color: "rgba(255,255,255,0.5)" }} />
@@ -971,7 +971,7 @@ function TimerModal({
             className="font-mono font-bold"
             style={{
               fontSize: "48px",
-              color: timerLeft === 0 && !timerRunning ? "rgba(255,255,255,0.3)" : timerLeft <= 10 && timerRunning ? "#EF4444" : "#F97316",
+              color: timerLeft === 0 && !timerRunning ? "rgba(255,255,255,0.3)" : timerLeft <= 10 && timerRunning ? "var(--c-red, #EF4444)" : "var(--c-orange, #F97316)",
             }}
           >
             {formatTime(timerLeft > 0 ? timerLeft : timerSeconds)}
@@ -980,7 +980,7 @@ function TimerModal({
           <div className="w-full h-2 rounded-full mt-3" style={{ background: "rgba(255,255,255,0.1)" }}>
             <div
               className="h-full rounded-full transition-all duration-1000"
-              style={{ width: `${progress}%`, background: "linear-gradient(90deg, #F97316, #EF4444)" }}
+              style={{ width: `${progress}%`, background: "linear-gradient(90deg, var(--c-orange, #F97316), var(--c-red, #EF4444))" }}
             />
           </div>
         </div>
@@ -995,7 +995,7 @@ function TimerModal({
                   onClick={() => startTimer(s)}
                   className="py-2.5 rounded-xl text-sm font-medium transition-all active:scale-95"
                   style={{
-                    background: timerSeconds === s ? "#F97316" : "rgba(255,255,255,0.06)",
+                    background: timerSeconds === s ? "var(--c-orange, #F97316)" : "rgba(255,255,255,0.06)",
                     color: timerSeconds === s ? "#fff" : "rgba(255,255,255,0.7)",
                     border: "1px solid rgba(255,255,255,0.08)",
                   }}
@@ -1024,7 +1024,7 @@ function TimerModal({
                   if (n > 0 && n <= 600) startTimer(n);
                 }}
                 className="px-4 py-2.5 rounded-xl text-sm font-medium"
-                style={{ background: "#F97316", color: "#fff" }}
+                style={{ background: "var(--c-orange, #F97316)", color: "#fff" }}
               >
                 Start
               </button>
@@ -1039,7 +1039,7 @@ function TimerModal({
               <button
                 onClick={() => setTimerRunning(false)}
                 className="flex-1 py-3 rounded-xl text-sm font-semibold"
-                style={{ background: "#F59E0B", color: "#000" }}
+                style={{ background: "var(--c-amber-2, #F59E0B)", color: "#000" }}
               >
                 Pauza
               </button>
@@ -1047,7 +1047,7 @@ function TimerModal({
               <button
                 onClick={() => setTimerRunning(true)}
                 className="flex-1 py-3 rounded-xl text-sm font-semibold"
-                style={{ background: "linear-gradient(135deg, #F97316, #EF4444)", color: "#fff" }}
+                style={{ background: "linear-gradient(135deg, var(--c-orange, #F97316), var(--c-red, #EF4444))", color: "#fff" }}
               >
                 Wznów
               </button>
@@ -1058,7 +1058,7 @@ function TimerModal({
                 setTimerLeft(0);
               }}
               className="flex-1 py-3 rounded-xl text-sm font-semibold"
-              style={{ background: "rgba(239,68,68,0.2)", color: "#EF4444" }}
+              style={{ background: "rgba(var(--c-red-rgb, 239,68,68),0.2)", color: "var(--c-red, #EF4444)" }}
             >
               Reset
             </button>
@@ -1132,9 +1132,9 @@ function CalculatorView({
             onClick={() => { setExercise(ex); setSaved(false); }}
             className="py-2.5 px-3 rounded-xl text-xs font-medium transition-all text-left"
             style={{
-              background: exercise === ex ? "rgba(249,115,22,0.15)" : "rgba(255,255,255,0.04)",
-              border: `1px solid ${exercise === ex ? "#F97316" : "rgba(255,255,255,0.08)"}`,
-              color: exercise === ex ? "#F97316" : "rgba(255,255,255,0.7)",
+              background: exercise === ex ? "rgba(var(--c-orange-rgb, 249,115,22),0.15)" : "rgba(255,255,255,0.04)",
+              border: `1px solid ${exercise === ex ? "var(--c-orange, #F97316)" : "rgba(255,255,255,0.08)"}`,
+              color: exercise === ex ? "var(--c-orange, #F97316)" : "rgba(255,255,255,0.7)",
             }}
           >
             {EXERCISE_LABELS[ex]}
@@ -1169,17 +1169,17 @@ function CalculatorView({
       </div>
 
       {r > 12 && (
-        <div className="rounded-xl px-3 py-2 mb-4 text-xs" style={{ background: "rgba(245,158,11,0.15)", color: "#F59E0B" }}>
+        <div className="rounded-xl px-3 py-2 mb-4 text-xs" style={{ background: "rgba(245,158,11,0.15)", color: "var(--c-amber-2, #F59E0B)" }}>
           {"⚠️"} Powyżej 12 powtórzeń wynik może być mniej dokładny
         </div>
       )}
 
       {/* Result */}
       {oneRM !== null && (
-        <div className="rounded-2xl p-4 mb-4" style={{ background: "rgba(249,115,22,0.1)", border: "1px solid rgba(249,115,22,0.2)" }}>
+        <div className="rounded-2xl p-4 mb-4" style={{ background: "rgba(var(--c-orange-rgb, 249,115,22),0.1)", border: "1px solid rgba(var(--c-orange-rgb, 249,115,22),0.2)" }}>
           <div className="text-center">
             <div className="text-sm mb-1" style={{ color: "rgba(255,255,255,0.6)" }}>Szacowane 1RM</div>
-            <div className="text-4xl font-bold" style={{ color: "#F97316" }}>{oneRM} <span className="text-lg">kg</span></div>
+            <div className="text-4xl font-bold" style={{ color: "var(--c-orange, #F97316)" }}>{oneRM} <span className="text-lg">kg</span></div>
           </div>
 
           {/* Ratio */}
@@ -1212,7 +1212,7 @@ function CalculatorView({
               </div>
               {levelInfo.next !== null && profile.weight_kg > 0 && (
                 <div className="mt-2 text-xs" style={{ color: "rgba(255,255,255,0.5)" }}>
-                  Brakuje <span className="font-bold" style={{ color: "#F59E0B" }}>
+                  Brakuje <span className="font-bold" style={{ color: "var(--c-amber-2, #F59E0B)" }}>
                     {Math.round((levelInfo.next * profile.weight_kg - oneRM) * 10) / 10} kg
                   </span> do następnego poziomu
                 </div>
@@ -1226,8 +1226,8 @@ function CalculatorView({
             disabled={saved}
             className="w-full mt-4 py-3 rounded-xl text-sm font-semibold transition-all active:scale-95"
             style={{
-              background: saved ? "rgba(16,185,129,0.2)" : "linear-gradient(135deg, #F97316, #EF4444)",
-              color: saved ? "#10B981" : "#fff",
+              background: saved ? "rgba(16,185,129,0.2)" : "linear-gradient(135deg, var(--c-orange, #F97316), var(--c-red, #EF4444))",
+              color: saved ? "var(--c-emerald-2, #10B981)" : "#fff",
             }}
           >
             {saved ? "✓ Zapisano!" : "💾 Zapisz jako rekord"}
@@ -1248,7 +1248,7 @@ function CalculatorView({
                     className="h-full rounded-full"
                     style={{
                       width: `${pct}%`,
-                      background: pct >= 90 ? "#EF4444" : pct >= 75 ? "#F97316" : "#F59E0B",
+                      background: pct >= 90 ? "var(--c-red, #EF4444)" : pct >= 75 ? "var(--c-orange, #F97316)" : "var(--c-amber-2, #F59E0B)",
                     }}
                   />
                 </div>
@@ -1300,11 +1300,11 @@ function RecordsView({
 
       {records.length > 0 && (
         <div className="rounded-2xl p-4 mb-4 text-center" style={{
-          background: "linear-gradient(135deg, rgba(249,115,22,0.15), rgba(239,68,68,0.15))",
-          border: "1px solid rgba(249,115,22,0.2)",
+          background: "linear-gradient(135deg, rgba(var(--c-orange-rgb, 249,115,22),0.15), rgba(var(--c-red-rgb, 239,68,68),0.15))",
+          border: "1px solid rgba(var(--c-orange-rgb, 249,115,22),0.2)",
         }}>
           <div className="text-xs mb-1" style={{ color: "rgba(255,255,255,0.5)" }}>Big 3 Total</div>
-          <div className="text-3xl font-bold" style={{ color: "#F97316" }}>{Math.round(big3Total)} kg</div>
+          <div className="text-3xl font-bold" style={{ color: "var(--c-orange, #F97316)" }}>{Math.round(big3Total)} kg</div>
           <div className="flex justify-center gap-4 mt-2 text-xs" style={{ color: "rgba(255,255,255,0.5)" }}>
             {big3Exercises.map((ex) => {
               const exR = records.filter((r) => r.exercise === ex);
@@ -1378,7 +1378,7 @@ function RecordsView({
                 <div className="font-semibold text-sm text-white">{EXERCISE_LABELS[ex]}</div>
                 {hasRecords ? (
                   <div className="text-xs mt-0.5" style={{ color: "rgba(255,255,255,0.5)" }}>
-                    PR: <span className="font-bold" style={{ color: "#F97316" }}>{Math.round(pr)} kg</span>
+                    PR: <span className="font-bold" style={{ color: "var(--c-orange, #F97316)" }}>{Math.round(pr)} kg</span>
                     {exRecords[0].ratio !== null && (
                       <span className="ml-2">Ratio: {exRecords[0].ratio}x</span>
                     )}
@@ -1391,7 +1391,7 @@ function RecordsView({
               </div>
               <div className="flex items-center gap-2">
                 {progress > 0 && (
-                  <span className="text-xs font-bold" style={{ color: "#F97316" }}>+{Math.round(progress)} kg</span>
+                  <span className="text-xs font-bold" style={{ color: "var(--c-orange, #F97316)" }}>+{Math.round(progress)} kg</span>
                 )}
                 {hasRecords && (
                   <ChevronRight
@@ -1557,7 +1557,7 @@ function MeasurementsView({
                 onClick={() => setChartField(f.key)}
                 className="px-2.5 py-1 rounded-lg text-[10px] font-medium transition-colors"
                 style={{
-                  background: chartField === f.key ? "#F97316" : "rgba(255,255,255,0.06)",
+                  background: chartField === f.key ? "var(--c-orange, #F97316)" : "rgba(255,255,255,0.06)",
                   color: chartField === f.key ? "#fff" : "rgba(255,255,255,0.5)",
                 }}
               >
@@ -1616,7 +1616,7 @@ function MeasurementsView({
                 {diff !== null && (
                   <span
                     className="text-xs font-bold w-16 text-right flex items-center justify-end gap-0.5"
-                    style={{ color: isGood ? "#10B981" : "#EF4444" }}
+                    style={{ color: isGood ? "var(--c-emerald-2, #10B981)" : "var(--c-red, #EF4444)" }}
                   >
                     {isGood ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
                     {diff > 0 ? "+" : ""}{diff}
@@ -1628,7 +1628,7 @@ function MeasurementsView({
         </div>
 
         {!profile?.height_cm && (
-          <p className="text-xs mt-3" style={{ color: "#F59E0B" }}>
+          <p className="text-xs mt-3" style={{ color: "var(--c-amber-2, #F59E0B)" }}>
             {"⚠️"} Ustaw wzrost w profilu, aby obliczyć % tłuszczu
           </p>
         )}
@@ -1638,8 +1638,8 @@ function MeasurementsView({
           disabled={saved}
           className="w-full mt-4 py-3 rounded-xl text-sm font-semibold transition-all active:scale-95"
           style={{
-            background: saved ? "rgba(16,185,129,0.2)" : "linear-gradient(135deg, #F97316, #EF4444)",
-            color: saved ? "#10B981" : "#fff",
+            background: saved ? "rgba(16,185,129,0.2)" : "linear-gradient(135deg, var(--c-orange, #F97316), var(--c-red, #EF4444))",
+            color: saved ? "var(--c-emerald-2, #10B981)" : "#fff",
           }}
         >
           {saved ? "✓ Zapisano!" : "💾 Zapisz pomiar"}
@@ -1664,7 +1664,7 @@ function MeasurementsView({
                   {m.waist && <span>Talia: {m.waist}</span>}
                   {m.biceps && <span>Biceps: {m.biceps}</span>}
                   {m.bodyFatPercent && (
-                    <span className="font-bold" style={{ color: "#F97316" }}>{m.bodyFatPercent}%</span>
+                    <span className="font-bold" style={{ color: "var(--c-orange, #F97316)" }}>{m.bodyFatPercent}%</span>
                   )}
                 </div>
               </div>
@@ -1728,7 +1728,7 @@ function PhotosView({ goBack }: { goBack: () => void }) {
       <h2 className="text-xl font-bold mb-4">{"📸"} Zdjęcia progresowe</h2>
 
       {/* Privacy notice */}
-      <div className="flex items-center gap-2 rounded-xl px-3 py-2 mb-4 text-xs" style={{ background: "rgba(249,115,22,0.1)", color: "#F97316" }}>
+      <div className="flex items-center gap-2 rounded-xl px-3 py-2 mb-4 text-xs" style={{ background: "rgba(var(--c-orange-rgb, 249,115,22),0.1)", color: "var(--c-orange, #F97316)" }}>
         <Lock size={14} />
         Zdjęcia zapisane tylko na Twoim telefonie
       </div>
@@ -1741,9 +1741,9 @@ function PhotosView({ goBack }: { goBack: () => void }) {
             onClick={() => setPhotoType(t)}
             className="flex-1 py-2 rounded-xl text-xs font-medium"
             style={{
-              background: photoType === t ? "rgba(249,115,22,0.15)" : "rgba(255,255,255,0.04)",
-              border: `1px solid ${photoType === t ? "#F97316" : "rgba(255,255,255,0.08)"}`,
-              color: photoType === t ? "#F97316" : "rgba(255,255,255,0.6)",
+              background: photoType === t ? "rgba(var(--c-orange-rgb, 249,115,22),0.15)" : "rgba(255,255,255,0.04)",
+              border: `1px solid ${photoType === t ? "var(--c-orange, #F97316)" : "rgba(255,255,255,0.08)"}`,
+              color: photoType === t ? "var(--c-orange, #F97316)" : "rgba(255,255,255,0.6)",
             }}
           >
             {typeLabels[t]}
@@ -1764,7 +1764,7 @@ function PhotosView({ goBack }: { goBack: () => void }) {
             } else { cameraRef.current?.click(); }
           }}
           className="flex-1 py-3 rounded-xl text-sm font-semibold flex items-center justify-center gap-2"
-          style={{ background: "linear-gradient(135deg, #F97316, #EF4444)", color: "#fff" }}
+          style={{ background: "linear-gradient(135deg, var(--c-orange, #F97316), var(--c-red, #EF4444))", color: "#fff" }}
         >
           <Camera size={18} /> Zrób zdjęcie
         </button>
@@ -1808,9 +1808,9 @@ function PhotosView({ goBack }: { goBack: () => void }) {
           onClick={() => { setIsComparing(!isComparing); setCompareA(null); setCompareB(null); }}
           className="w-full py-2 rounded-xl text-xs font-medium mb-4"
           style={{
-            background: isComparing ? "rgba(249,115,22,0.15)" : "rgba(255,255,255,0.04)",
+            background: isComparing ? "rgba(var(--c-orange-rgb, 249,115,22),0.15)" : "rgba(255,255,255,0.04)",
             border: "1px solid rgba(255,255,255,0.08)",
-            color: isComparing ? "#F97316" : "rgba(255,255,255,0.6)",
+            color: isComparing ? "var(--c-orange, #F97316)" : "rgba(255,255,255,0.6)",
           }}
         >
           {isComparing ? "Anuluj porównanie" : "🖼️ Porównaj zdjęcia (przed/po)"}
@@ -1834,7 +1834,7 @@ function PhotosView({ goBack }: { goBack: () => void }) {
       )}
 
       {isComparing && (!compareA || !compareB) && (
-        <p className="text-xs mb-3" style={{ color: "#F59E0B" }}>
+        <p className="text-xs mb-3" style={{ color: "var(--c-amber-2, #F59E0B)" }}>
           Wybierz {!compareA ? "pierwsze" : "drugie"} zdjęcie do porównania
         </p>
       )}
@@ -1846,7 +1846,7 @@ function PhotosView({ goBack }: { goBack: () => void }) {
             key={photo.id}
             className="relative rounded-xl overflow-hidden cursor-pointer"
             style={{
-              border: (compareA === photo.id || compareB === photo.id) ? "2px solid #F59E0B" : "1px solid rgba(255,255,255,0.08)",
+              border: (compareA === photo.id || compareB === photo.id) ? "2px solid var(--c-amber-2, #F59E0B)" : "1px solid rgba(255,255,255,0.08)",
             }}
             onClick={() => {
               if (isComparing) {
@@ -1870,7 +1870,7 @@ function PhotosView({ goBack }: { goBack: () => void }) {
                   onClick={(e) => { e.stopPropagation(); handleDelete(photo.id); }}
                   className="p-0.5"
                 >
-                  <Trash2 size={10} style={{ color: "#EF4444" }} />
+                  <Trash2 size={10} style={{ color: "var(--c-red, #EF4444)" }} />
                 </button>
               )}
             </div>
@@ -1973,7 +1973,7 @@ function StrengthCardView({
             {/* Header */}
             <div className="flex items-center justify-between mb-4">
               <div>
-                <div className="text-xs font-medium" style={{ color: "#F97316" }}>SKŁAD<span style={{ color: "#F59E0B" }}>AI</span> FORMA</div>
+                <div className="text-xs font-medium" style={{ color: "var(--c-orange, #F97316)" }}>SKŁAD<span style={{ color: "var(--c-amber-2, #F59E0B)" }}>AI</span> FORMA</div>
                 <div className="text-lg font-bold text-white">Karta Siły</div>
               </div>
               {profile?.weight_kg && (
@@ -1985,9 +1985,9 @@ function StrengthCardView({
             </div>
 
             {/* Big 3 */}
-            <div className="text-center py-3 rounded-2xl mb-4" style={{ background: "rgba(249,115,22,0.1)", border: "1px solid rgba(249,115,22,0.2)" }}>
+            <div className="text-center py-3 rounded-2xl mb-4" style={{ background: "rgba(var(--c-orange-rgb, 249,115,22),0.1)", border: "1px solid rgba(var(--c-orange-rgb, 249,115,22),0.2)" }}>
               <div className="text-[10px]" style={{ color: "rgba(255,255,255,0.5)" }}>BIG 3 TOTAL</div>
-              <div className="text-3xl font-bold" style={{ color: "#F97316" }}>{Math.round(big3)} kg</div>
+              <div className="text-3xl font-bold" style={{ color: "var(--c-orange, #F97316)" }}>{Math.round(big3)} kg</div>
             </div>
 
             {/* Exercises - show all 6 */}
@@ -2026,8 +2026,8 @@ function StrengthCardView({
             onClick={handleShare}
             className="w-full py-3 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-all active:scale-95"
             style={{
-              background: shared ? "rgba(16,185,129,0.2)" : "linear-gradient(135deg, #F97316, #EF4444)",
-              color: shared ? "#10B981" : "#fff",
+              background: shared ? "rgba(16,185,129,0.2)" : "linear-gradient(135deg, var(--c-orange, #F97316), var(--c-red, #EF4444))",
+              color: shared ? "var(--c-emerald-2, #10B981)" : "#fff",
             }}
           >
             {shared ? "✓ Skopiowano!" : <><Share2 size={16} /> Udostępnij (tylko statystyki)</>}
@@ -2163,7 +2163,7 @@ function CheckFormView({
       {error && (
         <div
           className="mt-4 rounded-xl px-4 py-3 text-sm"
-          style={{ background: "rgba(239,68,68,0.15)", color: "#EF4444" }}
+          style={{ background: "rgba(var(--c-red-rgb, 239,68,68),0.15)", color: "var(--c-red, #EF4444)" }}
         >
           {error}
         </div>
@@ -2216,7 +2216,7 @@ function CheckFormView({
                 </div>
                 <div
                   className="text-lg font-bold"
-                  style={{ color: "#F97316" }}
+                  style={{ color: "var(--c-orange, #F97316)" }}
                 >
                   {entry.score}/10
                 </div>

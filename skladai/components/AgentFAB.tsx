@@ -137,7 +137,7 @@ export default function AgentFAB() {
       {/* Coachmark — dymek nad FAB-em (jednorazowo, przy pierwszym wejściu) */}
       {showCoachmark && (
         <div className="agent-coach" style={{ position: "fixed", right: 14, bottom: 146, width: 230, zIndex: 92 }}>
-          <div style={{ background: "#6efcb4", color: "#0a0f0d", borderRadius: 16, padding: "12px 14px", fontSize: 13, fontWeight: 600, lineHeight: 1.35, boxShadow: "0 10px 30px rgba(110,252,180,0.27)" }}>
+          <div style={{ background: "var(--c-mint, #6efcb4)", color: "var(--c-ink, #0a0f0d)", borderRadius: 16, padding: "12px 14px", fontSize: 13, fontWeight: 600, lineHeight: 1.35, boxShadow: "0 10px 30px rgba(var(--c-mint-rgb, 110,252,180),0.27)" }}>
             👋 Zapytaj mnie o trening, dietę, a nawet o analizę Twoich badań.
             <div
               onClick={dismissCoachmark}
@@ -148,7 +148,7 @@ export default function AgentFAB() {
             </div>
           </div>
           {/* ogonek skierowany w dół na FAB */}
-          <div style={{ width: 0, height: 0, borderLeft: "9px solid transparent", borderRight: "9px solid transparent", borderTop: "10px solid #6efcb4", marginLeft: "auto", marginRight: 26 }} />
+          <div style={{ width: 0, height: 0, borderLeft: "9px solid transparent", borderRight: "9px solid transparent", borderTop: "10px solid var(--c-mint, #6efcb4)", marginLeft: "auto", marginRight: 26 }} />
         </div>
       )}
 
@@ -164,8 +164,8 @@ export default function AgentFAB() {
           width: 56,
           height: 56,
           borderRadius: 18,
-          background: "linear-gradient(135deg, #6efcb4, #3dd990)",
-          border: "1px solid rgba(110,252,180,0.4)",
+          background: "linear-gradient(135deg, var(--c-mint, #6efcb4), var(--c-green-2, #3dd990))",
+          border: "1px solid rgba(var(--c-mint-rgb, 110,252,180),0.4)",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
@@ -176,7 +176,7 @@ export default function AgentFAB() {
       >
         {/* Pierścień pulsujący tylko w trakcie coachmarka — przyciąga wzrok do FAB */}
         {showCoachmark && (
-          <span className="agent-fab-ring" aria-hidden="true" style={{ position: "absolute", inset: -4, borderRadius: 22, border: "2px solid #6efcb4", pointerEvents: "none" }} />
+          <span className="agent-fab-ring" aria-hidden="true" style={{ position: "absolute", inset: -4, borderRadius: 22, border: "2px solid var(--c-mint, #6efcb4)", pointerEvents: "none" }} />
         )}
         <FabLogo size={36} />
       </button>
@@ -186,16 +186,16 @@ export default function AgentFAB() {
       <style jsx>{`
         /* Spokojny idle glow — delikatne "oddychanie". Energia dopiero na press. */
         .agent-fab {
-          box-shadow: 0 0 12px rgba(110, 252, 180, 0.27);
+          box-shadow: 0 0 12px rgba(var(--c-mint-rgb, 110, 252, 180),0.27);
           animation: agentBreathe 3.2s ease-in-out infinite;
         }
         .agent-fab:active {
-          box-shadow: 0 0 30px rgba(110, 252, 180, 0.68);
+          box-shadow: 0 0 30px rgba(var(--c-mint-rgb, 110, 252, 180),0.68);
           animation: none;
         }
         @keyframes agentBreathe {
-          0%, 100% { box-shadow: 0 0 12px rgba(110, 252, 180, 0.27); }
-          50%      { box-shadow: 0 0 22px rgba(110, 252, 180, 0.47); }
+          0%, 100% { box-shadow: 0 0 12px rgba(var(--c-mint-rgb, 110, 252, 180),0.27); }
+          50%      { box-shadow: 0 0 22px rgba(var(--c-mint-rgb, 110, 252, 180),0.47); }
         }
         .agent-fab-ring {
           animation: agentRingPulse 1.8s ease-out infinite;

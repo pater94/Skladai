@@ -78,11 +78,11 @@ const PRESET_DISTANCES = [
 ];
 
 const HR_ZONES = [
-  { zone: 1, low: 0.5, high: 0.6, color: "#3B82F6", name: "Regeneracja", desc: "Lekki wysiłek, regeneracja aktywna, rozgrzewka" },
+  { zone: 1, low: 0.5, high: 0.6, color: "var(--c-blue, #3B82F6)", name: "Regeneracja", desc: "Lekki wysiłek, regeneracja aktywna, rozgrzewka" },
   { zone: 2, low: 0.6, high: 0.7, color: "#22C55E", name: "Spalanie tłuszczu", desc: "Długie, spokojne biegi. Budowanie bazy tlenowej" },
   { zone: 3, low: 0.7, high: 0.8, color: "#EAB308", name: "Tlenowa", desc: "Tempo komfortowe, poprawa wydolności" },
-  { zone: 4, low: 0.8, high: 0.9, color: "#F97316", name: "Próg", desc: "Tempo wyścigowe, interwały. Ciężki wysiłek" },
-  { zone: 5, low: 0.9, high: 1.0, color: "#EF4444", name: "Maksimum", desc: "Sprint, max wysiłek. Tylko krótkie odcinki" },
+  { zone: 4, low: 0.8, high: 0.9, color: "var(--c-orange, #F97316)", name: "Próg", desc: "Tempo wyścigowe, interwały. Ciężki wysiłek" },
+  { zone: 5, low: 0.9, high: 1.0, color: "var(--c-red, #EF4444)", name: "Maksimum", desc: "Sprint, max wysiłek. Tylko krótkie odcinki" },
 ];
 
 const COMPARISONS = [
@@ -420,7 +420,7 @@ function PaceCalculator() {
             onClick={() => setMode(m)}
             className="flex-1 py-2 rounded-xl text-sm font-medium transition-colors"
             style={{
-              background: mode === m ? "#3B82F6" : "rgba(255,255,255,0.06)",
+              background: mode === m ? "var(--c-blue, #3B82F6)" : "rgba(255,255,255,0.06)",
               color: mode === m ? "#fff" : "rgba(255,255,255,0.5)",
             }}
           >
@@ -437,7 +437,7 @@ function PaceCalculator() {
             onClick={() => setDistPreset(i)}
             className="px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
             style={{
-              background: distPreset === i ? "#3B82F6" : "rgba(255,255,255,0.06)",
+              background: distPreset === i ? "var(--c-blue, #3B82F6)" : "rgba(255,255,255,0.06)",
               color: distPreset === i ? "#fff" : "rgba(255,255,255,0.5)",
             }}
           >
@@ -559,7 +559,7 @@ function HeartRateZones({ profile }: { profile: UserProfile | null }) {
               );
             })}
           </div>
-          <div className="mt-4 p-3 rounded-2xl text-sm" style={{ background: "rgba(59,130,246,0.1)", border: "1px solid rgba(59,130,246,0.2)" }}>
+          <div className="mt-4 p-3 rounded-2xl text-sm" style={{ background: "rgba(var(--c-blue-rgb, 59,130,246), 0.1)", border: "1px solid rgba(var(--c-blue-rgb, 59,130,246), 0.2)" }}>
             {"💡"} <strong>Zasada 80/20:</strong> 80% treningów w strefach 1–2, 20% w 3–5
           </div>
         </>
@@ -618,7 +618,7 @@ function RiegelConverter() {
             onClick={() => setKnownDist(i)}
             className="px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
             style={{
-              background: knownDist === i ? "#3B82F6" : "rgba(255,255,255,0.06)",
+              background: knownDist === i ? "var(--c-blue, #3B82F6)" : "rgba(255,255,255,0.06)",
               color: knownDist === i ? "#fff" : "rgba(255,255,255,0.5)",
             }}
           >
@@ -756,7 +756,7 @@ function CaloriesCalc({ profile }: { profile: UserProfile | null }) {
             onClick={() => { setInputMode(m); setCalculated(false); }}
             className="flex-1 py-2 rounded-xl text-sm font-medium transition-colors"
             style={{
-              background: inputMode === m ? "#F97316" : "rgba(255,255,255,0.06)",
+              background: inputMode === m ? "var(--c-orange, #F97316)" : "rgba(255,255,255,0.06)",
               color: inputMode === m ? "#fff" : "rgba(255,255,255,0.5)",
             }}
           >
@@ -832,7 +832,7 @@ function CaloriesCalc({ profile }: { profile: UserProfile | null }) {
         disabled={weight <= 0 || dist <= 0}
         className="w-full py-3 rounded-xl text-sm font-bold text-white transition-all active:scale-95 mb-4"
         style={{
-          background: weight > 0 && dist > 0 ? "linear-gradient(135deg, #F97316, #EF4444)" : "rgba(255,255,255,0.1)",
+          background: weight > 0 && dist > 0 ? "linear-gradient(135deg, var(--c-orange, #F97316), var(--c-red, #EF4444))" : "rgba(255,255,255,0.1)",
           opacity: weight > 0 && dist > 0 ? 1 : 0.5,
         }}
       >
@@ -842,12 +842,12 @@ function CaloriesCalc({ profile }: { profile: UserProfile | null }) {
       {kcal > 0 && (
         <div className="space-y-3">
           {/* Big calorie number */}
-          <div className="p-5 rounded-2xl text-center" style={{ background: "linear-gradient(135deg, rgba(249,115,22,0.15), rgba(239,68,68,0.15))", border: "1px solid rgba(249,115,22,0.2)" }}>
-            <div className="text-5xl font-bold" style={{ color: "#F97316" }}>{kcal}</div>
+          <div className="p-5 rounded-2xl text-center" style={{ background: "linear-gradient(135deg, rgba(var(--c-orange-rgb, 249,115,22), 0.15), rgba(var(--c-red-rgb, 239,68,68), 0.15))", border: "1px solid rgba(var(--c-orange-rgb, 249,115,22), 0.2)" }}>
+            <div className="text-5xl font-bold" style={{ color: "var(--c-orange, #F97316)" }}>{kcal}</div>
             <div className="text-lg font-semibold text-white/60 mt-1">kcal</div>
             <div className="text-xs text-white/40 mt-2">{weight} kg × {dist} km × {multiplier}</div>
             {paceLabel && (
-              <div className="text-xs mt-1 px-2 py-1 inline-block rounded-lg" style={{ background: "rgba(249,115,22,0.15)", color: "#F97316" }}>
+              <div className="text-xs mt-1 px-2 py-1 inline-block rounded-lg" style={{ background: "rgba(var(--c-orange-rgb, 249,115,22), 0.15)", color: "var(--c-orange, #F97316)" }}>
                 {paceLabel}
               </div>
             )}
@@ -1056,7 +1056,7 @@ function RunningRecords() {
               onClick={() => setDistLabel(d)}
               className="px-3 py-1 rounded-lg text-xs font-medium transition-colors"
               style={{
-                background: distLabel === d ? "#3B82F6" : "rgba(255,255,255,0.06)",
+                background: distLabel === d ? "var(--c-blue, #3B82F6)" : "rgba(255,255,255,0.06)",
                 color: distLabel === d ? "#fff" : "rgba(255,255,255,0.5)",
               }}
             >
@@ -1112,7 +1112,7 @@ function RunningRecords() {
       )}
       {/* Runner Card */}
       {showCard && Object.keys(prs).length > 0 && (
-        <div className="p-5 rounded-2xl mb-4 text-center" style={{ background: "linear-gradient(135deg, #1e3a5f, #0f172a)", border: "1px solid rgba(59,130,246,0.3)" }}>
+        <div className="p-5 rounded-2xl mb-4 text-center" style={{ background: "linear-gradient(135deg, #1e3a5f, #0f172a)", border: "1px solid rgba(var(--c-blue-rgb, 59,130,246), 0.3)" }}>
           <div className="text-lg font-bold mb-2">{"🏃"} Karta Biegacza</div>
           <div className="space-y-1 text-sm">
             {Object.entries(prs).map(([dist, r]) => (
@@ -1204,7 +1204,7 @@ function PolishRaces() {
           onClick={() => setFilter("Wszystkie")}
           className="px-3 py-1 rounded-lg text-xs font-medium transition-colors"
           style={{
-            background: filter === "Wszystkie" ? "#3B82F6" : "rgba(255,255,255,0.06)",
+            background: filter === "Wszystkie" ? "var(--c-blue, #3B82F6)" : "rgba(255,255,255,0.06)",
             color: filter === "Wszystkie" ? "#fff" : "rgba(255,255,255,0.5)",
           }}
         >
@@ -1216,7 +1216,7 @@ function PolishRaces() {
             onClick={() => setFilter(t)}
             className="px-3 py-1 rounded-lg text-xs font-medium transition-colors"
             style={{
-              background: filter === t ? "#3B82F6" : "rgba(255,255,255,0.06)",
+              background: filter === t ? "var(--c-blue, #3B82F6)" : "rgba(255,255,255,0.06)",
               color: filter === t ? "#fff" : "rgba(255,255,255,0.5)",
             }}
           >

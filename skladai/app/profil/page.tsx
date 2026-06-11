@@ -12,6 +12,7 @@ import { useHealthData } from "@/lib/useHealthData";
 import { IS_DEMO } from "@/lib/config";
 import { deactivatePremiumDemo, resetChatLimitsDemo } from "@/lib/demo";
 import { useUserMode, setUserMode } from "@/lib/hooks/useUserMode";
+import { useThemeVariant } from "@/lib/hooks/useThemeVariant";
 import { MODES, MODE_LABELS } from "@/lib/modes";
 import { nsRemove } from "@/lib/native-storage";
 import { pushToCloud } from "@/lib/sync";
@@ -166,7 +167,7 @@ function ModeRow({
           borderRadius: "50%",
           border: active ? "none" : "1.5px solid rgba(255,255,255,0.15)",
           background: active ? color : "transparent",
-          color: "#0a0e0c",
+          color: "var(--bg, #0a0e0c)",
           fontSize: 11,
           fontWeight: 900,
           display: "flex",
@@ -198,6 +199,7 @@ export default function ProfilPage() {
   const [updating, setUpdating] = useState(false);
   const health = useHealthData();
   const { mode: currentMode } = useUserMode();
+  const { variant: themeVariant, setVariant: setThemeVariant } = useThemeVariant();
 
   // Build ID (krótki commit SHA z Vercela) — pokazany przy "Aktualizuj".
   const buildId = process.env.NEXT_PUBLIC_BUILD_ID || "dev";
@@ -320,8 +322,8 @@ export default function ProfilPage() {
   // Loading
   if (!loaded) {
     return (
-      <div style={{ minHeight: "100dvh", display: "flex", alignItems: "center", justifyContent: "center", background: "#0a0e0c" }}>
-        <div style={{ width: 48, height: 48, border: "4px solid rgba(110,252,180,0.3)", borderTopColor: "#6efcb4", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
+      <div style={{ minHeight: "100dvh", display: "flex", alignItems: "center", justifyContent: "center", background: "var(--bg, #0a0e0c)" }}>
+        <div style={{ width: 48, height: 48, border: "4px solid rgba(var(--c-mint-rgb, 110,252,180),0.3)", borderTopColor: "var(--c-mint, #6efcb4)", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
         <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </div>
     );
@@ -341,9 +343,9 @@ export default function ProfilPage() {
   // ═══ EMPTY STATE (no profile) ═══
   if (!profile) {
     return (
-      <div style={{ minHeight: "100dvh", background: "#0a0e0c", paddingBottom: 100 }}>
+      <div style={{ minHeight: "100dvh", background: "var(--bg, #0a0e0c)", paddingBottom: 100 }}>
         <div style={{ padding: "20px 22px 30px", position: "relative" }}>
-          <div style={{ position: "absolute", top: 0, left: "50%", transform: "translateX(-50%)", width: 300, height: 200, background: "radial-gradient(ellipse, rgba(110,252,180,0.08), transparent 70%)", pointerEvents: "none" }} />
+          <div style={{ position: "absolute", top: 0, left: "50%", transform: "translateX(-50%)", width: 300, height: 200, background: "radial-gradient(ellipse, rgba(var(--c-mint-rgb, 110,252,180),0.08), transparent 70%)", pointerEvents: "none" }} />
 
           <div style={{ textAlign: "center", paddingTop: 30 }}>
             <div style={{ width: 80, height: 80, borderRadius: "50%", margin: "0 auto 16px", background: "rgba(255,255,255,0.04)", border: "2px solid rgba(255,255,255,0.08)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 32, color: "rgba(255,255,255,0.2)" }}>👤</div>
@@ -354,7 +356,7 @@ export default function ProfilPage() {
             <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 16, padding: 16, marginBottom: 20, textAlign: "left" }}>
               <div style={{ fontSize: 13, fontWeight: 800, color: "rgba(255,255,255,0.8)", marginBottom: 14 }}>Krok 1 z 4</div>
               <div style={{ height: 4, background: "rgba(255,255,255,0.06)", borderRadius: 2, marginBottom: 16, overflow: "hidden" }}>
-                <div style={{ height: "100%", width: "25%", background: "#6efcb4", borderRadius: 2 }} />
+                <div style={{ height: "100%", width: "25%", background: "var(--c-mint, #6efcb4)", borderRadius: 2 }} />
               </div>
 
               {[
@@ -366,19 +368,19 @@ export default function ProfilPage() {
                 <div key={i} style={{
                   display: "flex", alignItems: "center", gap: 12,
                   padding: "10px 12px", marginBottom: 6, borderRadius: 12,
-                  background: s.active ? "rgba(110,252,180,0.06)" : "transparent",
-                  border: s.active ? "1px solid rgba(110,252,180,0.12)" : "1px solid rgba(255,255,255,0.04)",
+                  background: s.active ? "rgba(var(--c-mint-rgb, 110,252,180),0.06)" : "transparent",
+                  border: s.active ? "1px solid rgba(var(--c-mint-rgb, 110,252,180),0.12)" : "1px solid rgba(255,255,255,0.04)",
                 }}>
-                  <div style={{ width: 32, height: 32, borderRadius: 10, background: s.active ? "rgba(110,252,180,0.1)" : "rgba(255,255,255,0.03)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14 }}>{s.icon}</div>
+                  <div style={{ width: 32, height: 32, borderRadius: 10, background: s.active ? "rgba(var(--c-mint-rgb, 110,252,180),0.1)" : "rgba(255,255,255,0.03)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14 }}>{s.icon}</div>
                   <div>
-                    <div style={{ fontSize: 12.5, fontWeight: 700, color: s.active ? "#6efcb4" : "rgba(255,255,255,0.55)" }}>{s.label}</div>
+                    <div style={{ fontSize: 12.5, fontWeight: 700, color: s.active ? "var(--c-mint, #6efcb4)" : "rgba(255,255,255,0.55)" }}>{s.label}</div>
                     <div style={{ fontSize: 10.5, color: "rgba(255,255,255,0.55)", marginTop: 1 }}>{s.desc}</div>
                   </div>
                 </div>
               ))}
             </div>
 
-            <button onClick={() => setEditing(true)} style={{ width: "100%", padding: 16, borderRadius: 14, border: "none", background: "var(--accent-gradient, linear-gradient(135deg, #6efcb4, #3dd990))", color: "#0a0f0d", fontWeight: 800, fontSize: 15, cursor: "pointer", boxShadow: "0 4px 20px rgba(var(--accent-rgb, 110,252,180), 0.2)" }}>
+            <button onClick={() => setEditing(true)} style={{ width: "100%", padding: 16, borderRadius: 14, border: "none", background: "var(--accent-gradient, linear-gradient(135deg, var(--c-mint, #6efcb4), var(--c-green-2, #3dd990)))", color: "var(--c-ink, #0a0f0d)", fontWeight: 800, fontSize: 15, cursor: "pointer", boxShadow: "0 4px 20px rgba(var(--accent-rgb, var(--c-mint-rgb, 110,252,180)), 0.2)" }}>
               Rozpocznij →
             </button>
 
@@ -407,10 +409,10 @@ export default function ProfilPage() {
   const streakLabel = streak === 1 ? "dzień" : "dni";
 
   return (
-    <div style={{ minHeight: "100dvh", background: "#0a0e0c", paddingBottom: 100 }}>
+    <div style={{ minHeight: "100dvh", background: "var(--bg, #0a0e0c)", paddingBottom: 100 }}>
 
       {/* Header with gradient */}
-      <div style={{ padding: "16px 22px 30px", background: "linear-gradient(180deg, rgba(110,252,180,0.1) 0%, rgba(110,252,180,0.02) 60%, transparent 100%)", textAlign: "center", position: "relative" }}>
+      <div style={{ padding: "16px 22px 30px", background: "linear-gradient(180deg, rgba(var(--c-mint-rgb, 110,252,180),0.1) 0%, rgba(var(--c-mint-rgb, 110,252,180),0.02) 60%, transparent 100%)", textAlign: "center", position: "relative" }}>
         <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 8 }}>
           <div onClick={() => setEditing(true)} style={{ padding: "6px 16px", borderRadius: 20, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", fontSize: 12, color: "rgba(255,255,255,0.6)", fontWeight: 600, cursor: "pointer" }}>
             Edytuj profil
@@ -418,16 +420,16 @@ export default function ProfilPage() {
         </div>
 
         {/* Avatar */}
-        <div style={{ width: 76, height: 76, borderRadius: "50%", margin: "0 auto 12px", background: "linear-gradient(135deg, rgba(110,252,180,0.2), rgba(59,130,246,0.15))", border: "2px solid rgba(110,252,180,0.2)", display: "flex", alignItems: "center", justifyContent: "center", position: "relative" }}>
-          <div style={{ position: "absolute", inset: -6, background: "radial-gradient(circle, rgba(110,252,180,0.15), transparent 70%)", borderRadius: "50%" }} />
+        <div style={{ width: 76, height: 76, borderRadius: "50%", margin: "0 auto 12px", background: "linear-gradient(135deg, rgba(var(--c-mint-rgb, 110,252,180),0.2), rgba(var(--c-blue-rgb, 59,130,246),0.15))", border: "2px solid rgba(var(--c-mint-rgb, 110,252,180),0.2)", display: "flex", alignItems: "center", justifyContent: "center", position: "relative" }}>
+          <div style={{ position: "absolute", inset: -6, background: "radial-gradient(circle, rgba(var(--c-mint-rgb, 110,252,180),0.15), transparent 70%)", borderRadius: "50%" }} />
           {isEmoji ? (
             <span style={{ fontSize: 30, position: "relative" }}>👤</span>
           ) : (
-            <span style={{ fontSize: 30, fontWeight: 900, color: "#6efcb4", position: "relative" }}>{avatarLetter}</span>
+            <span style={{ fontSize: 30, fontWeight: 900, color: "var(--c-mint, #6efcb4)", position: "relative" }}>{avatarLetter}</span>
           )}
         </div>
 
-        <div style={{ fontSize: 20, fontWeight: 900, color: "#6efcb4", letterSpacing: "-0.02em" }}>
+        <div style={{ fontSize: 20, fontWeight: 900, color: "var(--c-mint, #6efcb4)", letterSpacing: "-0.02em" }}>
           {profile.name ? `Cześć, ${profile.name}!` : "Cześć!"}
         </div>
 
@@ -457,8 +459,8 @@ export default function ProfilPage() {
         {!authEmail && (
           <GlassCard
             style={{
-              border: "1px solid rgba(110,252,180,0.3)",
-              background: "linear-gradient(180deg, rgba(110,252,180,0.06), rgba(110,252,180,0.02))",
+              border: "1px solid rgba(var(--c-mint-rgb, 110,252,180),0.3)",
+              background: "linear-gradient(180deg, rgba(var(--c-mint-rgb, 110,252,180),0.06), rgba(var(--c-mint-rgb, 110,252,180),0.02))",
             }}
           >
             <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
@@ -467,7 +469,7 @@ export default function ProfilPage() {
                   width: 40,
                   height: 40,
                   borderRadius: 12,
-                  background: "rgba(110,252,180,0.15)",
+                  background: "rgba(var(--c-mint-rgb, 110,252,180),0.15)",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -492,8 +494,8 @@ export default function ProfilPage() {
                   }
                 }}
                 style={{
-                  background: "var(--accent-gradient, linear-gradient(135deg, #6efcb4, #3dd990))",
-                  color: "#0a0e0c",
+                  background: "var(--accent-gradient, linear-gradient(135deg, var(--c-mint, #6efcb4), var(--c-green-2, #3dd990)))",
+                  color: "var(--bg, #0a0e0c)",
                   border: "none",
                   padding: "8px 14px",
                   borderRadius: 100,
@@ -611,7 +613,7 @@ export default function ProfilPage() {
                     padding: "4px 2px",
                     fontSize: 13,
                     fontWeight: 700,
-                    color: "rgba(110,252,180,0.85)",
+                    color: "rgba(var(--c-mint-rgb, 110,252,180),0.85)",
                     background: "transparent",
                     border: "none",
                     cursor: "pointer",
@@ -646,8 +648,8 @@ export default function ProfilPage() {
                       width: 42,
                       height: 42,
                       borderRadius: 12,
-                      background: "rgba(251,191,36,0.08)",
-                      border: "1px solid rgba(251,191,36,0.15)",
+                      background: "rgba(var(--c-amber-rgb, 251,191,36),0.08)",
+                      border: "1px solid rgba(var(--c-amber-rgb, 251,191,36),0.15)",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
@@ -657,7 +659,7 @@ export default function ProfilPage() {
                     <span style={{ fontSize: 18 }}>⚠️</span>
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 13.5, fontWeight: 700, color: "rgba(251,191,36,0.9)" }}>
+                    <div style={{ fontSize: 13.5, fontWeight: 700, color: "rgba(var(--c-amber-rgb, 251,191,36),0.9)" }}>
                       {healthLabel} — brak zgód
                     </div>
                     <div style={{ fontSize: 11, color: "rgba(255,255,255,0.5)", marginTop: 2 }}>
@@ -703,7 +705,7 @@ export default function ProfilPage() {
                     style={{
                       padding: "8px 16px",
                       borderRadius: 10,
-                      background: "linear-gradient(135deg, #34d399 0%, #10b981 100%)",
+                      background: "linear-gradient(135deg, var(--c-emerald, #34d399) 0%, var(--c-emerald-2, #10b981) 100%)",
                       color: "#fff",
                       fontSize: 12,
                       fontWeight: 800,
@@ -729,9 +731,9 @@ export default function ProfilPage() {
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               {diabetesLabel && (
-                <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 12px", borderRadius: 12, background: "rgba(251,191,36,0.06)", border: "1px solid rgba(251,191,36,0.12)" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 12px", borderRadius: 12, background: "rgba(var(--c-amber-rgb, 251,191,36),0.06)", border: "1px solid rgba(var(--c-amber-rgb, 251,191,36),0.12)" }}>
                   <span>🩸</span>
-                  <span style={{ fontSize: 12.5, fontWeight: 600, color: "rgba(251,191,36,0.8)" }}>Cukrzyca {diabetesLabel}</span>
+                  <span style={{ fontSize: 12.5, fontWeight: 600, color: "rgba(var(--c-amber-rgb, 251,191,36),0.8)" }}>Cukrzyca {diabetesLabel}</span>
                 </div>
               )}
               {pregnancyLabel && (
@@ -741,19 +743,19 @@ export default function ProfilPage() {
                 </div>
               )}
               {allergenLabels.length > 0 && (
-                <div style={{ padding: "10px 12px", borderRadius: 12, background: "rgba(239,68,68,0.06)", border: "1px solid rgba(239,68,68,0.12)" }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(239,68,68,0.7)", marginBottom: 6 }}>⚠️ Alergie:</div>
+                <div style={{ padding: "10px 12px", borderRadius: 12, background: "rgba(var(--c-red-rgb, 239,68,68),0.06)", border: "1px solid rgba(var(--c-red-rgb, 239,68,68),0.12)" }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(var(--c-red-rgb, 239,68,68),0.7)", marginBottom: 6 }}>⚠️ Alergie:</div>
                   <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
                     {allergenLabels.map((a, i) => (
-                      <span key={i} style={{ fontSize: 11, fontWeight: 700, padding: "4px 10px", borderRadius: 16, background: "rgba(239,68,68,0.08)", color: "rgba(239,68,68,0.7)" }}>{a}</span>
+                      <span key={i} style={{ fontSize: 11, fontWeight: 700, padding: "4px 10px", borderRadius: 16, background: "rgba(var(--c-red-rgb, 239,68,68),0.08)", color: "rgba(var(--c-red-rgb, 239,68,68),0.7)" }}>{a}</span>
                     ))}
                   </div>
                 </div>
               )}
               {dietLabel && (
-                <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 12px", borderRadius: 12, background: "rgba(110,252,180,0.06)", border: "1px solid rgba(110,252,180,0.12)" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 12px", borderRadius: 12, background: "rgba(var(--c-mint-rgb, 110,252,180),0.06)", border: "1px solid rgba(var(--c-mint-rgb, 110,252,180),0.12)" }}>
                   <span>🥗</span>
-                  <span style={{ fontSize: 12.5, fontWeight: 600, color: "rgba(110,252,180,0.8)" }}>{dietLabel}</span>
+                  <span style={{ fontSize: 12.5, fontWeight: 600, color: "rgba(var(--c-mint-rgb, 110,252,180),0.8)" }}>{dietLabel}</span>
                 </div>
               )}
             </div>
@@ -769,7 +771,7 @@ export default function ProfilPage() {
 
           {uniqueDateCount >= 2 ? (
             <>
-              <div style={{ height: 80, borderRadius: 12, background: "rgba(110,252,180,0.04)", border: "1px solid rgba(110,252,180,0.08)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 10, overflow: "hidden" }}>
+              <div style={{ height: 80, borderRadius: 12, background: "rgba(var(--c-mint-rgb, 110,252,180),0.04)", border: "1px solid rgba(var(--c-mint-rgb, 110,252,180),0.08)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 10, overflow: "hidden" }}>
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart data={chartDisplayData} margin={{ top: 8, right: 8, left: -30, bottom: 0 }}>
                     <defs>
@@ -791,14 +793,14 @@ export default function ProfilPage() {
 
               {prediction && (
                 prediction.goodTrend ? (
-                  <div style={{ padding: "8px 12px", borderRadius: 10, background: "rgba(110,252,180,0.06)", marginBottom: 8 }}>
-                    <span style={{ fontSize: 11, color: "rgba(110,252,180,0.7)", fontWeight: 600 }}>
+                  <div style={{ padding: "8px 12px", borderRadius: 10, background: "rgba(var(--c-mint-rgb, 110,252,180),0.06)", marginBottom: 8 }}>
+                    <span style={{ fontSize: 11, color: "rgba(var(--c-mint-rgb, 110,252,180),0.7)", fontWeight: 600 }}>
                       📈 Przy tym tempie osiągniesz {targetWeight} kg{prediction.weeksToGoal !== null ? ` za ~${prediction.weeksToGoal} tyg.` : ""}
                     </span>
                   </div>
                 ) : (
-                  <div style={{ padding: "8px 12px", borderRadius: 10, background: "rgba(239,68,68,0.06)", marginBottom: 8 }}>
-                    <span style={{ fontSize: 11, color: "rgba(239,68,68,0.7)", fontWeight: 600 }}>⚠️ Trend prowadzi w złą stronę</span>
+                  <div style={{ padding: "8px 12px", borderRadius: 10, background: "rgba(var(--c-red-rgb, 239,68,68),0.06)", marginBottom: 8 }}>
+                    <span style={{ fontSize: 11, color: "rgba(var(--c-red-rgb, 239,68,68),0.7)", fontWeight: 600 }}>⚠️ Trend prowadzi w złą stronę</span>
                   </div>
                 )
               )}
@@ -810,7 +812,7 @@ export default function ProfilPage() {
           )}
 
           {!showWeightForm ? (
-            <button onClick={() => setShowWeightForm(true)} style={{ width: "100%", padding: 10, borderRadius: 12, background: "rgba(110,252,180,0.06)", border: "1px solid rgba(110,252,180,0.12)", color: "#6efcb4", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+            <button onClick={() => setShowWeightForm(true)} style={{ width: "100%", padding: 10, borderRadius: 12, background: "rgba(var(--c-mint-rgb, 110,252,180),0.06)", border: "1px solid rgba(var(--c-mint-rgb, 110,252,180),0.12)", color: "var(--c-mint, #6efcb4)", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
               + Dodaj wagę
             </button>
           ) : (
@@ -825,7 +827,7 @@ export default function ProfilPage() {
                 <input type="date" value={newWeightDate} onChange={(e) => setNewWeightDate(e.target.value)}
                   style={{ width: "100%", padding: "8px 10px", borderRadius: 10, border: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.04)", color: "#fff", fontSize: 13, colorScheme: "dark" }} />
               </div>
-              <button type="button" onClick={handleSaveWeight} style={{ padding: "8px 16px", borderRadius: 10, background: "var(--accent-main, #6efcb4)", color: "#0a0f0d", fontSize: 13, fontWeight: 700, border: "none", cursor: "pointer", flexShrink: 0, WebkitAppearance: "none" }}>
+              <button type="button" onClick={handleSaveWeight} style={{ padding: "8px 16px", borderRadius: 10, background: "var(--accent-main, var(--c-mint, #6efcb4))", color: "var(--c-ink, #0a0f0d)", fontSize: 13, fontWeight: 700, border: "none", cursor: "pointer", flexShrink: 0, WebkitAppearance: "none" }}>
                 Zapisz
               </button>
             </div>
@@ -845,12 +847,12 @@ export default function ProfilPage() {
           {normsOpen && (
             <div style={{ marginTop: 16 }}>
               {/* Calories */}
-              <div style={{ padding: "12px 14px", borderRadius: 14, background: "rgba(110,252,180,0.06)", border: "1px solid rgba(110,252,180,0.1)", marginBottom: 10 }}>
+              <div style={{ padding: "12px 14px", borderRadius: 14, background: "rgba(var(--c-mint-rgb, 110,252,180),0.06)", border: "1px solid rgba(var(--c-mint-rgb, 110,252,180),0.1)", marginBottom: 10 }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <span style={{ fontSize: 13, fontWeight: 700, color: "rgba(110,252,180,0.8)" }}>⚡ Kalorie</span>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: "rgba(var(--c-mint-rgb, 110,252,180),0.8)" }}>⚡ Kalorie</span>
                   <span style={{ fontSize: 20, fontWeight: 900, color: "#fff" }}>{n.calories} kcal</span>
                 </div>
-                <div style={{ fontSize: 10, color: "rgba(110,252,180,0.6)", marginTop: 4 }}>BMR: {profile.bmr} · TDEE: {profile.tdee} · Cel: {goalLabel}</div>
+                <div style={{ fontSize: 10, color: "rgba(var(--c-mint-rgb, 110,252,180),0.6)", marginTop: 4 }}>BMR: {profile.bmr} · TDEE: {profile.tdee} · Cel: {goalLabel}</div>
               </div>
 
               {/* Macros */}
@@ -913,9 +915,9 @@ export default function ProfilPage() {
               }}
               style={{
                 width: "100%", padding: 12, borderRadius: 12,
-                background: "rgba(239,68,68,0.08)",
-                border: "1px solid rgba(239,68,68,0.15)",
-                color: "rgba(239,68,68,0.7)", fontSize: 13, fontWeight: 700,
+                background: "rgba(var(--c-red-rgb, 239,68,68),0.08)",
+                border: "1px solid rgba(var(--c-red-rgb, 239,68,68),0.15)",
+                color: "rgba(var(--c-red-rgb, 239,68,68),0.7)", fontSize: 13, fontWeight: 700,
                 cursor: "pointer",
               }}
             >
@@ -928,7 +930,7 @@ export default function ProfilPage() {
           <GlassCard>
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
               <span style={{ fontSize: 16 }}>🧪</span>
-              <span style={{ fontSize: 13, fontWeight: 800, color: "#f59e0b" }}>
+              <span style={{ fontSize: 13, fontWeight: 800, color: "var(--c-amber-2, #f59e0b)" }}>
                 Narzędzia DEMO
               </span>
             </div>
@@ -954,7 +956,7 @@ export default function ProfilPage() {
                   width: "100%", padding: 10, borderRadius: 10,
                   background: "rgba(245,158,11,0.08)",
                   border: "1px dashed rgba(245,158,11,0.5)",
-                  color: "#f59e0b",
+                  color: "var(--c-amber-2, #f59e0b)",
                   fontSize: 12, fontWeight: 700, cursor: "pointer",
                 }}
               >
@@ -980,7 +982,7 @@ export default function ProfilPage() {
                   width: "100%", padding: 10, borderRadius: 10,
                   background: "rgba(245,158,11,0.08)",
                   border: "1px dashed rgba(245,158,11,0.5)",
-                  color: "#f59e0b",
+                  color: "var(--c-amber-2, #f59e0b)",
                   fontSize: 12, fontWeight: 700, cursor: "pointer",
                 }}
               >
@@ -1021,7 +1023,7 @@ export default function ProfilPage() {
                   width: "100%", padding: 10, borderRadius: 10,
                   background: "rgba(245,158,11,0.08)",
                   border: "1px dashed rgba(245,158,11,0.5)",
-                  color: "#f59e0b",
+                  color: "var(--c-amber-2, #f59e0b)",
                   fontSize: 12, fontWeight: 700, cursor: "pointer",
                 }}
               >
@@ -1033,6 +1035,53 @@ export default function ProfilPage() {
             </p>
           </GlassCard>
         )}
+
+        {/* Wygląd aplikacji — przełącznik motywu (Klasyczny / Obsidian).
+            Obsidian = alternatywna paleta (grafit + szmaragd) do porównania;
+            klasyczny pozostaje 1:1 dotychczasowym wyglądem. */}
+        <GlassCard>
+          <div style={{ fontSize: 13.5, fontWeight: 800, color: "rgba(255,255,255,0.85)", marginBottom: 4 }}>
+            🎨 Wygląd aplikacji
+          </div>
+          <p style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", margin: "0 0 12px", lineHeight: 1.4 }}>
+            Wypróbuj nową kolorystykę — zmiana działa od razu w całej aplikacji i możesz wrócić kiedy chcesz.
+          </p>
+          <div style={{ display: "flex", gap: 10 }}>
+            {([
+              { id: "classic" as const, label: "Klasyczny", bg: "#0a0e0c", acc: "#6efcb4", desc: "mięta" },
+              { id: "obsidian" as const, label: "Obsidian", bg: "#0a0b0f", acc: "#34d399", desc: "szmaragd · nowy" },
+            ]).map((t) => {
+              const active = themeVariant === t.id;
+              return (
+                <button
+                  key={t.id}
+                  onClick={() => setThemeVariant(t.id)}
+                  aria-pressed={active}
+                  data-testid={`theme-card-${t.id}`}
+                  style={{
+                    flex: 1, padding: 12, borderRadius: 14, cursor: "pointer", textAlign: "left",
+                    background: t.bg,
+                    border: active ? `1.5px solid ${t.acc}` : "1px solid rgba(255,255,255,0.1)",
+                    boxShadow: active ? `0 0 16px ${t.acc}40` : "none",
+                    transition: "all 0.2s",
+                  }}
+                >
+                  {/* Mini-podgląd palety: pasek akcentu + kropki semantyczne */}
+                  <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 8 }}>
+                    <div style={{ width: 26, height: 8, borderRadius: 4, background: t.acc }} />
+                    <div style={{ width: 8, height: 8, borderRadius: 4, background: t.id === "classic" ? "#FBBF24" : "#f7c548" }} />
+                    <div style={{ width: 8, height: 8, borderRadius: 4, background: t.id === "classic" ? "#ef4444" : "#f2555a" }} />
+                    <div style={{ width: 8, height: 8, borderRadius: 4, background: t.id === "classic" ? "#3b82f6" : "#5b9dff" }} />
+                  </div>
+                  <div style={{ fontSize: 12.5, fontWeight: 800, color: active ? t.acc : "rgba(255,255,255,0.85)" }}>
+                    {active ? "✓ " : ""}{t.label}
+                  </div>
+                  <div style={{ fontSize: 10, color: "rgba(255,255,255,0.45)", marginTop: 2 }}>{t.desc}</div>
+                </button>
+              );
+            })}
+          </div>
+        </GlassCard>
 
         {/* Aktualizacja aplikacji — wymusza pobranie najnowszej wersji z serwera.
             Stała opcja (nie DEMO) — przydatna gdy WebView trzyma stary cache. */}
@@ -1047,8 +1096,8 @@ export default function ProfilPage() {
               disabled={updating}
               style={{
                 padding: "10px 16px", borderRadius: 12, flexShrink: 0,
-                background: "rgba(110,252,180,0.1)", border: "1px solid rgba(110,252,180,0.25)",
-                color: "#6efcb4", fontSize: 13, fontWeight: 800,
+                background: "rgba(var(--c-mint-rgb, 110,252,180),0.1)", border: "1px solid rgba(var(--c-mint-rgb, 110,252,180),0.25)",
+                color: "var(--c-mint, #6efcb4)", fontSize: 13, fontWeight: 800,
                 cursor: updating ? "default" : "pointer", opacity: updating ? 0.6 : 1,
                 display: "flex", alignItems: "center", gap: 6, whiteSpace: "nowrap",
               }}

@@ -39,22 +39,22 @@ function AlertCard({ alert }: { alert: HealthAlert }) {
   // Severity → kolory
   const colors = {
     danger: {
-      border: "rgba(239,68,68,0.35)",
-      bg: "rgba(239,68,68,0.08)",
+      border: "rgba(var(--c-red-rgb, 239,68,68), 0.35)",
+      bg: "rgba(var(--c-red-rgb, 239,68,68), 0.08)",
       title: "#fca5a5",
       ingredient: "rgba(252,165,165,0.18)",
     },
     warning: {
-      border: "rgba(251,191,36,0.32)",
-      bg: "rgba(251,191,36,0.06)",
-      title: "#fbbf24",
-      ingredient: "rgba(251,191,36,0.15)",
+      border: "rgba(var(--c-amber-rgb, 251,191,36), 0.32)",
+      bg: "rgba(var(--c-amber-rgb, 251,191,36), 0.06)",
+      title: "var(--c-amber, #fbbf24)",
+      ingredient: "rgba(var(--c-amber-rgb, 251,191,36), 0.15)",
     },
     info: {
-      border: "rgba(34,211,238,0.32)",
-      bg: "rgba(34,211,238,0.06)",
-      title: "#22d3ee",
-      ingredient: "rgba(34,211,238,0.15)",
+      border: "rgba(var(--c-cyan-rgb, 34,211,238), 0.32)",
+      bg: "rgba(var(--c-cyan-rgb, 34,211,238), 0.06)",
+      title: "var(--c-cyan, #22d3ee)",
+      ingredient: "rgba(var(--c-cyan-rgb, 34,211,238), 0.15)",
     },
   }[alert.severity];
 
