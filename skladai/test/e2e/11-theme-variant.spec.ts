@@ -3,9 +3,9 @@
  * @critical
  *
  * Architektura: design tokens w globals.css — :root = klasyczne wartości
- * (identyczne z dawnymi hardcodami), body.theme-obsidian = nowa paleta.
- * Przełącznik: Profil → "Wygląd aplikacji" (useThemeVariant, nsSet persist,
- * pre-paint script w layout.tsx czyta localStorage przed renderem).
+ * (identyczne z dawnymi hardcodami), body.theme-{azure|violet|gold} = nowe
+ * palety. Przełącznik: Profil → "Wygląd aplikacji" (useThemeVariant, nsSet
+ * persist, pre-paint script w layout.tsx czyta localStorage przed renderem).
  */
 
 import { test, expect } from "@playwright/test";
@@ -36,7 +36,9 @@ test.describe("Motyw Klasyczny/Obsidian @critical", () => {
     await page.goto("/", { waitUntil: "domcontentloaded" });
     await page.waitForTimeout(800);
 
-    const hasClass = await page.evaluate(() => document.body.classList.contains("theme-obsidian"));
+    const hasClass = await page.evaluate(() =>
+      ["theme-azure", "theme-violet", "theme-gold"].some((c) => document.body.classList.contains(c))
+    );
     expect(hasClass).toBe(false);
 
     const mint = await page.evaluate(() =>
@@ -50,14 +52,14 @@ test.describe("Motyw Klasyczny/Obsidian @critical", () => {
     expect(bg).toBe("#0a0e0c");
   });
 
-  test("przełączenie na OBSIDIAN w profilu: klasa + tokeny + persist po reload", async ({ page }) => {
+  test("przełączenie na LAZUR w profilu: klasa + tokeny + persist po reload", async ({ page }) => {
     await page.addInitScript(PROFILE_INIT);
     await page.goto("/profil", { waitUntil: "domcontentloaded" });
     await page.waitForTimeout(1500);
 
     // JS-click (omija ewentualną nakładkę onboardingu — wzorzec z innych testów)
     const clicked = await page.evaluate(() => {
-      const el = document.querySelector('[data-testid="theme-card-obsidian"]') as HTMLElement | null;
+      const el = document.querySelector('[data-testid="theme-card-azure"]') as HTMLElement | null;
       if (el) { el.click(); return true; }
       return false;
     });
@@ -65,17 +67,17 @@ test.describe("Motyw Klasyczny/Obsidian @critical", () => {
     await page.waitForTimeout(400);
 
     // Klasa + tokeny przestawione natychmiast
-    expect(await page.evaluate(() => document.body.classList.contains("theme-obsidian"))).toBe(true);
+    expect(await page.evaluate(() => document.body.classList.contains("theme-azure"))).toBe(true);
     const mint = await page.evaluate(() =>
       getComputedStyle(document.body).getPropertyValue("--c-mint").trim().toLowerCase()
     );
-    expect(mint).toBe("#34d399"); // szmaragd Obsidianu
+    expect(mint).toBe("#38bdf8"); // błękit Lazuru
 
     // Persist: localStorage zapisany, po reloadzie pre-paint przywraca motyw
-    expect(await page.evaluate(() => localStorage.getItem("skladai_theme_variant"))).toBe("obsidian");
+    expect(await page.evaluate(() => localStorage.getItem("skladai_theme_variant"))).toBe("azure");
     await page.reload({ waitUntil: "domcontentloaded" });
     await page.waitForTimeout(800);
-    expect(await page.evaluate(() => document.body.classList.contains("theme-obsidian"))).toBe(true);
+    expect(await page.evaluate(() => document.body.classList.contains("theme-azure"))).toBe(true);
 
     // Powrót do klasycznego
     await page.evaluate(() => {

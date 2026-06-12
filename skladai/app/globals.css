@@ -74,54 +74,74 @@
   --hero-meal-4: #6B4A15;
 }
 
-/* ── OBSIDIAN — premium dark: neutralny grafit + szmaragd ── */
-body.theme-obsidian {
-  --bg: #0a0b0f;
-  --bg-panel: #0e0f14;
-  --c-mint: #34d399;
-  --c-mint-rgb: 52, 211, 153;
-  --c-ink: #051510;
-  --c-green: #30c98e;
-  --c-green-rgb: 48, 201, 142;
-  --c-green-2: #10b981;
-  --c-emerald: #34d399;
-  --c-emerald-2: #10b981;
+/* ════════════════════════════════════════════════════════════════════
+   ALTERNATYWNE MOTYWY — każdy nadpisuje TYLKO: tło + rodzinę akcentu
+   (mint/green/emerald/teal = brand + skan żywności) + hero + ink. Kolory
+   semantyczne/kategorii (amber=Danie, blue=Suplement, violet=Kosmetyki,
+   red=ostrzeżenia) dziedziczą z :root → zachowują znaczenie w każdym motywie.
+   ════════════════════════════════════════════════════════════════════ */
+
+/* ── LAZUR — błękit electric na chłodnej granatowej czerni (clinical premium) ── */
+body.theme-azure {
+  --bg: #080e18;
+  --bg-panel: #0c1422;
+  --c-mint: #38bdf8;
+  --c-mint-rgb: 56, 189, 248;
+  --c-ink: #04141f;
+  --c-green: #0ea5e9;
+  --c-green-rgb: 14, 165, 233;
+  --c-green-2: #38bdf8;
+  --c-emerald: #22d3ee;
+  --c-emerald-2: #0891b2;
   --c-teal: #2dd4bf;
   --c-teal-rgb: 45, 212, 191;
-  --c-teal-2: #14b8a6;
-  --c-cyan: #38cdf8;
-  --c-cyan-rgb: 56, 205, 248;
-  --c-cyan-2: #0ea5e9;
-  --c-blue: #5b9dff;
-  --c-blue-rgb: 91, 157, 255;
-  --c-blue-2: #7eb3ff;
-  --c-blue-3: #3b82f6;
-  --c-violet: #a78bfa;
-  --c-violet-rgb: 167, 139, 250;
-  --c-violet-2: #8b5cf6;
-  --c-violet-3: #7c3aed;
-  --c-amber: #f7c548;
-  --c-amber-rgb: 247, 197, 72;
-  --c-amber-2: #f59e0b;
-  --c-amber-3: #fde68a;
-  --c-orange: #ff8a50;
-  --c-orange-rgb: 255, 138, 80;
-  --c-orange-2: #ffa66e;
-  --c-orange-3: #f97340;
-  --c-red: #f2555a;
-  --c-red-rgb: 242, 85, 90;
-  --c-red-2: #ff8a80;
-  --c-red-3: #e5484d;
-  --c-pink: #f472b6;
-  --c-pink-2: #f9a8d4;
-  --hero-1: #0c1a14;
-  --hero-2: #103326;
-  --hero-3: #14503a;
-  --hero-4: #1a6b4c;
-  --hero-meal-1: #15100a;
-  --hero-meal-2: #2e2310;
-  --hero-meal-3: #463415;
-  --hero-meal-4: #54401a;
+  --c-teal-2: #0e9488;
+  --hero-1: #07223e;
+  --hero-2: #0b3a68;
+  --hero-3: #0f5ea4;
+  --hero-4: #1788e0;
+}
+
+/* ── AMETYST — fiolet/magenta na ciemnej śliwce (Whoop / Oura premium) ── */
+body.theme-violet {
+  --bg: #0c0a14;
+  --bg-panel: #130f1f;
+  --c-mint: #a78bfa;
+  --c-mint-rgb: 167, 139, 250;
+  --c-ink: #160a26;
+  --c-green: #8b5cf6;
+  --c-green-rgb: 139, 92, 246;
+  --c-green-2: #a78bfa;
+  --c-emerald: #c084fc;
+  --c-emerald-2: #9333ea;
+  --c-teal: #818cf8;
+  --c-teal-rgb: 129, 140, 248;
+  --c-teal-2: #6366f1;
+  --hero-1: #18103a;
+  --hero-2: #2a1860;
+  --hero-3: #402594;
+  --hero-4: #5733c0;
+}
+
+/* ── BURSZTYN — ciepłe złoto na grafitowym brązie (luksusowy members-club) ── */
+body.theme-gold {
+  --bg: #100c06;
+  --bg-panel: #17110a;
+  --c-mint: #f5c14e;
+  --c-mint-rgb: 245, 193, 78;
+  --c-ink: #1c1304;
+  --c-green: #f59e0b;
+  --c-green-rgb: 245, 158, 11;
+  --c-green-2: #f5c14e;
+  --c-emerald: #fcd34d;
+  --c-emerald-2: #ea9a0b;
+  --c-teal: #fb923c;
+  --c-teal-rgb: 251, 146, 60;
+  --c-teal-2: #f97316;
+  --hero-1: #2a1c08;
+  --hero-2: #4a3210;
+  --hero-3: #6e4d16;
+  --hero-4: #946a20;
 }
 
 * {
@@ -191,9 +211,9 @@ body.onboarding-active #scroll-container {
 .velvet-hero {
   background: #0D0B0E;
 }
-body.theme-obsidian .velvet-hero {
-  background: #0c0d12;
-}
+body.theme-azure .velvet-hero { background: #0a1018; }
+body.theme-violet .velvet-hero { background: #100c1a; }
+body.theme-gold .velvet-hero { background: #14100a; }
 
 /* === MEAL HERO === */
 .meal-hero {

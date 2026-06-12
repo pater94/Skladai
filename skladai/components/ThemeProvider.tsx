@@ -36,6 +36,14 @@ interface AccentSet {
 
 // Realne hexy (nie var(--…)) — accent.main bywa czytany w JS (getComputedStyle
 // w testach, ewentualne canvas/SVG); wariant motywu wybiera zestaw niżej.
+// fitness = akcent brandowy danego motywu; cosmetics zachowuje fioletową
+// tożsamość (poza Ametystem, gdzie i tak jest fioletowo).
+const COSMETIC_VIOLET: AccentSet = {
+  main: "#C084FC",
+  rgb: "192,132,252",
+  gradient: "linear-gradient(135deg, #a78bfa, #C084FC)",
+  bg: "rgba(192,132,252,0.08)",
+};
 const MODE_ACCENTS: Record<ThemeVariant, Record<UserMode, AccentSet>> = {
   classic: {
     fitness: {
@@ -44,26 +52,34 @@ const MODE_ACCENTS: Record<ThemeVariant, Record<UserMode, AccentSet>> = {
       gradient: "linear-gradient(135deg, #4ade80, #6efcb4)",
       bg: "rgba(110,252,180,0.08)",
     },
-    cosmetics: {
-      main: "#C084FC",
-      rgb: "192,132,252",
-      gradient: "linear-gradient(135deg, #a78bfa, #C084FC)",
-      bg: "rgba(192,132,252,0.08)",
-    },
+    cosmetics: COSMETIC_VIOLET,
   },
-  obsidian: {
+  azure: {
     fitness: {
-      main: "#34d399",
-      rgb: "52,211,153",
-      gradient: "linear-gradient(135deg, #10b981, #34d399)",
-      bg: "rgba(52,211,153,0.08)",
+      main: "#38bdf8",
+      rgb: "56,189,248",
+      gradient: "linear-gradient(135deg, #0ea5e9, #38bdf8)",
+      bg: "rgba(56,189,248,0.08)",
     },
-    cosmetics: {
+    cosmetics: COSMETIC_VIOLET,
+  },
+  violet: {
+    fitness: {
       main: "#a78bfa",
       rgb: "167,139,250",
       gradient: "linear-gradient(135deg, #8b5cf6, #a78bfa)",
       bg: "rgba(167,139,250,0.08)",
     },
+    cosmetics: COSMETIC_VIOLET,
+  },
+  gold: {
+    fitness: {
+      main: "#f5c14e",
+      rgb: "245,193,78",
+      gradient: "linear-gradient(135deg, #f59e0b, #f5c14e)",
+      bg: "rgba(245,193,78,0.08)",
+    },
+    cosmetics: COSMETIC_VIOLET,
   },
 };
 
