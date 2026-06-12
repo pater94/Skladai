@@ -3,12 +3,14 @@
 /**
  * useThemeVariant — przełącznik motywu kolorystycznego aplikacji.
  *
- *   "classic"  — dotychczasowa kolorystyka (mięta na zielonkawej czerni).
- *                Tokeny :root w globals.css = dokładnie stare wartości,
- *                więc klasyczny wygląda IDENTYCZNIE jak przed zmianą.
- *   "obsidian" — premium dark: neutralny grafit + szmaragd (Profil → Wygląd).
+ *   "classic" — dotychczasowa kolorystyka (mięta na zielonkawej czerni).
+ *               Tokeny :root w globals.css = dokładnie stare wartości,
+ *               więc klasyczny wygląda IDENTYCZNIE jak przed zmianą.
+ *   "azure"   — Lazur: błękit electric na granatowej czerni.
+ *   "violet"  — Ametyst: fiolet/magenta na ciemnej śliwce.
+ *   "gold"    — Bursztyn: ciepłe złoto na grafitowym brązie.
  *
- * Mechanika: body.theme-obsidian przestawia tokeny --c-* / --bg / --hero-*
+ * Mechanika: body.theme-{variant} przestawia tokeny --c-* / --bg / --hero-*
  * zdefiniowane w globals.css. Persist: nsSet (Capacitor Preferences +
  * localStorage — localStorage czyta też pre-paint script w layout.tsx,
  * żeby uniknąć mignięcia klasycznego przy starcie).
@@ -17,15 +19,18 @@
 import { useEffect, useState } from "react";
 import { nsGet, nsSet } from "@/lib/native-storage";
 
-export type ThemeVariant = "classic" | "obsidian";
+export type ThemeVariant = "classic" | "azure" | "violet" | "gold";
 
+export const THEME_VARIANTS: ThemeVariant[] = ["classic", "azure", "violet", "gold"];
 export const THEME_VARIANT_KEY = "skladai_theme_variant";
-const BODY_CLASS = "theme-obsidian";
+// Wszystkie klasy motywów (poza klasycznym, który nie ma klasy).
+const THEME_CLASSES = ["theme-azure", "theme-violet", "theme-gold"];
 const EVENT = "theme-variant-changed";
 
 export function applyThemeVariant(variant: ThemeVariant): void {
   if (typeof document === "undefined") return;
-  document.body.classList.toggle(BODY_CLASS, variant === "obsidian");
+  document.body.classList.remove(...THEME_CLASSES);
+  if (variant !== "classic") document.body.classList.add(`theme-${variant}`);
 }
 
 export function setThemeVariant(variant: ThemeVariant): void {
@@ -43,15 +48,17 @@ export function useThemeVariant(): {
 
   useEffect(() => {
     let cancelled = false;
+    const normalize = (v: string | null): ThemeVariant =>
+      v && (THEME_VARIANTS as string[]).includes(v) ? (v as ThemeVariant) : "classic";
     const refresh = () => {
       // Źródło prawdy po mount: body class (pre-paint script mógł już ustawić)
       // + nsGet dla natywki, gdzie localStorage bywa czyszczony.
-      const fromBody = document.body.classList.contains(BODY_CLASS);
-      setVariantState(fromBody ? "obsidian" : "classic");
+      const fromBody = THEME_CLASSES.find((c) => document.body.classList.contains(c));
+      setVariantState(fromBody ? (fromBody.replace("theme-", "") as ThemeVariant) : "classic");
       nsGet(THEME_VARIANT_KEY)
         .then((v) => {
           if (cancelled) return;
-          const stored: ThemeVariant = v === "obsidian" ? "obsidian" : "classic";
+          const stored = normalize(v);
           applyThemeVariant(stored);
           setVariantState(stored);
         })

@@ -20,20 +20,20 @@ function ScannerLogo({ size = 72, filterId = "glow" }: { size?: number; filterId
   return (
     <div style={{ width: size, height: size, margin: "0 auto", position: "relative" }}>
       <div style={{ position: "absolute", inset: -10, background: "radial-gradient(circle, rgba(var(--c-mint-rgb, 110,252,180),0.2), transparent 70%)", animation: "breathe 3s ease-in-out infinite" }} />
-      <svg width={size} height={size} viewBox="0 0 512 512" style={{ position: "relative" }}>
+      <svg width={size} height={size} viewBox="0 0 512 512" style={{ position: "relative", color: "var(--c-mint, #6efcb4)" }}>
         <defs>
           <filter id={filterId}><feGaussianBlur stdDeviation="8" result="b" /><feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge></filter>
         </defs>
         <rect width="512" height="512" rx="108" fill="#0a0f0d" />
-        <circle cx="256" cy="256" r="200" fill="rgba(110,252,180,0.05)" />
-        <g stroke="#6efcb4" strokeWidth="16" strokeLinecap="round" fill="none" filter={`url(#${filterId})`}>
+        <circle cx="256" cy="256" r="200" fill="currentColor" fillOpacity={0.05} />
+        <g stroke="currentColor" strokeWidth="16" strokeLinecap="round" fill="none" filter={`url(#${filterId})`}>
           <path d="M120 200 L120 140 Q120 120 140 120 L200 120" />
           <path d="M312 120 L372 120 Q392 120 392 140 L392 200" />
           <path d="M392 312 L392 372 Q392 392 372 392 L312 392" />
           <path d="M200 392 L140 392 Q120 392 120 372 L120 312" />
         </g>
-        <line x1="150" y1="256" x2="362" y2="256" stroke="#6efcb4" strokeWidth="3" opacity="0.3" />
-        <text x="256" y="290" textAnchor="middle" fontFamily="system-ui,-apple-system,sans-serif" fontWeight="900" fontSize="180" fill="#6efcb4">S</text>
+        <line x1="150" y1="256" x2="362" y2="256" stroke="currentColor" strokeWidth="3" opacity="0.3" />
+        <text x="256" y="290" textAnchor="middle" fontFamily="system-ui,-apple-system,sans-serif" fontWeight="900" fontSize="180" fill="currentColor">S</text>
       </svg>
     </div>
   );

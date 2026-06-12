@@ -1036,9 +1036,9 @@ export default function ProfilPage() {
           </GlassCard>
         )}
 
-        {/* Wygląd aplikacji — przełącznik motywu (Klasyczny / Obsidian).
-            Obsidian = alternatywna paleta (grafit + szmaragd) do porównania;
-            klasyczny pozostaje 1:1 dotychczasowym wyglądem. */}
+        {/* Wygląd aplikacji — przełącznik motywu. Klasyczny zostaje 1:1
+            dotychczasowym wyglądem; pozostałe to odważne alternatywy paletowe
+            (tło + akcent + hero) do porównania na żywo. */}
         <GlassCard>
           <div style={{ fontSize: 13.5, fontWeight: 800, color: "rgba(255,255,255,0.85)", marginBottom: 4 }}>
             🎨 Wygląd aplikacji
@@ -1046,10 +1046,12 @@ export default function ProfilPage() {
           <p style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", margin: "0 0 12px", lineHeight: 1.4 }}>
             Wypróbuj nową kolorystykę — zmiana działa od razu w całej aplikacji i możesz wrócić kiedy chcesz.
           </p>
-          <div style={{ display: "flex", gap: 10 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
             {([
-              { id: "classic" as const, label: "Klasyczny", bg: "#0a0e0c", acc: "#6efcb4", desc: "mięta" },
-              { id: "obsidian" as const, label: "Obsidian", bg: "#0a0b0f", acc: "#34d399", desc: "szmaragd · nowy" },
+              { id: "classic" as const, label: "Klasyczny", bg: "#0a0e0c", acc: "#6efcb4", grad: ["#1A3A0A", "#4A8C26"], desc: "mięta" },
+              { id: "azure" as const, label: "Lazur", bg: "#080e18", acc: "#38bdf8", grad: ["#07223e", "#1788e0"], desc: "błękit · nowy" },
+              { id: "violet" as const, label: "Ametyst", bg: "#0c0a14", acc: "#a78bfa", grad: ["#18103a", "#5733c0"], desc: "fiolet · nowy" },
+              { id: "gold" as const, label: "Bursztyn", bg: "#100c06", acc: "#f5c14e", grad: ["#2a1c08", "#946a20"], desc: "złoto · nowy" },
             ]).map((t) => {
               const active = themeVariant === t.id;
               return (
@@ -1059,21 +1061,19 @@ export default function ProfilPage() {
                   aria-pressed={active}
                   data-testid={`theme-card-${t.id}`}
                   style={{
-                    flex: 1, padding: 12, borderRadius: 14, cursor: "pointer", textAlign: "left",
+                    padding: 12, borderRadius: 14, cursor: "pointer", textAlign: "left",
                     background: t.bg,
                     border: active ? `1.5px solid ${t.acc}` : "1px solid rgba(255,255,255,0.1)",
                     boxShadow: active ? `0 0 16px ${t.acc}40` : "none",
                     transition: "all 0.2s",
                   }}
                 >
-                  {/* Mini-podgląd palety: pasek akcentu + kropki semantyczne */}
-                  <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 8 }}>
-                    <div style={{ width: 26, height: 8, borderRadius: 4, background: t.acc }} />
-                    <div style={{ width: 8, height: 8, borderRadius: 4, background: t.id === "classic" ? "#FBBF24" : "#f7c548" }} />
-                    <div style={{ width: 8, height: 8, borderRadius: 4, background: t.id === "classic" ? "#ef4444" : "#f2555a" }} />
-                    <div style={{ width: 8, height: 8, borderRadius: 4, background: t.id === "classic" ? "#3b82f6" : "#5b9dff" }} />
+                  {/* Mini-podgląd: pasek hero gradientu + kropka akcentu */}
+                  <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
+                    <div style={{ flex: 1, height: 10, borderRadius: 5, background: `linear-gradient(90deg, ${t.grad[0]}, ${t.grad[1]})` }} />
+                    <div style={{ width: 10, height: 10, borderRadius: 5, background: t.acc, boxShadow: `0 0 8px ${t.acc}` }} />
                   </div>
-                  <div style={{ fontSize: 12.5, fontWeight: 800, color: active ? t.acc : "rgba(255,255,255,0.85)" }}>
+                  <div style={{ fontSize: 12.5, fontWeight: 800, color: active ? t.acc : "rgba(255,255,255,0.88)" }}>
                     {active ? "✓ " : ""}{t.label}
                   </div>
                   <div style={{ fontSize: 10, color: "rgba(255,255,255,0.45)", marginTop: 2 }}>{t.desc}</div>

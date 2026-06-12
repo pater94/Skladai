@@ -33,22 +33,24 @@ const HIDDEN_PREFIXES = [
 // Inline scanner logo for the FAB itself (small, emerald, no expert glow)
 function FabLogo({ size = 32 }: { size?: number }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 512 512">
+    <svg width={size} height={size} viewBox="0 0 512 512" style={{ color: "var(--c-mint, #6efcb4)" }}>
       <defs>
         <filter id="fabGlow">
           <feGaussianBlur stdDeviation="6" result="b" />
           <feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge>
         </filter>
       </defs>
+      {/* Tło logo = stały ciemny badge; znak S dziedziczy akcent motywu
+          (currentColor ← color w style; var() w atrybutach SVG nie działa). */}
       <rect width="512" height="512" rx="108" fill="#0a0f0d" />
-      <circle cx="256" cy="256" r="200" fill="rgba(110,252,180,0.06)" />
-      <g stroke="#6efcb4" strokeWidth="20" strokeLinecap="round" fill="none" filter="url(#fabGlow)">
+      <circle cx="256" cy="256" r="200" fill="currentColor" fillOpacity={0.06} />
+      <g stroke="currentColor" strokeWidth="20" strokeLinecap="round" fill="none" filter="url(#fabGlow)">
         <path d="M120 200 L120 140 Q120 120 140 120 L200 120" />
         <path d="M312 120 L372 120 Q392 120 392 140 L392 200" />
         <path d="M392 312 L392 372 Q392 392 372 392 L312 392" />
         <path d="M200 392 L140 392 Q120 392 120 372 L120 312" />
       </g>
-      <text x="256" y="296" textAnchor="middle" fontFamily="system-ui,-apple-system,sans-serif" fontWeight="900" fontSize="200" fill="#6efcb4">S</text>
+      <text x="256" y="296" textAnchor="middle" fontFamily="system-ui,-apple-system,sans-serif" fontWeight="900" fontSize="200" fill="currentColor">S</text>
     </svg>
   );
 }
