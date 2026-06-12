@@ -23,7 +23,7 @@ const sectionTitle: React.CSSProperties = {
 const questionTitle: React.CSSProperties = {
   fontSize: 15,
   fontWeight: 800,
-  color: "#ffffff",
+  color: "var(--fg, #ffffff)",
   marginTop: 18,
   marginBottom: 6,
 };
@@ -80,7 +80,7 @@ export default function SupportPage() {
             style={{
               fontSize: 32,
               fontWeight: 900,
-              color: "#ffffff",
+              color: "var(--fg, #ffffff)",
               lineHeight: 1.2,
               margin: 0,
             }}
@@ -147,7 +147,7 @@ export default function SupportPage() {
           style={{
             marginTop: 56,
             paddingTop: 24,
-            borderTop: "1px solid rgba(255,255,255,0.08)",
+            borderTop: "1px solid rgba(var(--fg-rgb, 255,255,255),0.08)",
             fontSize: 12,
             color: MUTED,
             lineHeight: 1.7,

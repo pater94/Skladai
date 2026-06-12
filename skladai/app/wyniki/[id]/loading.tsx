@@ -40,7 +40,7 @@ export default function Loading() {
       <p
         style={{
           fontSize: 13,
-          color: "rgba(255,255,255,0.55)",
+          color: "rgba(var(--fg-rgb, 255,255,255),0.55)",
           fontWeight: 600,
           letterSpacing: 0.2,
         }}

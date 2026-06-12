@@ -252,7 +252,7 @@ export default function Scanner({ onScan, isLoading, mode = "food", loadingMessa
           food: { gradient: "linear-gradient(135deg, #1A3A0A 0%, #2D5A16 50%, #3D7A1F 100%)", iconBg: "rgba(132,204,22,0.12)", iconStroke1: "#BEF264", iconStroke2: "#84CC16", subColor: "rgba(132,204,22,0.9)", subText: "🔬 AI Vision przeanalizuje skład", emoji: "🔬" },
           cosmetics: { gradient: "linear-gradient(135deg, #6B21A8 0%, #9333EA 50%, #A855F7 100%)", iconBg: "rgba(232,121,249,0.12)", iconStroke1: "#F0ABFC", iconStroke2: "#E879F9", subColor: "rgba(232,121,249,0.9)", subText: "🔬 AI Vision przeanalizuje skład kosmetyku", emoji: "✨" },
           meal: { gradient: "linear-gradient(135deg, #C2410C 0%, var(--c-orange-3, #EA580C) 50%, var(--c-orange, #F97316) 100%)", iconBg: "rgba(var(--c-amber-rgb, 251,191,36), 0.12)", iconStroke1: "#FDE68A", iconStroke2: "#FBBF24", subColor: "rgba(var(--c-amber-rgb, 251,191,36), 0.9)", subText: "🔬 AI Vision rozpozna składniki i kalorie", emoji: "🍽️" },
-          forma: { gradient: "linear-gradient(135deg, var(--c-orange, #F97316) 0%, var(--c-red, #EF4444) 100%)", iconBg: "rgba(var(--c-orange-rgb, 249,115,22), 0.12)", iconStroke1: "#FDBA74", iconStroke2: "#F97316", subColor: "rgba(255,255,255,0.9)", subText: "✦ POWERED BY AI VISION", emoji: "🔥" },
+          forma: { gradient: "linear-gradient(135deg, var(--c-orange, #F97316) 0%, var(--c-red, #EF4444) 100%)", iconBg: "rgba(var(--c-orange-rgb, 249,115,22), 0.12)", iconStroke1: "#FDBA74", iconStroke2: "#F97316", subColor: "rgba(var(--fg-rgb, 255,255,255),0.9)", subText: "✦ POWERED BY AI VISION", emoji: "🔥" },
         };
         const t = themes[mode] || themes.food;
         return (
@@ -262,7 +262,7 @@ export default function Scanner({ onScan, isLoading, mode = "food", loadingMessa
             className="w-full group relative overflow-hidden flex items-center gap-4 px-5 py-[22px] text-white rounded-[20px] active:scale-[0.97] transition-all duration-200 shadow-xl"
             style={{ background: t.gradient }}
           >
-            <div className="absolute top-0 right-0 w-32 h-32 rounded-full" style={{ background: "radial-gradient(circle, rgba(255,255,255,0.06) 0%, transparent 70%)" }} />
+            <div className="absolute top-0 right-0 w-32 h-32 rounded-full" style={{ background: "radial-gradient(circle, rgba(var(--fg-rgb, 255,255,255),0.06) 0%, transparent 70%)" }} />
             <div className="absolute left-[20%] right-[20%] top-1/2 h-[1px]" style={{ background: `linear-gradient(90deg, transparent, ${t.iconStroke2}40, transparent)` }} />
             <div className="relative flex-shrink-0 w-12 h-12 rounded-xl flex items-center justify-center" style={{ background: t.iconBg }}>
               <svg width="28" height="28" viewBox="0 0 24 24" fill="none">

@@ -90,13 +90,13 @@ export default function AnalyzingAnimation({ mode }: AnalyzingAnimationProps) {
             }}>
               <div style={{
                 width: 28, height: 28, borderRadius: 8,
-                background: done ? `rgba(${c.rgb},0.15)` : active ? `rgba(${c.rgb},0.1)` : "rgba(255,255,255,0.03)",
+                background: done ? `rgba(${c.rgb},0.15)` : active ? `rgba(${c.rgb},0.1)` : "rgba(var(--fg-rgb, 255,255,255),0.03)",
                 display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13,
                 color: done ? c.accent : undefined,
               }}>{done ? "✓" : s.icon}</div>
               <span style={{
                 fontSize: 13, fontWeight: active ? 700 : 500,
-                color: done ? `rgba(${c.rgb},0.6)` : active ? c.accent : "rgba(255,255,255,0.55)",
+                color: done ? `rgba(${c.rgb},0.6)` : active ? c.accent : "rgba(var(--fg-rgb, 255,255,255),0.55)",
                 textDecoration: done ? "line-through" : "none",
               }}>{s.text}</span>
               {active && <div style={{ marginLeft: "auto", width: 16, height: 16, borderRadius: "50%", border: `2px solid rgba(${c.rgb},0.2)`, borderTopColor: c.accent, animation: "spinSlow 0.6s linear infinite" }} />}
@@ -106,10 +106,10 @@ export default function AnalyzingAnimation({ mode }: AnalyzingAnimationProps) {
       </div>
 
       {/* Progress bar */}
-      <div style={{ width: "80%", height: 3, margin: "0 auto", background: "rgba(255,255,255,0.05)", borderRadius: 2, overflow: "hidden" }}>
+      <div style={{ width: "80%", height: 3, margin: "0 auto", background: "rgba(var(--fg-rgb, 255,255,255),0.05)", borderRadius: 2, overflow: "hidden" }}>
         <div style={{ height: "100%", width: `${progressPct}%`, background: `linear-gradient(90deg, ${c.dark}, ${c.accent}, ${c.dark})`, backgroundSize: "200% 100%", borderRadius: 2, transition: "width 0.5s ease", animation: "shimmer 1.5s linear infinite" }} />
       </div>
-      <div style={{ textAlign: "center", marginTop: 16, fontSize: 11, color: "rgba(255,255,255,0.55)" }}>To potrwa kilka sekund</div>
+      <div style={{ textAlign: "center", marginTop: 16, fontSize: 11, color: "rgba(var(--fg-rgb, 255,255,255),0.55)" }}>To potrwa kilka sekund</div>
     </div>
   );
 }

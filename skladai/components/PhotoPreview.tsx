@@ -86,7 +86,7 @@ export default function PhotoPreview({
         {/* Header */}
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
           <div onClick={onBack} style={{ width: 32, height: 32, borderRadius: 10, background: t.accentLight, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, cursor: "pointer" }}>←</div>
-          <div style={{ color: "#fff", fontWeight: 800, fontSize: 15 }}>Oba zdjęcia</div>
+          <div style={{ color: "var(--fg, #fff)", fontWeight: 800, fontSize: 15 }}>Oba zdjęcia</div>
           <div style={{ marginLeft: "auto", background: t.accentLight, color: t.accent, fontSize: 10, fontWeight: 800, padding: "4px 10px", borderRadius: 10 }}>✓ KOMPLET</div>
         </div>
 
@@ -95,28 +95,28 @@ export default function PhotoPreview({
           {[photo1, photo2].map((photo, n) => (
             <div key={n} style={{
               flex: 1, height: 155, borderRadius: 16,
-              background: `linear-gradient(160deg, ${n === 1 ? t.gradStart : "rgba(255,255,255,0.02)"}, #0d1210)`,
-              border: n === 1 ? `1.5px solid ${t.accent}44` : "1.5px solid rgba(255,255,255,0.06)",
+              background: `linear-gradient(160deg, ${n === 1 ? t.gradStart : "rgba(var(--fg-rgb, 255,255,255),0.02)"}, #0d1210)`,
+              border: n === 1 ? `1.5px solid ${t.accent}44` : "1.5px solid rgba(var(--fg-rgb, 255,255,255),0.06)",
               position: "relative", overflow: "hidden",
             }}>
               <img src={photo!} alt={`Zdjęcie ${n + 1}`} style={{ width: "100%", height: "100%", objectFit: "cover", position: "absolute", inset: 0 }} />
               {/* Mini scanner brackets */}
               <svg width="100%" height="100%" style={{ position: "absolute", top: 0, left: 0 }}>
-                <g stroke={n === 1 ? t.accent : "rgba(255,255,255,0.1)"} strokeWidth="1.5" strokeLinecap="round" fill="none" opacity="0.5">
+                <g stroke={n === 1 ? t.accent : "rgba(var(--fg-rgb, 255,255,255),0.1)"} strokeWidth="1.5" strokeLinecap="round" fill="none" opacity="0.5">
                   <path d="M12 35 L12 18 Q12 12 18 12 L35 12" /><path d="M138 12 L155 12 Q161 12 161 18 L161 35" />
                   <path d="M161 122 L161 139 Q161 145 155 145 L138 145" /><path d="M35 145 L18 145 Q12 145 12 139 L12 122" />
                 </g>
               </svg>
               {/* Label */}
               <div style={{ position: "absolute", bottom: 8, left: 0, right: 0, textAlign: "center" }}>
-                <span style={{ fontSize: 10, fontWeight: 700, color: n === 1 ? t.accent : "rgba(255,255,255,0.55)" }}>
+                <span style={{ fontSize: 10, fontWeight: 700, color: n === 1 ? t.accent : "rgba(var(--fg-rgb, 255,255,255),0.55)" }}>
                   {n === 0 ? t.p1 : t.p2}
                 </span>
               </div>
               {/* Badge */}
-              <div style={{ position: "absolute", top: 8, right: 8, background: n === 1 ? t.accent : "rgba(255,255,255,0.1)", color: n === 1 && t.darkBtn ? "var(--c-ink, #0a0f0d)" : "#fff", fontSize: 8, fontWeight: 800, padding: "2px 6px", borderRadius: 6 }}>{n + 1}/2</div>
+              <div style={{ position: "absolute", top: 8, right: 8, background: n === 1 ? t.accent : "rgba(var(--fg-rgb, 255,255,255),0.1)", color: n === 1 && t.darkBtn ? "var(--c-ink, #0a0f0d)" : "#fff", fontSize: 8, fontWeight: 800, padding: "2px 6px", borderRadius: 6 }}>{n + 1}/2</div>
               {/* Checkmark on photo 1 */}
-              {n === 0 && <div style={{ position: "absolute", top: 8, left: 8, background: "#22c55e", color: "#fff", fontSize: 9, width: 16, height: 16, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center" }}>✓</div>}
+              {n === 0 && <div style={{ position: "absolute", top: 8, left: 8, background: "#22c55e", color: "var(--fg, #fff)", fontSize: 9, width: 16, height: 16, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center" }}>✓</div>}
             </div>
           ))}
         </div>
@@ -141,8 +141,8 @@ export default function PhotoPreview({
 
         {/* Change photo links */}
         <div style={{ display: "flex", justifyContent: "center", gap: 16 }}>
-          <button type="button" onClick={onRetakePhoto1} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.55)", fontSize: 11, cursor: "pointer", padding: 6 }}>🔄 Zmień zdjęcie 1</button>
-          <button type="button" onClick={onRetakePhoto2} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.55)", fontSize: 11, cursor: "pointer", padding: 6 }}>🔄 Zmień zdjęcie 2</button>
+          <button type="button" onClick={onRetakePhoto1} style={{ background: "none", border: "none", color: "rgba(var(--fg-rgb, 255,255,255),0.55)", fontSize: 11, cursor: "pointer", padding: 6 }}>🔄 Zmień zdjęcie 1</button>
+          <button type="button" onClick={onRetakePhoto2} style={{ background: "none", border: "none", color: "rgba(var(--fg-rgb, 255,255,255),0.55)", fontSize: 11, cursor: "pointer", padding: 6 }}>🔄 Zmień zdjęcie 2</button>
         </div>
       </div>
     );
@@ -163,8 +163,8 @@ export default function PhotoPreview({
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
         <div onClick={onBack} style={{ width: 32, height: 32, borderRadius: 10, background: t.accentLight, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, cursor: "pointer" }}>←</div>
         <div>
-          <div style={{ color: "#fff", fontWeight: 800, fontSize: 15 }}>Podgląd zdjęcia</div>
-          <div style={{ color: "rgba(255,255,255,0.55)", fontSize: 10.5, marginTop: 1 }}>{source === "gallery" ? "Wybrano z galerii" : "Zrobiono aparatem"}</div>
+          <div style={{ color: "var(--fg, #fff)", fontWeight: 800, fontSize: 15 }}>Podgląd zdjęcia</div>
+          <div style={{ color: "rgba(var(--fg-rgb, 255,255,255),0.55)", fontSize: 10.5, marginTop: 1 }}>{source === "gallery" ? "Wybrano z galerii" : "Zrobiono aparatem"}</div>
         </div>
         <div style={{ marginLeft: "auto", background: `linear-gradient(135deg, ${t.accent}, ${t.accentMid})`, color: bc, fontSize: 10, fontWeight: 800, padding: "4px 10px", borderRadius: 10 }}>ZDJĘCIE 1</div>
       </div>
@@ -184,17 +184,17 @@ export default function PhotoPreview({
         </svg>
         {/* Center icon */}
         <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 6 }}>
-          <div style={{ width: 52, height: 52, borderRadius: 14, background: "rgba(255,255,255,0.05)", backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)", border: "1px solid rgba(255,255,255,0.08)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24 }}>
+          <div style={{ width: 52, height: 52, borderRadius: 14, background: "rgba(var(--fg-rgb, 255,255,255),0.05)", backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)", border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.08)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24 }}>
             {source === "gallery" ? "🖼️" : "📸"}
           </div>
-          <span style={{ fontSize: 11, color: "rgba(255,255,255,0.55)", fontWeight: 600 }}>
+          <span style={{ fontSize: 11, color: "rgba(var(--fg-rgb, 255,255,255),0.55)", fontWeight: 600 }}>
             {mode === "food" ? "Etykieta produktu" : "Przód opakowania"}
           </span>
         </div>
       </div>
 
       {/* Glass info card — AI POTRZEBUJE */}
-      <div style={{ background: "rgba(255,255,255,0.03)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)", border: `1px solid ${t.accent}22`, borderRadius: 16, padding: "14px 14px 12px", marginBottom: 12, position: "relative", overflow: "hidden" }}>
+      <div style={{ background: "rgba(var(--fg-rgb, 255,255,255),0.03)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)", border: `1px solid ${t.accent}22`, borderRadius: 16, padding: "14px 14px 12px", marginBottom: 12, position: "relative", overflow: "hidden" }}>
         <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: `linear-gradient(90deg, transparent, ${t.accent}60, transparent)` }} />
         <div style={{ fontSize: 11.5, fontWeight: 800, color: t.accent, marginBottom: 12, letterSpacing: "0.04em", textTransform: "uppercase" }}>AI potrzebuje</div>
         {t.checklist.map((item, i) => {
@@ -205,10 +205,10 @@ export default function PhotoPreview({
               opacity: visible ? 1 : 0.25, transform: visible ? "translateX(0)" : "translateX(-8px)",
               transition: `all 0.4s cubic-bezier(.4,0,.2,1) ${i * 0.15}s`,
             }}>
-              <div style={{ width: 34, height: 34, borderRadius: 10, background: visible ? t.accentLight : "rgba(255,255,255,0.03)", border: `1px solid ${visible ? t.accent + "33" : "rgba(255,255,255,0.05)"}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15, flexShrink: 0 }}>{item.icon}</div>
+              <div style={{ width: 34, height: 34, borderRadius: 10, background: visible ? t.accentLight : "rgba(var(--fg-rgb, 255,255,255),0.03)", border: `1px solid ${visible ? t.accent + "33" : "rgba(var(--fg-rgb, 255,255,255),0.05)"}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15, flexShrink: 0 }}>{item.icon}</div>
               <div>
-                <div style={{ fontSize: 13, fontWeight: 700, color: visible ? "rgba(255,255,255,0.9)" : "rgba(255,255,255,0.4)", lineHeight: "17px" }}>{item.text}</div>
-                <div style={{ fontSize: 10.5, color: visible ? "rgba(255,255,255,0.55)" : "rgba(255,255,255,0.35)", lineHeight: "14px", marginTop: 1 }}>{item.desc}</div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: visible ? "rgba(var(--fg-rgb, 255,255,255),0.9)" : "rgba(var(--fg-rgb, 255,255,255),0.4)", lineHeight: "17px" }}>{item.text}</div>
+                <div style={{ fontSize: 10.5, color: visible ? "rgba(var(--fg-rgb, 255,255,255),0.55)" : "rgba(var(--fg-rgb, 255,255,255),0.35)", lineHeight: "14px", marginTop: 1 }}>{item.desc}</div>
               </div>
             </div>
           );
@@ -218,7 +218,7 @@ export default function PhotoPreview({
       {/* Hint */}
       <div style={{ borderRadius: 12, padding: "10px 12px", marginBottom: 16, display: "flex", gap: 8, alignItems: "flex-start" }}>
         <span style={{ fontSize: 13, flexShrink: 0, opacity: 0.7 }}>💡</span>
-        <span style={{ fontSize: 11.5, color: "rgba(255,255,255,0.55)", lineHeight: "16px" }}>{t.hint}</span>
+        <span style={{ fontSize: 11.5, color: "rgba(var(--fg-rgb, 255,255,255),0.55)", lineHeight: "16px" }}>{t.hint}</span>
       </div>
 
       {/* CTA — animated gradient border */}
@@ -229,7 +229,7 @@ export default function PhotoPreview({
       </div>
 
       {/* Secondary — analyze single */}
-      <button type="button" onClick={onAnalyzeSingle} style={{ width: "100%", padding: 13, borderRadius: 13, border: "1px solid rgba(255,255,255,0.06)", background: "transparent", color: "rgba(255,255,255,0.55)", fontWeight: 600, fontSize: 13.5, cursor: "pointer" }}>
+      <button type="button" onClick={onAnalyzeSingle} style={{ width: "100%", padding: 13, borderRadius: 13, border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.06)", background: "transparent", color: "rgba(var(--fg-rgb, 255,255,255),0.55)", fontWeight: 600, fontSize: 13.5, cursor: "pointer" }}>
         Analizuj z jednym zdjęciem →
       </button>
     </div>

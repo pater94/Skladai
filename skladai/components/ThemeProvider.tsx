@@ -81,6 +81,21 @@ const MODE_ACCENTS: Record<ThemeVariant, Record<UserMode, AccentSet>> = {
     },
     cosmetics: COSMETIC_VIOLET,
   },
+  // Tryb jasny — akcenty przyciemnione, by były czytelne na białym tle.
+  light: {
+    fitness: {
+      main: "#059669",
+      rgb: "5,150,105",
+      gradient: "linear-gradient(135deg, #10b981, #059669)",
+      bg: "rgba(5,150,105,0.10)",
+    },
+    cosmetics: {
+      main: "#7c3aed",
+      rgb: "124,58,237",
+      gradient: "linear-gradient(135deg, #8b5cf6, #7c3aed)",
+      bg: "rgba(124,58,237,0.10)",
+    },
+  },
 };
 
 interface ThemeContextValue {

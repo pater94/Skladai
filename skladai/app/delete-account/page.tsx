@@ -2,17 +2,17 @@ export default function DeleteAccount() {
   return (
     <div style={{ background: "var(--bg-panel, #0a0f0d)", color: "#e0e0e0", minHeight: "100vh", padding: "24px 20px", fontFamily: "system-ui, sans-serif", lineHeight: 1.7 }}>
       <div style={{ maxWidth: 680, margin: "0 auto" }}>
-        <h1 style={{ fontSize: 28, fontWeight: 800, color: "#fff", marginBottom: 8 }}>Usuwanie konta SkładAI</h1>
+        <h1 style={{ fontSize: 28, fontWeight: 800, color: "var(--fg, #fff)", marginBottom: 8 }}>Usuwanie konta SkładAI</h1>
         <p style={{ fontSize: 13, color: "#888", marginBottom: 32 }}>Ostatnia aktualizacja: kwiecień 2026</p>
 
-        <div style={{ padding: 20, borderRadius: 16, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", marginBottom: 24 }}>
+        <div style={{ padding: 20, borderRadius: 16, background: "rgba(var(--fg-rgb, 255,255,255),0.04)", border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.08)", marginBottom: 24 }}>
           <p style={{ fontSize: 14 }}>
             Aby usunąć swoje konto i wszystkie powiązane dane, wyślij wiadomość e-mail na adres:{" "}
             <a href="mailto:skladai.app@gmail.com?subject=Usuń moje konto" style={{ color: "var(--c-mint, #6efcb4)", fontWeight: 700 }}>skladai.app@gmail.com</a>{" "}
-            z tematem <strong style={{ color: "#fff" }}>{'"'}Usuń moje konto{'"'}</strong>.
+            z tematem <strong style={{ color: "var(--fg, #fff)" }}>{'"'}Usuń moje konto{'"'}</strong>.
           </p>
           <p style={{ fontSize: 14, marginTop: 12 }}>
-            Twoje dane zostaną usunięte w ciągu <strong style={{ color: "#fff" }}>7 dni roboczych</strong> od otrzymania zgłoszenia.
+            Twoje dane zostaną usunięte w ciągu <strong style={{ color: "var(--fg, #fff)" }}>7 dni roboczych</strong> od otrzymania zgłoszenia.
           </p>
         </div>
 
@@ -28,7 +28,7 @@ export default function DeleteAccount() {
           Dane przechowywane lokalnie na Twoim urządzeniu (localStorage) możesz usunąć samodzielnie czyszcząc dane aplikacji w ustawieniach przeglądarki lub telefonu.
         </p>
 
-        <div style={{ marginTop: 48, paddingTop: 24, borderTop: "1px solid rgba(255,255,255,0.08)", textAlign: "center" }}>
+        <div style={{ marginTop: 48, paddingTop: 24, borderTop: "1px solid rgba(var(--fg-rgb, 255,255,255),0.08)", textAlign: "center" }}>
           <p style={{ fontSize: 12, color: "#555" }}>SkładAI &copy; 2026. Wszystkie prawa zastrzeżone.</p>
         </div>
       </div>

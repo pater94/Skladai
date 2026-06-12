@@ -36,16 +36,16 @@ function FunComparisons({ items, isDark }: { items: string[]; isDark: boolean })
       className="mt-3 anim-fade-up-1"
       style={{
         padding: 18, borderRadius: 16,
-        background: "rgba(255,255,255,0.025)",
-        border: "1px solid rgba(255,255,255,0.06)",
+        background: "rgba(var(--fg-rgb, 255,255,255),0.025)",
+        border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.06)",
       }}
     >
-      <p style={{ fontSize: 14, fontWeight: 700, color: "rgba(255,255,255,0.8)", marginBottom: 12 }}>
+      <p style={{ fontSize: 14, fontWeight: 700, color: "rgba(var(--fg-rgb, 255,255,255),0.8)", marginBottom: 12 }}>
         💡 Ciekawostki
       </p>
       <ul className="space-y-2">
         {items.map((c: string, i: number) => (
-          <li key={i} style={{ fontSize: 13, color: "rgba(255,255,255,0.55)", lineHeight: 1.6, display: "flex", alignItems: "flex-start", gap: 8 }}>
+          <li key={i} style={{ fontSize: 13, color: "rgba(var(--fg-rgb, 255,255,255),0.55)", lineHeight: 1.6, display: "flex", alignItems: "flex-start", gap: 8 }}>
             <span style={{ color: "var(--c-mint, #6efcb4)", fontSize: 8, marginTop: 6 }}>●</span>
             <span>{String(c)}</span>
           </li>
@@ -311,15 +311,15 @@ function ShareCard({ name, score, verdict, isForma, macroKcal100 }: { name: stri
     <div style={{ width: 400, padding: 32, background: "var(--bg, #0a0e0c)", fontFamily: "system-ui, -apple-system, sans-serif" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 24 }}>
         <img src="/icons/icon-192.png" alt="" width={32} height={32} style={{ borderRadius: 8 }} />
-        <span style={{ fontSize: 14, fontWeight: 800, color: "rgba(255,255,255,0.7)" }}>SkładAI</span>
+        <span style={{ fontSize: 14, fontWeight: 800, color: "rgba(var(--fg-rgb, 255,255,255),0.7)" }}>SkładAI</span>
       </div>
-      <p style={{ fontSize: 20, fontWeight: 800, color: "#ffffff", marginBottom: 12, lineHeight: 1.3 }}>{name}</p>
+      <p style={{ fontSize: 20, fontWeight: 800, color: "var(--fg, #ffffff)", marginBottom: 12, lineHeight: 1.3 }}>{name}</p>
       <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
         {isMacroCard ? (
           <span style={{ fontSize: 18, fontWeight: 800, color: scoreColor }}>⚡ {macroKcal100} kcal/100g</span>
         ) : (
           <>
-            <div style={{ width: 52, height: 52, borderRadius: "50%", background: `conic-gradient(${scoreColor} ${(score ?? 0) * 36}deg, rgba(255,255,255,0.08) 0deg)`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <div style={{ width: 52, height: 52, borderRadius: "50%", background: `conic-gradient(${scoreColor} ${(score ?? 0) * 36}deg, rgba(var(--fg-rgb, 255,255,255),0.08) 0deg)`, display: "flex", alignItems: "center", justifyContent: "center" }}>
               <div style={{ width: 40, height: 40, borderRadius: "50%", background: "var(--bg, #0a0e0c)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, fontWeight: 800, color: scoreColor }}>
                 {score}
               </div>
@@ -330,9 +330,9 @@ function ShareCard({ name, score, verdict, isForma, macroKcal100 }: { name: stri
           </>
         )}
       </div>
-      {verdict && <p style={{ fontSize: 13, color: "rgba(255,255,255,0.55)", lineHeight: 1.6, marginBottom: 20 }}>{verdict.slice(0, 120)}{verdict.length > 120 ? "..." : ""}</p>}
-      <div style={{ borderTop: "1px solid rgba(255,255,255,0.08)", paddingTop: 16 }}>
-        <p style={{ fontSize: 11, color: "rgba(255,255,255,0.55)" }}>Sprawdź skład swoich produktów → skladai.com</p>
+      {verdict && <p style={{ fontSize: 13, color: "rgba(var(--fg-rgb, 255,255,255),0.55)", lineHeight: 1.6, marginBottom: 20 }}>{verdict.slice(0, 120)}{verdict.length > 120 ? "..." : ""}</p>}
+      <div style={{ borderTop: "1px solid rgba(var(--fg-rgb, 255,255,255),0.08)", paddingTop: 16 }}>
+        <p style={{ fontSize: 11, color: "rgba(var(--fg-rgb, 255,255,255),0.55)" }}>Sprawdź skład swoich produktów → skladai.com</p>
       </div>
     </div>
   );
@@ -462,9 +462,9 @@ export default function WynikiPage() {
               aria-label="Wróć"
               className="w-10 h-10 rounded-full flex items-center justify-center active:scale-90 transition-transform"
               style={{
-                background: "rgba(255,255,255,0.05)",
-                border: "1px solid rgba(255,255,255,0.08)",
-                color: "rgba(255,255,255,0.85)",
+                background: "rgba(var(--fg-rgb, 255,255,255),0.05)",
+                border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.08)",
+                color: "rgba(var(--fg-rgb, 255,255,255),0.85)",
                 fontSize: 18,
               }}
             >
@@ -480,7 +480,7 @@ export default function WynikiPage() {
                 marginTop: 22,
                 fontSize: 28,
                 fontWeight: 900,
-                color: "#ffffff",
+                color: "var(--fg, #ffffff)",
                 letterSpacing: "-0.02em",
                 textAlign: "center",
               }}
@@ -491,7 +491,7 @@ export default function WynikiPage() {
               style={{
                 marginTop: 10,
                 fontSize: 14,
-                color: "rgba(255,255,255,0.6)",
+                color: "rgba(var(--fg-rgb, 255,255,255),0.6)",
                 lineHeight: 1.55,
                 maxWidth: 300,
                 textAlign: "center",
@@ -530,7 +530,7 @@ export default function WynikiPage() {
                   <p
                     style={{
                       fontSize: 13.5,
-                      color: "rgba(255,255,255,0.85)",
+                      color: "rgba(var(--fg-rgb, 255,255,255),0.85)",
                       lineHeight: 1.65,
                       margin: 0,
                     }}
@@ -549,7 +549,7 @@ export default function WynikiPage() {
                 style={{
                   fontSize: 11,
                   fontWeight: 800,
-                  color: "rgba(255,255,255,0.4)",
+                  color: "rgba(var(--fg-rgb, 255,255,255),0.4)",
                   textTransform: "uppercase",
                   letterSpacing: 1.2,
                   marginBottom: 12,
@@ -565,8 +565,8 @@ export default function WynikiPage() {
                     style={{
                       padding: "12px 14px",
                       borderRadius: 14,
-                      background: "rgba(255,255,255,0.03)",
-                      border: "1px solid rgba(255,255,255,0.06)",
+                      background: "rgba(var(--fg-rgb, 255,255,255),0.03)",
+                      border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.06)",
                       display: "flex",
                       alignItems: "center",
                       gap: 12,
@@ -593,7 +593,7 @@ export default function WynikiPage() {
                     <span
                       style={{
                         fontSize: 13,
-                        color: "rgba(255,255,255,0.78)",
+                        color: "rgba(var(--fg-rgb, 255,255,255),0.78)",
                         lineHeight: 1.45,
                       }}
                     >
@@ -630,7 +630,7 @@ export default function WynikiPage() {
               className="w-full mt-3 py-3 active:opacity-60 transition-opacity"
               style={{
                 fontSize: 12.5,
-                color: "rgba(255,255,255,0.45)",
+                color: "rgba(var(--fg-rgb, 255,255,255),0.45)",
                 background: "transparent",
                 border: "none",
                 fontWeight: 600,
@@ -779,9 +779,9 @@ export default function WynikiPage() {
                 className="active:scale-95 transition-all"
                 style={{
                   padding: "7px 14px", borderRadius: 11,
-                  background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)",
+                  background: "rgba(var(--fg-rgb, 255,255,255),0.04)", border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.08)",
                   backdropFilter: "blur(12px)",
-                  fontSize: 12, fontWeight: 600, color: "rgba(255,255,255,0.6)",
+                  fontSize: 12, fontWeight: 600, color: "rgba(var(--fg-rgb, 255,255,255),0.6)",
                   display: "flex", alignItems: "center", gap: 5, cursor: "pointer",
                 }}
               >
@@ -792,9 +792,9 @@ export default function WynikiPage() {
                 className="active:scale-95 transition-all"
                 style={{
                   padding: "7px 14px", borderRadius: 11,
-                  background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)",
+                  background: "rgba(var(--fg-rgb, 255,255,255),0.04)", border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.08)",
                   backdropFilter: "blur(12px)",
-                  fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.45)",
+                  fontSize: 11, fontWeight: 600, color: "rgba(var(--fg-rgb, 255,255,255),0.45)",
                   cursor: "pointer",
                 }}
               >
@@ -811,8 +811,8 @@ export default function WynikiPage() {
               className="active:scale-95 transition-all"
               style={{
                 padding: "8px 16px", borderRadius: 12,
-                background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)",
-                backdropFilter: "blur(12px)", color: "rgba(255,255,255,0.6)",
+                background: "rgba(var(--fg-rgb, 255,255,255),0.04)", border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.08)",
+                backdropFilter: "blur(12px)", color: "rgba(var(--fg-rgb, 255,255,255),0.6)",
                 fontSize: 13, fontWeight: 600, cursor: "pointer",
               }}
             >
@@ -823,8 +823,8 @@ export default function WynikiPage() {
               className="active:scale-95 transition-all"
               style={{
                 padding: "8px 16px", borderRadius: 12,
-                background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)",
-                backdropFilter: "blur(12px)", color: "rgba(255,255,255,0.45)",
+                background: "rgba(var(--fg-rgb, 255,255,255),0.04)", border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.08)",
+                backdropFilter: "blur(12px)", color: "rgba(var(--fg-rgb, 255,255,255),0.45)",
                 fontSize: 12, fontWeight: 600, cursor: "pointer",
               }}
             >
@@ -857,7 +857,7 @@ export default function WynikiPage() {
             return (
               <div style={{
                 margin: "0 16px 12px", borderRadius: 20,
-                background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.06)",
+                background: "rgba(var(--fg-rgb, 255,255,255),0.025)", border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.06)",
                 backdropFilter: "blur(20px)", position: "relative", overflow: "hidden",
               }}>
                 {/* Gradient stripe */}
@@ -878,7 +878,7 @@ export default function WynikiPage() {
                   ) : (
                     <div style={{ textAlign: "center" }}>
                       <div style={{ fontSize: 60, opacity: 0.8, filter: "drop-shadow(0 4px 12px rgba(0,0,0,0.3))" }}>🏋️</div>
-                      <div style={{ fontSize: 10, color: "rgba(255,255,255,0.2)", marginTop: 2 }}>Twoje zdjęcie sylwetki</div>
+                      <div style={{ fontSize: 10, color: "rgba(var(--fg-rgb, 255,255,255),0.2)", marginTop: 2 }}>Twoje zdjęcie sylwetki</div>
                     </div>
                   )}
 
@@ -892,14 +892,14 @@ export default function WynikiPage() {
                   <div style={{
                     position: "absolute", top: 10, right: 10,
                     width: 58, height: 58, borderRadius: 14,
-                    background: "rgba(0,0,0,0.6)", border: "1.5px solid rgba(255,255,255,0.1)",
+                    background: "rgba(0,0,0,0.6)", border: "1.5px solid rgba(var(--fg-rgb, 255,255,255),0.1)",
                     backdropFilter: "blur(16px)",
                     display: "flex", alignItems: "center", justifyContent: "center",
                     zIndex: 2, boxShadow: `0 0 16px ${formaScoreColor}15`,
                   }}>
                     <div style={{ position: "relative", width: 44, height: 44 }}>
                       <svg width="44" height="44" style={{ transform: "rotate(-90deg)", position: "absolute", top: 0, left: 0 }}>
-                        <circle cx="22" cy="22" r="18" stroke="rgba(255,255,255,0.08)" strokeWidth="3" fill="none" />
+                        <circle cx="22" cy="22" r="18" stroke="rgba(var(--fg-rgb, 255,255,255),0.08)" strokeWidth="3" fill="none" />
                         <circle cx="22" cy="22" r="18" stroke={formaScoreColor} strokeWidth="3" fill="none"
                           strokeLinecap="round"
                           strokeDasharray={scoreCircumForma}
@@ -912,7 +912,7 @@ export default function WynikiPage() {
                         transform: "translate(-50%, -50%)", textAlign: "center",
                       }}>
                         <div style={{ fontSize: 15, fontWeight: 900, color: formaScoreColor, lineHeight: 1 }}>{result.score}</div>
-                        <div style={{ fontSize: 7, color: "rgba(255,255,255,0.4)" }}>/10</div>
+                        <div style={{ fontSize: 7, color: "rgba(var(--fg-rgb, 255,255,255),0.4)" }}>/10</div>
                       </div>
                     </div>
                   </div>
@@ -932,7 +932,7 @@ export default function WynikiPage() {
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 }}>
                     <div>
                       <div style={{ fontSize: 18, fontWeight: 800, color: "white", marginBottom: 2 }}>CheckForm</div>
-                      <div style={{ fontSize: 12, color: "rgba(255,255,255,0.45)" }}>{subtitle}</div>
+                      <div style={{ fontSize: 12, color: "rgba(var(--fg-rgb, 255,255,255),0.45)" }}>{subtitle}</div>
                     </div>
                     <span style={{
                       padding: "4px 10px", borderRadius: 7, fontSize: 10, fontWeight: 600,
@@ -943,9 +943,9 @@ export default function WynikiPage() {
                   {/* AI Comment */}
                   <div style={{
                     padding: 11, borderRadius: 12,
-                    background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.05)",
+                    background: "rgba(var(--fg-rgb, 255,255,255),0.025)", border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.05)",
                   }}>
-                    <p style={{ fontSize: 12, color: "rgba(255,255,255,0.6)", lineHeight: 1.45, margin: 0 }}>
+                    <p style={{ fontSize: 12, color: "rgba(var(--fg-rgb, 255,255,255),0.6)", lineHeight: 1.45, margin: 0 }}>
                       {result.verdict}
                     </p>
                   </div>
@@ -953,25 +953,25 @@ export default function WynikiPage() {
                   {/* Feedback */}
                   <div style={{ marginTop: 10, display: "flex", justifyContent: "center", gap: 8 }}>
                     {feedbackSent === "good" || feedbackSent === "sent" ? (
-                      <span style={{ fontSize: 12, color: "rgba(255,255,255,0.4)" }}>Dzięki! 🙏</span>
+                      <span style={{ fontSize: 12, color: "rgba(var(--fg-rgb, 255,255,255),0.4)" }}>Dzięki! 🙏</span>
                     ) : feedbackSent === "bad" ? (
                       <div style={{ width: "100%" }}>
-                        <textarea rows={2} maxLength={300} placeholder="Co było nie tak?" value={feedbackNote} onChange={(e) => setFeedbackNote(e.target.value)} style={{ width: "100%", padding: "8px 12px", borderRadius: 10, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "#fff", fontSize: 12, resize: "none", outline: "none", fontFamily: "inherit" }} />
+                        <textarea rows={2} maxLength={300} placeholder="Co było nie tak?" value={feedbackNote} onChange={(e) => setFeedbackNote(e.target.value)} style={{ width: "100%", padding: "8px 12px", borderRadius: 10, background: "rgba(var(--fg-rgb, 255,255,255),0.04)", border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.08)", color: "var(--fg, #fff)", fontSize: 12, resize: "none", outline: "none", fontFamily: "inherit" }} />
                         <div style={{ display: "flex", gap: 8, marginTop: 6 }}>
                           <button onClick={() => { fetch("/api/feedback", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ scan_id: item.scan_log_id, product_name: result.name, feedback: "bad", feedback_note: feedbackNote || null }) }); setFeedbackSent("sent"); }} style={{ flex: 1, padding: 8, borderRadius: 10, background: "rgba(var(--c-orange-rgb, 249,115,22),0.1)", border: "1px solid rgba(var(--c-orange-rgb, 249,115,22),0.2)", color: "var(--c-orange, #f97316)", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>Wyślij</button>
-                          <button onClick={() => { setFeedbackSent(null); setFeedbackNote(""); }} style={{ padding: "8px 12px", borderRadius: 10, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.55)", fontSize: 12, cursor: "pointer" }}>✕</button>
+                          <button onClick={() => { setFeedbackSent(null); setFeedbackNote(""); }} style={{ padding: "8px 12px", borderRadius: 10, background: "rgba(var(--fg-rgb, 255,255,255),0.03)", border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.06)", color: "rgba(var(--fg-rgb, 255,255,255),0.55)", fontSize: 12, cursor: "pointer" }}>✕</button>
                         </div>
                       </div>
                     ) : (
                       <>
                         <button onClick={() => { setFeedbackSent("good"); fetch("/api/feedback", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ scan_id: item.scan_log_id, product_name: result.name, feedback: "good" }) }); }} className="active:scale-95 transition-transform" style={{
-                          padding: "6px 16px", borderRadius: 10, border: "1px solid rgba(255,255,255,0.06)",
-                          background: "rgba(255,255,255,0.03)", color: "rgba(255,255,255,0.5)",
+                          padding: "6px 16px", borderRadius: 10, border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.06)",
+                          background: "rgba(var(--fg-rgb, 255,255,255),0.03)", color: "rgba(var(--fg-rgb, 255,255,255),0.5)",
                           fontSize: 12, cursor: "pointer",
                         }}>👍 Trafna</button>
                         <button onClick={() => setFeedbackSent("bad")} className="active:scale-95 transition-transform" style={{
-                          padding: "6px 16px", borderRadius: 10, border: "1px solid rgba(255,255,255,0.06)",
-                          background: "rgba(255,255,255,0.03)", color: "rgba(255,255,255,0.5)",
+                          padding: "6px 16px", borderRadius: 10, border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.06)",
+                          background: "rgba(var(--fg-rgb, 255,255,255),0.03)", color: "rgba(var(--fg-rgb, 255,255,255),0.5)",
                           fontSize: 12, cursor: "pointer",
                         }}>👎 Błędna</button>
                       </>
@@ -1019,7 +1019,7 @@ export default function WynikiPage() {
                   className="anim-fade-up"
                   style={{
                     margin: "0 16px 16px", borderRadius: 22,
-                    background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.06)",
+                    background: "rgba(var(--fg-rgb, 255,255,255),0.025)", border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.06)",
                     backdropFilter: "blur(20px)", position: "relative", overflow: "hidden",
                   }}
                 >
@@ -1048,14 +1048,14 @@ export default function WynikiPage() {
                     <div style={{
                       position: "absolute", top: 12, right: 12,
                       width: 64, height: 64, borderRadius: 16,
-                      background: "rgba(0,0,0,0.6)", border: "1.5px solid rgba(255,255,255,0.1)",
+                      background: "rgba(0,0,0,0.6)", border: "1.5px solid rgba(var(--fg-rgb, 255,255,255),0.1)",
                       backdropFilter: "blur(16px)",
                       display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
                       zIndex: 2,
                     }}>
                       <div style={{ position: "relative", width: 48, height: 48 }}>
                         <svg width="48" height="48" style={{ transform: "rotate(-90deg)", position: "absolute", top: 0, left: 0 }}>
-                          <circle cx="24" cy="24" r="20" stroke="rgba(255,255,255,0.08)" strokeWidth="3" fill="none" />
+                          <circle cx="24" cy="24" r="20" stroke="rgba(var(--fg-rgb, 255,255,255),0.08)" strokeWidth="3" fill="none" />
                           <circle cx="24" cy="24" r="20" stroke={mealScoreColor} strokeWidth="3" fill="none"
                             strokeLinecap="round"
                             strokeDasharray={scoreCircum}
@@ -1065,7 +1065,7 @@ export default function WynikiPage() {
                         </svg>
                         <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", textAlign: "center" }}>
                           <div style={{ fontSize: 18, fontWeight: 900, color: mealScoreColor, lineHeight: 1 }}>{result.score}</div>
-                          <div style={{ fontSize: 8, color: "rgba(255,255,255,0.4)" }}>/10</div>
+                          <div style={{ fontSize: 8, color: "rgba(var(--fg-rgb, 255,255,255),0.4)" }}>/10</div>
                         </div>
                       </div>
                     </div>
@@ -1095,8 +1095,8 @@ export default function WynikiPage() {
                     </div>
 
                     {/* AI Comment */}
-                    <div style={{ marginTop: 14, padding: 14, borderRadius: 14, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.05)" }}>
-                      <p style={{ fontSize: 13, color: "rgba(255,255,255,0.65)", lineHeight: 1.5, margin: 0 }}>
+                    <div style={{ marginTop: 14, padding: 14, borderRadius: 14, background: "rgba(var(--fg-rgb, 255,255,255),0.03)", border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.05)" }}>
+                      <p style={{ fontSize: 13, color: "rgba(var(--fg-rgb, 255,255,255),0.65)", lineHeight: 1.5, margin: 0 }}>
                         {result.verdict}
                       </p>
                     </div>
@@ -1107,11 +1107,11 @@ export default function WynikiPage() {
                       <div style={{ display: "flex", gap: 8 }}>
                         {feedbackSent === null ? (
                           <>
-                            <button onClick={() => { setFeedbackSent("good"); fetch("/api/feedback", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ scan_id: item.scan_log_id, product_name: result.name, feedback: "good" }) }); }} className="active:scale-95 transition-transform" style={{ padding: "6px 14px", borderRadius: 10, border: "1px solid rgba(255,255,255,0.06)", background: "rgba(255,255,255,0.03)", color: "rgba(255,255,255,0.5)", fontSize: 12, cursor: "pointer" }}>👍 Trafne</button>
-                            <button onClick={() => setFeedbackSent("bad")} className="active:scale-95 transition-transform" style={{ padding: "6px 14px", borderRadius: 10, border: "1px solid rgba(255,255,255,0.06)", background: "rgba(255,255,255,0.03)", color: "rgba(255,255,255,0.5)", fontSize: 12, cursor: "pointer" }}>👎 Błędne</button>
+                            <button onClick={() => { setFeedbackSent("good"); fetch("/api/feedback", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ scan_id: item.scan_log_id, product_name: result.name, feedback: "good" }) }); }} className="active:scale-95 transition-transform" style={{ padding: "6px 14px", borderRadius: 10, border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.06)", background: "rgba(var(--fg-rgb, 255,255,255),0.03)", color: "rgba(var(--fg-rgb, 255,255,255),0.5)", fontSize: 12, cursor: "pointer" }}>👍 Trafne</button>
+                            <button onClick={() => setFeedbackSent("bad")} className="active:scale-95 transition-transform" style={{ padding: "6px 14px", borderRadius: 10, border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.06)", background: "rgba(var(--fg-rgb, 255,255,255),0.03)", color: "rgba(var(--fg-rgb, 255,255,255),0.5)", fontSize: 12, cursor: "pointer" }}>👎 Błędne</button>
                           </>
                         ) : feedbackSent === "bad" ? null : (
-                          <span style={{ fontSize: 12, color: "rgba(255,255,255,0.4)" }}>Dzięki! 🙏</span>
+                          <span style={{ fontSize: 12, color: "rgba(var(--fg-rgb, 255,255,255),0.4)" }}>Dzięki! 🙏</span>
                         )}
                       </div>
                     </div>
@@ -1119,12 +1119,12 @@ export default function WynikiPage() {
                     {/* Expanded bad feedback */}
                     {feedbackSent === "bad" && (
                       <div style={{ marginTop: 10, overflow: "hidden", animation: "feedbackSlideIn 0.3s ease-out" }}>
-                        <div style={{ padding: 12, borderRadius: 14, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
-                          <p style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginBottom: 8, fontWeight: 600 }}>Co było nie tak?</p>
-                          <textarea autoFocus rows={2} maxLength={300} placeholder="Np. źle odczytał kalorie, to nie ten produkt..." value={feedbackNote} onChange={(e) => setFeedbackNote(e.target.value)} style={{ width: "100%", padding: "10px 12px", borderRadius: 10, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "#fff", fontSize: 12, resize: "none", outline: "none", fontFamily: "inherit" }} />
+                        <div style={{ padding: 12, borderRadius: 14, background: "rgba(var(--fg-rgb, 255,255,255),0.03)", border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.06)" }}>
+                          <p style={{ fontSize: 11, color: "rgba(var(--fg-rgb, 255,255,255),0.4)", marginBottom: 8, fontWeight: 600 }}>Co było nie tak?</p>
+                          <textarea autoFocus rows={2} maxLength={300} placeholder="Np. źle odczytał kalorie, to nie ten produkt..." value={feedbackNote} onChange={(e) => setFeedbackNote(e.target.value)} style={{ width: "100%", padding: "10px 12px", borderRadius: 10, background: "rgba(var(--fg-rgb, 255,255,255),0.04)", border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.08)", color: "var(--fg, #fff)", fontSize: 12, resize: "none", outline: "none", fontFamily: "inherit" }} />
                           <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
                             <button onClick={() => { fetch("/api/feedback", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ scan_id: item.scan_log_id, product_name: result.name, feedback: "bad", feedback_note: feedbackNote || null }) }); setFeedbackSent("sent"); }} style={{ flex: 1, padding: 10, borderRadius: 10, background: "rgba(var(--c-amber-rgb, 251,191,36),0.1)", border: "1px solid rgba(var(--c-amber-rgb, 251,191,36),0.2)", color: mealColor, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>{feedbackNote.trim() ? "Wyślij" : "Wyślij bez komentarza"}</button>
-                            <button onClick={() => { setFeedbackSent(null); setFeedbackNote(""); }} style={{ padding: "10px 14px", borderRadius: 10, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.55)", fontSize: 12, cursor: "pointer" }}>✕</button>
+                            <button onClick={() => { setFeedbackSent(null); setFeedbackNote(""); }} style={{ padding: "10px 14px", borderRadius: 10, background: "rgba(var(--fg-rgb, 255,255,255),0.03)", border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.06)", color: "rgba(var(--fg-rgb, 255,255,255),0.55)", fontSize: 12, cursor: "pointer" }}>✕</button>
                           </div>
                         </div>
                       </div>
@@ -1138,7 +1138,7 @@ export default function WynikiPage() {
                   margin: "0 16px 16px", padding: 18, borderRadius: 16,
                   background: "rgba(var(--c-amber-rgb, 251,191,36),0.05)", border: "1px solid rgba(var(--c-amber-rgb, 251,191,36),0.12)",
                 }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.6)", marginBottom: 14, textTransform: "uppercase", letterSpacing: 1.5 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(var(--fg-rgb, 255,255,255),0.6)", marginBottom: 14, textTransform: "uppercase", letterSpacing: 1.5 }}>
                     Podsumowanie dania
                   </div>
                   <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
@@ -1151,15 +1151,15 @@ export default function WynikiPage() {
                       <div key={i} style={{
                         display: "flex", alignItems: "center", justifyContent: "space-between",
                         padding: "10px 0",
-                        borderBottom: i < 3 ? "1px solid rgba(255,255,255,0.05)" : "none",
+                        borderBottom: i < 3 ? "1px solid rgba(var(--fg-rgb, 255,255,255),0.05)" : "none",
                       }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                           <span style={{ fontSize: 14 }}>{m.icon}</span>
-                          <span style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", fontWeight: 500 }}>{m.label}</span>
+                          <span style={{ fontSize: 13, color: "rgba(var(--fg-rgb, 255,255,255),0.6)", fontWeight: 500 }}>{m.label}</span>
                         </div>
                         <div style={{ display: "flex", alignItems: "baseline", gap: 4 }}>
                           <span style={{ fontSize: 18, fontWeight: 800, color: m.mColor }}>{m.value}</span>
-                          <span style={{ fontSize: 11, color: "rgba(255,255,255,0.45)" }}>{m.unit}</span>
+                          <span style={{ fontSize: 11, color: "rgba(var(--fg-rgb, 255,255,255),0.45)" }}>{m.unit}</span>
                         </div>
                       </div>
                     ))}
@@ -1169,8 +1169,8 @@ export default function WynikiPage() {
                 {/* Per-ingredient portion sliders */}
                 <div className="anim-fade-up-2" style={{ margin: "0 16px 16px" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-                    <span style={{ fontSize: 14, fontWeight: 700, color: "rgba(255,255,255,0.85)" }}>🍽️ Korekta porcji</span>
-                    <span style={{ fontSize: 11, color: "rgba(255,255,255,0.5)" }}>Dopasuj do rzeczywistości</span>
+                    <span style={{ fontSize: 14, fontWeight: 700, color: "rgba(var(--fg-rgb, 255,255,255),0.85)" }}>🍽️ Korekta porcji</span>
+                    <span style={{ fontSize: 11, color: "rgba(var(--fg-rgb, 255,255,255),0.5)" }}>Dopasuj do rzeczywistości</span>
                   </div>
 
                   <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
@@ -1187,12 +1187,12 @@ export default function WynikiPage() {
                       return (
                         <div key={idx} style={{
                           padding: 16, borderRadius: 16,
-                          background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.06)",
+                          background: "rgba(var(--fg-rgb, 255,255,255),0.025)", border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.06)",
                         }}>
                           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
                             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                               <div style={{ width: 6, height: 24, borderRadius: 3, background: compColor, boxShadow: `0 0 8px ${compColor}40` }} />
-                              <span style={{ fontSize: 13, fontWeight: 700, color: "rgba(255,255,255,0.9)" }}>{comp.name}</span>
+                              <span style={{ fontSize: 13, fontWeight: 700, color: "rgba(var(--fg-rgb, 255,255,255),0.9)" }}>{comp.name}</span>
                             </div>
                             <span style={{ fontSize: 14, fontWeight: 800, color: compColor }}>{scaledKcal} kcal</span>
                           </div>
@@ -1213,7 +1213,7 @@ export default function WynikiPage() {
                             <div style={{
                               position: "absolute", top: "50%", left: 0, right: 0, height: 5,
                               transform: "translateY(-50%)", borderRadius: 3, overflow: "hidden",
-                              background: "rgba(255,255,255,0.08)",
+                              background: "rgba(var(--fg-rgb, 255,255,255),0.08)",
                             }}>
                               <div style={{
                                 width: `${(w - minG) / (maxG - minG) * 100}%`,
@@ -1223,14 +1223,14 @@ export default function WynikiPage() {
                           </div>
 
                           <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10 }}>
-                            <span style={{ fontSize: 11, color: "rgba(255,255,255,0.55)", fontWeight: 500 }}>{minG}g</span>
-                            <span style={{ fontSize: 11, color: "rgba(255,255,255,0.55)", fontWeight: 500 }}>{maxG}g</span>
+                            <span style={{ fontSize: 11, color: "rgba(var(--fg-rgb, 255,255,255),0.55)", fontWeight: 500 }}>{minG}g</span>
+                            <span style={{ fontSize: 11, color: "rgba(var(--fg-rgb, 255,255,255),0.55)", fontWeight: 500 }}>{maxG}g</span>
                           </div>
 
                           {/* Macros as mini table row */}
                           <div style={{
                             display: "flex", justifyContent: "space-between",
-                            paddingTop: 10, borderTop: "1px solid rgba(255,255,255,0.05)",
+                            paddingTop: 10, borderTop: "1px solid rgba(var(--fg-rgb, 255,255,255),0.05)",
                           }}>
                             {[
                               { label: "Białko", value: scaledP, mColor: "var(--c-blue-2, #60a5fa)" },
@@ -1239,10 +1239,10 @@ export default function WynikiPage() {
                             ].map((m, mi) => (
                               <div key={mi} style={{
                                 flex: 1, textAlign: "center",
-                                borderRight: mi < 2 ? "1px solid rgba(255,255,255,0.05)" : "none",
+                                borderRight: mi < 2 ? "1px solid rgba(var(--fg-rgb, 255,255,255),0.05)" : "none",
                               }}>
                                 <div style={{ fontSize: 14, fontWeight: 700, color: m.mColor }}>{m.value}g</div>
-                                <div style={{ fontSize: 9, color: "rgba(255,255,255,0.45)", marginTop: 3 }}>{m.label}</div>
+                                <div style={{ fontSize: 9, color: "rgba(var(--fg-rgb, 255,255,255),0.45)", marginTop: 3 }}>{m.label}</div>
                               </div>
                             ))}
                           </div>
@@ -1250,7 +1250,7 @@ export default function WynikiPage() {
                       );
                     })}
                   </div>
-                  <p style={{ fontSize: 10, marginTop: 8, textAlign: "center", color: "rgba(255,255,255,0.25)" }}>
+                  <p style={{ fontSize: 10, marginTop: 8, textAlign: "center", color: "rgba(var(--fg-rgb, 255,255,255),0.25)" }}>
                     ⚠️ Wartości szacunkowe na podstawie zdjęcia ±20%
                   </p>
                 </div>
@@ -1294,7 +1294,7 @@ export default function WynikiPage() {
                   className="anim-fade-up"
                   style={{
                     margin: "0 16px 16px", padding: "20px 20px 18px", borderRadius: 20,
-                    background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.06)",
+                    background: "rgba(var(--fg-rgb, 255,255,255),0.025)", border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.06)",
                     backdropFilter: "blur(20px)", position: "relative", overflow: "hidden",
                   }}
                 >
@@ -1309,7 +1309,7 @@ export default function WynikiPage() {
                       <div style={{ fontSize: 19, fontWeight: 800, color: "white", lineHeight: 1.3, marginBottom: 4 }}>
                         {result.name}
                       </div>
-                      <div style={{ fontSize: 11, color: "rgba(255,255,255,0.45)" }}>
+                      <div style={{ fontSize: 11, color: "rgba(var(--fg-rgb, 255,255,255),0.45)" }}>
                         🎙️ Wpisane ręcznie
                       </div>
                     </div>
@@ -1321,7 +1321,7 @@ export default function WynikiPage() {
                       display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
                     }}>
                       <div style={{ fontSize: 24, fontWeight: 900, color: tsScoreColor, lineHeight: 1 }}>{result.score}</div>
-                      <div style={{ fontSize: 8, color: "rgba(255,255,255,0.4)" }}>/10</div>
+                      <div style={{ fontSize: 8, color: "rgba(var(--fg-rgb, 255,255,255),0.4)" }}>/10</div>
                     </div>
                   </div>
 
@@ -1340,8 +1340,8 @@ export default function WynikiPage() {
                   </div>
 
                   {/* AI comment */}
-                  <div style={{ marginTop: 14, padding: 13, borderRadius: 13, background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.05)" }}>
-                    <p style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", lineHeight: 1.5, margin: 0 }}>
+                  <div style={{ marginTop: 14, padding: 13, borderRadius: 13, background: "rgba(var(--fg-rgb, 255,255,255),0.025)", border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.05)" }}>
+                    <p style={{ fontSize: 13, color: "rgba(var(--fg-rgb, 255,255,255),0.6)", lineHeight: 1.5, margin: 0 }}>
                       {result.verdict}
                     </p>
                   </div>
@@ -1352,11 +1352,11 @@ export default function WynikiPage() {
                     <div style={{ display: "flex", gap: 8 }}>
                       {feedbackSent === null ? (
                         <>
-                          <button onClick={() => { setFeedbackSent("good"); fetch("/api/feedback", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ scan_id: item.scan_log_id, product_name: result.name, feedback: "good" }) }); }} className="active:scale-95 transition-transform" style={{ padding: "6px 14px", borderRadius: 10, border: "1px solid rgba(255,255,255,0.06)", background: "rgba(255,255,255,0.03)", color: "rgba(255,255,255,0.5)", fontSize: 12, cursor: "pointer" }}>👍 Trafne</button>
-                          <button onClick={() => setFeedbackSent("bad")} className="active:scale-95 transition-transform" style={{ padding: "6px 14px", borderRadius: 10, border: "1px solid rgba(255,255,255,0.06)", background: "rgba(255,255,255,0.03)", color: "rgba(255,255,255,0.5)", fontSize: 12, cursor: "pointer" }}>👎 Błędne</button>
+                          <button onClick={() => { setFeedbackSent("good"); fetch("/api/feedback", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ scan_id: item.scan_log_id, product_name: result.name, feedback: "good" }) }); }} className="active:scale-95 transition-transform" style={{ padding: "6px 14px", borderRadius: 10, border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.06)", background: "rgba(var(--fg-rgb, 255,255,255),0.03)", color: "rgba(var(--fg-rgb, 255,255,255),0.5)", fontSize: 12, cursor: "pointer" }}>👍 Trafne</button>
+                          <button onClick={() => setFeedbackSent("bad")} className="active:scale-95 transition-transform" style={{ padding: "6px 14px", borderRadius: 10, border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.06)", background: "rgba(var(--fg-rgb, 255,255,255),0.03)", color: "rgba(var(--fg-rgb, 255,255,255),0.5)", fontSize: 12, cursor: "pointer" }}>👎 Błędne</button>
                         </>
                       ) : feedbackSent === "bad" ? null : (
-                        <span style={{ fontSize: 12, color: "rgba(255,255,255,0.4)" }}>Dzięki! 🙏</span>
+                        <span style={{ fontSize: 12, color: "rgba(var(--fg-rgb, 255,255,255),0.4)" }}>Dzięki! 🙏</span>
                       )}
                     </div>
                   </div>
@@ -1364,12 +1364,12 @@ export default function WynikiPage() {
                   {/* Expanded bad feedback */}
                   {feedbackSent === "bad" && (
                     <div style={{ marginTop: 10, overflow: "hidden", animation: "feedbackSlideIn 0.3s ease-out" }}>
-                      <div style={{ padding: 12, borderRadius: 14, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
-                        <p style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginBottom: 8, fontWeight: 600 }}>Co było nie tak?</p>
-                        <textarea autoFocus rows={2} maxLength={300} placeholder="Np. źle odczytał kalorie, to nie ten produkt..." value={feedbackNote} onChange={(e) => setFeedbackNote(e.target.value)} style={{ width: "100%", padding: "10px 12px", borderRadius: 10, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "#fff", fontSize: 12, resize: "none", outline: "none", fontFamily: "inherit" }} />
+                      <div style={{ padding: 12, borderRadius: 14, background: "rgba(var(--fg-rgb, 255,255,255),0.03)", border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.06)" }}>
+                        <p style={{ fontSize: 11, color: "rgba(var(--fg-rgb, 255,255,255),0.4)", marginBottom: 8, fontWeight: 600 }}>Co było nie tak?</p>
+                        <textarea autoFocus rows={2} maxLength={300} placeholder="Np. źle odczytał kalorie, to nie ten produkt..." value={feedbackNote} onChange={(e) => setFeedbackNote(e.target.value)} style={{ width: "100%", padding: "10px 12px", borderRadius: 10, background: "rgba(var(--fg-rgb, 255,255,255),0.04)", border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.08)", color: "var(--fg, #fff)", fontSize: 12, resize: "none", outline: "none", fontFamily: "inherit" }} />
                         <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
                           <button onClick={() => { fetch("/api/feedback", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ scan_id: item.scan_log_id, product_name: result.name, feedback: "bad", feedback_note: feedbackNote || null }) }); setFeedbackSent("sent"); }} style={{ flex: 1, padding: 10, borderRadius: 10, background: "rgba(var(--c-amber-rgb, 251,191,36),0.1)", border: "1px solid rgba(var(--c-amber-rgb, 251,191,36),0.2)", color: mealColor, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>{feedbackNote.trim() ? "Wyślij" : "Wyślij bez komentarza"}</button>
-                          <button onClick={() => { setFeedbackSent(null); setFeedbackNote(""); }} style={{ padding: "10px 14px", borderRadius: 10, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.55)", fontSize: 12, cursor: "pointer" }}>✕</button>
+                          <button onClick={() => { setFeedbackSent(null); setFeedbackNote(""); }} style={{ padding: "10px 14px", borderRadius: 10, background: "rgba(var(--fg-rgb, 255,255,255),0.03)", border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.06)", color: "rgba(var(--fg-rgb, 255,255,255),0.55)", fontSize: 12, cursor: "pointer" }}>✕</button>
                         </div>
                       </div>
                     </div>
@@ -1382,7 +1382,7 @@ export default function WynikiPage() {
                   margin: "0 16px 16px", padding: 18, borderRadius: 16,
                   background: "rgba(var(--c-amber-rgb, 251,191,36),0.05)", border: "1px solid rgba(var(--c-amber-rgb, 251,191,36),0.12)",
                 }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.6)", marginBottom: 14, textTransform: "uppercase", letterSpacing: 1.5 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(var(--fg-rgb, 255,255,255),0.6)", marginBottom: 14, textTransform: "uppercase", letterSpacing: 1.5 }}>
                     Podsumowanie posiłku
                   </div>
                   <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
@@ -1395,15 +1395,15 @@ export default function WynikiPage() {
                       <div key={i} style={{
                         display: "flex", alignItems: "center", justifyContent: "space-between",
                         padding: "10px 0",
-                        borderBottom: i < 3 ? "1px solid rgba(255,255,255,0.05)" : "none",
+                        borderBottom: i < 3 ? "1px solid rgba(var(--fg-rgb, 255,255,255),0.05)" : "none",
                       }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                           <span style={{ fontSize: 14 }}>{m.icon}</span>
-                          <span style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", fontWeight: 500 }}>{m.label}</span>
+                          <span style={{ fontSize: 13, color: "rgba(var(--fg-rgb, 255,255,255),0.6)", fontWeight: 500 }}>{m.label}</span>
                         </div>
                         <div style={{ display: "flex", alignItems: "baseline", gap: 4 }}>
                           <span style={{ fontSize: 18, fontWeight: 800, color: m.mColor }}>{m.value}</span>
-                          <span style={{ fontSize: 11, color: "rgba(255,255,255,0.45)" }}>{m.unit}</span>
+                          <span style={{ fontSize: 11, color: "rgba(var(--fg-rgb, 255,255,255),0.45)" }}>{m.unit}</span>
                         </div>
                       </div>
                     ))}
@@ -1414,8 +1414,8 @@ export default function WynikiPage() {
                 {tsItems.length > 0 && (
                   <div className="anim-fade-up-2" style={{ margin: "0 16px 16px" }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-                      <span style={{ fontSize: 14, fontWeight: 700, color: "rgba(255,255,255,0.85)" }}>🍽️ Dopasuj porcje</span>
-                      <span style={{ fontSize: 11, color: "rgba(255,255,255,0.5)" }}>Przesuń suwaki</span>
+                      <span style={{ fontSize: 14, fontWeight: 700, color: "rgba(var(--fg-rgb, 255,255,255),0.85)" }}>🍽️ Dopasuj porcje</span>
+                      <span style={{ fontSize: 11, color: "rgba(var(--fg-rgb, 255,255,255),0.5)" }}>Przesuń suwaki</span>
                     </div>
                     <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                       {tsItems.map((comp, idx) => {
@@ -1431,18 +1431,18 @@ export default function WynikiPage() {
                         return (
                           <div key={idx} style={{
                             padding: "14px 16px", borderRadius: 14,
-                            background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.06)",
+                            background: "rgba(var(--fg-rgb, 255,255,255),0.025)", border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.06)",
                             backdropFilter: "blur(8px)",
                             animation: `fadeInUp 0.4s ease ${0.3 + idx * 0.06}s both`,
                           }}>
                             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
                               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                                 <div style={{ width: 5, height: 20, borderRadius: 3, background: compColor, boxShadow: `0 0 8px ${compColor}40` }} />
-                                <span style={{ fontSize: 13, fontWeight: 700, color: "rgba(255,255,255,0.9)" }}>{comp.name}</span>
+                                <span style={{ fontSize: 13, fontWeight: 700, color: "rgba(var(--fg-rgb, 255,255,255),0.9)" }}>{comp.name}</span>
                               </div>
                               <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
                                 <span style={{ fontSize: 13, fontWeight: 800, color: compColor }}>{w}g</span>
-                                <span style={{ fontSize: 12, color: "rgba(255,255,255,0.45)" }}>{scaledKcal} kcal</span>
+                                <span style={{ fontSize: 12, color: "rgba(var(--fg-rgb, 255,255,255),0.45)" }}>{scaledKcal} kcal</span>
                               </div>
                             </div>
 
@@ -1454,7 +1454,7 @@ export default function WynikiPage() {
                               <div style={{
                                 position: "absolute", top: "50%", left: 0, right: 0, height: 6,
                                 transform: "translateY(-50%)", borderRadius: 3, overflow: "hidden",
-                                background: "rgba(255,255,255,0.08)",
+                                background: "rgba(var(--fg-rgb, 255,255,255),0.08)",
                               }}>
                                 <div style={{
                                   width: `${Math.max(0, Math.min(100, (w - minG) / (maxG - minG) * 100))}%`,
@@ -1464,13 +1464,13 @@ export default function WynikiPage() {
                             </div>
 
                             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                              <span style={{ fontSize: 10, color: "rgba(255,255,255,0.5)" }}>{minG}g</span>
+                              <span style={{ fontSize: 10, color: "rgba(var(--fg-rgb, 255,255,255),0.5)" }}>{minG}g</span>
                               <div style={{ display: "flex", gap: 10 }}>
                                 <span style={{ fontSize: 11, fontWeight: 600, color: "var(--c-blue-2, #60a5fa)" }}>B:{scaledP}g</span>
                                 <span style={{ fontSize: 11, fontWeight: 600, color: "var(--c-orange-2, #fb923c)" }}>T:{scaledF}g</span>
                                 <span style={{ fontSize: 11, fontWeight: 600, color: "var(--c-green, #4ade80)" }}>W:{scaledC}g</span>
                               </div>
-                              <span style={{ fontSize: 10, color: "rgba(255,255,255,0.5)" }}>{maxG}g</span>
+                              <span style={{ fontSize: 10, color: "rgba(var(--fg-rgb, 255,255,255),0.5)" }}>{maxG}g</span>
                             </div>
                           </div>
                         );
@@ -1496,12 +1496,12 @@ export default function WynikiPage() {
                   if (result.tip) tips.push(result.tip);
                   if (tips.length === 0) return null;
                   return (
-                    <div className="anim-fade-up-3" style={{ margin: "12px 16px 16px", padding: 16, borderRadius: 16, background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.06)" }}>
-                      <div style={{ fontSize: 13, fontWeight: 700, color: "rgba(255,255,255,0.75)", marginBottom: 10 }}>💡 Wskazówki</div>
+                    <div className="anim-fade-up-3" style={{ margin: "12px 16px 16px", padding: 16, borderRadius: 16, background: "rgba(var(--fg-rgb, 255,255,255),0.025)", border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.06)" }}>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: "rgba(var(--fg-rgb, 255,255,255),0.75)", marginBottom: 10 }}>💡 Wskazówki</div>
                       {tips.map((tip, i) => (
                         <div key={i} style={{
-                          padding: "8px 0", fontSize: 12, color: "rgba(255,255,255,0.55)",
-                          borderBottom: i < tips.length - 1 ? "1px solid rgba(255,255,255,0.04)" : "none",
+                          padding: "8px 0", fontSize: 12, color: "rgba(var(--fg-rgb, 255,255,255),0.55)",
+                          borderBottom: i < tips.length - 1 ? "1px solid rgba(var(--fg-rgb, 255,255,255),0.04)" : "none",
                           display: "flex", alignItems: "flex-start", gap: 8, lineHeight: 1.4,
                         }}>
                           <span style={{ color: "var(--c-amber, #FBBF24)", fontSize: 10, marginTop: 3 }}>●</span> {tip}
@@ -1519,7 +1519,7 @@ export default function WynikiPage() {
             className="anim-fade-up"
             style={{
               margin: "0 16px 16px", padding: 24, borderRadius: 22,
-              background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.06)",
+              background: "rgba(var(--fg-rgb, 255,255,255),0.025)", border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.06)",
               backdropFilter: "blur(20px)", position: "relative", overflow: "hidden",
             }}
           >
@@ -1542,13 +1542,13 @@ export default function WynikiPage() {
                   <span style={{ fontSize: 26, fontWeight: 900, color: accentColor, lineHeight: 1.1 }}>
                     {foodResult ? Math.round(extractFoodNutrition(foodResult).cal100) : "?"}
                   </span>
-                  <span style={{ fontSize: 10, color: "rgba(255,255,255,0.4)" }}>kcal/100g</span>
+                  <span style={{ fontSize: 10, color: "rgba(var(--fg-rgb, 255,255,255),0.4)" }}>kcal/100g</span>
                 </div>
               ) : (
                 /* Animated SVG ring (ocena 0-10) */
                 <div style={{ position: "relative", width: 100, height: 100, flexShrink: 0 }}>
                   <svg width="100" height="100" viewBox="0 0 100 100">
-                    <circle cx="50" cy="50" r="42" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="6" />
+                    <circle cx="50" cy="50" r="42" fill="none" stroke="rgba(var(--fg-rgb, 255,255,255),0.06)" strokeWidth="6" />
                     <circle
                       cx="50" cy="50" r="42" fill="none"
                       stroke={color} strokeWidth="6" strokeLinecap="round"
@@ -1562,20 +1562,20 @@ export default function WynikiPage() {
                     transition: "transform 0.5s ease-out", textAlign: "center",
                   }}>
                     <span style={{ fontSize: 32, fontWeight: 900, color, lineHeight: 1 }}>{result.score}</span>
-                    <span style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", display: "block" }}>/10</span>
+                    <span style={{ fontSize: 12, color: "rgba(var(--fg-rgb, 255,255,255),0.4)", display: "block" }}>/10</span>
                   </div>
                 </div>
               )}
 
               <div style={{ flex: 1, minWidth: 0 }}>
-                <h1 style={{ fontSize: 20, fontWeight: 800, color: "#ffffff", lineHeight: 1.3, marginBottom: 4 }}>{result.name}</h1>
-                <p style={{ fontSize: 12, color: "rgba(255,255,255,0.5)" }}>{subtitle}</p>
+                <h1 style={{ fontSize: 20, fontWeight: 800, color: "var(--fg, #ffffff)", lineHeight: 1.3, marginBottom: 4 }}>{result.name}</h1>
+                <p style={{ fontSize: 12, color: "rgba(var(--fg-rgb, 255,255,255),0.5)" }}>{subtitle}</p>
                 <div style={{ marginTop: 8, display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
                   {/* verdict_short (ocena) — ukryty dla makro (brak oceny) */}
                   {!isMacro && (
                     <span style={{ fontSize: 10, fontWeight: 700, padding: "4px 12px", borderRadius: 999, backgroundColor: bg, color }}>{result.verdict_short || label}</span>
                   )}
-                  <span style={{ fontSize: 10, fontWeight: 700, padding: "4px 12px", borderRadius: 999, background: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.55)" }}>
+                  <span style={{ fontSize: 10, fontWeight: 700, padding: "4px 12px", borderRadius: 999, background: "rgba(var(--fg-rgb, 255,255,255),0.05)", color: "rgba(var(--fg-rgb, 255,255,255),0.55)" }}>
                     {isTextSearch ? "🔍 Szukaj" : isCosmetics ? "✨ Kosmetyk" : isSuplement ? "💊 Suplement" : isMacro ? "⚡ Makro" : "🛒 Żywność"}
                   </span>
                 </div>
@@ -1584,8 +1584,8 @@ export default function WynikiPage() {
 
             {/* AI comment (verdict) — ukryty dla makro (skan kalorii, brak oceny słownej) */}
             {!isMacro && result.verdict && (
-              <div style={{ marginTop: 14, padding: 14, borderRadius: 14, background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.05)" }}>
-                <p style={{ fontSize: 13, color: "rgba(255,255,255,0.65)", lineHeight: 1.6 }}>{result.verdict}</p>
+              <div style={{ marginTop: 14, padding: 14, borderRadius: 14, background: "rgba(var(--fg-rgb, 255,255,255),0.025)", border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.05)" }}>
+                <p style={{ fontSize: 13, color: "rgba(var(--fg-rgb, 255,255,255),0.65)", lineHeight: 1.6 }}>{result.verdict}</p>
               </div>
             )}
 
@@ -1601,8 +1601,8 @@ export default function WynikiPage() {
                   <p style={{ fontSize: 12, color: "rgba(var(--c-mint-rgb, 110,252,180),0.5)" }}>Dzięki! 🙏</p>
                 ) : feedbackSent === "bad" ? null : (
                   <div style={{ display: "flex", gap: 6 }}>
-                    <button onClick={() => { setFeedbackSent("good"); fetch("/api/feedback", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ scan_id: item.scan_log_id, product_name: result.name, feedback: "good" }) }); }} className="active:scale-95 transition-transform" style={{ padding: "6px 12px", borderRadius: 8, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.55)", fontSize: 11, cursor: "pointer" }}>👍</button>
-                    <button onClick={() => setFeedbackSent("bad")} className="active:scale-95 transition-transform" style={{ padding: "6px 12px", borderRadius: 8, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.55)", fontSize: 11, cursor: "pointer" }}>👎</button>
+                    <button onClick={() => { setFeedbackSent("good"); fetch("/api/feedback", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ scan_id: item.scan_log_id, product_name: result.name, feedback: "good" }) }); }} className="active:scale-95 transition-transform" style={{ padding: "6px 12px", borderRadius: 8, background: "rgba(var(--fg-rgb, 255,255,255),0.03)", border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.06)", color: "rgba(var(--fg-rgb, 255,255,255),0.55)", fontSize: 11, cursor: "pointer" }}>👍</button>
+                    <button onClick={() => setFeedbackSent("bad")} className="active:scale-95 transition-transform" style={{ padding: "6px 12px", borderRadius: 8, background: "rgba(var(--fg-rgb, 255,255,255),0.03)", border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.06)", color: "rgba(var(--fg-rgb, 255,255,255),0.55)", fontSize: 11, cursor: "pointer" }}>👎</button>
                   </div>
                 )}
               </div>
@@ -1611,12 +1611,12 @@ export default function WynikiPage() {
             {/* Expanded bad feedback */}
             {feedbackSent === "bad" && (
               <div style={{ marginTop: 10, overflow: "hidden", animation: "feedbackSlideIn 0.3s ease-out" }}>
-                <div style={{ padding: 12, borderRadius: 14, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
-                  <p style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginBottom: 8, fontWeight: 600 }}>Co było nie tak?</p>
-                  <textarea autoFocus rows={2} maxLength={300} placeholder="Np. źle odczytał kalorie, to nie ten produkt..." value={feedbackNote} onChange={(e) => setFeedbackNote(e.target.value)} style={{ width: "100%", padding: "10px 12px", borderRadius: 10, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "#fff", fontSize: 12, resize: "none", outline: "none", fontFamily: "inherit" }} />
+                <div style={{ padding: 12, borderRadius: 14, background: "rgba(var(--fg-rgb, 255,255,255),0.03)", border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.06)" }}>
+                  <p style={{ fontSize: 11, color: "rgba(var(--fg-rgb, 255,255,255),0.4)", marginBottom: 8, fontWeight: 600 }}>Co było nie tak?</p>
+                  <textarea autoFocus rows={2} maxLength={300} placeholder="Np. źle odczytał kalorie, to nie ten produkt..." value={feedbackNote} onChange={(e) => setFeedbackNote(e.target.value)} style={{ width: "100%", padding: "10px 12px", borderRadius: 10, background: "rgba(var(--fg-rgb, 255,255,255),0.04)", border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.08)", color: "var(--fg, #fff)", fontSize: 12, resize: "none", outline: "none", fontFamily: "inherit" }} />
                   <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
                     <button onClick={() => { fetch("/api/feedback", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ scan_id: item.scan_log_id, product_name: result.name, feedback: "bad", feedback_note: feedbackNote || null }) }); setFeedbackSent("sent"); }} style={{ flex: 1, padding: 10, borderRadius: 10, background: `rgba(${accentRgb},0.1)`, border: `1px solid rgba(${accentRgb},0.2)`, color: accentColor, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>{feedbackNote.trim() ? "Wyślij" : "Wyślij bez komentarza"}</button>
-                    <button onClick={() => { setFeedbackSent(null); setFeedbackNote(""); }} style={{ padding: "10px 14px", borderRadius: 10, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.55)", fontSize: 12, cursor: "pointer" }}>✕</button>
+                    <button onClick={() => { setFeedbackSent(null); setFeedbackNote(""); }} style={{ padding: "10px 14px", borderRadius: 10, background: "rgba(var(--fg-rgb, 255,255,255),0.03)", border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.06)", color: "rgba(var(--fg-rgb, 255,255,255),0.55)", fontSize: 12, cursor: "pointer" }}>✕</button>
                   </div>
                 </div>
               </div>
@@ -1630,36 +1630,36 @@ export default function WynikiPage() {
         {/* ─── PORTION & QUANTITY (TYLKO legacy food — makro używa czystej tabeli + DiaryPanel) ─── */}
         {scanType === "food" && !isSuplement && !isTextSearch && !isMeal && !isForma && (
           <div className="anim-fade-up-1" style={{ margin: "0 16px 12px" }}>
-            <div style={{ padding: 18, borderRadius: 16, background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.06)" }}>
+            <div style={{ padding: 18, borderRadius: 16, background: "rgba(var(--fg-rgb, 255,255,255),0.025)", border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.06)" }}>
               {/* Quantity row */}
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
-                <span style={{ fontSize: 13, fontWeight: 700, color: "rgba(255,255,255,0.7)" }}>📦 Ilość</span>
+                <span style={{ fontSize: 13, fontWeight: 700, color: "rgba(var(--fg-rgb, 255,255,255),0.7)" }}>📦 Ilość</span>
                 <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                   <button
                     onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                    style={{ width: 32, height: 32, borderRadius: 10, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.6)", fontSize: 16, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+                    style={{ width: 32, height: 32, borderRadius: 10, background: "rgba(var(--fg-rgb, 255,255,255),0.04)", border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.08)", color: "rgba(var(--fg-rgb, 255,255,255),0.6)", fontSize: 16, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
                   >−</button>
-                  <span style={{ fontSize: 18, fontWeight: 800, color: "#fff", minWidth: 24, textAlign: "center" }}>{quantity}</span>
+                  <span style={{ fontSize: 18, fontWeight: 800, color: "var(--fg, #fff)", minWidth: 24, textAlign: "center" }}>{quantity}</span>
                   <button
                     onClick={() => setQuantity(quantity + 1)}
-                    style={{ width: 32, height: 32, borderRadius: 10, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.6)", fontSize: 16, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+                    style={{ width: 32, height: 32, borderRadius: 10, background: "rgba(var(--fg-rgb, 255,255,255),0.04)", border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.08)", color: "rgba(var(--fg-rgb, 255,255,255),0.6)", fontSize: 16, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
                   >+</button>
                 </div>
               </div>
               {/* Separator */}
-              <div style={{ height: 1, background: "rgba(255,255,255,0.06)", marginBottom: 14 }} />
+              <div style={{ height: 1, background: "rgba(var(--fg-rgb, 255,255,255),0.06)", marginBottom: 14 }} />
               {/* Portion slider */}
               <div>
-                <span style={{ fontSize: 13, fontWeight: 700, color: "rgba(255,255,255,0.7)" }}>🍽️ Ile zjadłeś?</span>
+                <span style={{ fontSize: 13, fontWeight: 700, color: "rgba(var(--fg-rgb, 255,255,255),0.7)" }}>🍽️ Ile zjadłeś?</span>
                 <input
                   type="range" min={0} max={100} step={1} value={portion}
                   onChange={(e) => setPortion(+e.target.value)}
                   style={{ width: "100%", marginTop: 10, accentColor: accentColor }}
                 />
                 <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4 }}>
-                  <span style={{ fontSize: 10, color: "rgba(255,255,255,0.3)" }}>0%</span>
-                  <span style={{ fontSize: 13, fontWeight: 700, color: "rgba(255,255,255,0.7)" }}>{portion}%</span>
-                  <span style={{ fontSize: 10, color: "rgba(255,255,255,0.3)" }}>100%</span>
+                  <span style={{ fontSize: 10, color: "rgba(var(--fg-rgb, 255,255,255),0.3)" }}>0%</span>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: "rgba(var(--fg-rgb, 255,255,255),0.7)" }}>{portion}%</span>
+                  <span style={{ fontSize: 10, color: "rgba(var(--fg-rgb, 255,255,255),0.3)" }}>100%</span>
                 </div>
                 {/* Quick buttons */}
                 <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
@@ -1669,9 +1669,9 @@ export default function WynikiPage() {
                       onClick={() => setPortion(v)}
                       style={{
                         flex: 1, padding: "6px 0", borderRadius: 10, fontSize: 12, fontWeight: 700, cursor: "pointer",
-                        background: portion === v ? `rgba(${accentRgb},0.15)` : "rgba(255,255,255,0.03)",
-                        border: portion === v ? `1px solid rgba(${accentRgb},0.3)` : "1px solid rgba(255,255,255,0.06)",
-                        color: portion === v ? accentColor : "rgba(255,255,255,0.4)",
+                        background: portion === v ? `rgba(${accentRgb},0.15)` : "rgba(var(--fg-rgb, 255,255,255),0.03)",
+                        border: portion === v ? `1px solid rgba(${accentRgb},0.3)` : "1px solid rgba(var(--fg-rgb, 255,255,255),0.06)",
+                        color: portion === v ? accentColor : "rgba(var(--fg-rgb, 255,255,255),0.4)",
                       }}
                     >{v}%</button>
                   ))}
@@ -1696,7 +1696,7 @@ export default function WynikiPage() {
           return (
             <div className="anim-fade-up-1" style={{ margin: "0 16px 12px" }}>
               <div style={{ padding: 18, borderRadius: 16, background: `rgba(${accentRgb},0.04)`, border: `1px solid rgba(${accentRgb},0.1)` }}>
-                <p style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.35)", letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 14 }}>WARTOŚCI ODŻYWCZE</p>
+                <p style={{ fontSize: 10, fontWeight: 700, color: "rgba(var(--fg-rgb, 255,255,255),0.35)", letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 14 }}>WARTOŚCI ODŻYWCZE</p>
                 <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                   {[
                     { icon: "🔥", label: "Kalorie", value: `${kcal} kcal` },
@@ -1705,8 +1705,8 @@ export default function WynikiPage() {
                     { icon: "🍞", label: "Węglowodany", value: `${carb} g` },
                   ].map((row) => (
                     <div key={row.label} style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                      <span style={{ fontSize: 13, color: "rgba(255,255,255,0.55)" }}>{row.icon} {row.label}</span>
-                      <span style={{ fontSize: 14, fontWeight: 700, color: "#fff" }}>{row.value}</span>
+                      <span style={{ fontSize: 13, color: "rgba(var(--fg-rgb, 255,255,255),0.55)" }}>{row.icon} {row.label}</span>
+                      <span style={{ fontSize: 14, fontWeight: 700, color: "var(--fg, #fff)" }}>{row.value}</span>
                     </div>
                   ))}
                 </div>
@@ -1737,9 +1737,9 @@ export default function WynikiPage() {
             <div className="anim-fade-up-1" style={{ margin: "0 16px 12px" }}>
               <div style={{ padding: 18, borderRadius: 16, background: `rgba(${accentRgb},0.04)`, border: `1px solid rgba(${accentRgb},0.1)` }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
-                  <p style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.35)", letterSpacing: 1.5, textTransform: "uppercase", margin: 0 }}>Wartości odżywcze</p>
+                  <p style={{ fontSize: 10, fontWeight: 700, color: "rgba(var(--fg-rgb, 255,255,255),0.35)", letterSpacing: 1.5, textTransform: "uppercase", margin: 0 }}>Wartości odżywcze</p>
                   {hasWeight && (
-                    <div style={{ display: "flex", gap: 4, background: "rgba(255,255,255,0.05)", borderRadius: 10, padding: 3 }}>
+                    <div style={{ display: "flex", gap: 4, background: "rgba(var(--fg-rgb, 255,255,255),0.05)", borderRadius: 10, padding: 3 }}>
                       {([["100g", "Na 100g"], ["package", `Opakowanie ${packageG}g`]] as const).map(([id, lbl]) => (
                         <button
                           key={id}
@@ -1748,7 +1748,7 @@ export default function WynikiPage() {
                             padding: "5px 10px", borderRadius: 8, border: "none", cursor: "pointer",
                             fontSize: 11, fontWeight: 700,
                             background: nutriBasis === id ? `rgba(${accentRgb},0.18)` : "transparent",
-                            color: nutriBasis === id ? "#fff" : "rgba(255,255,255,0.5)",
+                            color: nutriBasis === id ? "#fff" : "rgba(var(--fg-rgb, 255,255,255),0.5)",
                           }}
                         >
                           {lbl}
@@ -1760,12 +1760,12 @@ export default function WynikiPage() {
                 <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                   {rows.map((row) => (
                     <div key={row.label} style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                      <span style={{ fontSize: 13, color: "rgba(255,255,255,0.55)" }}>{row.icon} {row.label}</span>
-                      <span style={{ fontSize: 14, fontWeight: 700, color: "#fff" }}>{row.value}</span>
+                      <span style={{ fontSize: 13, color: "rgba(var(--fg-rgb, 255,255,255),0.55)" }}>{row.icon} {row.label}</span>
+                      <span style={{ fontSize: 14, fontWeight: 700, color: "var(--fg, #fff)" }}>{row.value}</span>
                     </div>
                   ))}
                 </div>
-                <p style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", marginTop: 12, marginBottom: 0 }}>
+                <p style={{ fontSize: 10, color: "rgba(var(--fg-rgb, 255,255,255),0.3)", marginTop: 12, marginBottom: 0 }}>
                   {basisPkg ? `Dla całego opakowania (${foodResult.weight}).` : "Na 100g / 100ml produktu."}
                   {hasWeight ? "" : " Waga opakowania nieznana — pokazuję na 100g."}
                 </p>
@@ -1822,12 +1822,12 @@ export default function WynikiPage() {
               </div>
             </div>
           ) : (
-            <div className="anim-fade-up-1" style={{ margin: "12px 16px 0", padding: 18, borderRadius: 16, background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.06)" }}>
-              <p style={{ fontSize: 13, fontWeight: 700, color: "rgba(255,255,255,0.8)", marginBottom: 8 }}>
+            <div className="anim-fade-up-1" style={{ margin: "12px 16px 0", padding: 18, borderRadius: 16, background: "rgba(var(--fg-rgb, 255,255,255),0.025)", border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.06)" }}>
+              <p style={{ fontSize: 13, fontWeight: 700, color: "rgba(var(--fg-rgb, 255,255,255),0.8)", marginBottom: 8 }}>
                 🥄 Łyżeczki cukru: {sugarTeaspoons}
               </p>
               <SugarSpoons count={sugarTeaspoons} />
-              <p style={{ fontSize: 11, marginTop: 8, color: "rgba(255,255,255,0.4)" }}>
+              <p style={{ fontSize: 11, marginTop: 8, color: "rgba(var(--fg-rgb, 255,255,255),0.4)" }}>
                 1 łyżeczka = 4g cukru · WHO zaleca max 6 dziennie
               </p>
             </div>
@@ -1850,7 +1850,7 @@ export default function WynikiPage() {
               background: "rgba(var(--c-orange-rgb, 249,115,22),0.04)", border: "1px solid rgba(var(--c-orange-rgb, 249,115,22),0.1)",
               backdropFilter: "blur(12px)",
             }}>
-              <div style={{ fontSize: 13, fontWeight: 700, color: "rgba(255,255,255,0.8)", marginBottom: 12 }}>🏋️ Kompozycja ciała</div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: "rgba(var(--fg-rgb, 255,255,255),0.8)", marginBottom: 12 }}>🏋️ Kompozycja ciała</div>
               {(() => {
                 const weight = profile?.weight_kg;
                 const heightCm = profile?.height_cm;
@@ -1866,7 +1866,7 @@ export default function WynikiPage() {
                 if (!hasProfile) {
                   return (
                     <div style={{ padding: 14, borderRadius: 12, background: "rgba(var(--c-orange-rgb, 249,115,22),0.08)", border: "1px solid rgba(var(--c-orange-rgb, 249,115,22),0.15)", textAlign: "center" }}>
-                      <p style={{ fontSize: 12, color: "rgba(255,255,255,0.55)", marginBottom: 8 }}>
+                      <p style={{ fontSize: 12, color: "rgba(var(--fg-rgb, 255,255,255),0.55)", marginBottom: 8 }}>
                         Uzupełnij wagę i wzrost w Profilu żeby zobaczyć szacunek kompozycji ciała
                       </p>
                       <button onClick={() => router.push("/profil")} style={{ fontSize: 12, color: "var(--c-orange, #f97316)", fontWeight: 600, cursor: "pointer", background: "none", border: "none" }}>
@@ -1880,38 +1880,38 @@ export default function WynikiPage() {
                   <>
                     {/* 3 tiles */}
                     <div style={{ display: "flex", gap: 6, marginBottom: 12 }}>
-                      <div style={{ flex: 1, textAlign: "center", padding: 10, borderRadius: 12, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.05)" }}>
+                      <div style={{ flex: 1, textAlign: "center", padding: 10, borderRadius: 12, background: "rgba(var(--fg-rgb, 255,255,255),0.03)", border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.05)" }}>
                         <div style={{ fontSize: 20, fontWeight: 800, color: "var(--c-amber, #FBBF24)" }}>{bfMid ? `${bfMid}%` : formaResult.body_fat_range}</div>
-                        <div style={{ fontSize: 9, color: "rgba(255,255,255,0.45)", marginTop: 3 }}>% tłuszczu</div>
+                        <div style={{ fontSize: 9, color: "rgba(var(--fg-rgb, 255,255,255),0.45)", marginTop: 3 }}>% tłuszczu</div>
                       </div>
-                      <div style={{ flex: 1, textAlign: "center", padding: 10, borderRadius: 12, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.05)" }}>
+                      <div style={{ flex: 1, textAlign: "center", padding: 10, borderRadius: 12, background: "rgba(var(--fg-rgb, 255,255,255),0.03)", border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.05)" }}>
                         <div style={{ fontSize: 20, fontWeight: 800, color: "var(--c-red, #ef4444)" }}>{fatKg ? `~${fatKg}` : "—"} <span style={{ fontSize: 12 }}>kg</span></div>
-                        <div style={{ fontSize: 9, color: "rgba(255,255,255,0.45)", marginTop: 3 }}>tłuszcz</div>
+                        <div style={{ fontSize: 9, color: "rgba(var(--fg-rgb, 255,255,255),0.45)", marginTop: 3 }}>tłuszcz</div>
                       </div>
-                      <div style={{ flex: 1, textAlign: "center", padding: 10, borderRadius: 12, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.05)" }}>
+                      <div style={{ flex: 1, textAlign: "center", padding: 10, borderRadius: 12, background: "rgba(var(--fg-rgb, 255,255,255),0.03)", border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.05)" }}>
                         <div style={{ fontSize: 20, fontWeight: 800, color: "#22c55e" }}>{muscleKg ? `~${muscleKg}` : "—"} <span style={{ fontSize: 12 }}>kg</span></div>
-                        <div style={{ fontSize: 9, color: "rgba(255,255,255,0.45)", marginTop: 3 }}>mięśnie</div>
+                        <div style={{ fontSize: 9, color: "rgba(var(--fg-rgb, 255,255,255),0.45)", marginTop: 3 }}>mięśnie</div>
                       </div>
                     </div>
 
                     {/* Details rows */}
                     {[
                       { label: "Kategoria", value: formaResult.body_fat_category?.toUpperCase() || "—", color: "#22c55e" },
-                      { label: "Ocena mięśni", value: formaResult.muscle_mass === "above_average" ? "Powyżej średniej" : formaResult.muscle_mass === "average" ? "Średnia" : "Poniżej średniej", color: "rgba(255,255,255,0.8)" },
-                      ...(formaResult.bmi && formaResult.bmi_category ? [{ label: "BMI", value: `${formaResult.bmi} — ${formaResult.bmi_category}`, color: "rgba(255,255,255,0.8)" }] : []),
+                      { label: "Ocena mięśni", value: formaResult.muscle_mass === "above_average" ? "Powyżej średniej" : formaResult.muscle_mass === "average" ? "Średnia" : "Poniżej średniej", color: "rgba(var(--fg-rgb, 255,255,255),0.8)" },
+                      ...(formaResult.bmi && formaResult.bmi_category ? [{ label: "BMI", value: `${formaResult.bmi} — ${formaResult.bmi_category}`, color: "rgba(var(--fg-rgb, 255,255,255),0.8)" }] : []),
                     ].map((row, i) => (
                       <div key={i} style={{
                         display: "flex", justifyContent: "space-between", alignItems: "center",
-                        padding: "8px 0", borderTop: "1px solid rgba(255,255,255,0.05)",
+                        padding: "8px 0", borderTop: "1px solid rgba(var(--fg-rgb, 255,255,255),0.05)",
                       }}>
-                        <span style={{ fontSize: 11, color: "rgba(255,255,255,0.45)" }}>{row.label}</span>
+                        <span style={{ fontSize: 11, color: "rgba(var(--fg-rgb, 255,255,255),0.45)" }}>{row.label}</span>
                         <span style={{ fontSize: 11, fontWeight: 700, color: row.color, textAlign: "right", maxWidth: "60%" }}>{row.value}</span>
                       </div>
                     ))}
 
                     <div style={{
-                      marginTop: 10, paddingTop: 8, borderTop: "1px solid rgba(255,255,255,0.05)",
-                      fontSize: 9, color: "rgba(255,255,255,0.3)", textAlign: "center", lineHeight: 1.4,
+                      marginTop: 10, paddingTop: 8, borderTop: "1px solid rgba(var(--fg-rgb, 255,255,255),0.05)",
+                      fontSize: 9, color: "rgba(var(--fg-rgb, 255,255,255),0.3)", textAlign: "center", lineHeight: 1.4,
                     }}>
                       ⚠️ Szacunek AI — dokładność ±5%. Dla precyzji użyj DEXA scan.
                     </div>
@@ -1922,10 +1922,10 @@ export default function WynikiPage() {
 
             {/* Strengths */}
             {formaResult.visible_strengths && formaResult.visible_strengths.length > 0 && (
-              <div style={{ margin: "0 16px 12px", padding: 14, borderRadius: 14, background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.06)", backdropFilter: "blur(8px)" }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: "rgba(255,255,255,0.8)", marginBottom: 8 }}>✅ Mocne strony</div>
+              <div style={{ margin: "0 16px 12px", padding: 14, borderRadius: 14, background: "rgba(var(--fg-rgb, 255,255,255),0.025)", border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.06)", backdropFilter: "blur(8px)" }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: "rgba(var(--fg-rgb, 255,255,255),0.8)", marginBottom: 8 }}>✅ Mocne strony</div>
                 {formaResult.visible_strengths.map((s, i) => (
-                  <div key={i} style={{ padding: "6px 0", fontSize: 12, color: "rgba(255,255,255,0.55)", borderBottom: i < formaResult.visible_strengths.length - 1 ? "1px solid rgba(255,255,255,0.04)" : "none", display: "flex", alignItems: "center", gap: 8 }}>
+                  <div key={i} style={{ padding: "6px 0", fontSize: 12, color: "rgba(var(--fg-rgb, 255,255,255),0.55)", borderBottom: i < formaResult.visible_strengths.length - 1 ? "1px solid rgba(var(--fg-rgb, 255,255,255),0.04)" : "none", display: "flex", alignItems: "center", gap: 8 }}>
                     <span style={{ color: "#22c55e", fontSize: 10 }}>●</span> {s}
                   </div>
                 ))}
@@ -1934,10 +1934,10 @@ export default function WynikiPage() {
 
             {/* Areas to improve */}
             {formaResult.areas_to_improve && formaResult.areas_to_improve.length > 0 && (
-              <div style={{ margin: "0 16px 12px", padding: 14, borderRadius: 14, background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.06)", backdropFilter: "blur(8px)" }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: "rgba(255,255,255,0.8)", marginBottom: 8 }}>🎯 Do poprawy</div>
+              <div style={{ margin: "0 16px 12px", padding: 14, borderRadius: 14, background: "rgba(var(--fg-rgb, 255,255,255),0.025)", border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.06)", backdropFilter: "blur(8px)" }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: "rgba(var(--fg-rgb, 255,255,255),0.8)", marginBottom: 8 }}>🎯 Do poprawy</div>
                 {formaResult.areas_to_improve.map((a, i) => (
-                  <div key={i} style={{ padding: "6px 0", fontSize: 12, color: "rgba(255,255,255,0.55)", borderBottom: i < formaResult.areas_to_improve.length - 1 ? "1px solid rgba(255,255,255,0.04)" : "none", display: "flex", alignItems: "center", gap: 8 }}>
+                  <div key={i} style={{ padding: "6px 0", fontSize: 12, color: "rgba(var(--fg-rgb, 255,255,255),0.55)", borderBottom: i < formaResult.areas_to_improve.length - 1 ? "1px solid rgba(var(--fg-rgb, 255,255,255),0.04)" : "none", display: "flex", alignItems: "center", gap: 8 }}>
                     <span style={{ color: "var(--c-blue, #3b82f6)", fontSize: 10 }}>●</span> {a}
                   </div>
                 ))}
@@ -1946,9 +1946,9 @@ export default function WynikiPage() {
 
             {/* Tip */}
             {formaResult.tip && (
-              <div style={{ margin: "0 16px 12px", padding: 14, borderRadius: 14, background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.06)", backdropFilter: "blur(8px)" }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: "rgba(255,255,255,0.8)", marginBottom: 8 }}>💡 Rada</div>
-                <p style={{ fontSize: 12, color: "rgba(255,255,255,0.55)", lineHeight: 1.5, margin: 0 }}>{formaResult.tip}</p>
+              <div style={{ margin: "0 16px 12px", padding: 14, borderRadius: 14, background: "rgba(var(--fg-rgb, 255,255,255),0.025)", border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.06)", backdropFilter: "blur(8px)" }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: "rgba(var(--fg-rgb, 255,255,255),0.8)", marginBottom: 8 }}>💡 Rada</div>
+                <p style={{ fontSize: 12, color: "rgba(var(--fg-rgb, 255,255,255),0.55)", lineHeight: 1.5, margin: 0 }}>{formaResult.tip}</p>
               </div>
             )}
 
@@ -1964,10 +1964,10 @@ export default function WynikiPage() {
 
             {/* Fun facts / Ciekawostki */}
             {funComparisons.length > 0 && (
-              <div style={{ margin: "0 16px 12px", padding: 14, borderRadius: 14, background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.06)", backdropFilter: "blur(8px)" }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: "rgba(255,255,255,0.8)", marginBottom: 8 }}>💡 Ciekawostki</div>
+              <div style={{ margin: "0 16px 12px", padding: 14, borderRadius: 14, background: "rgba(var(--fg-rgb, 255,255,255),0.025)", border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.06)", backdropFilter: "blur(8px)" }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: "rgba(var(--fg-rgb, 255,255,255),0.8)", marginBottom: 8 }}>💡 Ciekawostki</div>
                 {funComparisons.map((fact, i) => (
-                  <div key={i} style={{ padding: "6px 0", fontSize: 12, color: "rgba(255,255,255,0.55)", borderBottom: i < funComparisons.length - 1 ? "1px solid rgba(255,255,255,0.04)" : "none", display: "flex", alignItems: "center", gap: 8 }}>
+                  <div key={i} style={{ padding: "6px 0", fontSize: 12, color: "rgba(var(--fg-rgb, 255,255,255),0.55)", borderBottom: i < funComparisons.length - 1 ? "1px solid rgba(var(--fg-rgb, 255,255,255),0.04)" : "none", display: "flex", alignItems: "center", gap: 8 }}>
                     <span style={{ color: result.score >= 8 ? "#22c55e" : result.score >= 5 ? "var(--c-amber, #FBBF24)" : "var(--c-red, #ef4444)", fontSize: 10 }}>●</span> {fact}
                   </div>
                 ))}
@@ -1998,12 +1998,12 @@ export default function WynikiPage() {
           if (result.tip) tips.push(result.tip);
           if (tips.length === 0) return null;
           return (
-            <div className="anim-fade-up-3" style={{ margin: "12px 16px 16px", padding: 16, borderRadius: 16, background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.06)" }}>
-              <div style={{ fontSize: 13, fontWeight: 700, color: "rgba(255,255,255,0.75)", marginBottom: 10 }}>💡 Wskazówki</div>
+            <div className="anim-fade-up-3" style={{ margin: "12px 16px 16px", padding: 16, borderRadius: 16, background: "rgba(var(--fg-rgb, 255,255,255),0.025)", border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.06)" }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: "rgba(var(--fg-rgb, 255,255,255),0.75)", marginBottom: 10 }}>💡 Wskazówki</div>
               {tips.map((tip, i) => (
                 <div key={i} style={{
-                  padding: "8px 0", fontSize: 12, color: "rgba(255,255,255,0.55)",
-                  borderBottom: i < tips.length - 1 ? "1px solid rgba(255,255,255,0.04)" : "none",
+                  padding: "8px 0", fontSize: 12, color: "rgba(var(--fg-rgb, 255,255,255),0.55)",
+                  borderBottom: i < tips.length - 1 ? "1px solid rgba(var(--fg-rgb, 255,255,255),0.04)" : "none",
                   display: "flex", alignItems: "flex-start", gap: 8, lineHeight: 1.4,
                 }}>
                   <span style={{ color: "var(--c-amber, #FBBF24)", fontSize: 10, marginTop: 3 }}>●</span> {tip}
@@ -2056,9 +2056,9 @@ export default function WynikiPage() {
               width: "100%",
               padding: 14,
               borderRadius: 14,
-              background: "rgba(255,255,255,0.04)",
-              border: "1px solid rgba(255,255,255,0.08)",
-              color: shareCopied ? "#22c55e" : "rgba(255,255,255,0.55)",
+              background: "rgba(var(--fg-rgb, 255,255,255),0.04)",
+              border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.08)",
+              color: shareCopied ? "#22c55e" : "rgba(var(--fg-rgb, 255,255,255),0.55)",
               fontWeight: 700,
               fontSize: 13,
               marginTop: 8,

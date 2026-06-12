@@ -33,12 +33,12 @@ const TAB_BY_HREF = new Map<string, (typeof TABS)[number]>(
  */
 function getThemeColors(pathname: string, modeAccent: string | null) {
   if (pathname === "/forma" || pathname === "/biegacz") {
-    return { active: "var(--c-orange, #f97316)", inactive: "rgba(255,255,255,0.25)" };
+    return { active: "var(--c-orange, #f97316)", inactive: "rgba(var(--fg-rgb, 255,255,255),0.25)" };
   }
   if (pathname === "/promile") {
-    return { active: "#818CF8", inactive: "rgba(255,255,255,0.2)" };
+    return { active: "#818CF8", inactive: "rgba(var(--fg-rgb, 255,255,255),0.2)" };
   }
-  return { active: modeAccent ?? "var(--c-mint, #6efcb4)", inactive: "rgba(255,255,255,0.25)" };
+  return { active: modeAccent ?? "var(--c-mint, #6efcb4)", inactive: "rgba(var(--fg-rgb, 255,255,255),0.25)" };
 }
 
 // Public / static pages where the in-app BottomNav would look out of
@@ -108,10 +108,10 @@ export default function BottomNav() {
         zIndex: 9999,
         height: 68,
         paddingBottom: "env(safe-area-inset-bottom, 0px)",
-        background: "rgba(10,14,12,0.95)",
+        background: "rgba(var(--bg-rgb, 10,14,12),0.95)",
         backdropFilter: "blur(20px)",
         WebkitBackdropFilter: "blur(20px)",
-        borderTop: "1px solid rgba(255,255,255,0.05)",
+        borderTop: "1px solid rgba(var(--fg-rgb, 255,255,255),0.05)",
         transform: "translateZ(0)",
         WebkitTransform: "translateZ(0)",
         backfaceVisibility: "hidden",

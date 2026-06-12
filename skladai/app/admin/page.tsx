@@ -68,7 +68,7 @@ function Chip({ label, tone }: { label: string; tone: "ok" | "warn" | "bad" | "m
     ok: { bg: "rgba(16,185,129,0.12)", fg: "#6ee7b7", border: "rgba(16,185,129,0.28)" },
     warn: { bg: "rgba(245,158,11,0.12)", fg: "var(--c-amber-3, #fcd34d)", border: "rgba(245,158,11,0.28)" },
     bad: { bg: "rgba(var(--c-red-rgb, 239,68,68), 0.12)", fg: "#fca5a5", border: "rgba(var(--c-red-rgb, 239,68,68), 0.28)" },
-    mute: { bg: "rgba(255,255,255,0.04)", fg: "rgba(255,255,255,0.55)", border: "rgba(255,255,255,0.08)" },
+    mute: { bg: "rgba(var(--fg-rgb, 255,255,255),0.04)", fg: "rgba(var(--fg-rgb, 255,255,255),0.55)", border: "rgba(var(--fg-rgb, 255,255,255),0.08)" },
   };
   const c = colors[tone];
   return (

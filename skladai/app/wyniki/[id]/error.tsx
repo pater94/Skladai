@@ -43,8 +43,8 @@ export default function WynikiError({
           width: "100%",
           padding: 28,
           borderRadius: 22,
-          background: "rgba(255,255,255,0.03)",
-          border: "1px solid rgba(255,255,255,0.06)",
+          background: "rgba(var(--fg-rgb, 255,255,255),0.03)",
+          border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.06)",
           textAlign: "center",
         }}
       >
@@ -68,7 +68,7 @@ export default function WynikiError({
           style={{
             fontSize: 22,
             fontWeight: 900,
-            color: "#ffffff",
+            color: "var(--fg, #ffffff)",
             margin: 0,
             marginBottom: 10,
             letterSpacing: "-0.01em",
@@ -79,7 +79,7 @@ export default function WynikiError({
         <p
           style={{
             fontSize: 13,
-            color: "rgba(255,255,255,0.6)",
+            color: "rgba(var(--fg-rgb, 255,255,255),0.6)",
             lineHeight: 1.55,
             margin: 0,
             marginBottom: 22,
@@ -115,10 +115,10 @@ export default function WynikiError({
             padding: "12px 18px",
             borderRadius: 14,
             background: "transparent",
-            color: "rgba(255,255,255,0.55)",
+            color: "rgba(var(--fg-rgb, 255,255,255),0.55)",
             fontWeight: 600,
             fontSize: 13,
-            border: "1px solid rgba(255,255,255,0.08)",
+            border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.08)",
             cursor: "pointer",
           }}
         >

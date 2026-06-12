@@ -411,7 +411,7 @@ export default function FormaPage() {
   };
 
   return (
-    <div className="min-h-screen relative overflow-hidden" style={{ background: "var(--bg, #0a0e0c)", color: "#fff" }}>
+    <div className="min-h-screen relative overflow-hidden" style={{ background: "var(--bg, #0a0e0c)", color: "var(--fg, #fff)" }}>
       {/* Ambient blobs */}
       <div className="pointer-events-none absolute" style={{
         top: "-40px", right: "-60px", width: "220px", height: "220px",
@@ -543,8 +543,8 @@ function Card({
       style={{
         padding: "15px 15px 15px 20px",
         borderRadius: "14px",
-        background: "rgba(255,255,255,0.025)",
-        border: "1px solid rgba(255,255,255,0.05)",
+        background: "rgba(var(--fg-rgb, 255,255,255),0.025)",
+        border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.05)",
         borderLeft: `3px solid ${accentColor}`,
         backdropFilter: "blur(8px)",
         animation: `fadeInUp 0.4s ease both`,
@@ -566,12 +566,12 @@ function Card({
       <div className="flex-1 min-w-0">
         <div className="font-bold text-white" style={{ fontSize: "14px" }}>{title}</div>
         {subtitle && (
-          <div className="mt-0.5" style={{ color: "rgba(255,255,255,0.3)", fontSize: "11px" }}>
+          <div className="mt-0.5" style={{ color: "rgba(var(--fg-rgb, 255,255,255),0.3)", fontSize: "11px" }}>
             {subtitle}
           </div>
         )}
       </div>
-      <span style={{ color: "rgba(255,255,255,0.2)", fontSize: "15px" }}>{"›"}</span>
+      <span style={{ color: "rgba(var(--fg-rgb, 255,255,255),0.2)", fontSize: "15px" }}>{"›"}</span>
     </button>
   );
 }
@@ -585,7 +585,7 @@ function BackButton({ onClick }: { onClick: () => void }) {
     <button
       onClick={onClick}
       className="flex items-center gap-1 mb-5 transition-colors"
-      style={{ color: "rgba(255,255,255,0.7)" }}
+      style={{ color: "rgba(var(--fg-rgb, 255,255,255),0.7)" }}
     >
       <ChevronLeft size={24} />
       <span className="font-semibold" style={{ fontSize: "14px" }}>Wstecz</span>
@@ -649,7 +649,7 @@ function MainView({
               <span>{"🔥"}</span>
               <span style={{ color: "var(--c-orange, #f97316)" }}>Forma</span>
             </h1>
-            <p style={{ color: "rgba(255,255,255,0.55)", fontSize: "13px", marginTop: "2px" }}>
+            <p style={{ color: "rgba(var(--fg-rgb, 255,255,255),0.55)", fontSize: "13px", marginTop: "2px" }}>
               Śledź siłę, pomiary i progres
             </p>
           </div>
@@ -704,8 +704,8 @@ function MainView({
               boxShadow: "0 4px 20px rgba(var(--c-orange-rgb, 249,115,22),0.3)",
               fontSize: "26px",
             }}>{"📸"}</div>
-            <h2 style={{ fontSize: "20px", fontWeight: 800, color: "#fff" }}>CheckForm</h2>
-            <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.4)", marginTop: "4px", marginBottom: "16px" }}>
+            <h2 style={{ fontSize: "20px", fontWeight: 800, color: "var(--fg, #fff)" }}>CheckForm</h2>
+            <p style={{ fontSize: "12px", color: "rgba(var(--fg-rgb, 255,255,255),0.4)", marginTop: "4px", marginBottom: "16px" }}>
               AI przeanalizuje Twoją sylwetkę
             </p>
             <button
@@ -722,7 +722,7 @@ function MainView({
             <div className="flex items-center justify-center gap-4 mt-3">
               <span style={{
                 fontSize: "10px",
-                color: "rgba(255,255,255,0.5)",
+                color: "rgba(var(--fg-rgb, 255,255,255),0.5)",
                 textTransform: "uppercase",
                 letterSpacing: "1.5px",
                 fontWeight: 600,
@@ -748,11 +748,11 @@ function MainView({
         >
           <div
             className="w-[85%] max-w-xs rounded-2xl p-6"
-            style={{ background: "#1a1a1a", border: "1px solid rgba(255,255,255,0.1)" }}
+            style={{ background: "#1a1a1a", border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.1)" }}
             onClick={(e) => e.stopPropagation()}
           >
             <h3 className="text-lg font-bold text-white mb-1">Kiedy zrobiono zdjęcie?</h3>
-            <p className="text-xs mb-4" style={{ color: "rgba(255,255,255,0.4)" }}>
+            <p className="text-xs mb-4" style={{ color: "rgba(var(--fg-rgb, 255,255,255),0.4)" }}>
               Wybierz datę wykonania zdjęcia
             </p>
             <input
@@ -761,9 +761,9 @@ function MainView({
               onChange={(e) => setGalleryDate(e.target.value)}
               className="w-full rounded-xl px-4 py-3 text-sm outline-none mb-4"
               style={{
-                background: "rgba(255,255,255,0.06)",
-                border: "1px solid rgba(255,255,255,0.1)",
-                color: "#fff",
+                background: "rgba(var(--fg-rgb, 255,255,255),0.06)",
+                border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.1)",
+                color: "var(--fg, #fff)",
                 colorScheme: "dark",
               }}
             />
@@ -791,7 +791,7 @@ function MainView({
       {recentCheckForms.length > 0 && (
         <div className="mb-6" style={{ animation: "fadeInUp 0.5s ease both", animationDelay: "0.15s" }}>
           <div className="mb-3" style={{
-            fontSize: "10px", color: "rgba(255,255,255,0.3)",
+            fontSize: "10px", color: "rgba(var(--fg-rgb, 255,255,255),0.3)",
             textTransform: "uppercase", letterSpacing: "2px", fontWeight: 600,
           }}>OSTATNIE WYNIKI</div>
           <div className="grid grid-cols-2 gap-2.5">
@@ -800,8 +800,8 @@ function MainView({
                 key={entry.id}
                 className="relative flex flex-col p-3 rounded-[14px] text-left transition-all"
                 style={{
-                  background: "rgba(255,255,255,0.03)",
-                  border: "1px solid rgba(255,255,255,0.06)",
+                  background: "rgba(var(--fg-rgb, 255,255,255),0.03)",
+                  border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.06)",
                   backdropFilter: "blur(8px)",
                 }}
               >
@@ -810,7 +810,7 @@ function MainView({
                   className="flex-1 text-left active:scale-[0.97] transition-all"
                 >
                   <div className="text-xs font-medium text-white">CheckForm</div>
-                  <div style={{ color: "rgba(255,255,255,0.3)", fontSize: "10px", marginTop: "2px" }}>
+                  <div style={{ color: "rgba(var(--fg-rgb, 255,255,255),0.3)", fontSize: "10px", marginTop: "2px" }}>
                     {new Date(entry.date).toLocaleDateString("pl-PL")}
                   </div>
                   <div className="text-lg font-bold mt-1" style={{ color: getScoreColor(entry.score) }}>
@@ -839,7 +839,7 @@ function MainView({
               >
                 <div
                   className="w-[85%] max-w-xs rounded-2xl p-5"
-                  style={{ background: "#1a1a1a", border: "1px solid rgba(255,255,255,0.1)" }}
+                  style={{ background: "#1a1a1a", border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.1)" }}
                   onClick={(e) => e.stopPropagation()}
                 >
                   <p className="text-sm text-white mb-4">
@@ -849,7 +849,7 @@ function MainView({
                     <button
                       onClick={() => setDeleteConfirm(null)}
                       className="flex-1 py-2.5 rounded-xl text-sm font-medium"
-                      style={{ background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.7)" }}
+                      style={{ background: "rgba(var(--fg-rgb, 255,255,255),0.06)", color: "rgba(var(--fg-rgb, 255,255,255),0.7)" }}
                     >
                       Nie
                     </button>
@@ -871,10 +871,10 @@ function MainView({
       {/* CheckForm score chart */}
       {checkFormHistory.length >= 2 && (
         <div className="mb-6 rounded-[14px] p-4" style={{
-          background: "rgba(255,255,255,0.03)",
-          border: "1px solid rgba(255,255,255,0.06)",
+          background: "rgba(var(--fg-rgb, 255,255,255),0.03)",
+          border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.06)",
         }}>
-          <p className="text-xs font-semibold mb-2" style={{ color: "rgba(255,255,255,0.4)" }}>Wynik CheckForm — trend</p>
+          <p className="text-xs font-semibold mb-2" style={{ color: "rgba(var(--fg-rgb, 255,255,255),0.4)" }}>Wynik CheckForm — trend</p>
           <ProgressChart
             data={checkFormHistory.map((h) => ({ date: h.date, value: h.score }))}
             label="/10"
@@ -887,15 +887,15 @@ function MainView({
 
       {/* Separator */}
       <div className="flex items-center gap-3 mb-4" style={{ animation: "fadeInUp 0.4s ease both", animationDelay: "0.25s" }}>
-        <div className="flex-1 h-px" style={{ background: "linear-gradient(to right, transparent, rgba(255,255,255,0.08), transparent)" }} />
+        <div className="flex-1 h-px" style={{ background: "linear-gradient(to right, transparent, rgba(var(--fg-rgb, 255,255,255),0.08), transparent)" }} />
         <span style={{
           fontSize: "9px",
-          color: "rgba(255,255,255,0.55)",
+          color: "rgba(var(--fg-rgb, 255,255,255),0.55)",
           textTransform: "uppercase",
           letterSpacing: "2.5px",
           fontWeight: 600,
         }}>NARZĘDZIA</span>
-        <div className="flex-1 h-px" style={{ background: "linear-gradient(to right, transparent, rgba(255,255,255,0.08), transparent)" }} />
+        <div className="flex-1 h-px" style={{ background: "linear-gradient(to right, transparent, rgba(var(--fg-rgb, 255,255,255),0.08), transparent)" }} />
       </div>
 
       {/* Tool cards */}
@@ -953,7 +953,7 @@ function TimerModal({
     >
       <div
         className="w-[90%] max-w-sm rounded-3xl p-6"
-        style={{ background: "#1A1A1A", border: "1px solid rgba(255,255,255,0.1)" }}
+        style={{ background: "#1A1A1A", border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.1)" }}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between mb-6">
@@ -961,7 +961,7 @@ function TimerModal({
             <Timer size={20} style={{ color: "var(--c-orange, #F97316)" }} /> Przerwa
           </h2>
           <button onClick={onClose} className="p-1">
-            <X size={20} style={{ color: "rgba(255,255,255,0.5)" }} />
+            <X size={20} style={{ color: "rgba(var(--fg-rgb, 255,255,255),0.5)" }} />
           </button>
         </div>
 
@@ -971,13 +971,13 @@ function TimerModal({
             className="font-mono font-bold"
             style={{
               fontSize: "48px",
-              color: timerLeft === 0 && !timerRunning ? "rgba(255,255,255,0.3)" : timerLeft <= 10 && timerRunning ? "var(--c-red, #EF4444)" : "var(--c-orange, #F97316)",
+              color: timerLeft === 0 && !timerRunning ? "rgba(var(--fg-rgb, 255,255,255),0.3)" : timerLeft <= 10 && timerRunning ? "var(--c-red, #EF4444)" : "var(--c-orange, #F97316)",
             }}
           >
             {formatTime(timerLeft > 0 ? timerLeft : timerSeconds)}
           </div>
           {/* Progress bar */}
-          <div className="w-full h-2 rounded-full mt-3" style={{ background: "rgba(255,255,255,0.1)" }}>
+          <div className="w-full h-2 rounded-full mt-3" style={{ background: "rgba(var(--fg-rgb, 255,255,255),0.1)" }}>
             <div
               className="h-full rounded-full transition-all duration-1000"
               style={{ width: `${progress}%`, background: "linear-gradient(90deg, var(--c-orange, #F97316), var(--c-red, #EF4444))" }}
@@ -995,9 +995,9 @@ function TimerModal({
                   onClick={() => startTimer(s)}
                   className="py-2.5 rounded-xl text-sm font-medium transition-all active:scale-95"
                   style={{
-                    background: timerSeconds === s ? "var(--c-orange, #F97316)" : "rgba(255,255,255,0.06)",
-                    color: timerSeconds === s ? "#fff" : "rgba(255,255,255,0.7)",
-                    border: "1px solid rgba(255,255,255,0.08)",
+                    background: timerSeconds === s ? "var(--c-orange, #F97316)" : "rgba(var(--fg-rgb, 255,255,255),0.06)",
+                    color: timerSeconds === s ? "#fff" : "rgba(var(--fg-rgb, 255,255,255),0.7)",
+                    border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.08)",
                   }}
                 >
                   {s}s
@@ -1013,9 +1013,9 @@ function TimerModal({
                 onChange={(e) => setCustomSec(e.target.value)}
                 className="flex-1 rounded-xl px-3 py-2.5 text-sm outline-none"
                 style={{
-                  background: "rgba(255,255,255,0.06)",
-                  border: "1px solid rgba(255,255,255,0.08)",
-                  color: "#fff",
+                  background: "rgba(var(--fg-rgb, 255,255,255),0.06)",
+                  border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.08)",
+                  color: "var(--fg, #fff)",
                 }}
               />
               <button
@@ -1024,7 +1024,7 @@ function TimerModal({
                   if (n > 0 && n <= 600) startTimer(n);
                 }}
                 className="px-4 py-2.5 rounded-xl text-sm font-medium"
-                style={{ background: "var(--c-orange, #F97316)", color: "#fff" }}
+                style={{ background: "var(--c-orange, #F97316)", color: "var(--fg, #fff)" }}
               >
                 Start
               </button>
@@ -1047,7 +1047,7 @@ function TimerModal({
               <button
                 onClick={() => setTimerRunning(true)}
                 className="flex-1 py-3 rounded-xl text-sm font-semibold"
-                style={{ background: "linear-gradient(135deg, var(--c-orange, #F97316), var(--c-red, #EF4444))", color: "#fff" }}
+                style={{ background: "linear-gradient(135deg, var(--c-orange, #F97316), var(--c-red, #EF4444))", color: "var(--fg, #fff)" }}
               >
                 Wznów
               </button>
@@ -1066,7 +1066,7 @@ function TimerModal({
         )}
 
         {timerLeft === 0 && !timerRunning && (
-          <p className="text-center text-xs mt-4" style={{ color: "rgba(255,255,255,0.55)" }}>
+          <p className="text-center text-xs mt-4" style={{ color: "rgba(var(--fg-rgb, 255,255,255),0.55)" }}>
             Ostatnio: {getTimerPref()}s
           </p>
         )}
@@ -1132,9 +1132,9 @@ function CalculatorView({
             onClick={() => { setExercise(ex); setSaved(false); }}
             className="py-2.5 px-3 rounded-xl text-xs font-medium transition-all text-left"
             style={{
-              background: exercise === ex ? "rgba(var(--c-orange-rgb, 249,115,22),0.15)" : "rgba(255,255,255,0.04)",
-              border: `1px solid ${exercise === ex ? "var(--c-orange, #F97316)" : "rgba(255,255,255,0.08)"}`,
-              color: exercise === ex ? "var(--c-orange, #F97316)" : "rgba(255,255,255,0.7)",
+              background: exercise === ex ? "rgba(var(--c-orange-rgb, 249,115,22),0.15)" : "rgba(var(--fg-rgb, 255,255,255),0.04)",
+              border: `1px solid ${exercise === ex ? "var(--c-orange, #F97316)" : "rgba(var(--fg-rgb, 255,255,255),0.08)"}`,
+              color: exercise === ex ? "var(--c-orange, #F97316)" : "rgba(var(--fg-rgb, 255,255,255),0.7)",
             }}
           >
             {EXERCISE_LABELS[ex]}
@@ -1145,25 +1145,25 @@ function CalculatorView({
       {/* Inputs */}
       <div className="flex gap-3 mb-4">
         <div className="flex-1">
-          <label className="text-xs mb-1 block" style={{ color: "rgba(255,255,255,0.5)" }}>Ciężar (kg)</label>
+          <label className="text-xs mb-1 block" style={{ color: "rgba(var(--fg-rgb, 255,255,255),0.5)" }}>Ciężar (kg)</label>
           <input
             type="number"
             value={weight}
             onChange={(e) => { setWeight(e.target.value); setSaved(false); }}
             placeholder="0"
             className="w-full rounded-xl px-3 py-3 text-lg font-bold outline-none"
-            style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)", color: "#fff" }}
+            style={{ background: "rgba(var(--fg-rgb, 255,255,255),0.06)", border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.08)", color: "var(--fg, #fff)" }}
           />
         </div>
         <div className="flex-1">
-          <label className="text-xs mb-1 block" style={{ color: "rgba(255,255,255,0.5)" }}>Powtórzenia</label>
+          <label className="text-xs mb-1 block" style={{ color: "rgba(var(--fg-rgb, 255,255,255),0.5)" }}>Powtórzenia</label>
           <input
             type="number"
             value={reps}
             onChange={(e) => { setReps(e.target.value); setSaved(false); }}
             placeholder="0"
             className="w-full rounded-xl px-3 py-3 text-lg font-bold outline-none"
-            style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)", color: "#fff" }}
+            style={{ background: "rgba(var(--fg-rgb, 255,255,255),0.06)", border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.08)", color: "var(--fg, #fff)" }}
           />
         </div>
       </div>
@@ -1178,21 +1178,21 @@ function CalculatorView({
       {oneRM !== null && (
         <div className="rounded-2xl p-4 mb-4" style={{ background: "rgba(var(--c-orange-rgb, 249,115,22),0.1)", border: "1px solid rgba(var(--c-orange-rgb, 249,115,22),0.2)" }}>
           <div className="text-center">
-            <div className="text-sm mb-1" style={{ color: "rgba(255,255,255,0.6)" }}>Szacowane 1RM</div>
+            <div className="text-sm mb-1" style={{ color: "rgba(var(--fg-rgb, 255,255,255),0.6)" }}>Szacowane 1RM</div>
             <div className="text-4xl font-bold" style={{ color: "var(--c-orange, #F97316)" }}>{oneRM} <span className="text-lg">kg</span></div>
           </div>
 
           {/* Ratio */}
           {ratio !== null && levelInfo && profile && (
-            <div className="mt-4 pt-4" style={{ borderTop: "1px solid rgba(255,255,255,0.08)" }}>
+            <div className="mt-4 pt-4" style={{ borderTop: "1px solid rgba(var(--fg-rgb, 255,255,255),0.08)" }}>
               <div className="flex justify-between items-center mb-2">
-                <span className="text-xs" style={{ color: "rgba(255,255,255,0.5)" }}>Siła / masa ciała</span>
+                <span className="text-xs" style={{ color: "rgba(var(--fg-rgb, 255,255,255),0.5)" }}>Siła / masa ciała</span>
                 <span className="text-sm font-bold" style={{ color: levelInfo.color }}>
                   {ratio}x — {levelInfo.label}
                 </span>
               </div>
               {/* Progress bar */}
-              <div className="w-full h-3 rounded-full flex overflow-hidden" style={{ background: "rgba(255,255,255,0.06)" }}>
+              <div className="w-full h-3 rounded-full flex overflow-hidden" style={{ background: "rgba(var(--fg-rgb, 255,255,255),0.06)" }}>
                 {scales[exercise].map((_, i) => (
                   <div
                     key={i}
@@ -1207,11 +1207,11 @@ function CalculatorView({
               </div>
               <div className="flex justify-between mt-1">
                 {LEVEL_LABELS.map((l, i) => (
-                  <span key={i} className="text-[9px]" style={{ color: i === levelInfo.level ? LEVEL_COLORS[i] : "rgba(255,255,255,0.25)" }}>{l.slice(0, 4)}.</span>
+                  <span key={i} className="text-[9px]" style={{ color: i === levelInfo.level ? LEVEL_COLORS[i] : "rgba(var(--fg-rgb, 255,255,255),0.25)" }}>{l.slice(0, 4)}.</span>
                 ))}
               </div>
               {levelInfo.next !== null && profile.weight_kg > 0 && (
-                <div className="mt-2 text-xs" style={{ color: "rgba(255,255,255,0.5)" }}>
+                <div className="mt-2 text-xs" style={{ color: "rgba(var(--fg-rgb, 255,255,255),0.5)" }}>
                   Brakuje <span className="font-bold" style={{ color: "var(--c-amber-2, #F59E0B)" }}>
                     {Math.round((levelInfo.next * profile.weight_kg - oneRM) * 10) / 10} kg
                   </span> do następnego poziomu
@@ -1237,13 +1237,13 @@ function CalculatorView({
 
       {/* Percentage table */}
       {oneRM !== null && (
-        <div className="rounded-2xl p-4" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
-          <h3 className="text-sm font-semibold mb-3" style={{ color: "rgba(255,255,255,0.7)" }}>Tabela procentowa</h3>
+        <div className="rounded-2xl p-4" style={{ background: "rgba(var(--fg-rgb, 255,255,255),0.04)", border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.08)" }}>
+          <h3 className="text-sm font-semibold mb-3" style={{ color: "rgba(var(--fg-rgb, 255,255,255),0.7)" }}>Tabela procentowa</h3>
           <div className="space-y-1.5">
             {percentages.map((pct) => (
               <div key={pct} className="flex items-center gap-2">
-                <span className="text-xs w-10 text-right" style={{ color: "rgba(255,255,255,0.4)" }}>{pct}%</span>
-                <div className="flex-1 h-2 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.06)" }}>
+                <span className="text-xs w-10 text-right" style={{ color: "rgba(var(--fg-rgb, 255,255,255),0.4)" }}>{pct}%</span>
+                <div className="flex-1 h-2 rounded-full overflow-hidden" style={{ background: "rgba(var(--fg-rgb, 255,255,255),0.06)" }}>
                   <div
                     className="h-full rounded-full"
                     style={{
@@ -1252,7 +1252,7 @@ function CalculatorView({
                     }}
                   />
                 </div>
-                <span className="text-xs font-mono w-14 text-right font-bold" style={{ color: "rgba(255,255,255,0.8)" }}>
+                <span className="text-xs font-mono w-14 text-right font-bold" style={{ color: "rgba(var(--fg-rgb, 255,255,255),0.8)" }}>
                   {Math.round(oneRM * pct / 100 * 10) / 10} kg
                 </span>
               </div>
@@ -1292,8 +1292,8 @@ function RecordsView({
       <h2 className="text-xl font-bold mb-4">{"🏆"} Moje Rekordy</h2>
 
       {records.length === 0 && (
-        <div className="text-center py-8 mb-4" style={{ color: "rgba(255,255,255,0.4)" }}>
-          <Trophy size={48} className="mx-auto mb-3" style={{ color: "rgba(255,255,255,0.55)" }} />
+        <div className="text-center py-8 mb-4" style={{ color: "rgba(var(--fg-rgb, 255,255,255),0.4)" }}>
+          <Trophy size={48} className="mx-auto mb-3" style={{ color: "rgba(var(--fg-rgb, 255,255,255),0.55)" }} />
           <p className="text-sm">Brak rekordów — oblicz pierwszy w kalkulatorze 1RM</p>
         </div>
       )}
@@ -1303,9 +1303,9 @@ function RecordsView({
           background: "linear-gradient(135deg, rgba(var(--c-orange-rgb, 249,115,22),0.15), rgba(var(--c-red-rgb, 239,68,68),0.15))",
           border: "1px solid rgba(var(--c-orange-rgb, 249,115,22),0.2)",
         }}>
-          <div className="text-xs mb-1" style={{ color: "rgba(255,255,255,0.5)" }}>Big 3 Total</div>
+          <div className="text-xs mb-1" style={{ color: "rgba(var(--fg-rgb, 255,255,255),0.5)" }}>Big 3 Total</div>
           <div className="text-3xl font-bold" style={{ color: "var(--c-orange, #F97316)" }}>{Math.round(big3Total)} kg</div>
-          <div className="flex justify-center gap-4 mt-2 text-xs" style={{ color: "rgba(255,255,255,0.5)" }}>
+          <div className="flex justify-center gap-4 mt-2 text-xs" style={{ color: "rgba(var(--fg-rgb, 255,255,255),0.5)" }}>
             {big3Exercises.map((ex) => {
               const exR = records.filter((r) => r.exercise === ex);
               const pr = exR.length ? Math.max(...exR.map((r) => r.oneRepMax)) : 0;
@@ -1344,7 +1344,7 @@ function RecordsView({
         if (big3PerDate.length >= 2) {
           return (
             <div className="mb-4">
-              <p className="text-xs font-semibold mb-2" style={{ color: "rgba(255,255,255,0.5)" }}>Big 3 Total — progres</p>
+              <p className="text-xs font-semibold mb-2" style={{ color: "rgba(var(--fg-rgb, 255,255,255),0.5)" }}>Big 3 Total — progres</p>
               <ProgressChart data={big3PerDate} label="kg" color="#F97316" />
             </div>
           );
@@ -1367,7 +1367,7 @@ function RecordsView({
           <div
             key={ex}
             className="rounded-2xl mb-3 overflow-hidden"
-            style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}
+            style={{ background: "rgba(var(--fg-rgb, 255,255,255),0.04)", border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.08)" }}
           >
             <button
               onClick={() => hasRecords && setExpanded(isExpanded ? null : ex)}
@@ -1377,14 +1377,14 @@ function RecordsView({
               <div className="text-left">
                 <div className="font-semibold text-sm text-white">{EXERCISE_LABELS[ex]}</div>
                 {hasRecords ? (
-                  <div className="text-xs mt-0.5" style={{ color: "rgba(255,255,255,0.5)" }}>
+                  <div className="text-xs mt-0.5" style={{ color: "rgba(var(--fg-rgb, 255,255,255),0.5)" }}>
                     PR: <span className="font-bold" style={{ color: "var(--c-orange, #F97316)" }}>{Math.round(pr)} kg</span>
                     {exRecords[0].ratio !== null && (
                       <span className="ml-2">Ratio: {exRecords[0].ratio}x</span>
                     )}
                   </div>
                 ) : (
-                  <div className="text-xs mt-0.5" style={{ color: "rgba(255,255,255,0.3)" }}>
+                  <div className="text-xs mt-0.5" style={{ color: "rgba(var(--fg-rgb, 255,255,255),0.3)" }}>
                     Brak rekordu
                   </div>
                 )}
@@ -1398,7 +1398,7 @@ function RecordsView({
                     size={16}
                     className="transition-transform"
                     style={{
-                      color: "rgba(255,255,255,0.3)",
+                      color: "rgba(var(--fg-rgb, 255,255,255),0.3)",
                       transform: isExpanded ? "rotate(90deg)" : "none",
                     }}
                   />
@@ -1407,7 +1407,7 @@ function RecordsView({
             </button>
 
             {isExpanded && hasRecords && (
-              <div className="px-4 pb-4 space-y-2" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+              <div className="px-4 pb-4 space-y-2" style={{ borderTop: "1px solid rgba(var(--fg-rgb, 255,255,255),0.06)" }}>
                 {exRecords.length >= 2 && (
                   <div className="mb-3">
                     <ProgressChart
@@ -1419,11 +1419,11 @@ function RecordsView({
                 )}
                 {exRecords.map((rec, i) => (
                   <div key={i} className="flex justify-between items-center py-1.5 text-xs">
-                    <span style={{ color: "rgba(255,255,255,0.5)" }}>
+                    <span style={{ color: "rgba(var(--fg-rgb, 255,255,255),0.5)" }}>
                       {new Date(rec.date).toLocaleDateString("pl-PL")}
                     </span>
                     <span>
-                      <span style={{ color: "rgba(255,255,255,0.4)" }}>{rec.weight}kg x{rec.reps}</span>
+                      <span style={{ color: "rgba(var(--fg-rgb, 255,255,255),0.4)" }}>{rec.weight}kg x{rec.reps}</span>
                       <span className="ml-2 font-bold text-white">{"→"} {Math.round(rec.oneRepMax)} kg</span>
                     </span>
                   </div>
@@ -1509,10 +1509,10 @@ function MeasurementsView({
       {/* Body fat display */}
       {latestBf !== null && bfInfo && (
         <div className="rounded-2xl p-4 mb-4 text-center" style={{
-          background: "rgba(255,255,255,0.04)",
-          border: "1px solid rgba(255,255,255,0.08)",
+          background: "rgba(var(--fg-rgb, 255,255,255),0.04)",
+          border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.08)",
         }}>
-          <div className="text-xs mb-1" style={{ color: "rgba(255,255,255,0.5)" }}>Tkanka tłuszczowa (US Navy)</div>
+          <div className="text-xs mb-1" style={{ color: "rgba(var(--fg-rgb, 255,255,255),0.5)" }}>Tkanka tłuszczowa (US Navy)</div>
           <div className="text-3xl font-bold" style={{ color: bfInfo.color }}>{latestBf}%</div>
           <div className="text-sm mt-1" style={{ color: bfInfo.color }}>{bfInfo.label}</div>
           {/* Scale */}
@@ -1522,7 +1522,7 @@ function MeasurementsView({
                 key={i}
                 className="flex-1 h-2 rounded-full"
                 style={{
-                  background: c.label === bfInfo.label ? c.color : "rgba(255,255,255,0.08)",
+                  background: c.label === bfInfo.label ? c.color : "rgba(var(--fg-rgb, 255,255,255),0.08)",
                 }}
               />
             ))}
@@ -1538,7 +1538,7 @@ function MeasurementsView({
         if (bfData.length >= 2) {
           return (
             <div className="mb-4">
-              <p className="text-xs font-semibold mb-2" style={{ color: "rgba(255,255,255,0.5)" }}>% tkanki tłuszczowej — trend</p>
+              <p className="text-xs font-semibold mb-2" style={{ color: "rgba(var(--fg-rgb, 255,255,255),0.5)" }}>% tkanki tłuszczowej — trend</p>
               <ProgressChart data={bfData} label="%" color="#3B82F6" invertTrend />
             </div>
           );
@@ -1548,8 +1548,8 @@ function MeasurementsView({
 
       {/* Measurement chart with selector */}
       {measurements.length >= 2 && (
-        <div className="rounded-2xl p-4 mb-4" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
-          <p className="text-xs font-semibold mb-2" style={{ color: "rgba(255,255,255,0.5)" }}>Wykres pomiaru</p>
+        <div className="rounded-2xl p-4 mb-4" style={{ background: "rgba(var(--fg-rgb, 255,255,255),0.04)", border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.08)" }}>
+          <p className="text-xs font-semibold mb-2" style={{ color: "rgba(var(--fg-rgb, 255,255,255),0.5)" }}>Wykres pomiaru</p>
           <div className="flex gap-1.5 flex-wrap mb-3">
             {MEASUREMENT_FIELDS.map((f) => (
               <button
@@ -1557,8 +1557,8 @@ function MeasurementsView({
                 onClick={() => setChartField(f.key)}
                 className="px-2.5 py-1 rounded-lg text-[10px] font-medium transition-colors"
                 style={{
-                  background: chartField === f.key ? "var(--c-orange, #F97316)" : "rgba(255,255,255,0.06)",
-                  color: chartField === f.key ? "#fff" : "rgba(255,255,255,0.5)",
+                  background: chartField === f.key ? "var(--c-orange, #F97316)" : "rgba(var(--fg-rgb, 255,255,255),0.06)",
+                  color: chartField === f.key ? "#fff" : "rgba(var(--fg-rgb, 255,255,255),0.5)",
                 }}
               >
                 {f.label}
@@ -1581,7 +1581,7 @@ function MeasurementsView({
               );
             }
             return (
-              <p style={{ color: "rgba(255,255,255,0.3)", fontSize: "12px", textAlign: "center", padding: "16px 0" }}>
+              <p style={{ color: "rgba(var(--fg-rgb, 255,255,255),0.3)", fontSize: "12px", textAlign: "center", padding: "16px 0" }}>
                 Dodaj więcej wyników żeby zobaczyć wykres progresu
               </p>
             );
@@ -1590,8 +1590,8 @@ function MeasurementsView({
       )}
 
       {/* Input fields */}
-      <div className="rounded-2xl p-4 mb-4" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
-        <h3 className="text-sm font-semibold mb-3" style={{ color: "rgba(255,255,255,0.7)" }}>Nowy pomiar</h3>
+      <div className="rounded-2xl p-4 mb-4" style={{ background: "rgba(var(--fg-rgb, 255,255,255),0.04)", border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.08)" }}>
+        <h3 className="text-sm font-semibold mb-3" style={{ color: "rgba(var(--fg-rgb, 255,255,255),0.7)" }}>Nowy pomiar</h3>
         <div className="space-y-3">
           {MEASUREMENT_FIELDS.map((f) => {
             const prevVal = prev ? (prev as unknown as Record<string, unknown>)[f.key] as number | null : null;
@@ -1601,7 +1601,7 @@ function MeasurementsView({
 
             return (
               <div key={f.key} className="flex items-center gap-3">
-                <label className="text-sm w-28 flex-shrink-0" style={{ color: "rgba(255,255,255,0.6)" }}>
+                <label className="text-sm w-28 flex-shrink-0" style={{ color: "rgba(var(--fg-rgb, 255,255,255),0.6)" }}>
                   {f.label}
                 </label>
                 <input
@@ -1611,7 +1611,7 @@ function MeasurementsView({
                   onChange={(e) => setValues({ ...values, [f.key]: e.target.value })}
                   placeholder={prevVal ? `${prevVal}` : "cm"}
                   className="flex-1 rounded-lg px-3 py-2 text-sm outline-none"
-                  style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)", color: "#fff" }}
+                  style={{ background: "rgba(var(--fg-rgb, 255,255,255),0.06)", border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.08)", color: "var(--fg, #fff)" }}
                 />
                 {diff !== null && (
                   <span
@@ -1648,19 +1648,19 @@ function MeasurementsView({
 
       {/* History */}
       {measurements.length > 0 && (
-        <div className="rounded-2xl p-4" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
-          <h3 className="text-sm font-semibold mb-3" style={{ color: "rgba(255,255,255,0.7)" }}>Historia pomiarów</h3>
+        <div className="rounded-2xl p-4" style={{ background: "rgba(var(--fg-rgb, 255,255,255),0.04)", border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.08)" }}>
+          <h3 className="text-sm font-semibold mb-3" style={{ color: "rgba(var(--fg-rgb, 255,255,255),0.7)" }}>Historia pomiarów</h3>
           <div className="space-y-2">
             {[...measurements].reverse().slice(0, 10).map((m, i) => (
               <div
                 key={i}
                 className="flex items-center justify-between py-2 text-xs"
-                style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}
+                style={{ borderBottom: "1px solid rgba(var(--fg-rgb, 255,255,255),0.04)" }}
               >
-                <span style={{ color: "rgba(255,255,255,0.5)" }}>
+                <span style={{ color: "rgba(var(--fg-rgb, 255,255,255),0.5)" }}>
                   {new Date(m.date).toLocaleDateString("pl-PL")}
                 </span>
-                <div className="flex gap-3" style={{ color: "rgba(255,255,255,0.6)" }}>
+                <div className="flex gap-3" style={{ color: "rgba(var(--fg-rgb, 255,255,255),0.6)" }}>
                   {m.waist && <span>Talia: {m.waist}</span>}
                   {m.biceps && <span>Biceps: {m.biceps}</span>}
                   {m.bodyFatPercent && (
@@ -1741,9 +1741,9 @@ function PhotosView({ goBack }: { goBack: () => void }) {
             onClick={() => setPhotoType(t)}
             className="flex-1 py-2 rounded-xl text-xs font-medium"
             style={{
-              background: photoType === t ? "rgba(var(--c-orange-rgb, 249,115,22),0.15)" : "rgba(255,255,255,0.04)",
-              border: `1px solid ${photoType === t ? "var(--c-orange, #F97316)" : "rgba(255,255,255,0.08)"}`,
-              color: photoType === t ? "var(--c-orange, #F97316)" : "rgba(255,255,255,0.6)",
+              background: photoType === t ? "rgba(var(--c-orange-rgb, 249,115,22),0.15)" : "rgba(var(--fg-rgb, 255,255,255),0.04)",
+              border: `1px solid ${photoType === t ? "var(--c-orange, #F97316)" : "rgba(var(--fg-rgb, 255,255,255),0.08)"}`,
+              color: photoType === t ? "var(--c-orange, #F97316)" : "rgba(var(--fg-rgb, 255,255,255),0.6)",
             }}
           >
             {typeLabels[t]}
@@ -1764,7 +1764,7 @@ function PhotosView({ goBack }: { goBack: () => void }) {
             } else { cameraRef.current?.click(); }
           }}
           className="flex-1 py-3 rounded-xl text-sm font-semibold flex items-center justify-center gap-2"
-          style={{ background: "linear-gradient(135deg, var(--c-orange, #F97316), var(--c-red, #EF4444))", color: "#fff" }}
+          style={{ background: "linear-gradient(135deg, var(--c-orange, #F97316), var(--c-red, #EF4444))", color: "var(--fg, #fff)" }}
         >
           <Camera size={18} /> Zrób zdjęcie
         </button>
@@ -1780,7 +1780,7 @@ function PhotosView({ goBack }: { goBack: () => void }) {
             } else { fileRef.current?.click(); }
           }}
           className="flex-1 py-3 rounded-xl text-sm font-semibold"
-          style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.7)" }}
+          style={{ background: "rgba(var(--fg-rgb, 255,255,255),0.06)", border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.08)", color: "rgba(var(--fg-rgb, 255,255,255),0.7)" }}
         >
           Z galerii
         </button>
@@ -1808,9 +1808,9 @@ function PhotosView({ goBack }: { goBack: () => void }) {
           onClick={() => { setIsComparing(!isComparing); setCompareA(null); setCompareB(null); }}
           className="w-full py-2 rounded-xl text-xs font-medium mb-4"
           style={{
-            background: isComparing ? "rgba(var(--c-orange-rgb, 249,115,22),0.15)" : "rgba(255,255,255,0.04)",
-            border: "1px solid rgba(255,255,255,0.08)",
-            color: isComparing ? "var(--c-orange, #F97316)" : "rgba(255,255,255,0.6)",
+            background: isComparing ? "rgba(var(--c-orange-rgb, 249,115,22),0.15)" : "rgba(var(--fg-rgb, 255,255,255),0.04)",
+            border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.08)",
+            color: isComparing ? "var(--c-orange, #F97316)" : "rgba(var(--fg-rgb, 255,255,255),0.6)",
           }}
         >
           {isComparing ? "Anuluj porównanie" : "🖼️ Porównaj zdjęcia (przed/po)"}
@@ -1818,7 +1818,7 @@ function PhotosView({ goBack }: { goBack: () => void }) {
       )}
 
       {isComparing && compareA && compareB && (
-        <div className="grid grid-cols-2 gap-2 mb-4 rounded-2xl overflow-hidden" style={{ border: "1px solid rgba(255,255,255,0.08)" }}>
+        <div className="grid grid-cols-2 gap-2 mb-4 rounded-2xl overflow-hidden" style={{ border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.08)" }}>
           {[compareA, compareB].map((id, i) => {
             const photo = photos.find((p) => p.id === id);
             return photo ? (
@@ -1846,7 +1846,7 @@ function PhotosView({ goBack }: { goBack: () => void }) {
             key={photo.id}
             className="relative rounded-xl overflow-hidden cursor-pointer"
             style={{
-              border: (compareA === photo.id || compareB === photo.id) ? "2px solid var(--c-amber-2, #F59E0B)" : "1px solid rgba(255,255,255,0.08)",
+              border: (compareA === photo.id || compareB === photo.id) ? "2px solid var(--c-amber-2, #F59E0B)" : "1px solid rgba(var(--fg-rgb, 255,255,255),0.08)",
             }}
             onClick={() => {
               if (isComparing) {
@@ -1862,7 +1862,7 @@ function PhotosView({ goBack }: { goBack: () => void }) {
               className="absolute bottom-0 left-0 right-0 px-1.5 py-1 flex justify-between items-center"
               style={{ background: "rgba(0,0,0,0.7)", fontSize: "9px" }}
             >
-              <span style={{ color: "rgba(255,255,255,0.7)" }}>
+              <span style={{ color: "rgba(var(--fg-rgb, 255,255,255),0.7)" }}>
                 {typeLabels[photo.type]} · {new Date(photo.date).toLocaleDateString("pl-PL")}
               </span>
               {!isComparing && (
@@ -1879,14 +1879,14 @@ function PhotosView({ goBack }: { goBack: () => void }) {
       </div>
 
       {photos.length === 0 && (
-        <div className="text-center py-10" style={{ color: "rgba(255,255,255,0.3)" }}>
-          <Camera size={40} className="mx-auto mb-2" style={{ color: "rgba(255,255,255,0.1)" }} />
+        <div className="text-center py-10" style={{ color: "rgba(var(--fg-rgb, 255,255,255),0.3)" }}>
+          <Camera size={40} className="mx-auto mb-2" style={{ color: "rgba(var(--fg-rgb, 255,255,255),0.1)" }} />
           <p className="text-sm">Brak zdjęć</p>
           <p className="text-xs mt-1">Zrób pierwsze zdjęcie progresowe</p>
         </div>
       )}
 
-      <p className="text-[10px] text-center mt-4" style={{ color: "rgba(255,255,255,0.55)" }}>
+      <p className="text-[10px] text-center mt-4" style={{ color: "rgba(var(--fg-rgb, 255,255,255),0.55)" }}>
         {photos.length}/20 zdjęć
       </p>
     </>
@@ -1955,8 +1955,8 @@ function StrengthCardView({
       <h2 className="text-xl font-bold mb-4">{"💪"} Karta Siły</h2>
 
       {records.length === 0 ? (
-        <div className="text-center py-12" style={{ color: "rgba(255,255,255,0.4)" }}>
-          <Dumbbell size={48} className="mx-auto mb-3" style={{ color: "rgba(255,255,255,0.55)" }} />
+        <div className="text-center py-12" style={{ color: "rgba(var(--fg-rgb, 255,255,255),0.4)" }}>
+          <Dumbbell size={48} className="mx-auto mb-3" style={{ color: "rgba(var(--fg-rgb, 255,255,255),0.55)" }} />
           <p className="text-sm">Dodaj rekordy w kalkulatorze 1RM</p>
           <p className="text-xs mt-1">żeby wygenerować kartę</p>
         </div>
@@ -1967,7 +1967,7 @@ function StrengthCardView({
             className="rounded-3xl p-5 mb-4"
             style={{
               background: "linear-gradient(135deg, #111827, #1E293B)",
-              border: "1px solid rgba(255,255,255,0.1)",
+              border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.1)",
             }}
           >
             {/* Header */}
@@ -1978,7 +1978,7 @@ function StrengthCardView({
               </div>
               {profile?.weight_kg && (
                 <div className="text-right">
-                  <div className="text-[10px]" style={{ color: "rgba(255,255,255,0.4)" }}>Masa ciała</div>
+                  <div className="text-[10px]" style={{ color: "rgba(var(--fg-rgb, 255,255,255),0.4)" }}>Masa ciała</div>
                   <div className="text-sm font-bold text-white">{profile.weight_kg} kg</div>
                 </div>
               )}
@@ -1986,7 +1986,7 @@ function StrengthCardView({
 
             {/* Big 3 */}
             <div className="text-center py-3 rounded-2xl mb-4" style={{ background: "rgba(var(--c-orange-rgb, 249,115,22),0.1)", border: "1px solid rgba(var(--c-orange-rgb, 249,115,22),0.2)" }}>
-              <div className="text-[10px]" style={{ color: "rgba(255,255,255,0.5)" }}>BIG 3 TOTAL</div>
+              <div className="text-[10px]" style={{ color: "rgba(var(--fg-rgb, 255,255,255),0.5)" }}>BIG 3 TOTAL</div>
               <div className="text-3xl font-bold" style={{ color: "var(--c-orange, #F97316)" }}>{Math.round(big3)} kg</div>
             </div>
 
@@ -1998,12 +1998,12 @@ function StrengthCardView({
                 const hasPR = prs[ex] > 0;
                 return (
                   <div key={ex} className="flex items-center justify-between py-1.5">
-                    <span className="text-xs" style={{ color: "rgba(255,255,255,0.6)" }}>{EXERCISE_LABELS[ex]}</span>
+                    <span className="text-xs" style={{ color: "rgba(var(--fg-rgb, 255,255,255),0.6)" }}>{EXERCISE_LABELS[ex]}</span>
                     <div className="flex items-center gap-2">
                       {hasPR ? (
                         <span className="text-sm font-bold text-white">{Math.round(prs[ex])} kg</span>
                       ) : (
-                        <span className="text-xs" style={{ color: "rgba(255,255,255,0.3)" }}>{"—"}</span>
+                        <span className="text-xs" style={{ color: "rgba(var(--fg-rgb, 255,255,255),0.3)" }}>{"—"}</span>
                       )}
                       {lvl && (
                         <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ background: `${lvl.color}20`, color: lvl.color }}>
@@ -2017,7 +2017,7 @@ function StrengthCardView({
             </div>
 
             {/* Date */}
-            <div className="text-center mt-4 text-[10px]" style={{ color: "rgba(255,255,255,0.55)" }}>
+            <div className="text-center mt-4 text-[10px]" style={{ color: "rgba(var(--fg-rgb, 255,255,255),0.55)" }}>
               {new Date().toLocaleDateString("pl-PL")}
             </div>
           </div>
@@ -2032,7 +2032,7 @@ function StrengthCardView({
           >
             {shared ? "✓ Skopiowano!" : <><Share2 size={16} /> Udostępnij (tylko statystyki)</>}
           </button>
-          <p className="text-[10px] text-center mt-2" style={{ color: "rgba(255,255,255,0.3)" }}>
+          <p className="text-[10px] text-center mt-2" style={{ color: "rgba(var(--fg-rgb, 255,255,255),0.3)" }}>
             Udostępniane są tylko wyniki, bez zdjęć
           </p>
         </>
@@ -2143,7 +2143,7 @@ function CheckFormView({
     <>
       <BackButton onClick={goBack} />
       <h2 className="text-xl font-bold mb-4">{"📸"} CheckForm</h2>
-      <p className="text-sm mb-4" style={{ color: "rgba(255,255,255,0.5)" }}>
+      <p className="text-sm mb-4" style={{ color: "rgba(var(--fg-rgb, 255,255,255),0.5)" }}>
         Zrób zdjęcie sylwetki, a AI przeanalizuje Twoją kompozycję ciała
       </p>
 
@@ -2151,7 +2151,7 @@ function CheckFormView({
 
       <div className="text-center mt-3" style={{
         fontSize: "11px",
-        color: "rgba(255,255,255,0.85)",
+        color: "rgba(var(--fg-rgb, 255,255,255),0.85)",
         textTransform: "uppercase" as const,
         letterSpacing: "1.5px",
         fontWeight: 600,
@@ -2172,7 +2172,7 @@ function CheckFormView({
       {/* CheckForm score chart */}
       {history.length >= 2 && (
         <div className="mt-6">
-          <p className="text-xs font-semibold mb-2" style={{ color: "rgba(255,255,255,0.5)" }}>Wynik CheckForm — trend</p>
+          <p className="text-xs font-semibold mb-2" style={{ color: "rgba(var(--fg-rgb, 255,255,255),0.5)" }}>Wynik CheckForm — trend</p>
           <ProgressChart
             data={[...history].sort((a, b) => a.date.localeCompare(b.date)).map((h) => ({ date: h.date, value: h.score }))}
             label="/10"
@@ -2188,7 +2188,7 @@ function CheckFormView({
         <div className="mt-6">
           <h3
             className="text-sm font-semibold mb-3"
-            style={{ color: "rgba(255,255,255,0.5)" }}
+            style={{ color: "rgba(var(--fg-rgb, 255,255,255),0.5)" }}
           >
             Historia CheckForm
           </h3>
@@ -2199,8 +2199,8 @@ function CheckFormView({
                 onClick={() => router.push(`/wyniki/${entry.id}`)}
                 className="w-full flex items-center justify-between p-3 rounded-xl text-left transition-all active:scale-[0.98]"
                 style={{
-                  background: "rgba(255,255,255,0.04)",
-                  border: "1px solid rgba(255,255,255,0.08)",
+                  background: "rgba(var(--fg-rgb, 255,255,255),0.04)",
+                  border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.08)",
                 }}
               >
                 <div>
@@ -2209,7 +2209,7 @@ function CheckFormView({
                   </div>
                   <div
                     className="text-xs"
-                    style={{ color: "rgba(255,255,255,0.4)" }}
+                    style={{ color: "rgba(var(--fg-rgb, 255,255,255),0.4)" }}
                   >
                     {new Date(entry.date).toLocaleDateString("pl-PL")}
                   </div>

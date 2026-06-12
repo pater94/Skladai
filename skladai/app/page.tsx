@@ -867,7 +867,7 @@ export default function Home() {
                 </span>{" "}
                 {h.line2}
               </h2>
-              <p className="text-[13px] mt-2 font-medium transition-all duration-300" style={{ color: "rgba(255,255,255,0.55)" }}>
+              <p className="text-[13px] mt-2 font-medium transition-all duration-300" style={{ color: "rgba(var(--fg-rgb, 255,255,255),0.55)" }}>
                 {h.sub}
               </p>
             </div>
@@ -879,7 +879,7 @@ export default function Home() {
             → modal Makro/Skład (po SKANUJ); Danie/Suplement → skan od razu.
             Cosmetics: brak tabów (skanuje kosmetyk wprost). */}
         {userMode !== "cosmetics" && (
-          <div className="rounded-2xl p-1 mb-6 anim-fade-up-2" style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", backdropFilter: "blur(10px)" }}>
+          <div className="rounded-2xl p-1 mb-6 anim-fade-up-2" style={{ background: "rgba(var(--fg-rgb, 255,255,255),0.05)", border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.08)", backdropFilter: "blur(10px)" }}>
             <div className="flex gap-1">
               {(() => {
                 const foodDefault = getDefaultScanCategoryForMode(userMode) as ScanMode;
@@ -893,7 +893,7 @@ export default function Home() {
                     key={t.key}
                     onClick={() => { setMode(t.target); saveMode(t.target); setError(null); }}
                     className="flex-1 flex items-center justify-center gap-1.5 py-2.5 px-1 text-[12px] rounded-xl font-semibold transition-all duration-300"
-                    style={{ backgroundColor: t.active ? `${t.color}1f` : "transparent", color: t.active ? t.color : "rgba(255,255,255,0.55)", fontWeight: t.active ? 700 : 500 }}
+                    style={{ backgroundColor: t.active ? `${t.color}1f` : "transparent", color: t.active ? t.color : "rgba(var(--fg-rgb, 255,255,255),0.55)", fontWeight: t.active ? 700 : 500 }}
                   >
                     <t.Icon size={15} strokeWidth={2.2} />
                     {t.label}
@@ -1031,7 +1031,7 @@ export default function Home() {
                 onClick={() => openScanFlow("camera")}
                 className="relative w-[220px] h-[220px] rounded-[36px] flex flex-col items-center justify-center active:scale-[0.96] transition-transform"
                 style={{
-                  background: "rgba(255,255,255,0.03)",
+                  background: "rgba(var(--fg-rgb, 255,255,255),0.03)",
                   border: `1px solid rgba(${accent.rgb},0.1)`,
                   boxShadow: `0 0 30px rgba(${accent.rgb},0.05)`,
                   animation: "pulse-glow 3s ease-in-out infinite",
@@ -1196,7 +1196,7 @@ export default function Home() {
                   <div
                     style={{
                       fontSize: 11,
-                      color: "rgba(255,255,255,0.45)",
+                      color: "rgba(var(--fg-rgb, 255,255,255),0.45)",
                       marginTop: 4,
                       fontWeight: 500,
                       letterSpacing: 0.1,
@@ -1375,7 +1375,7 @@ export default function Home() {
                                   flex: 1,
                                   fontSize: 12,
                                   fontWeight: 700,
-                                  color: "rgba(255,255,255,0.92)",
+                                  color: "rgba(var(--fg-rgb, 255,255,255),0.92)",
                                   overflow: "hidden",
                                   textOverflow: "ellipsis",
                                   whiteSpace: "nowrap",
@@ -1393,8 +1393,8 @@ export default function Home() {
                                   width: 18,
                                   height: 18,
                                   borderRadius: 9,
-                                  background: "rgba(255,255,255,0.06)",
-                                  color: "rgba(255,255,255,0.45)",
+                                  background: "rgba(var(--fg-rgb, 255,255,255),0.06)",
+                                  color: "rgba(var(--fg-rgb, 255,255,255),0.45)",
                                   fontSize: 10,
                                   display: "flex",
                                   alignItems: "center",
@@ -1515,8 +1515,8 @@ export default function Home() {
                   href={link.href}
                   className="rounded-2xl p-3.5 text-center active:scale-[0.97] transition-transform"
                   style={{
-                    background: "rgba(255,255,255,0.03)",
-                    border: "1px solid rgba(255,255,255,0.06)",
+                    background: "rgba(var(--fg-rgb, 255,255,255),0.03)",
+                    border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.06)",
                   }}
                 >
                   <span className="text-[20px] block">{link.emoji}</span>
@@ -1563,7 +1563,7 @@ export default function Home() {
         <div
           className="mt-5 p-4 rounded-2xl anim-fade-up-3 transition-all duration-500"
           style={{
-            background: "rgba(255,255,255,0.03)",
+            background: "rgba(var(--fg-rgb, 255,255,255),0.03)",
             border: `1px solid rgba(${accent.rgb},0.12)`,
             backdropFilter: "blur(10px)",
           }}
@@ -1620,10 +1620,10 @@ export default function Home() {
             }}
           >
             <div style={{ fontSize: 44, marginBottom: 8 }}>🍽️</div>
-            <h2 style={{ fontSize: 19, fontWeight: 800, color: "#fff", marginBottom: 8, letterSpacing: "-0.3px" }}>
+            <h2 style={{ fontSize: 19, fontWeight: 800, color: "var(--fg, #fff)", marginBottom: 8, letterSpacing: "-0.3px" }}>
               To wygląda na danie!
             </h2>
-            <p style={{ fontSize: 13.5, color: "rgba(255,255,255,0.7)", lineHeight: 1.5, marginBottom: 22 }}>
+            <p style={{ fontSize: 13.5, color: "rgba(var(--fg-rgb, 255,255,255),0.7)", lineHeight: 1.5, marginBottom: 22 }}>
               Wykryłem <strong style={{ color: "var(--c-amber, #FBBF24)" }}>{mealSuggestion.dish}</strong> — to przygotowane jedzenie, nie etykieta produktu.
               Przełącz na tryb <strong>Danie</strong>, żeby oszacować kalorie i makro z talerza.
             </p>
@@ -1650,8 +1650,8 @@ export default function Home() {
               onClick={() => setMealSuggestion(null)}
               style={{
                 width: "100%", padding: "12px", borderRadius: 14,
-                background: "transparent", border: "1px solid rgba(255,255,255,0.12)",
-                color: "rgba(255,255,255,0.6)", fontSize: 13.5, fontWeight: 600, cursor: "pointer",
+                background: "transparent", border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.12)",
+                color: "rgba(var(--fg-rgb, 255,255,255),0.6)", fontSize: 13.5, fontWeight: 600, cursor: "pointer",
               }}
             >
               Anuluj — zeskanuję etykietę
@@ -1684,15 +1684,15 @@ export default function Home() {
 
             {/* TOP: X + eyebrow + tytuł + podtytuł */}
             <div style={{ position: "relative", padding: "max(20px, env(safe-area-inset-top)) 20px 0" }}>
-              <button type="button" onClick={() => setShowScanChoice(false)} aria-label="Zamknij" className="scan-opt" style={{ width: 38, height: 38, borderRadius: 99, background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
-                <X size={18} color="rgba(255,255,255,0.7)" />
+              <button type="button" onClick={() => setShowScanChoice(false)} aria-label="Zamknij" className="scan-opt" style={{ width: 38, height: 38, borderRadius: 99, background: "rgba(var(--fg-rgb, 255,255,255),0.05)", border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.08)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
+                <X size={18} color="rgba(var(--fg-rgb, 255,255,255),0.7)" />
               </button>
               <div style={{ marginTop: 26 }}>
                 <div style={{ display: "inline-flex", alignItems: "center", gap: 6, color: "var(--c-mint, #6efcb4)", fontSize: 11.5, fontWeight: 800, letterSpacing: 2, textTransform: "uppercase" }}>
                   <ScanLine size={14} color="#6efcb4" strokeWidth={2.4} /> Skanowanie
                 </div>
-                <div style={{ fontSize: 28, fontWeight: 800, color: "#fff", letterSpacing: -0.6, lineHeight: 1.1, marginTop: 10 }}>Co chcesz<br />zeskanować?</div>
-                <div style={{ fontSize: 15.5, color: "rgba(255,255,255,0.82)", fontWeight: 700, marginTop: 10 }}>Wybierz rodzaj analizy</div>
+                <div style={{ fontSize: 28, fontWeight: 800, color: "var(--fg, #fff)", letterSpacing: -0.6, lineHeight: 1.1, marginTop: 10 }}>Co chcesz<br />zeskanować?</div>
+                <div style={{ fontSize: 15.5, color: "rgba(var(--fg-rgb, 255,255,255),0.82)", fontWeight: 700, marginTop: 10 }}>Wybierz rodzaj analizy</div>
               </div>
             </div>
 
@@ -1709,18 +1709,18 @@ export default function Home() {
                     ["--acc" as string]: c.accent,
                     position: "relative", overflow: "hidden", width: "100%", textAlign: "left", cursor: "pointer",
                     padding: 22, borderRadius: 24, border: "1px solid transparent",
-                    background: `linear-gradient(180deg, rgba(255,255,255,0.055), rgba(255,255,255,0.02)) padding-box, linear-gradient(145deg, ${c.accent}70, rgba(255,255,255,0.06) 42%) border-box`,
-                    boxShadow: "inset 0 1px 0 rgba(255,255,255,0.07), 0 10px 28px rgba(0,0,0,0.35)",
+                    background: `linear-gradient(180deg, rgba(var(--fg-rgb, 255,255,255),0.055), rgba(var(--fg-rgb, 255,255,255),0.02)) padding-box, linear-gradient(145deg, ${c.accent}70, rgba(var(--fg-rgb, 255,255,255),0.06) 42%) border-box`,
+                    boxShadow: "inset 0 1px 0 rgba(var(--fg-rgb, 255,255,255),0.07), 0 10px 28px rgba(0,0,0,0.35)",
                   }}
                 >
                   <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
-                    <div style={{ width: 58, height: 58, borderRadius: 17, background: `linear-gradient(150deg, ${c.accent}, ${c.accentDeep})`, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: `inset 0 1px 0 rgba(255,255,255,0.45), 0 6px 16px ${c.accentDeep}40` }}>
+                    <div style={{ width: 58, height: 58, borderRadius: 17, background: `linear-gradient(150deg, ${c.accent}, ${c.accentDeep})`, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: `inset 0 1px 0 rgba(var(--fg-rgb, 255,255,255),0.45), 0 6px 16px ${c.accentDeep}40` }}>
                       <c.Icon size={27} color="#06100c" strokeWidth={2.4} />
                     </div>
                     <ChevronRight className="scan-arrow" size={22} color={c.accent} style={{ opacity: 0.85 }} />
                   </div>
-                  <div style={{ fontSize: 22, fontWeight: 800, color: "#fff", letterSpacing: -0.3, marginTop: 18 }}>{c.title}</div>
-                  <div style={{ fontSize: 14, color: "rgba(255,255,255,0.55)", marginTop: 5, lineHeight: 1.35 }}>{c.desc}</div>
+                  <div style={{ fontSize: 22, fontWeight: 800, color: "var(--fg, #fff)", letterSpacing: -0.3, marginTop: 18 }}>{c.title}</div>
+                  <div style={{ fontSize: 14, color: "rgba(var(--fg-rgb, 255,255,255),0.55)", marginTop: 5, lineHeight: 1.35 }}>{c.desc}</div>
                   <div style={{ display: "inline-flex", alignItems: "center", gap: 5, marginTop: 14, padding: "5px 11px", borderRadius: 99, background: `${c.accent}1f`, border: `1px solid ${c.accent}33`, color: c.accent, fontSize: 12, fontWeight: 700 }}>
                     📸 {c.tag}
                   </div>
@@ -1730,10 +1730,10 @@ export default function Home() {
 
             {/* FOOTER: hint odkrywalności + tagline */}
             <div style={{ position: "relative", textAlign: "center", padding: "8px 20px max(24px, env(safe-area-inset-bottom))" }}>
-              <div className="scan-hint" style={{ fontSize: 13.5, fontWeight: 700, color: "rgba(255,255,255,0.72)", marginBottom: 7 }}>
+              <div className="scan-hint" style={{ fontSize: 13.5, fontWeight: 700, color: "rgba(var(--fg-rgb, 255,255,255),0.72)", marginBottom: 7 }}>
                 <span className="scan-hint-finger" style={{ marginRight: 5 }}>👆</span>Dotknij kategorii, aby zeskanować
               </div>
-              <div style={{ fontSize: 11.5, color: "rgba(255,255,255,0.4)", fontWeight: 600, letterSpacing: 0.3 }}>
+              <div style={{ fontSize: 11.5, color: "rgba(var(--fg-rgb, 255,255,255),0.4)", fontWeight: 600, letterSpacing: 0.3 }}>
                 ✨ AI Vision przeanalizuje Twoje zdjęcie
               </div>
             </div>
@@ -1741,8 +1741,8 @@ export default function Home() {
             <style>{`
               @keyframes scanCardIn { from { transform: translateY(16px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
               @keyframes scanCardGlow {
-                0%, 100% { box-shadow: inset 0 1px 0 rgba(255,255,255,0.07), 0 10px 28px rgba(0,0,0,0.35); }
-                50%      { box-shadow: inset 0 1px 0 rgba(255,255,255,0.07), 0 10px 28px rgba(0,0,0,0.35), 0 0 26px -4px var(--acc); }
+                0%, 100% { box-shadow: inset 0 1px 0 rgba(var(--fg-rgb, 255,255,255),0.07), 0 10px 28px rgba(0,0,0,0.35); }
+                50%      { box-shadow: inset 0 1px 0 rgba(var(--fg-rgb, 255,255,255),0.07), 0 10px 28px rgba(0,0,0,0.35), 0 0 26px -4px var(--acc); }
               }
               .scan-card-in { animation: scanCardIn .55s cubic-bezier(.22,1,.36,1) both, scanCardGlow 2.8s ease-in-out .7s infinite; }
               @keyframes scanArrowNudge { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(5px); } }
