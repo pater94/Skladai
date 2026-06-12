@@ -237,9 +237,9 @@ export default function TTSButton({ text, messageId, accent, accentRgb }: Props)
 
   // ── Visual ──
   const isActive = status === "playing" || status === "paused";
-  const baseBg = isActive ? `rgba(${accentRgb},0.14)` : "rgba(255,255,255,0.05)";
-  const baseBorder = isActive ? `1px solid rgba(${accentRgb},0.35)` : "1px solid rgba(255,255,255,0.1)";
-  const iconColor = isActive ? accent : "rgba(255,255,255,0.55)";
+  const baseBg = isActive ? `rgba(${accentRgb},0.14)` : "rgba(var(--fg-rgb, 255,255,255),0.05)";
+  const baseBorder = isActive ? `1px solid rgba(${accentRgb},0.35)` : "1px solid rgba(var(--fg-rgb, 255,255,255),0.1)";
+  const iconColor = isActive ? accent : "rgba(var(--fg-rgb, 255,255,255),0.55)";
 
   const label =
     status === "loading" ? "Ładowanie audio..."
@@ -272,7 +272,7 @@ export default function TTSButton({ text, messageId, accent, accentRgb }: Props)
           <span
             style={{
               width: 12, height: 12, borderRadius: "50%",
-              border: "2px solid rgba(255,255,255,0.2)",
+              border: "2px solid rgba(var(--fg-rgb, 255,255,255),0.2)",
               borderTopColor: accent,
               animation: "ttsSpin 0.8s linear infinite",
             }}

@@ -330,7 +330,7 @@ export default function BiegaczPage() {
                 key={c.id}
                 onClick={() => setView(c.id)}
                 className="w-full flex items-center gap-3 p-4 rounded-2xl text-left transition-colors"
-                style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}
+                style={{ background: "rgba(var(--fg-rgb, 255,255,255),0.04)", border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.08)" }}
               >
                 <span className="text-2xl">{c.emoji}</span>
                 <span className="flex-1 font-medium">{c.label}</span>
@@ -347,7 +347,7 @@ export default function BiegaczPage() {
   return (
     <div className="min-h-screen bg-[#111111] text-white">
       <div className="max-w-md mx-auto px-4 pt-4 pb-4">
-        <button onClick={goBack} className="flex items-center gap-1 mb-5 transition-colors" style={{ color: "rgba(255,255,255,0.7)" }}>
+        <button onClick={goBack} className="flex items-center gap-1 mb-5 transition-colors" style={{ color: "rgba(var(--fg-rgb, 255,255,255),0.7)" }}>
           <ChevronLeft size={24} />
           <span className="font-semibold" style={{ fontSize: "14px" }}>Wstecz</span>
         </button>
@@ -420,8 +420,8 @@ function PaceCalculator() {
             onClick={() => setMode(m)}
             className="flex-1 py-2 rounded-xl text-sm font-medium transition-colors"
             style={{
-              background: mode === m ? "var(--c-blue, #3B82F6)" : "rgba(255,255,255,0.06)",
-              color: mode === m ? "#fff" : "rgba(255,255,255,0.5)",
+              background: mode === m ? "var(--c-blue, #3B82F6)" : "rgba(var(--fg-rgb, 255,255,255),0.06)",
+              color: mode === m ? "#fff" : "rgba(var(--fg-rgb, 255,255,255),0.5)",
             }}
           >
             {m === "toPace" ? "Dystans + Czas → Tempo" : "Dystans + Tempo → Czas"}
@@ -437,8 +437,8 @@ function PaceCalculator() {
             onClick={() => setDistPreset(i)}
             className="px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
             style={{
-              background: distPreset === i ? "var(--c-blue, #3B82F6)" : "rgba(255,255,255,0.06)",
-              color: distPreset === i ? "#fff" : "rgba(255,255,255,0.5)",
+              background: distPreset === i ? "var(--c-blue, #3B82F6)" : "rgba(var(--fg-rgb, 255,255,255),0.06)",
+              color: distPreset === i ? "#fff" : "rgba(var(--fg-rgb, 255,255,255),0.5)",
             }}
           >
             {d.label}
@@ -479,7 +479,7 @@ function PaceCalculator() {
       {/* Results */}
       {result && (
         <div className="space-y-3">
-          <div className="p-4 rounded-2xl" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
+          <div className="p-4 rounded-2xl" style={{ background: "rgba(var(--fg-rgb, 255,255,255),0.04)", border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.08)" }}>
             {mode === "toPace" ? (
               <>
                 <div className="text-2xl font-bold text-blue-400">{result.pacePerKm} <span className="text-sm font-normal text-white/40">/km</span></div>
@@ -494,7 +494,7 @@ function PaceCalculator() {
           </div>
           {/* Splits */}
           {result.splits && result.splits.length > 0 && (
-            <div className="p-4 rounded-2xl" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
+            <div className="p-4 rounded-2xl" style={{ background: "rgba(var(--fg-rgb, 255,255,255),0.04)", border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.08)" }}>
               <h3 className="text-sm font-semibold mb-2 text-white/60">Tabela splitów</h3>
               <div className="space-y-1">
                 {result.splits.map((s) => (
@@ -536,7 +536,7 @@ function HeartRateZones({ profile }: { profile: UserProfile | null }) {
       )}
       {hrMax > 0 && (
         <>
-          <div className="p-3 rounded-2xl mb-4" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
+          <div className="p-3 rounded-2xl mb-4" style={{ background: "rgba(var(--fg-rgb, 255,255,255),0.04)", border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.08)" }}>
             <span className="text-white/50 text-sm">HR max (220 - {age})</span>
             <span className="text-xl font-bold ml-2">{hrMax} BPM</span>
           </div>
@@ -618,8 +618,8 @@ function RiegelConverter() {
             onClick={() => setKnownDist(i)}
             className="px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
             style={{
-              background: knownDist === i ? "var(--c-blue, #3B82F6)" : "rgba(255,255,255,0.06)",
-              color: knownDist === i ? "#fff" : "rgba(255,255,255,0.5)",
+              background: knownDist === i ? "var(--c-blue, #3B82F6)" : "rgba(var(--fg-rgb, 255,255,255),0.06)",
+              color: knownDist === i ? "#fff" : "rgba(var(--fg-rgb, 255,255,255),0.5)",
             }}
           >
             {d.label}
@@ -644,7 +644,7 @@ function RiegelConverter() {
       />
       {predictions && (
         <div className="space-y-3">
-          <div className="p-4 rounded-2xl" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
+          <div className="p-4 rounded-2xl" style={{ background: "rgba(var(--fg-rgb, 255,255,255),0.04)", border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.08)" }}>
             <h3 className="text-sm font-semibold mb-2 text-white/60">Przewidywane czasy</h3>
             {predictions.map((p) => (
               <div key={p.label} className="flex justify-between py-1 text-sm">
@@ -654,7 +654,7 @@ function RiegelConverter() {
             ))}
           </div>
           {level5k && (
-            <div className="p-4 rounded-2xl" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
+            <div className="p-4 rounded-2xl" style={{ background: "rgba(var(--fg-rgb, 255,255,255),0.04)", border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.08)" }}>
               <h3 className="text-sm font-semibold mb-2 text-white/60">Ocena poziomu (5K: {level5k.time})</h3>
               <div className="text-sm"><span className="text-blue-400">{"♂️"}</span> {level5k.mLevel}</div>
               <div className="text-sm"><span className="text-pink-400">{"♀️"}</span> {level5k.fLevel}</div>
@@ -756,8 +756,8 @@ function CaloriesCalc({ profile }: { profile: UserProfile | null }) {
             onClick={() => { setInputMode(m); setCalculated(false); }}
             className="flex-1 py-2 rounded-xl text-sm font-medium transition-colors"
             style={{
-              background: inputMode === m ? "var(--c-orange, #F97316)" : "rgba(255,255,255,0.06)",
-              color: inputMode === m ? "#fff" : "rgba(255,255,255,0.5)",
+              background: inputMode === m ? "var(--c-orange, #F97316)" : "rgba(var(--fg-rgb, 255,255,255),0.06)",
+              color: inputMode === m ? "#fff" : "rgba(var(--fg-rgb, 255,255,255),0.5)",
             }}
           >
             {m === "tempo" ? "Tempo" : "Czas"}
@@ -832,7 +832,7 @@ function CaloriesCalc({ profile }: { profile: UserProfile | null }) {
         disabled={weight <= 0 || dist <= 0}
         className="w-full py-3 rounded-xl text-sm font-bold text-white transition-all active:scale-95 mb-4"
         style={{
-          background: weight > 0 && dist > 0 ? "linear-gradient(135deg, var(--c-orange, #F97316), var(--c-red, #EF4444))" : "rgba(255,255,255,0.1)",
+          background: weight > 0 && dist > 0 ? "linear-gradient(135deg, var(--c-orange, #F97316), var(--c-red, #EF4444))" : "rgba(var(--fg-rgb, 255,255,255),0.1)",
           opacity: weight > 0 && dist > 0 ? 1 : 0.5,
         }}
       >
@@ -854,7 +854,7 @@ function CaloriesCalc({ profile }: { profile: UserProfile | null }) {
           </div>
 
           {/* Comparison cards */}
-          <div className="p-4 rounded-2xl" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
+          <div className="p-4 rounded-2xl" style={{ background: "rgba(var(--fg-rgb, 255,255,255),0.04)", border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.08)" }}>
             <h3 className="text-sm font-semibold mb-3 text-white/60">To równowartość...</h3>
             <div className="grid grid-cols-2 gap-2">
               {COMPARISONS.map((c) => {
@@ -863,7 +863,7 @@ function CaloriesCalc({ profile }: { profile: UserProfile | null }) {
                   <div
                     key={c.name}
                     className="flex items-center gap-2 p-2 rounded-xl"
-                    style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.05)" }}
+                    style={{ background: "rgba(var(--fg-rgb, 255,255,255),0.03)", border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.05)" }}
                   >
                     <span className="text-2xl">{c.emoji}</span>
                     <div>
@@ -913,7 +913,7 @@ function TrainingPlans() {
                 key={p.id}
                 onClick={() => setSelected(p.id)}
                 className="w-full p-4 rounded-2xl text-left"
-                style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}
+                style={{ background: "rgba(var(--fg-rgb, 255,255,255),0.04)", border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.08)" }}
               >
                 <div className="flex items-center justify-between mb-2">
                   <span className="font-semibold">{p.emoji} {p.name}</span>
@@ -950,7 +950,7 @@ function TrainingPlans() {
           const wDone = w.sessions.filter((_, si) => progress[`${plan.id}_${w.weekNum}_${si}`]).length;
           const wPct = w.sessions.length > 0 ? Math.round((wDone / w.sessions.length) * 100) : 0;
           return (
-            <div key={w.weekNum} className="p-3 rounded-2xl" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
+            <div key={w.weekNum} className="p-3 rounded-2xl" style={{ background: "rgba(var(--fg-rgb, 255,255,255),0.04)", border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.08)" }}>
               <div className="flex items-center justify-between mb-2">
                 <span className="text-sm font-semibold">Tydzień {w.weekNum}</span>
                 <span className="text-xs text-white/40">{wPct}%</span>
@@ -1047,7 +1047,7 @@ function RunningRecords() {
     <div>
       <h2 className="text-xl font-bold mb-4">{"🏆"} Moje rekordy</h2>
       {/* Add */}
-      <div className="p-4 rounded-2xl mb-4" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
+      <div className="p-4 rounded-2xl mb-4" style={{ background: "rgba(var(--fg-rgb, 255,255,255),0.04)", border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.08)" }}>
         <h3 className="text-sm font-semibold mb-2 text-white/60">Dodaj wynik</h3>
         <div className="flex gap-2 mb-2 flex-wrap">
           {["5K", "10K", "Półmaraton", "Maraton", "Własny"].map((d) => (
@@ -1056,8 +1056,8 @@ function RunningRecords() {
               onClick={() => setDistLabel(d)}
               className="px-3 py-1 rounded-lg text-xs font-medium transition-colors"
               style={{
-                background: distLabel === d ? "var(--c-blue, #3B82F6)" : "rgba(255,255,255,0.06)",
-                color: distLabel === d ? "#fff" : "rgba(255,255,255,0.5)",
+                background: distLabel === d ? "var(--c-blue, #3B82F6)" : "rgba(var(--fg-rgb, 255,255,255),0.06)",
+                color: distLabel === d ? "#fff" : "rgba(var(--fg-rgb, 255,255,255),0.5)",
               }}
             >
               {d}
@@ -1094,7 +1094,7 @@ function RunningRecords() {
       </div>
       {/* PRs */}
       {Object.keys(prs).length > 0 && (
-        <div className="p-4 rounded-2xl mb-4" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
+        <div className="p-4 rounded-2xl mb-4" style={{ background: "rgba(var(--fg-rgb, 255,255,255),0.04)", border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.08)" }}>
           <h3 className="text-sm font-semibold mb-2 text-white/60">{"🥇"} Rekordy życiowe (PR)</h3>
           {Object.entries(prs).map(([dist, r]) => (
             <div key={dist} className="flex justify-between py-1 text-sm">
@@ -1138,13 +1138,13 @@ function RunningRecords() {
             <h3 className="text-sm font-semibold text-white/60 mb-1">{dist}</h3>
             {timeData.length >= 2 && (
               <div className="mb-2">
-                <p className="text-[10px] mb-1" style={{ color: "rgba(255,255,255,0.55)" }}>Czas — trend</p>
+                <p className="text-[10px] mb-1" style={{ color: "rgba(var(--fg-rgb, 255,255,255),0.55)" }}>Czas — trend</p>
                 <ProgressChart data={timeData} label="min" color="#3B82F6" invertTrend />
               </div>
             )}
             <div className="space-y-1">
               {recs.sort((a, b) => a.timeSeconds - b.timeSeconds).map((r) => (
-                <div key={r.id} className="flex justify-between text-sm px-2 py-1 rounded-lg" style={{ background: "rgba(255,255,255,0.03)" }}>
+                <div key={r.id} className="flex justify-between text-sm px-2 py-1 rounded-lg" style={{ background: "rgba(var(--fg-rgb, 255,255,255),0.03)" }}>
                   <span className="text-white/40">{r.date}</span>
                   <span className="font-mono">{fmtTime(r.timeSeconds)} <span className="text-white/30">({fmtTime(r.paceSecPerKm)}/km)</span></span>
                 </div>
@@ -1204,8 +1204,8 @@ function PolishRaces() {
           onClick={() => setFilter("Wszystkie")}
           className="px-3 py-1 rounded-lg text-xs font-medium transition-colors"
           style={{
-            background: filter === "Wszystkie" ? "var(--c-blue, #3B82F6)" : "rgba(255,255,255,0.06)",
-            color: filter === "Wszystkie" ? "#fff" : "rgba(255,255,255,0.5)",
+            background: filter === "Wszystkie" ? "var(--c-blue, #3B82F6)" : "rgba(var(--fg-rgb, 255,255,255),0.06)",
+            color: filter === "Wszystkie" ? "#fff" : "rgba(var(--fg-rgb, 255,255,255),0.5)",
           }}
         >
           Wszystkie
@@ -1216,8 +1216,8 @@ function PolishRaces() {
             onClick={() => setFilter(t)}
             className="px-3 py-1 rounded-lg text-xs font-medium transition-colors"
             style={{
-              background: filter === t ? "var(--c-blue, #3B82F6)" : "rgba(255,255,255,0.06)",
-              color: filter === t ? "#fff" : "rgba(255,255,255,0.5)",
+              background: filter === t ? "var(--c-blue, #3B82F6)" : "rgba(var(--fg-rgb, 255,255,255),0.06)",
+              color: filter === t ? "#fff" : "rgba(var(--fg-rgb, 255,255,255),0.5)",
             }}
           >
             {t}
@@ -1233,7 +1233,7 @@ function PolishRaces() {
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center justify-between p-3 rounded-xl transition-colors"
-            style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}
+            style={{ background: "rgba(var(--fg-rgb, 255,255,255),0.04)", border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.08)" }}
           >
             <div>
               <div className="text-sm font-medium">{s.name}</div>
@@ -1244,7 +1244,7 @@ function PolishRaces() {
         ))}
       </div>
       {/* My race plan */}
-      <div className="p-4 rounded-2xl mb-4" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
+      <div className="p-4 rounded-2xl mb-4" style={{ background: "rgba(var(--fg-rgb, 255,255,255),0.04)", border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.08)" }}>
         <h3 className="text-sm font-semibold mb-2 text-white/60">{"🎯"} Mój plan startowy</h3>
         {plans.map((p) => {
           const days = daysUntil(p.date);

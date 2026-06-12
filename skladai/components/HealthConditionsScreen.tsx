@@ -171,7 +171,7 @@ export default function HealthConditionsScreen({ onComplete, onSkip }: Props) {
           </div>
         </div>
         <div style={{ display: "flex", justifyContent: "center", gap: 6, marginBottom: 20 }}>
-          <div style={{ height: 3, borderRadius: 2, width: 12, background: "rgba(255,255,255,0.15)" }} />
+          <div style={{ height: 3, borderRadius: 2, width: 12, background: "rgba(var(--fg-rgb, 255,255,255),0.15)" }} />
           <div
             style={{
               height: 3,
@@ -181,7 +181,7 @@ export default function HealthConditionsScreen({ onComplete, onSkip }: Props) {
               boxShadow: `0 0 8px rgba(${ACCENT_RGB},0.5)`,
             }}
           />
-          <div style={{ height: 3, borderRadius: 2, width: 12, background: "rgba(255,255,255,0.08)" }} />
+          <div style={{ height: 3, borderRadius: 2, width: 12, background: "rgba(var(--fg-rgb, 255,255,255),0.08)" }} />
         </div>
 
         <h1
@@ -309,7 +309,7 @@ function SectionHeader({ title, subtitle }: { title: string; subtitle: string })
       >
         {title}
       </div>
-      <div style={{ fontSize: 11, color: "rgba(255,255,255,0.45)" }}>{subtitle}</div>
+      <div style={{ fontSize: 11, color: "rgba(var(--fg-rgb, 255,255,255),0.45)" }}>{subtitle}</div>
     </div>
   );
 }
@@ -356,10 +356,10 @@ function Chip({
         borderRadius: 14,
         background: active
           ? `linear-gradient(180deg, rgba(${ACCENT_RGB},0.12), rgba(${ACCENT_RGB},0.04))`
-          : "rgba(255,255,255,0.04)",
+          : "rgba(var(--fg-rgb, 255,255,255),0.04)",
         border: active
           ? `1px solid rgba(${ACCENT_RGB},0.5)`
-          : "1px solid rgba(255,255,255,0.08)",
+          : "1px solid rgba(var(--fg-rgb, 255,255,255),0.08)",
         cursor: "pointer",
         textAlign: "left",
         color: "inherit",
@@ -372,7 +372,7 @@ function Chip({
         style={{
           fontSize: 12,
           fontWeight: 600,
-          color: active ? ACCENT : "rgba(255,255,255,0.85)",
+          color: active ? ACCENT : "rgba(var(--fg-rgb, 255,255,255),0.85)",
           lineHeight: 1.25,
           flex: 1,
         }}

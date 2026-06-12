@@ -200,18 +200,18 @@ export default function SkinProfileSetup({ onComplete, onSkip }: Props) {
         onClick={() => onSelect(value)}
         style={{
           width: "100%", textAlign: "left", padding: "14px 16px", borderRadius: 16, cursor: "pointer", transition: "all 0.2s",
-          background: active ? "rgba(var(--c-violet-rgb, 192,132,252),0.1)" : "rgba(255,255,255,0.04)",
-          border: active ? "1.5px solid var(--c-violet, #C084FC)" : "1px solid rgba(255,255,255,0.06)",
+          background: active ? "rgba(var(--c-violet-rgb, 192,132,252),0.1)" : "rgba(var(--fg-rgb, 255,255,255),0.04)",
+          border: active ? "1.5px solid var(--c-violet, #C084FC)" : "1px solid rgba(var(--fg-rgb, 255,255,255),0.06)",
         }}
       >
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div>
-            <p style={{ fontWeight: 600, fontSize: 14, color: active ? "#fff" : "rgba(255,255,255,0.7)", margin: 0 }}>{label}</p>
-            {desc && <p style={{ fontSize: 11, marginTop: 2, color: active ? "rgba(var(--c-violet-rgb, 192,132,252),0.7)" : "rgba(255,255,255,0.55)", margin: 0 }}>{desc}</p>}
+            <p style={{ fontWeight: 600, fontSize: 14, color: active ? "#fff" : "rgba(var(--fg-rgb, 255,255,255),0.7)", margin: 0 }}>{label}</p>
+            {desc && <p style={{ fontSize: 11, marginTop: 2, color: active ? "rgba(var(--c-violet-rgb, 192,132,252),0.7)" : "rgba(var(--fg-rgb, 255,255,255),0.55)", margin: 0 }}>{desc}</p>}
           </div>
           <div style={{
             width: 20, height: 20, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.2s",
-            border: active ? "2px solid var(--c-violet, #C084FC)" : "2px solid rgba(255,255,255,0.15)",
+            border: active ? "2px solid var(--c-violet, #C084FC)" : "2px solid rgba(var(--fg-rgb, 255,255,255),0.15)",
             background: active ? "#9333EA" : "transparent",
           }}>
             {active && (
@@ -244,23 +244,23 @@ export default function SkinProfileSetup({ onComplete, onSkip }: Props) {
           width: "100%", textAlign: "left", padding: "14px 16px", borderRadius: 16, cursor: "pointer", transition: "all 0.2s",
           background: checked
             ? "rgba(var(--c-violet-rgb, 192,132,252),0.1)"
-            : muted ? "rgba(255,255,255,0.02)" : "rgba(255,255,255,0.04)",
+            : muted ? "rgba(var(--fg-rgb, 255,255,255),0.02)" : "rgba(var(--fg-rgb, 255,255,255),0.04)",
           border: checked
             ? "1.5px solid var(--c-violet, #C084FC)"
-            : muted ? "1px dashed rgba(255,255,255,0.10)" : "1px solid rgba(255,255,255,0.06)",
+            : muted ? "1px dashed rgba(var(--fg-rgb, 255,255,255),0.10)" : "1px solid rgba(var(--fg-rgb, 255,255,255),0.06)",
           marginTop: muted ? 4 : 0,
         }}
       >
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <p style={{
             fontWeight: 600, fontSize: 13,
-            color: checked ? "#fff" : muted ? "rgba(255,255,255,0.45)" : "rgba(255,255,255,0.7)",
+            color: checked ? "#fff" : muted ? "rgba(var(--fg-rgb, 255,255,255),0.45)" : "rgba(var(--fg-rgb, 255,255,255),0.7)",
             fontStyle: muted && !checked ? "italic" : "normal",
             margin: 0,
           }}>{label}</p>
           <div style={{
             width: 20, height: 20, borderRadius: 6, display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.2s",
-            border: checked ? "2px solid var(--c-violet, #C084FC)" : "2px solid rgba(255,255,255,0.15)",
+            border: checked ? "2px solid var(--c-violet, #C084FC)" : "2px solid rgba(var(--fg-rgb, 255,255,255),0.15)",
             background: checked ? "#9333EA" : "transparent",
           }}>
             {checked && (
@@ -301,7 +301,7 @@ export default function SkinProfileSetup({ onComplete, onSkip }: Props) {
                   ? "var(--c-violet, #C084FC)"
                   : i === step
                   ? "linear-gradient(90deg, var(--c-violet, #C084FC), #DB2777)"
-                  : "rgba(255,255,255,0.08)",
+                  : "rgba(var(--fg-rgb, 255,255,255),0.08)",
               }}
             />
           ))}
@@ -312,16 +312,16 @@ export default function SkinProfileSetup({ onComplete, onSkip }: Props) {
       <div style={{ padding: "16px 22px 8px", flexShrink: 0 }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div>
-            <h2 style={{ fontSize: 24, fontWeight: 900, color: "#fff", letterSpacing: "-0.03em" }}>
+            <h2 style={{ fontSize: 24, fontWeight: 900, color: "var(--fg, #fff)", letterSpacing: "-0.03em" }}>
               {STEP_TITLES[step]}
             </h2>
-            <p style={{ color: "rgba(255,255,255,0.55)", fontSize: 12, marginTop: 2 }}>
+            <p style={{ color: "rgba(var(--fg-rgb, 255,255,255),0.55)", fontSize: 12, marginTop: 2 }}>
               Krok {step + 1} z 3{step === 2 && " (opcjonalne)"}
             </p>
           </div>
           <button
             onClick={onSkip}
-            style={{ padding: "6px 14px", borderRadius: 12, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.4)", fontSize: 13, fontWeight: 600, cursor: "pointer" }}
+            style={{ padding: "6px 14px", borderRadius: 12, background: "rgba(var(--fg-rgb, 255,255,255),0.04)", border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.08)", color: "rgba(var(--fg-rgb, 255,255,255),0.4)", fontSize: 13, fontWeight: 600, cursor: "pointer" }}
           >
             Pomiń
           </button>
@@ -334,7 +334,7 @@ export default function SkinProfileSetup({ onComplete, onSkip }: Props) {
         {step === 0 && (
           <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
             <div>
-              <label style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.7)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+              <label style={{ fontSize: 11, fontWeight: 600, color: "rgba(var(--fg-rgb, 255,255,255),0.7)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
                 Typ skóry
               </label>
               <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 8 }}>
@@ -345,7 +345,7 @@ export default function SkinProfileSetup({ onComplete, onSkip }: Props) {
             </div>
 
             <div>
-              <label style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.7)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+              <label style={{ fontSize: 11, fontWeight: 600, color: "rgba(var(--fg-rgb, 255,255,255),0.7)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
                 Wrażliwość
               </label>
               <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 8 }}>
@@ -356,7 +356,7 @@ export default function SkinProfileSetup({ onComplete, onSkip }: Props) {
             </div>
 
             <div>
-              <label style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.7)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+              <label style={{ fontSize: 11, fontWeight: 600, color: "rgba(var(--fg-rgb, 255,255,255),0.7)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
                 Wiek skóry
               </label>
               <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 8 }}>
@@ -371,7 +371,7 @@ export default function SkinProfileSetup({ onComplete, onSkip }: Props) {
         {/* STEP 1: Skin problems */}
         {step === 1 && (
           <div>
-            <p style={{ fontSize: 12, color: "rgba(255,255,255,0.55)", marginBottom: 12 }}>
+            <p style={{ fontSize: 12, color: "rgba(var(--fg-rgb, 255,255,255),0.55)", marginBottom: 12 }}>
               Wybierz wszystkie, które Cię dotyczą
             </p>
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -385,12 +385,12 @@ export default function SkinProfileSetup({ onComplete, onSkip }: Props) {
         {/* STEP 2: Hair */}
         {step === 2 && (
           <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-            <p style={{ fontSize: 12, color: "rgba(255,255,255,0.55)" }}>
+            <p style={{ fontSize: 12, color: "rgba(var(--fg-rgb, 255,255,255),0.55)" }}>
               Możesz pominąć ten krok
             </p>
 
             <div>
-              <label style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.7)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+              <label style={{ fontSize: 11, fontWeight: 600, color: "rgba(var(--fg-rgb, 255,255,255),0.7)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
                 Typ włosów
               </label>
               <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 8 }}>
@@ -401,7 +401,7 @@ export default function SkinProfileSetup({ onComplete, onSkip }: Props) {
             </div>
 
             <div>
-              <label style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.7)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+              <label style={{ fontSize: 11, fontWeight: 600, color: "rgba(var(--fg-rgb, 255,255,255),0.7)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
                 Problemy z włosami
               </label>
               <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 8 }}>
@@ -420,7 +420,7 @@ export default function SkinProfileSetup({ onComplete, onSkip }: Props) {
           {step > 0 && (
             <button
               onClick={() => setStep(step - 1)}
-              style={{ width: 48, height: 48, borderRadius: 14, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", display: "flex", alignItems: "center", justifyContent: "center", color: "rgba(255,255,255,0.5)", cursor: "pointer", flexShrink: 0 }}
+              style={{ width: 48, height: 48, borderRadius: 14, background: "rgba(var(--fg-rgb, 255,255,255),0.04)", border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.08)", display: "flex", alignItems: "center", justifyContent: "center", color: "rgba(var(--fg-rgb, 255,255,255),0.5)", cursor: "pointer", flexShrink: 0 }}
             >
               <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
                 <path d="M11 4L6 9L11 14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
@@ -431,7 +431,7 @@ export default function SkinProfileSetup({ onComplete, onSkip }: Props) {
             onClick={handleNext}
             disabled={!canProceed && step < 2}
             style={{
-              flex: 1, height: 48, borderRadius: 14, fontWeight: 700, fontSize: 15, color: "#fff", cursor: "pointer", border: "none", transition: "all 0.2s",
+              flex: 1, height: 48, borderRadius: 14, fontWeight: 700, fontSize: 15, color: "var(--fg, #fff)", cursor: "pointer", border: "none", transition: "all 0.2s",
               background: canProceed || step === 2
                 ? "linear-gradient(135deg, #9333EA 0%, #C026D3 50%, #DB2777 100%)"
                 : "#333",
@@ -441,7 +441,7 @@ export default function SkinProfileSetup({ onComplete, onSkip }: Props) {
             {step < 2 ? "Dalej" : "Zapisz"}
           </button>
         </div>
-        <p style={{ fontSize: 10, color: "rgba(255,255,255,0.55)", textAlign: "center", marginTop: 10 }}>
+        <p style={{ fontSize: 10, color: "rgba(var(--fg-rgb, 255,255,255),0.55)", textAlign: "center", marginTop: 10 }}>
           Dane zapisane lokalnie na Twoim urządzeniu
         </p>
       </div>

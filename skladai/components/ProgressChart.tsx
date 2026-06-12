@@ -79,11 +79,11 @@ export default function ProgressChart({
       <div
         className="rounded-2xl p-5 text-center"
         style={{
-          background: "rgba(255,255,255,0.03)",
-          border: "1px solid rgba(255,255,255,0.06)",
+          background: "rgba(var(--fg-rgb, 255,255,255),0.03)",
+          border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.06)",
         }}
       >
-        <p style={{ color: "rgba(255,255,255,0.4)", fontSize: "13px" }}>
+        <p style={{ color: "rgba(var(--fg-rgb, 255,255,255),0.4)", fontSize: "13px" }}>
           Dodaj więcej wyników żeby zobaczyć wykres progresu
         </p>
       </div>
@@ -184,8 +184,8 @@ export default function ProgressChart({
       <div
         className="rounded-2xl p-4"
         style={{
-          background: "rgba(255,255,255,0.03)",
-          border: "1px solid rgba(255,255,255,0.06)",
+          background: "rgba(var(--fg-rgb, 255,255,255),0.03)",
+          border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.06)",
         }}
       >
         <ResponsiveContainer width="100%" height={200}>
@@ -198,17 +198,17 @@ export default function ProgressChart({
             </defs>
             <CartesianGrid
               strokeDasharray="3 3"
-              stroke="rgba(255,255,255,0.04)"
+              stroke="rgba(var(--fg-rgb, 255,255,255),0.04)"
               vertical={false}
             />
             <XAxis
               dataKey="date"
-              tick={{ fontSize: 10, fill: "rgba(255,255,255,0.3)" }}
+              tick={{ fontSize: 10, fill: "rgba(var(--fg-rgb, 255,255,255),0.3)" }}
               axisLine={false}
               tickLine={false}
             />
             <YAxis
-              tick={{ fontSize: 10, fill: "rgba(255,255,255,0.3)" }}
+              tick={{ fontSize: 10, fill: "rgba(var(--fg-rgb, 255,255,255),0.3)" }}
               axisLine={false}
               tickLine={false}
               tickFormatter={(v: number) => `${v}${label}`}
@@ -217,10 +217,10 @@ export default function ProgressChart({
             <Tooltip
               contentStyle={{
                 background: "#1A1A1A",
-                border: "1px solid rgba(255,255,255,0.1)",
+                border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.1)",
                 borderRadius: "12px",
                 fontSize: "12px",
-                color: "#fff",
+                color: "var(--fg, #fff)",
               }}
               formatter={(val: unknown, name: unknown) => {
                 const displayName = name === "prediction" ? "Predykcja" : "Twój wynik";
@@ -266,15 +266,15 @@ export default function ProgressChart({
         </ResponsiveContainer>
 
         {/* Legend */}
-        <div className="flex items-center justify-center gap-5 mt-3 pt-3" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+        <div className="flex items-center justify-center gap-5 mt-3 pt-3" style={{ borderTop: "1px solid rgba(var(--fg-rgb, 255,255,255),0.06)" }}>
           <div className="flex items-center gap-2">
             <span className="block w-5 h-[3px] rounded-full" style={{ backgroundColor: color }} />
-            <span style={{ fontSize: "10px", color: "rgba(255,255,255,0.5)" }}>Twoje wyniki</span>
+            <span style={{ fontSize: "10px", color: "rgba(var(--fg-rgb, 255,255,255),0.5)" }}>Twoje wyniki</span>
           </div>
           {canPredict && (
             <div className="flex items-center gap-2">
               <span className="block w-5 h-[3px] rounded-full" style={{ backgroundColor: lighterColor, background: `repeating-linear-gradient(90deg, ${lighterColor} 0, ${lighterColor} 4px, transparent 4px, transparent 7px)` }} />
-              <span style={{ fontSize: "10px", color: "rgba(255,255,255,0.5)" }}>Predykcja</span>
+              <span style={{ fontSize: "10px", color: "rgba(var(--fg-rgb, 255,255,255),0.5)" }}>Predykcja</span>
             </div>
           )}
         </div>
@@ -282,8 +282,8 @@ export default function ProgressChart({
 
       {/* No prediction message */}
       {noPredictionMsg && (
-        <div className="rounded-xl p-3 mt-2" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
-          <p style={{ fontSize: "11px", color: "rgba(255,255,255,0.4)", textAlign: "center" }}>
+        <div className="rounded-xl p-3 mt-2" style={{ background: "rgba(var(--fg-rgb, 255,255,255),0.03)", border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.06)" }}>
+          <p style={{ fontSize: "11px", color: "rgba(var(--fg-rgb, 255,255,255),0.4)", textAlign: "center" }}>
             {noPredictionMsg}
           </p>
         </div>

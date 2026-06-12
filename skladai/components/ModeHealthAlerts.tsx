@@ -85,7 +85,7 @@ function AlertCard({ alert }: { alert: HealthAlert }) {
           <div
             style={{
               fontSize: 12,
-              color: "rgba(255,255,255,0.78)",
+              color: "rgba(var(--fg-rgb, 255,255,255),0.78)",
               lineHeight: 1.45,
             }}
           >
@@ -128,7 +128,7 @@ function AlertCard({ alert }: { alert: HealthAlert }) {
                     borderRadius: 8,
                     background: colors.ingredient,
                     fontSize: 11,
-                    color: "rgba(255,255,255,0.92)",
+                    color: "rgba(var(--fg-rgb, 255,255,255),0.92)",
                     fontWeight: 600,
                   }}
                 >

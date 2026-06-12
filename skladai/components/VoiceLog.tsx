@@ -689,8 +689,8 @@ export default function VoiceLog({ mode, onComplete, onClose, initialOpen = fals
               style={{
                 position: "absolute", top: 12, right: 12, width: 32, height: 32,
                 borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center",
-                background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)",
-                color: "rgba(255,255,255,0.5)", fontSize: 14, cursor: "pointer",
+                background: "rgba(var(--fg-rgb, 255,255,255),0.04)", border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.08)",
+                color: "rgba(var(--fg-rgb, 255,255,255),0.5)", fontSize: 14, cursor: "pointer",
               }}
               aria-label="Zamknij"
             >
@@ -754,15 +754,15 @@ export default function VoiceLog({ mode, onComplete, onClose, initialOpen = fals
 
                 {/* Hints grid */}
                 <div style={{ width: "100%", marginTop: 8 }}>
-                  <p style={{ fontSize: 14, fontWeight: 600, color: "rgba(255,255,255,0.7)", marginBottom: 10, textAlign: "center" }}>
+                  <p style={{ fontSize: 14, fontWeight: 600, color: "rgba(var(--fg-rgb, 255,255,255),0.7)", marginBottom: 10, textAlign: "center" }}>
                     Powiedz co zjadłeś:
                   </p>
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
                     {voiceHints.map((hint, i) => (
                       <div key={i} style={{
                         padding: "8px 14px", borderRadius: 10,
-                        background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)",
-                        fontSize: 12, color: "rgba(255,255,255,0.5)", textAlign: "center",
+                        background: "rgba(var(--fg-rgb, 255,255,255),0.04)", border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.06)",
+                        fontSize: 12, color: "rgba(var(--fg-rgb, 255,255,255),0.5)", textAlign: "center",
                       }}>{hint}</div>
                     ))}
                   </div>
@@ -815,15 +815,15 @@ export default function VoiceLog({ mode, onComplete, onClose, initialOpen = fals
 
                 {/* Hints — smaller during recording but VISIBLE */}
                 <div style={{ width: "100%", marginTop: 4 }}>
-                  <p style={{ fontSize: 12, fontWeight: 600, color: "rgba(255,255,255,0.5)", marginBottom: 8, textAlign: "center" }}>
+                  <p style={{ fontSize: 12, fontWeight: 600, color: "rgba(var(--fg-rgb, 255,255,255),0.5)", marginBottom: 8, textAlign: "center" }}>
                     Powiedz co zjadłeś:
                   </p>
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
                     {voiceHints.map((hint, i) => (
                       <div key={i} style={{
                         padding: "5px 10px", borderRadius: 8,
-                        background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.05)",
-                        fontSize: 10, color: "rgba(255,255,255,0.35)", textAlign: "center",
+                        background: "rgba(var(--fg-rgb, 255,255,255),0.03)", border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.05)",
+                        fontSize: 10, color: "rgba(var(--fg-rgb, 255,255,255),0.35)", textAlign: "center",
                       }}>{hint}</div>
                     ))}
                   </div>
@@ -835,7 +835,7 @@ export default function VoiceLog({ mode, onComplete, onClose, initialOpen = fals
             {phase === "processing" && (
               <div className="flex flex-col items-center gap-4 py-8">
                 <div style={{ width: 40, height: 40, border: "4px solid rgba(var(--c-amber-rgb, 251,191,36), 0.3)", borderTopColor: "var(--c-amber, #FBBF24)", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
-                <p style={{ fontSize: 13, color: "rgba(255,255,255,0.55)" }}>Analizuję: &ldquo;{transcript}&rdquo;</p>
+                <p style={{ fontSize: 13, color: "rgba(var(--fg-rgb, 255,255,255),0.55)" }}>Analizuję: &ldquo;{transcript}&rdquo;</p>
               </div>
             )}
 
@@ -1058,7 +1058,7 @@ export default function VoiceLog({ mode, onComplete, onClose, initialOpen = fals
                     padding: "16px",
                     borderRadius: 16,
                     background: "#22c55e",
-                    color: "#fff",
+                    color: "var(--fg, #fff)",
                     fontSize: 16,
                     fontWeight: 700,
                     border: "none",
@@ -1102,7 +1102,7 @@ export default function VoiceLog({ mode, onComplete, onClose, initialOpen = fals
                 padding: "12px 28px",
                 borderRadius: 16,
                 background: "rgba(34,197,94,0.95)",
-                color: "#fff",
+                color: "var(--fg, #fff)",
                 fontSize: 15,
                 fontWeight: 700,
                 zIndex: 10001,

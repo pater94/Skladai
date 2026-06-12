@@ -37,7 +37,7 @@ test.describe("Motyw Klasyczny/Obsidian @critical", () => {
     await page.waitForTimeout(800);
 
     const hasClass = await page.evaluate(() =>
-      ["theme-azure", "theme-violet", "theme-gold"].some((c) => document.body.classList.contains(c))
+      ["theme-azure", "theme-violet", "theme-gold", "theme-light"].some((c) => document.body.classList.contains(c))
     );
     expect(hasClass).toBe(false);
 

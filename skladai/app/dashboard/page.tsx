@@ -18,7 +18,7 @@ const MEAL_ICONS: Record<string, string> = { breakfast: "🥣", lunch: "🥗", d
 // dismiss the mobile keyboard.
 function GlassCard({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) {
   return (
-    <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 16, padding: "14px 16px", marginBottom: 12, ...style }}>
+    <div style={{ background: "rgba(var(--fg-rgb, 255,255,255),0.03)", border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.06)", borderRadius: 16, padding: "14px 16px", marginBottom: 12, ...style }}>
       {children}
     </div>
   );
@@ -26,7 +26,7 @@ function GlassCard({ children, style }: { children: React.ReactNode; style?: Rea
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
   return (
-    <div style={{ fontSize: 12, fontWeight: 800, color: "rgba(255,255,255,0.6)", marginBottom: 12, letterSpacing: "0.03em", textTransform: "uppercase" as const }}>{children}</div>
+    <div style={{ fontSize: 12, fontWeight: 800, color: "rgba(var(--fg-rgb, 255,255,255),0.6)", marginBottom: 12, letterSpacing: "0.03em", textTransform: "uppercase" as const }}>{children}</div>
   );
 }
 const DAY_LABELS = ["Pn", "Wt", "Śr", "Cz", "Pt", "Sb", "Nd"];
@@ -122,8 +122,8 @@ export default function DashboardPage() {
               <span style={{ position: "relative" }}>📊</span>
             </div>
 
-            <div style={{ fontSize: 20, fontWeight: 900, color: "#fff", letterSpacing: "-0.03em", marginBottom: 8 }}>Odblokuj Dashboard</div>
-            <div style={{ fontSize: 13, color: "rgba(255,255,255,0.55)", lineHeight: "19px", marginBottom: 28, padding: "0 10px" }}>
+            <div style={{ fontSize: 20, fontWeight: 900, color: "var(--fg, #fff)", letterSpacing: "-0.03em", marginBottom: 8 }}>Odblokuj Dashboard</div>
+            <div style={{ fontSize: 13, color: "rgba(var(--fg-rgb, 255,255,255),0.55)", lineHeight: "19px", marginBottom: 28, padding: "0 10px" }}>
               Uzupełnij profil żeby śledzić kalorie, makro i postępy. To zajmie minutę.
             </div>
 
@@ -132,9 +132,9 @@ export default function DashboardPage() {
               { icon: "🏃", text: "Monitoruj swoją aktywność" },
               { icon: "🎯", text: "Porównuj spożycie z normami dziennymi" },
             ].map((b, i) => (
-              <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", marginBottom: 6, borderRadius: 12, background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.04)" }}>
+              <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", marginBottom: 6, borderRadius: 12, background: "rgba(var(--fg-rgb, 255,255,255),0.02)", border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.04)" }}>
                 <span style={{ fontSize: 16 }}>{b.icon}</span>
-                <span style={{ fontSize: 13, color: "rgba(255,255,255,0.55)", fontWeight: 600 }}>{b.text}</span>
+                <span style={{ fontSize: 13, color: "rgba(var(--fg-rgb, 255,255,255),0.55)", fontWeight: 600 }}>{b.text}</span>
               </div>
             ))}
 
@@ -181,8 +181,8 @@ export default function DashboardPage() {
       <div style={{ padding: "16px 22px 24px", background: "linear-gradient(180deg, rgba(var(--c-mint-rgb, 110,252,180), 0.08) 0%, transparent 100%)", position: "relative" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
           <div>
-            <div style={{ fontSize: 22, fontWeight: 900, color: "#fff", letterSpacing: "-0.03em" }}>Dashboard</div>
-            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", marginTop: 2 }}>{dateStr}</div>
+            <div style={{ fontSize: 22, fontWeight: 900, color: "var(--fg, #fff)", letterSpacing: "-0.03em" }}>Dashboard</div>
+            <div style={{ fontSize: 12, color: "rgba(var(--fg-rgb, 255,255,255),0.5)", marginTop: 2 }}>{dateStr}</div>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             {/* Chipy kroki/kcal/sen usunięte z nagłówka — dane w karcie "Aktywność dziś". */}
@@ -196,14 +196,14 @@ export default function DashboardPage() {
         </div>
 
         {/* Toggle */}
-        <div style={{ display: "flex", gap: 4, marginTop: 12, background: "rgba(255,255,255,0.04)", borderRadius: 12, padding: 3 }}>
+        <div style={{ display: "flex", gap: 4, marginTop: 12, background: "rgba(var(--fg-rgb, 255,255,255),0.04)", borderRadius: 12, padding: 3 }}>
           {(["today", "week"] as DashView[]).map((v) => (
             <div key={v} onClick={() => setView(v)} style={{
               flex: 1, textAlign: "center", padding: 8, borderRadius: 10, cursor: "pointer",
               background: view === v ? "rgba(var(--c-mint-rgb, 110,252,180), 0.1)" : "transparent",
               border: view === v ? "1px solid rgba(var(--c-mint-rgb, 110,252,180), 0.15)" : "1px solid transparent",
               fontSize: 12, fontWeight: 700,
-              color: view === v ? "var(--c-mint, #6efcb4)" : "rgba(255,255,255,0.55)",
+              color: view === v ? "var(--c-mint, #6efcb4)" : "rgba(var(--fg-rgb, 255,255,255),0.55)",
             }}>
               {v === "today" ? "Dziś" : "Tydzień"}
             </div>
@@ -224,14 +224,14 @@ export default function DashboardPage() {
             <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
               <div style={{ width: 100, height: 100, position: "relative", flexShrink: 0 }}>
                 <svg width="100" height="100">
-                  <circle cx="50" cy="50" r="42" fill="none" stroke="rgba(255,255,255,0.04)" strokeWidth="8" />
+                  <circle cx="50" cy="50" r="42" fill="none" stroke="rgba(var(--fg-rgb, 255,255,255),0.04)" strokeWidth="8" />
                   <circle cx="50" cy="50" r="42" fill="none" stroke="#6efcb4" strokeWidth="8"
                     strokeDasharray={`${calDash} ${264 - calDash}`} strokeLinecap="round" transform="rotate(-90 50 50)"
                     style={{ transition: "stroke-dasharray 0.8s ease" }} />
                 </svg>
                 <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
-                  <span style={{ fontSize: 22, fontWeight: 900, color: "#fff" }}>{t.calories}</span>
-                  <span style={{ fontSize: 9, color: "rgba(255,255,255,0.55)", fontWeight: 600 }}>/ {n.calories} kcal</span>
+                  <span style={{ fontSize: 22, fontWeight: 900, color: "var(--fg, #fff)" }}>{t.calories}</span>
+                  <span style={{ fontSize: 9, color: "rgba(var(--fg-rgb, 255,255,255),0.55)", fontWeight: 600 }}>/ {n.calories} kcal</span>
                 </div>
               </div>
 
@@ -243,10 +243,10 @@ export default function DashboardPage() {
                 ].map((m, i) => (
                   <div key={i} style={{ marginBottom: i < 2 ? 10 : 0 }}>
                     <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
-                      <span style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.7)" }}>{m.label}</span>
-                      <span style={{ fontSize: 11, color: "rgba(255,255,255,0.8)" }}>{Math.round(m.value)}g / {m.max}g</span>
+                      <span style={{ fontSize: 11, fontWeight: 700, color: "rgba(var(--fg-rgb, 255,255,255),0.7)" }}>{m.label}</span>
+                      <span style={{ fontSize: 11, color: "rgba(var(--fg-rgb, 255,255,255),0.8)" }}>{Math.round(m.value)}g / {m.max}g</span>
                     </div>
-                    <div style={{ height: 4, background: "rgba(255,255,255,0.06)", borderRadius: 2 }}>
+                    <div style={{ height: 4, background: "rgba(var(--fg-rgb, 255,255,255),0.06)", borderRadius: 2 }}>
                       <div style={{ height: "100%", width: `${Math.min((m.value / m.max) * 100, 100)}%`, background: m.color, borderRadius: 2, transition: "width 0.5s ease" }} />
                     </div>
                   </div>
@@ -260,8 +260,8 @@ export default function DashboardPage() {
               return (
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 13, padding: "10px 12px", background: "rgba(var(--c-mint-rgb, 110,252,180), 0.08)", border: "1px solid rgba(var(--c-mint-rgb, 110,252,180), 0.22)", borderRadius: 13 }}>
                   <div>
-                    <span style={{ fontSize: 13.5, fontWeight: 800, color: "#fff" }}>Bilans netto</span>
-                    <span style={{ fontSize: 11.5, color: "rgba(255,255,255,0.55)", marginLeft: 8 }}>Zjedzone {t.calories} − Spalone {health.kcalBurned}</span>
+                    <span style={{ fontSize: 13.5, fontWeight: 800, color: "var(--fg, #fff)" }}>Bilans netto</span>
+                    <span style={{ fontSize: 11.5, color: "rgba(var(--fg-rgb, 255,255,255),0.55)", marginLeft: 8 }}>Zjedzone {t.calories} − Spalone {health.kcalBurned}</span>
                   </div>
                   <span style={{ fontSize: 18, fontWeight: 800, color: "var(--c-mint, #6efcb4)" }}>{net > 0 ? "+" : ""}{net}<span style={{ fontSize: 11, marginLeft: 2 }}>kcal</span></span>
                 </div>
@@ -273,28 +273,28 @@ export default function DashboardPage() {
           <GlassCard>
             <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
               <span style={{ fontSize: 16 }}>🍽️</span>
-              <span style={{ fontSize: 13, fontWeight: 800, color: "rgba(255,255,255,0.8)" }}>Posiłki dziś</span>
+              <span style={{ fontSize: 13, fontWeight: 800, color: "rgba(var(--fg-rgb, 255,255,255),0.8)" }}>Posiłki dziś</span>
             </div>
 
             {t.entries.length === 0 ? (
               <div style={{ textAlign: "center", padding: "16px 0" }}>
                 <span style={{ fontSize: 28, display: "block", marginBottom: 8 }}>🍽️</span>
-                <div style={{ fontSize: 13, color: "rgba(255,255,255,0.55)", fontWeight: 500 }}>
+                <div style={{ fontSize: 13, color: "rgba(var(--fg-rgb, 255,255,255),0.55)", fontWeight: 500 }}>
                   Brak posiłków — dodaj posiłek poniżej 👇
                 </div>
               </div>
             ) : (
               t.entries.map((meal) => (
-                <div key={meal.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 12px", marginBottom: 6, borderRadius: 12, background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.04)" }}>
+                <div key={meal.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 12px", marginBottom: 6, borderRadius: 12, background: "rgba(var(--fg-rgb, 255,255,255),0.02)", border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.04)" }}>
                   <div style={{ width: 36, height: 36, borderRadius: 10, background: "rgba(var(--c-mint-rgb, 110,252,180), 0.06)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>
                     {MEAL_ICONS[meal.mealType] || "🍽️"}
                   </div>
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 12.5, fontWeight: 700, color: "rgba(255,255,255,0.8)" }}>{meal.productName}</div>
-                    <div style={{ fontSize: 10.5, color: "rgba(255,255,255,0.5)", marginTop: 1 }}>{meal.timestamp ? new Date(meal.timestamp).toLocaleTimeString("pl-PL", { hour: "2-digit", minute: "2-digit" }) : ""}</div>
+                    <div style={{ fontSize: 12.5, fontWeight: 700, color: "rgba(var(--fg-rgb, 255,255,255),0.8)" }}>{meal.productName}</div>
+                    <div style={{ fontSize: 10.5, color: "rgba(var(--fg-rgb, 255,255,255),0.5)", marginTop: 1 }}>{meal.timestamp ? new Date(meal.timestamp).toLocaleTimeString("pl-PL", { hour: "2-digit", minute: "2-digit" }) : ""}</div>
                   </div>
                   <span style={{ fontSize: 12, fontWeight: 700, color: "var(--c-mint, #6efcb4)" }}>{meal.calories} kcal</span>
-                  <button onClick={() => handleRemove(meal.id)} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.55)", fontSize: 14, cursor: "pointer", padding: 4 }}>✕</button>
+                  <button onClick={() => handleRemove(meal.id)} style={{ background: "none", border: "none", color: "rgba(var(--fg-rgb, 255,255,255),0.55)", fontSize: 14, cursor: "pointer", padding: 4 }}>✕</button>
                 </div>
               ))
             )}
@@ -303,8 +303,8 @@ export default function DashboardPage() {
           {/* Szybkie dodawanie — kompakt: pole + mikrofon + 📸 skan (jeden rząd, pod posiłkami) */}
           <GlassCard>
             <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
-              <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 8, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 12, padding: "8px 12px" }}>
-                <span style={{ fontSize: 13, color: "rgba(255,255,255,0.5)" }}>🔍</span>
+              <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 8, background: "rgba(var(--fg-rgb, 255,255,255),0.04)", border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.06)", borderRadius: 12, padding: "8px 12px" }}>
+                <span style={{ fontSize: 13, color: "rgba(var(--fg-rgb, 255,255,255),0.5)" }}>🔍</span>
                 <input
                   type="text"
                   value={searchQuery}
@@ -316,7 +316,7 @@ export default function DashboardPage() {
                     }
                   }}
                   placeholder="Wpisz lub powiedz co zjadłeś..."
-                  style={{ flex: 1, background: "transparent", border: "none", outline: "none", color: "rgba(255,255,255,0.85)", fontSize: 13, fontWeight: 500, padding: "2px 0" }}
+                  style={{ flex: 1, background: "transparent", border: "none", outline: "none", color: "rgba(var(--fg-rgb, 255,255,255),0.85)", fontSize: 13, fontWeight: 500, padding: "2px 0" }}
                 />
               </div>
               {searchQuery.trim().length > 0 ? (
@@ -350,7 +350,7 @@ export default function DashboardPage() {
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                   <span style={{ fontSize: 16 }}>🏃</span>
-                  <span style={{ fontSize: 13, fontWeight: 800, color: "rgba(255,255,255,0.8)" }}>Aktywność dziś</span>
+                  <span style={{ fontSize: 13, fontWeight: 800, color: "rgba(var(--fg-rgb, 255,255,255),0.8)" }}>Aktywność dziś</span>
                 </div>
               </div>
 
@@ -371,10 +371,10 @@ export default function DashboardPage() {
                   return (
                     <div style={{ display: "flex" }}>
                       {stats.map((a, i) => (
-                        <div key={i} style={{ flex: 1, textAlign: "center", padding: "0 4px", borderRight: i < stats.length - 1 ? "1px solid rgba(255,255,255,0.07)" : "none" }}>
+                        <div key={i} style={{ flex: 1, textAlign: "center", padding: "0 4px", borderRight: i < stats.length - 1 ? "1px solid rgba(var(--fg-rgb, 255,255,255),0.07)" : "none" }}>
                           <div style={{ fontSize: 14 }}>{a.icon}</div>
                           <div style={{ fontSize: 16, fontWeight: 800, color: a.color, marginTop: 3, letterSpacing: "-0.02em" }}>{a.value}</div>
-                          <div style={{ fontSize: 10, color: "rgba(255,255,255,0.55)", marginTop: 1 }}>{a.label}</div>
+                          <div style={{ fontSize: 10, color: "rgba(var(--fg-rgb, 255,255,255),0.55)", marginTop: 1 }}>{a.label}</div>
                         </div>
                       ))}
                     </div>
@@ -386,7 +386,7 @@ export default function DashboardPage() {
                 const needsInstall = health.platform === "android" && !health.loading && !health.isAvailable;
                 return (
                   <div style={{ textAlign: "center", padding: "4px 0 2px" }}>
-                    <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", margin: "0 0 12px" }}>
+                    <div style={{ fontSize: 12, color: "rgba(var(--fg-rgb, 255,255,255),0.5)", margin: "0 0 12px" }}>
                       Śledź aktywność i bilans kaloryczny
                     </div>
                     <button
@@ -403,7 +403,7 @@ export default function DashboardPage() {
                         padding: 12,
                         borderRadius: 12,
                         background: "linear-gradient(135deg, var(--c-emerald, #34d399) 0%, var(--c-emerald-2, #10b981) 100%)",
-                        color: "#fff",
+                        color: "var(--fg, #fff)",
                         fontSize: 13.5,
                         fontWeight: 800,
                         border: "none",
@@ -437,21 +437,21 @@ export default function DashboardPage() {
                     <div style={{ flex: 1, width: "100%", display: "flex", alignItems: "flex-end", position: "relative" }}>
                       {/* Target line */}
                       {n.calories > 0 && (
-                        <div style={{ position: "absolute", left: 0, right: 0, bottom: `${(n.calories / maxWeekCal) * 100}%`, height: 1, borderBottom: "1px dashed rgba(255,255,255,0.15)" }} />
+                        <div style={{ position: "absolute", left: 0, right: 0, bottom: `${(n.calories / maxWeekCal) * 100}%`, height: 1, borderBottom: "1px dashed rgba(var(--fg-rgb, 255,255,255),0.15)" }} />
                       )}
                       <div style={{
                         width: "100%", borderRadius: "4px 4px 0 0",
                         height: `${Math.max(pct, 2)}%`,
-                        background: day.calories > 0 ? (day.calories > n.calories ? "linear-gradient(180deg, var(--c-orange, #f97316), var(--c-amber, #FBBF24))" : "linear-gradient(180deg, var(--c-mint, #6efcb4), var(--c-green-2, #3dd990))") : "rgba(255,255,255,0.04)",
+                        background: day.calories > 0 ? (day.calories > n.calories ? "linear-gradient(180deg, var(--c-orange, #f97316), var(--c-amber, #FBBF24))" : "linear-gradient(180deg, var(--c-mint, #6efcb4), var(--c-green-2, #3dd990))") : "rgba(var(--fg-rgb, 255,255,255),0.04)",
                         transition: "height 0.5s ease",
                       }} />
                     </div>
-                    <span style={{ fontSize: 9, color: "rgba(255,255,255,0.5)", fontWeight: 600 }}>{DAY_LABELS[dayIdx]}</span>
+                    <span style={{ fontSize: 9, color: "rgba(var(--fg-rgb, 255,255,255),0.5)", fontWeight: 600 }}>{DAY_LABELS[dayIdx]}</span>
                   </div>
                 );
               })}
             </div>
-            <div style={{ textAlign: "center", fontSize: 11, color: "rgba(255,255,255,0.55)" }}>
+            <div style={{ textAlign: "center", fontSize: 11, color: "rgba(var(--fg-rgb, 255,255,255),0.55)" }}>
               Średnio: <span style={{ color: "var(--c-mint, #6efcb4)", fontWeight: 700 }}>{avgCal} kcal</span> / dzień
             </div>
           </GlassCard>
@@ -467,10 +467,10 @@ export default function DashboardPage() {
               ].map((m, i) => (
                 <div key={i} style={{ marginBottom: i < 2 ? 10 : 0 }}>
                   <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
-                    <span style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.7)" }}>{m.label}</span>
-                    <span style={{ fontSize: 11, color: "rgba(255,255,255,0.35)" }}>{m.value}g / {m.max}g</span>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: "rgba(var(--fg-rgb, 255,255,255),0.7)" }}>{m.label}</span>
+                    <span style={{ fontSize: 11, color: "rgba(var(--fg-rgb, 255,255,255),0.35)" }}>{m.value}g / {m.max}g</span>
                   </div>
-                  <div style={{ height: 4, background: "rgba(255,255,255,0.06)", borderRadius: 2 }}>
+                  <div style={{ height: 4, background: "rgba(var(--fg-rgb, 255,255,255),0.06)", borderRadius: 2 }}>
                     <div style={{ height: "100%", width: `${Math.min((m.value / m.max) * 100, 100)}%`, background: m.color, borderRadius: 2 }} />
                   </div>
                 </div>
@@ -489,10 +489,10 @@ export default function DashboardPage() {
                     { value: String(health.weekKcalBurned), label: "kcal spalone", icon: "🔥", color: "var(--c-orange, #f97316)" },
                     { value: `${health.weekDistanceKm.toFixed(1)} km`, label: "Dystans", icon: "📍", color: "var(--c-blue, #3b82f6)" },
                   ].map((a, i) => (
-                    <div key={i} style={{ flex: 1, padding: "12px 8px", borderRadius: 14, textAlign: "center", background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)" }}>
+                    <div key={i} style={{ flex: 1, padding: "12px 8px", borderRadius: 14, textAlign: "center", background: "rgba(var(--fg-rgb, 255,255,255),0.02)", border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.05)" }}>
                       <div style={{ fontSize: 13, marginBottom: 4 }}>{a.icon}</div>
                       <div style={{ fontSize: 16, fontWeight: 900, color: a.color, letterSpacing: "-0.02em" }}>{a.value}</div>
-                      <div style={{ fontSize: 9.5, color: "rgba(255,255,255,0.7)", marginTop: 2 }}>{a.label}</div>
+                      <div style={{ fontSize: 9.5, color: "rgba(var(--fg-rgb, 255,255,255),0.7)", marginTop: 2 }}>{a.label}</div>
                     </div>
                   ))}
                 </div>
@@ -501,7 +501,7 @@ export default function DashboardPage() {
                 const needsInstall = health.platform === "android" && !health.loading && !health.isAvailable;
                 return (
                   <div style={{ textAlign: "center", padding: "4px 0 2px" }}>
-                    <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", margin: "0 0 12px" }}>
+                    <div style={{ fontSize: 12, color: "rgba(var(--fg-rgb, 255,255,255),0.5)", margin: "0 0 12px" }}>
                       Połącz z {healthLabel} żeby zobaczyć historię
                     </div>
                     <button
@@ -518,7 +518,7 @@ export default function DashboardPage() {
                         padding: 12,
                         borderRadius: 12,
                         background: "linear-gradient(135deg, var(--c-emerald, #34d399) 0%, var(--c-emerald-2, #10b981) 100%)",
-                        color: "#fff",
+                        color: "var(--fg, #fff)",
                         fontSize: 13.5,
                         fontWeight: 800,
                         border: "none",
@@ -537,13 +537,13 @@ export default function DashboardPage() {
           {/* Scan count */}
           <GlassCard>
             <div style={{ textAlign: "center" }}>
-              <div style={{ fontSize: 13, color: "rgba(255,255,255,0.55)", fontWeight: 600, marginBottom: 8 }}>
+              <div style={{ fontSize: 13, color: "rgba(var(--fg-rgb, 255,255,255),0.55)", fontWeight: 600, marginBottom: 8 }}>
                 Zeskanowałeś <span style={{ color: "var(--c-mint, #6efcb4)", fontWeight: 800 }}>{weekHistory.length}</span> produktów w tym tygodniu
               </div>
               <div style={{ display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap" }}>
-                {weekFoodCount > 0 && <span style={{ fontSize: 11, color: "rgba(255,255,255,0.55)", padding: "4px 10px", borderRadius: 10, background: "rgba(255,255,255,0.03)" }}>{weekFoodCount} żywność</span>}
-                {weekCosmeticsCount > 0 && <span style={{ fontSize: 11, color: "rgba(255,255,255,0.55)", padding: "4px 10px", borderRadius: 10, background: "rgba(255,255,255,0.03)" }}>{weekCosmeticsCount} kosmetyk</span>}
-                {weekSupplementCount > 0 && <span style={{ fontSize: 11, color: "rgba(255,255,255,0.55)", padding: "4px 10px", borderRadius: 10, background: "rgba(255,255,255,0.03)" }}>{weekSupplementCount} suplement</span>}
+                {weekFoodCount > 0 && <span style={{ fontSize: 11, color: "rgba(var(--fg-rgb, 255,255,255),0.55)", padding: "4px 10px", borderRadius: 10, background: "rgba(var(--fg-rgb, 255,255,255),0.03)" }}>{weekFoodCount} żywność</span>}
+                {weekCosmeticsCount > 0 && <span style={{ fontSize: 11, color: "rgba(var(--fg-rgb, 255,255,255),0.55)", padding: "4px 10px", borderRadius: 10, background: "rgba(var(--fg-rgb, 255,255,255),0.03)" }}>{weekCosmeticsCount} kosmetyk</span>}
+                {weekSupplementCount > 0 && <span style={{ fontSize: 11, color: "rgba(var(--fg-rgb, 255,255,255),0.55)", padding: "4px 10px", borderRadius: 10, background: "rgba(var(--fg-rgb, 255,255,255),0.03)" }}>{weekSupplementCount} suplement</span>}
               </div>
             </div>
           </GlassCard>
@@ -551,7 +551,7 @@ export default function DashboardPage() {
 
         {/* Disclaimer */}
         <div style={{ textAlign: "center", marginTop: 8 }}>
-          <span style={{ fontSize: 10, color: "rgba(255,255,255,0.45)" }}>
+          <span style={{ fontSize: 10, color: "rgba(var(--fg-rgb, 255,255,255),0.45)" }}>
             SkładAI nie jest wyrobem medycznym. Skonsultuj z dietetykiem.
           </span>
         </div>
@@ -599,18 +599,18 @@ export default function DashboardPage() {
             onClick={(e) => e.stopPropagation()}
             style={{
               width: "100%", maxWidth: 340,
-              background: "#13191a",
-              border: "1px solid rgba(255,255,255,0.08)",
+              background: "var(--bg-panel, #13191a)",
+              border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.08)",
               borderRadius: 20,
               padding: 24,
               textAlign: "center",
             }}
           >
             <div style={{ fontSize: 38, marginBottom: 12 }}>🏃</div>
-            <div style={{ fontSize: 18, fontWeight: 900, color: "#fff", marginBottom: 8 }}>
+            <div style={{ fontSize: 18, fontWeight: 900, color: "var(--fg, #fff)", marginBottom: 8 }}>
               Śledź swoją aktywność
             </div>
-            <div style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", lineHeight: "19px", marginBottom: 22 }}>
+            <div style={{ fontSize: 13, color: "rgba(var(--fg-rgb, 255,255,255),0.6)", lineHeight: "19px", marginBottom: 22 }}>
               {needsInstall
                 ? "Zainstaluj Google Health Connect z Play Store, żeby śledzić kroki i spalone kalorie w Dashboard."
                 : `Połącz z ${healthLabel} aby zobaczyć kroki i spalone kalorie w Dashboard.`}
@@ -642,9 +642,9 @@ export default function DashboardPage() {
               }}
               style={{
                 width: "100%", padding: 14, borderRadius: 14,
-                background: "rgba(255,255,255,0.04)",
-                border: "1px solid rgba(255,255,255,0.08)",
-                color: "rgba(255,255,255,0.7)", fontWeight: 700, fontSize: 13, cursor: "pointer",
+                background: "rgba(var(--fg-rgb, 255,255,255),0.04)",
+                border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.08)",
+                color: "rgba(var(--fg-rgb, 255,255,255),0.7)", fontWeight: 700, fontSize: 13, cursor: "pointer",
               }}
             >
               Nie teraz

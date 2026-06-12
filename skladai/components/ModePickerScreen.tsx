@@ -56,7 +56,7 @@ export default function ModePickerScreen({ onComplete }: Props) {
       style={{
         position: "fixed",
         inset: 0,
-        background: "#050a08",
+        background: "var(--bg, #050a08)",
         zIndex: 1000,
         overflow: "auto",
       }}
@@ -84,8 +84,8 @@ export default function ModePickerScreen({ onComplete }: Props) {
           position: "absolute",
           inset: 0,
           backgroundImage:
-            "linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px)," +
-            "linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px)",
+            "linear-gradient(rgba(var(--fg-rgb, 255,255,255),0.02) 1px, transparent 1px)," +
+            "linear-gradient(90deg, rgba(var(--fg-rgb, 255,255,255),0.02) 1px, transparent 1px)",
           backgroundSize: "40px 40px",
           maskImage: "radial-gradient(ellipse at center, black 30%, transparent 80%)",
           WebkitMaskImage: "radial-gradient(ellipse at center, black 30%, transparent 80%)",
@@ -134,8 +134,8 @@ export default function ModePickerScreen({ onComplete }: Props) {
               transition: "all 0.3s",
             }}
           />
-          <div style={{ height: 3, borderRadius: 2, width: 12, background: "rgba(255,255,255,0.08)" }} />
-          <div style={{ height: 3, borderRadius: 2, width: 12, background: "rgba(255,255,255,0.08)" }} />
+          <div style={{ height: 3, borderRadius: 2, width: 12, background: "rgba(var(--fg-rgb, 255,255,255),0.08)" }} />
+          <div style={{ height: 3, borderRadius: 2, width: 12, background: "rgba(var(--fg-rgb, 255,255,255),0.08)" }} />
         </div>
 
         {/* Title */}
@@ -197,7 +197,7 @@ export default function ModePickerScreen({ onComplete }: Props) {
               display: "block",
               width: 32,
               height: 1,
-              background: "rgba(255,255,255,0.08)",
+              background: "rgba(var(--fg-rgb, 255,255,255),0.08)",
               margin: "0 auto 8px",
             }}
           />
@@ -221,7 +221,7 @@ function ModeCard({ mode, onClick }: { mode: ModeDef; onClick: () => void }) {
       onClick={onClick}
       style={{
         background: "linear-gradient(180deg, rgba(30,40,35,0.6), rgba(15,25,20,0.6))",
-        border: "1px solid rgba(255,255,255,0.06)",
+        border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.06)",
         borderRadius: 20,
         padding: "14px 16px",
         textAlign: "center",

@@ -65,7 +65,7 @@ export default function RootLayout({
             (czyta localStorage — nsSet pisze do obu magazynów). Bez tego
             użytkownik Obsidianu widziałby mignięcie klasycznej palety. */}
         <script dangerouslySetInnerHTML={{ __html: `
-          try { var v = localStorage.getItem('skladai_theme_variant'); if (['azure','violet','gold'].indexOf(v) !== -1) document.body.classList.add('theme-' + v); } catch (e) {}
+          try { var v = localStorage.getItem('skladai_theme_variant'); if (['azure','violet','gold','light'].indexOf(v) !== -1) document.body.classList.add('theme-' + v); } catch (e) {}
         `}} />
         <ThemeProvider>
           <div id="scroll-container" data-scrollable="true">

@@ -99,8 +99,8 @@ function ShoppingLinks({ name }: { name: string; category?: "cosmetic" | "supple
               flex: 1,
               height: 38,
               borderRadius: 10,
-              background: "rgba(255,255,255,0.05)",
-              border: "1px solid rgba(255,255,255,0.06)",
+              background: "rgba(var(--fg-rgb, 255,255,255),0.05)",
+              border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.06)",
             }}
           />
         ))}
@@ -140,7 +140,7 @@ function ShoppingLinks({ name }: { name: string; category?: "cosmetic" | "supple
         <div style={{ width: 18, height: 18, borderRadius: 5, background: "#e8380d", display: "flex", alignItems: "center", justifyContent: "center" }}>
           <span style={{ color: "white", fontSize: 8, fontWeight: 700 }}>C</span>
         </div>
-        <span style={{ color: "rgba(255,255,255,0.85)", fontSize: 12, fontWeight: 500 }}>
+        <span style={{ color: "rgba(var(--fg-rgb, 255,255,255),0.85)", fontSize: 12, fontWeight: 500 }}>
           {ceneo?.found && ceneo.price ? `Ceneo · ${fmtPrice(ceneo.price)}` : "Ceneo"}
         </span>
       </a>
@@ -168,13 +168,13 @@ function ShoppingLinks({ name }: { name: string; category?: "cosmetic" | "supple
         <div style={{ width: 18, height: 18, borderRadius: 5, background: "#ff5a00", display: "flex", alignItems: "center", justifyContent: "center" }}>
           <span style={{ color: "white", fontSize: 8, fontWeight: 700 }}>A</span>
         </div>
-        <span style={{ color: "rgba(255,255,255,0.85)", fontSize: 12, fontWeight: 500 }}>
+        <span style={{ color: "rgba(var(--fg-rgb, 255,255,255),0.85)", fontSize: 12, fontWeight: 500 }}>
           {allegro?.found && allegro.price ? `Allegro · ${fmtPrice(allegro.price)}` : "Allegro"}
         </span>
       </a>
     </div>
     {noPrices && (
-      <p style={{ fontSize: 11, color: "rgba(255,255,255,0.5)", textAlign: "center", margin: "6px 0 0" }}>
+      <p style={{ fontSize: 11, color: "rgba(var(--fg-rgb, 255,255,255),0.5)", textAlign: "center", margin: "6px 0 0" }}>
         Sprawdź aktualną cenę
       </p>
     )}
@@ -307,7 +307,7 @@ export default function ResultTabs({ result, scanType = "food", isCosmetics: isC
                   <h3 className="text-[18px] font-black" style={{ color: "#22c55e" }}>Czysty skład!</h3>
                 </div>
                 <p className="text-[12px] text-white/55 leading-relaxed mt-2">Nie wykryto problematycznych składników. Ten produkt ma dobry skład — nie musisz szukać alternatywy.</p>
-                <div className="mt-4 pt-4" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+                <div className="mt-4 pt-4" style={{ borderTop: "1px solid rgba(var(--fg-rgb, 255,255,255),0.06)" }}>
                   <p className="text-[11px] font-bold text-white/55 uppercase tracking-widest mb-2">🛒 Kup taniej</p>
                   <ShoppingLinks name={cosResult.name || ""} category="cosmetic" />
                 </div>
@@ -332,7 +332,7 @@ export default function ResultTabs({ result, scanType = "food", isCosmetics: isC
                       {searchQueries.map((q: string, i: number) => (
                         <a key={i} href={`https://www.google.com/search?q=${encodeURIComponent(q)}`} target="_blank" rel="noopener noreferrer"
                           className="flex items-center gap-3 p-3 rounded-[12px] transition-all"
-                          style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
+                          style={{ background: "rgba(var(--fg-rgb, 255,255,255),0.03)", border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.06)" }}>
                           <span className="text-[16px]">🔎</span>
                           <span className="text-[12px] text-white/75 leading-snug flex-1">{q}</span>
                           <span className="text-[10px] text-white/30">→</span>
@@ -343,7 +343,7 @@ export default function ResultTabs({ result, scanType = "food", isCosmetics: isC
                   </div>
                 )}
 
-                <div className="rounded-[16px] p-4" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)" }}>
+                <div className="rounded-[16px] p-4" style={{ background: "rgba(var(--fg-rgb, 255,255,255),0.02)", border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.06)" }}>
                   <p className="text-[11px] font-bold text-white/55 uppercase tracking-widest mb-2">🛒 Kup ten produkt taniej</p>
                   <ShoppingLinks name={cosResult.name || ""} category="cosmetic" />
                 </div>
@@ -549,7 +549,7 @@ export default function ResultTabs({ result, scanType = "food", isCosmetics: isC
                   <h3 className="text-[18px] font-black" style={{ color: "#22c55e" }}>Dobry skład!</h3>
                 </div>
                 <p className="text-[12px] text-white/55 leading-relaxed mt-2">Nie wykryto problematycznych składników ani słabych form. Ten suplement ma dobry skład w odpowiednich dawkach.</p>
-                <div className="mt-4 pt-4" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+                <div className="mt-4 pt-4" style={{ borderTop: "1px solid rgba(var(--fg-rgb, 255,255,255),0.06)" }}>
                   <p className="text-[11px] font-bold text-white/55 uppercase tracking-widest mb-2">🛒 Kup taniej</p>
                   <ShoppingLinks name={suppResult.name || ""} category="supplement" />
                 </div>
@@ -574,7 +574,7 @@ export default function ResultTabs({ result, scanType = "food", isCosmetics: isC
                       {searchQueries.map((q: string, i: number) => (
                         <a key={i} href={`https://www.google.com/search?q=${encodeURIComponent(q)}`} target="_blank" rel="noopener noreferrer"
                           className="flex items-center gap-3 p-3 rounded-[12px] transition-all"
-                          style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
+                          style={{ background: "rgba(var(--fg-rgb, 255,255,255),0.03)", border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.06)" }}>
                           <span className="text-[16px]">🔎</span>
                           <span className="text-[12px] text-white/75 leading-snug flex-1">{q}</span>
                           <span className="text-[10px] text-white/30">→</span>
@@ -585,7 +585,7 @@ export default function ResultTabs({ result, scanType = "food", isCosmetics: isC
                   </div>
                 )}
 
-                <div className="rounded-[16px] p-4" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)" }}>
+                <div className="rounded-[16px] p-4" style={{ background: "rgba(var(--fg-rgb, 255,255,255),0.02)", border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.06)" }}>
                   <p className="text-[11px] font-bold text-white/55 uppercase tracking-widest mb-2">🛒 Kup ten suplement taniej</p>
                   <ShoppingLinks name={suppResult.name || ""} category="supplement" />
                 </div>

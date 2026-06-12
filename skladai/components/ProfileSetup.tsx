@@ -96,42 +96,42 @@ export default function ProfileSetup({ onComplete, onSkip, existingProfile }: Pr
       {/* Header */}
       <div style={{ padding: "50px 20px 60px", background: "linear-gradient(180deg, rgba(var(--c-mint-rgb, 110,252,180),0.12) 0%, rgba(var(--c-mint-rgb, 110,252,180),0.02) 60%, transparent 100%)", textAlign: "center", position: "relative", overflow: "hidden" }}>
         <div style={{ position: "absolute", top: -60, right: -60, width: 200, height: 200, borderRadius: "50%", background: "rgba(var(--c-mint-rgb, 110,252,180),0.06)", filter: "blur(60px)" }} />
-        <h1 style={{ fontSize: 28, fontWeight: 900, color: "#fff", letterSpacing: "-0.03em" }}>Twój profil</h1>
-        <p style={{ color: "rgba(255,255,255,0.55)", fontSize: 13, marginTop: 4 }}>Krok {step + 1} z 4</p>
+        <h1 style={{ fontSize: 28, fontWeight: 900, color: "var(--fg, #fff)", letterSpacing: "-0.03em" }}>Twój profil</h1>
+        <p style={{ color: "rgba(var(--fg-rgb, 255,255,255),0.55)", fontSize: 13, marginTop: 4 }}>Krok {step + 1} z 4</p>
         {/* Progress dots */}
         <div style={{ display: "flex", justifyContent: "center", gap: 8, marginTop: 16 }}>
           {steps.map((_, i) => (
             <div key={i} style={{
               height: 6, borderRadius: 3, transition: "all 0.3s",
               width: i <= step ? 32 : 16,
-              background: i <= step ? "var(--c-mint, #6efcb4)" : "rgba(255,255,255,0.15)",
+              background: i <= step ? "var(--c-mint, #6efcb4)" : "rgba(var(--fg-rgb, 255,255,255),0.15)",
             }} />
           ))}
         </div>
       </div>
 
       <div style={{ maxWidth: 448, margin: "0 auto", padding: "0 20px", marginTop: -40, paddingBottom: 40, position: "relative", zIndex: 20 }}>
-        <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 24, padding: 24 }}>
+        <div style={{ background: "rgba(var(--fg-rgb, 255,255,255),0.04)", border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.08)", borderRadius: 24, padding: 24 }}>
           {/* STEP 0: Basic data */}
           {step === 0 && (
             <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-              <h2 style={{ fontSize: 18, fontWeight: 800, color: "#fff" }}>Podstawowe dane</h2>
+              <h2 style={{ fontSize: 18, fontWeight: 800, color: "var(--fg, #fff)" }}>Podstawowe dane</h2>
 
               {/* Name */}
               <div>
-                <label style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.7)", textTransform: "uppercase", letterSpacing: "0.05em" }}>Imię (opcjonalne)</label>
+                <label style={{ fontSize: 11, fontWeight: 600, color: "rgba(var(--fg-rgb, 255,255,255),0.7)", textTransform: "uppercase", letterSpacing: "0.05em" }}>Imię (opcjonalne)</label>
                 <input
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Twoje imię"
-                  style={{ width: "100%", marginTop: 8, padding: "12px 16px", borderRadius: 14, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", fontSize: 14, color: "#fff", fontWeight: 600, outline: "none" }}
+                  style={{ width: "100%", marginTop: 8, padding: "12px 16px", borderRadius: 14, background: "rgba(var(--fg-rgb, 255,255,255),0.06)", border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.1)", fontSize: 14, color: "var(--fg, #fff)", fontWeight: 600, outline: "none" }}
                 />
               </div>
 
               {/* Gender */}
               <div>
-                <label style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.7)", textTransform: "uppercase", letterSpacing: "0.05em" }}>Płeć</label>
+                <label style={{ fontSize: 11, fontWeight: 600, color: "rgba(var(--fg-rgb, 255,255,255),0.7)", textTransform: "uppercase", letterSpacing: "0.05em" }}>Płeć</label>
                 <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
                   {(["male", "female"] as const).map((g) => (
                     <button
@@ -139,9 +139,9 @@ export default function ProfileSetup({ onComplete, onSkip, existingProfile }: Pr
                       onClick={() => setGender(g)}
                       style={{
                         flex: 1, padding: 12, borderRadius: 14, fontSize: 13, fontWeight: 700, cursor: "pointer", transition: "all 0.2s",
-                        background: gender === g ? "rgba(var(--c-mint-rgb, 110,252,180),0.15)" : "rgba(255,255,255,0.04)",
-                        color: gender === g ? "var(--c-mint, #6efcb4)" : "rgba(255,255,255,0.55)",
-                        border: gender === g ? "1px solid rgba(var(--c-mint-rgb, 110,252,180),0.25)" : "1px solid rgba(255,255,255,0.06)",
+                        background: gender === g ? "rgba(var(--c-mint-rgb, 110,252,180),0.15)" : "rgba(var(--fg-rgb, 255,255,255),0.04)",
+                        color: gender === g ? "var(--c-mint, #6efcb4)" : "rgba(var(--fg-rgb, 255,255,255),0.55)",
+                        border: gender === g ? "1px solid rgba(var(--c-mint-rgb, 110,252,180),0.25)" : "1px solid rgba(var(--fg-rgb, 255,255,255),0.06)",
                       }}
                     >
                       {g === "male" ? "👨 Mężczyzna" : "👩 Kobieta"}
@@ -152,33 +152,33 @@ export default function ProfileSetup({ onComplete, onSkip, existingProfile }: Pr
 
               {/* Age */}
               <div>
-                <label style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.7)", textTransform: "uppercase", letterSpacing: "0.05em" }}>Wiek: <span style={{ color: "var(--c-mint, #6efcb4)" }}>{age} lat</span></label>
+                <label style={{ fontSize: 11, fontWeight: 600, color: "rgba(var(--fg-rgb, 255,255,255),0.7)", textTransform: "uppercase", letterSpacing: "0.05em" }}>Wiek: <span style={{ color: "var(--c-mint, #6efcb4)" }}>{age} lat</span></label>
                 <input type="range" min={14} max={90} value={age} onChange={(e) => setAge(+e.target.value)}
                   style={{ width: "100%", marginTop: 8 }} />
               </div>
 
               {/* Weight */}
               <div>
-                <label style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.7)", textTransform: "uppercase", letterSpacing: "0.05em" }}>Waga: <span style={{ color: "var(--c-mint, #6efcb4)" }}>{weight} kg</span></label>
+                <label style={{ fontSize: 11, fontWeight: 600, color: "rgba(var(--fg-rgb, 255,255,255),0.7)", textTransform: "uppercase", letterSpacing: "0.05em" }}>Waga: <span style={{ color: "var(--c-mint, #6efcb4)" }}>{weight} kg</span></label>
                 <input type="range" min={30} max={200} value={weight} onChange={(e) => setWeight(+e.target.value)}
                   style={{ width: "100%", marginTop: 8 }} />
               </div>
 
               {/* Height */}
               <div>
-                <label style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.7)", textTransform: "uppercase", letterSpacing: "0.05em" }}>Wzrost: <span style={{ color: "var(--c-mint, #6efcb4)" }}>{height} cm</span></label>
+                <label style={{ fontSize: 11, fontWeight: 600, color: "rgba(var(--fg-rgb, 255,255,255),0.7)", textTransform: "uppercase", letterSpacing: "0.05em" }}>Wzrost: <span style={{ color: "var(--c-mint, #6efcb4)" }}>{height} cm</span></label>
                 <input type="range" min={120} max={220} value={height} onChange={(e) => setHeight(+e.target.value)}
                   style={{ width: "100%", marginTop: 8 }} />
               </div>
 
-              <p style={{ fontSize: 10, color: "rgba(255,255,255,0.55)", textAlign: "center" }}>🔒 Dane zapisane TYLKO lokalnie na Twoim telefonie. Nie wysyłamy na serwer.</p>
+              <p style={{ fontSize: 10, color: "rgba(var(--fg-rgb, 255,255,255),0.55)", textAlign: "center" }}>🔒 Dane zapisane TYLKO lokalnie na Twoim telefonie. Nie wysyłamy na serwer.</p>
             </div>
           )}
 
           {/* STEP 1: Activity */}
           {step === 1 && (
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              <h2 style={{ fontSize: 18, fontWeight: 800, color: "#fff", marginBottom: 4 }}>Poziom aktywności</h2>
+              <h2 style={{ fontSize: 18, fontWeight: 800, color: "var(--fg, #fff)", marginBottom: 4 }}>Poziom aktywności</h2>
               {(Object.keys(ACTIVITY_LEVELS) as ActivityLevel[]).map((key) => {
                 const level = ACTIVITY_LEVELS[key];
                 const sel = activity === key;
@@ -188,12 +188,12 @@ export default function ProfileSetup({ onComplete, onSkip, existingProfile }: Pr
                     onClick={() => setActivity(key)}
                     style={{
                       width: "100%", textAlign: "left", padding: 16, borderRadius: 16, cursor: "pointer", transition: "all 0.2s",
-                      background: sel ? "rgba(var(--c-mint-rgb, 110,252,180),0.12)" : "rgba(255,255,255,0.03)",
-                      border: sel ? "1px solid rgba(var(--c-mint-rgb, 110,252,180),0.2)" : "1px solid rgba(255,255,255,0.06)",
+                      background: sel ? "rgba(var(--c-mint-rgb, 110,252,180),0.12)" : "rgba(var(--fg-rgb, 255,255,255),0.03)",
+                      border: sel ? "1px solid rgba(var(--c-mint-rgb, 110,252,180),0.2)" : "1px solid rgba(var(--fg-rgb, 255,255,255),0.06)",
                     }}
                   >
-                    <p style={{ fontWeight: 700, fontSize: 14, color: sel ? "var(--c-mint, #6efcb4)" : "rgba(255,255,255,0.7)", margin: 0 }}>{level.label}</p>
-                    <p style={{ fontSize: 12, marginTop: 2, color: sel ? "rgba(var(--c-mint-rgb, 110,252,180),0.5)" : "rgba(255,255,255,0.55)", margin: 0 }}>{level.description}</p>
+                    <p style={{ fontWeight: 700, fontSize: 14, color: sel ? "var(--c-mint, #6efcb4)" : "rgba(var(--fg-rgb, 255,255,255),0.7)", margin: 0 }}>{level.label}</p>
+                    <p style={{ fontSize: 12, marginTop: 2, color: sel ? "rgba(var(--c-mint-rgb, 110,252,180),0.5)" : "rgba(var(--fg-rgb, 255,255,255),0.55)", margin: 0 }}>{level.description}</p>
                   </button>
                 );
               })}
@@ -203,7 +203,7 @@ export default function ProfileSetup({ onComplete, onSkip, existingProfile }: Pr
           {/* STEP 2: Goal */}
           {step === 2 && (
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              <h2 style={{ fontSize: 18, fontWeight: 800, color: "#fff", marginBottom: 4 }}>Twój cel</h2>
+              <h2 style={{ fontSize: 18, fontWeight: 800, color: "var(--fg, #fff)", marginBottom: 4 }}>Twój cel</h2>
               {(Object.keys(GOALS) as Goal[]).map((key) => {
                 const g = GOALS[key];
                 const icons: Record<string, string> = { maintain: "⚖️", lose: "🔥", gain: "💪", healthy: "🥗" };
@@ -214,13 +214,13 @@ export default function ProfileSetup({ onComplete, onSkip, existingProfile }: Pr
                     onClick={() => setGoal(key)}
                     style={{
                       width: "100%", textAlign: "left", padding: 16, borderRadius: 16, cursor: "pointer", transition: "all 0.2s",
-                      background: sel ? "rgba(var(--c-mint-rgb, 110,252,180),0.12)" : "rgba(255,255,255,0.03)",
-                      border: sel ? "1px solid rgba(var(--c-mint-rgb, 110,252,180),0.2)" : "1px solid rgba(255,255,255,0.06)",
+                      background: sel ? "rgba(var(--c-mint-rgb, 110,252,180),0.12)" : "rgba(var(--fg-rgb, 255,255,255),0.03)",
+                      border: sel ? "1px solid rgba(var(--c-mint-rgb, 110,252,180),0.2)" : "1px solid rgba(var(--fg-rgb, 255,255,255),0.06)",
                     }}
                   >
-                    <p style={{ fontWeight: 700, fontSize: 14, color: sel ? "var(--c-mint, #6efcb4)" : "rgba(255,255,255,0.7)", margin: 0 }}>{icons[key]} {g.label}</p>
+                    <p style={{ fontWeight: 700, fontSize: 14, color: sel ? "var(--c-mint, #6efcb4)" : "rgba(var(--fg-rgb, 255,255,255),0.7)", margin: 0 }}>{icons[key]} {g.label}</p>
                     {g.modifier !== 0 && (
-                      <p style={{ fontSize: 12, marginTop: 2, color: sel ? "rgba(var(--c-mint-rgb, 110,252,180),0.5)" : "rgba(255,255,255,0.3)", margin: 0 }}>
+                      <p style={{ fontSize: 12, marginTop: 2, color: sel ? "rgba(var(--c-mint-rgb, 110,252,180),0.5)" : "rgba(var(--fg-rgb, 255,255,255),0.3)", margin: 0 }}>
                         {g.modifier > 0 ? `+${g.modifier}` : g.modifier} kcal/dzień
                       </p>
                     )}
@@ -234,20 +234,20 @@ export default function ProfileSetup({ onComplete, onSkip, existingProfile }: Pr
           {step === 3 && (
             <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
               <div>
-                <h2 style={{ fontSize: 18, fontWeight: 800, color: "#fff", margin: 0 }}>Profil zdrowotny</h2>
-                <p style={{ fontSize: 12, color: "rgba(255,255,255,0.55)", marginTop: 4 }}>Opcjonalne — pomaga dopasować analizę</p>
+                <h2 style={{ fontSize: 18, fontWeight: 800, color: "var(--fg, #fff)", margin: 0 }}>Profil zdrowotny</h2>
+                <p style={{ fontSize: 12, color: "rgba(var(--fg-rgb, 255,255,255),0.55)", marginTop: 4 }}>Opcjonalne — pomaga dopasować analizę</p>
               </div>
 
               {/* Diabetes */}
               <div>
-                <p style={{ fontSize: 12, fontWeight: 600, color: "rgba(255,255,255,0.5)", marginBottom: 8 }}>🩸 Cukrzyca</p>
+                <p style={{ fontSize: 12, fontWeight: 600, color: "rgba(var(--fg-rgb, 255,255,255),0.5)", marginBottom: 8 }}>🩸 Cukrzyca</p>
                 <div style={{ display: "flex", gap: 8 }}>
                   <button onClick={() => setDiabetes(null)}
                     style={{
                       flex: 1, padding: 10, borderRadius: 12, fontSize: 12, fontWeight: 700, cursor: "pointer",
-                      background: !diabetes ? "rgba(var(--c-mint-rgb, 110,252,180),0.15)" : "rgba(255,255,255,0.04)",
-                      color: !diabetes ? "var(--c-mint, #6efcb4)" : "rgba(255,255,255,0.55)",
-                      border: !diabetes ? "1px solid rgba(var(--c-mint-rgb, 110,252,180),0.25)" : "1px solid rgba(255,255,255,0.06)",
+                      background: !diabetes ? "rgba(var(--c-mint-rgb, 110,252,180),0.15)" : "rgba(var(--fg-rgb, 255,255,255),0.04)",
+                      color: !diabetes ? "var(--c-mint, #6efcb4)" : "rgba(var(--fg-rgb, 255,255,255),0.55)",
+                      border: !diabetes ? "1px solid rgba(var(--c-mint-rgb, 110,252,180),0.25)" : "1px solid rgba(var(--fg-rgb, 255,255,255),0.06)",
                     }}>
                     Brak
                   </button>
@@ -257,9 +257,9 @@ export default function ProfileSetup({ onComplete, onSkip, existingProfile }: Pr
                       <button key={key} onClick={() => setDiabetes(key)}
                         style={{
                           flex: 1, padding: 10, borderRadius: 12, fontSize: 12, fontWeight: 700, cursor: "pointer",
-                          background: sel ? "rgba(var(--c-mint-rgb, 110,252,180),0.15)" : "rgba(255,255,255,0.04)",
-                          color: sel ? "var(--c-mint, #6efcb4)" : "rgba(255,255,255,0.55)",
-                          border: sel ? "1px solid rgba(var(--c-mint-rgb, 110,252,180),0.25)" : "1px solid rgba(255,255,255,0.06)",
+                          background: sel ? "rgba(var(--c-mint-rgb, 110,252,180),0.15)" : "rgba(var(--fg-rgb, 255,255,255),0.04)",
+                          color: sel ? "var(--c-mint, #6efcb4)" : "rgba(var(--fg-rgb, 255,255,255),0.55)",
+                          border: sel ? "1px solid rgba(var(--c-mint-rgb, 110,252,180),0.25)" : "1px solid rgba(var(--fg-rgb, 255,255,255),0.06)",
                         }}>
                         {DIABETES_TYPES[key].label}
                       </button>
@@ -275,16 +275,16 @@ export default function ProfileSetup({ onComplete, onSkip, existingProfile }: Pr
                     <span style={{ fontSize: 18 }}>🤰</span>
                     <p style={{ fontSize: 14, fontWeight: 800, color: "rgba(244,114,182,0.8)", margin: 0 }}>Ciąża i karmienie</p>
                   </div>
-                  <p style={{ fontSize: 11, color: "rgba(255,255,255,0.55)", marginBottom: 12, lineHeight: "16px" }}>
+                  <p style={{ fontSize: 11, color: "rgba(var(--fg-rgb, 255,255,255),0.55)", marginBottom: 12, lineHeight: "16px" }}>
                     Niektóre składniki w żywności i kosmetykach mogą być szkodliwe w ciąży lub przy karmieniu piersią. Dzięki tej informacji AI będzie Cię ostrzegać.
                   </p>
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
                     <button onClick={() => setPregnancy(null)}
                       style={{
                         padding: 10, borderRadius: 12, fontSize: 11, fontWeight: 700, cursor: "pointer",
-                        background: !pregnancy ? "rgba(244,114,182,0.15)" : "rgba(255,255,255,0.04)",
-                        color: !pregnancy ? "rgba(244,114,182,0.8)" : "rgba(255,255,255,0.55)",
-                        border: !pregnancy ? "1px solid rgba(244,114,182,0.25)" : "1px solid rgba(255,255,255,0.06)",
+                        background: !pregnancy ? "rgba(244,114,182,0.15)" : "rgba(var(--fg-rgb, 255,255,255),0.04)",
+                        color: !pregnancy ? "rgba(244,114,182,0.8)" : "rgba(var(--fg-rgb, 255,255,255),0.55)",
+                        border: !pregnancy ? "1px solid rgba(244,114,182,0.25)" : "1px solid rgba(var(--fg-rgb, 255,255,255),0.06)",
                       }}>
                       Nie dotyczy
                     </button>
@@ -294,9 +294,9 @@ export default function ProfileSetup({ onComplete, onSkip, existingProfile }: Pr
                         <button key={key} onClick={() => setPregnancy(key)}
                           style={{
                             padding: 10, borderRadius: 12, fontSize: 11, fontWeight: 700, cursor: "pointer",
-                            background: sel ? "rgba(244,114,182,0.15)" : "rgba(255,255,255,0.04)",
-                            color: sel ? "rgba(244,114,182,0.8)" : "rgba(255,255,255,0.55)",
-                            border: sel ? "1px solid rgba(244,114,182,0.25)" : "1px solid rgba(255,255,255,0.06)",
+                            background: sel ? "rgba(244,114,182,0.15)" : "rgba(var(--fg-rgb, 255,255,255),0.04)",
+                            color: sel ? "rgba(244,114,182,0.8)" : "rgba(var(--fg-rgb, 255,255,255),0.55)",
+                            border: sel ? "1px solid rgba(244,114,182,0.25)" : "1px solid rgba(var(--fg-rgb, 255,255,255),0.06)",
                           }}>
                           {TRIMESTERS[key].label}
                         </button>
@@ -305,9 +305,9 @@ export default function ProfileSetup({ onComplete, onSkip, existingProfile }: Pr
                     <button onClick={() => setPregnancy("planuje" as Trimester)}
                       style={{
                         padding: 10, borderRadius: 12, fontSize: 11, fontWeight: 700, cursor: "pointer",
-                        background: pregnancy === "planuje" ? "rgba(244,114,182,0.15)" : "rgba(255,255,255,0.04)",
-                        color: pregnancy === "planuje" ? "rgba(244,114,182,0.8)" : "rgba(255,255,255,0.55)",
-                        border: pregnancy === "planuje" ? "1px solid rgba(244,114,182,0.25)" : "1px solid rgba(255,255,255,0.06)",
+                        background: pregnancy === "planuje" ? "rgba(244,114,182,0.15)" : "rgba(var(--fg-rgb, 255,255,255),0.04)",
+                        color: pregnancy === "planuje" ? "rgba(244,114,182,0.8)" : "rgba(var(--fg-rgb, 255,255,255),0.55)",
+                        border: pregnancy === "planuje" ? "1px solid rgba(244,114,182,0.25)" : "1px solid rgba(var(--fg-rgb, 255,255,255),0.06)",
                       }}>
                       Planuję ciążę
                     </button>
@@ -317,7 +317,7 @@ export default function ProfileSetup({ onComplete, onSkip, existingProfile }: Pr
 
               {/* Allergens */}
               <div>
-                <p style={{ fontSize: 12, fontWeight: 600, color: "rgba(255,255,255,0.5)", marginBottom: 8 }}>⚠️ Alergie</p>
+                <p style={{ fontSize: 12, fontWeight: 600, color: "rgba(var(--fg-rgb, 255,255,255),0.5)", marginBottom: 8 }}>⚠️ Alergie</p>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
                   {COMMON_ALLERGENS.map((a) => {
                     const sel = allergens.includes(a.id);
@@ -325,9 +325,9 @@ export default function ProfileSetup({ onComplete, onSkip, existingProfile }: Pr
                       <button key={a.id} onClick={() => toggleAllergen(a.id)}
                         style={{
                           padding: "6px 12px", borderRadius: 20, fontSize: 11, fontWeight: 700, cursor: "pointer", transition: "all 0.2s",
-                          background: sel ? "rgba(var(--c-red-rgb, 239,68,68),0.2)" : "rgba(255,255,255,0.04)",
-                          color: sel ? "var(--c-red, #ef4444)" : "rgba(255,255,255,0.55)",
-                          border: sel ? "1px solid rgba(var(--c-red-rgb, 239,68,68),0.3)" : "1px solid rgba(255,255,255,0.06)",
+                          background: sel ? "rgba(var(--c-red-rgb, 239,68,68),0.2)" : "rgba(var(--fg-rgb, 255,255,255),0.04)",
+                          color: sel ? "var(--c-red, #ef4444)" : "rgba(var(--fg-rgb, 255,255,255),0.55)",
+                          border: sel ? "1px solid rgba(var(--c-red-rgb, 239,68,68),0.3)" : "1px solid rgba(var(--fg-rgb, 255,255,255),0.06)",
                         }}>
                         {a.icon} {a.label}
                       </button>
@@ -338,7 +338,7 @@ export default function ProfileSetup({ onComplete, onSkip, existingProfile }: Pr
 
               {/* Schorzenia przewlekłe */}
               <div>
-                <p style={{ fontSize: 12, fontWeight: 600, color: "rgba(255,255,255,0.5)", marginBottom: 8 }}>🩺 Schorzenia przewlekłe</p>
+                <p style={{ fontSize: 12, fontWeight: 600, color: "rgba(var(--fg-rgb, 255,255,255),0.5)", marginBottom: 8 }}>🩺 Schorzenia przewlekłe</p>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
                   {CONDITIONS.map((c) => {
                     const sel = conditions.includes(c.id);
@@ -346,9 +346,9 @@ export default function ProfileSetup({ onComplete, onSkip, existingProfile }: Pr
                       <button key={c.id} onClick={() => toggleCondition(c.id)}
                         style={{
                           padding: "6px 12px", borderRadius: 20, fontSize: 11, fontWeight: 700, cursor: "pointer", transition: "all 0.2s",
-                          background: sel ? "rgba(var(--c-cyan-rgb, 34,211,238),0.18)" : "rgba(255,255,255,0.04)",
-                          color: sel ? "var(--c-cyan, #22d3ee)" : "rgba(255,255,255,0.55)",
-                          border: sel ? "1px solid rgba(var(--c-cyan-rgb, 34,211,238),0.3)" : "1px solid rgba(255,255,255,0.06)",
+                          background: sel ? "rgba(var(--c-cyan-rgb, 34,211,238),0.18)" : "rgba(var(--fg-rgb, 255,255,255),0.04)",
+                          color: sel ? "var(--c-cyan, #22d3ee)" : "rgba(var(--fg-rgb, 255,255,255),0.55)",
+                          border: sel ? "1px solid rgba(var(--c-cyan-rgb, 34,211,238),0.3)" : "1px solid rgba(var(--fg-rgb, 255,255,255),0.06)",
                         }}>
                         {c.emoji} {c.label}
                       </button>
@@ -359,7 +359,7 @@ export default function ProfileSetup({ onComplete, onSkip, existingProfile }: Pr
 
               {/* Diet */}
               <div>
-                <p style={{ fontSize: 12, fontWeight: 600, color: "rgba(255,255,255,0.5)", marginBottom: 8 }}>🥗 Dieta</p>
+                <p style={{ fontSize: 12, fontWeight: 600, color: "rgba(var(--fg-rgb, 255,255,255),0.5)", marginBottom: 8 }}>🥗 Dieta</p>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
                   {(Object.keys(DIETS) as Diet[]).map((key) => {
                     const sel = diet === key;
@@ -367,9 +367,9 @@ export default function ProfileSetup({ onComplete, onSkip, existingProfile }: Pr
                       <button key={key} onClick={() => setDiet(key)}
                         style={{
                           padding: "6px 12px", borderRadius: 20, fontSize: 11, fontWeight: 700, cursor: "pointer", transition: "all 0.2s",
-                          background: sel ? "rgba(var(--c-mint-rgb, 110,252,180),0.15)" : "rgba(255,255,255,0.04)",
-                          color: sel ? "var(--c-mint, #6efcb4)" : "rgba(255,255,255,0.55)",
-                          border: sel ? "1px solid rgba(var(--c-mint-rgb, 110,252,180),0.25)" : "1px solid rgba(255,255,255,0.06)",
+                          background: sel ? "rgba(var(--c-mint-rgb, 110,252,180),0.15)" : "rgba(var(--fg-rgb, 255,255,255),0.04)",
+                          color: sel ? "var(--c-mint, #6efcb4)" : "rgba(var(--fg-rgb, 255,255,255),0.55)",
+                          border: sel ? "1px solid rgba(var(--c-mint-rgb, 110,252,180),0.25)" : "1px solid rgba(var(--fg-rgb, 255,255,255),0.06)",
                         }}>
                         {DIETS[key].label}
                       </button>
@@ -384,7 +384,7 @@ export default function ProfileSetup({ onComplete, onSkip, existingProfile }: Pr
           <div style={{ display: "flex", gap: 12, marginTop: 32 }}>
             {step > 0 && (
               <button onClick={() => setStep(step - 1)}
-                style={{ flex: 1, padding: 14, borderRadius: 14, fontSize: 14, fontWeight: 700, cursor: "pointer", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.5)" }}>
+                style={{ flex: 1, padding: 14, borderRadius: 14, fontSize: 14, fontWeight: 700, cursor: "pointer", background: "rgba(var(--fg-rgb, 255,255,255),0.04)", border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.08)", color: "rgba(var(--fg-rgb, 255,255,255),0.5)" }}>
                 ← Wstecz
               </button>
             )}
@@ -404,7 +404,7 @@ export default function ProfileSetup({ onComplete, onSkip, existingProfile }: Pr
           {/* Skip */}
           {step === 0 && (
             <button onClick={onSkip}
-              style={{ width: "100%", marginTop: 12, padding: 8, fontSize: 12, color: "rgba(255,255,255,0.55)", fontWeight: 600, background: "none", border: "none", cursor: "pointer" }}>
+              style={{ width: "100%", marginTop: 12, padding: 8, fontSize: 12, color: "rgba(var(--fg-rgb, 255,255,255),0.55)", fontWeight: 600, background: "none", border: "none", cursor: "pointer" }}>
               Pomiń na razie
             </button>
           )}

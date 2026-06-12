@@ -432,12 +432,12 @@ export default function AgentChat({ open, onClose, isPremium }: Props) {
         <div style={{ height: 50, flexShrink: 0 }} />
 
         {/* Header */}
-        <div style={{ padding: "12px 18px 16px", borderBottom: "1px solid rgba(255,255,255,0.06)", flexShrink: 0 }}>
+        <div style={{ padding: "12px 18px 16px", borderBottom: "1px solid rgba(var(--fg-rgb, 255,255,255),0.06)", flexShrink: 0 }}>
           <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
             <ScannerLogo size={48} expert={expertMode} />
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <h2 style={{ fontSize: 18, fontWeight: 900, color: "#fff", letterSpacing: "-0.02em", margin: 0 }}>
+                <h2 style={{ fontSize: 18, fontWeight: 900, color: "var(--fg, #fff)", letterSpacing: "-0.02em", margin: 0 }}>
                   Agent AI
                 </h2>
                 {expertMode && (
@@ -446,7 +446,7 @@ export default function AgentChat({ open, onClose, isPremium }: Props) {
                   </span>
                 )}
               </div>
-              <p style={{ fontSize: 12, color: "rgba(255,255,255,0.6)", marginTop: 2, marginBottom: 0 }}>
+              <p style={{ fontSize: 12, color: "rgba(var(--fg-rgb, 255,255,255),0.6)", marginTop: 2, marginBottom: 0 }}>
                 Zna Twój profil i cele
               </p>
             </div>
@@ -455,7 +455,7 @@ export default function AgentChat({ open, onClose, isPremium }: Props) {
               aria-label="Zamknij czat"
               style={{
                 width: 32, height: 32, borderRadius: 16, border: "none",
-                background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.8)",
+                background: "rgba(var(--fg-rgb, 255,255,255),0.06)", color: "rgba(var(--fg-rgb, 255,255,255),0.8)",
                 fontSize: 18, lineHeight: 1, cursor: "pointer", flexShrink: 0,
               }}
             >
@@ -477,7 +477,7 @@ export default function AgentChat({ open, onClose, isPremium }: Props) {
             >
               <span style={{
                 width: 42, height: 24, borderRadius: 999, position: "relative", flexShrink: 0,
-                background: expertMode ? accent : "rgba(255,255,255,0.22)", transition: "background 0.2s",
+                background: expertMode ? accent : "rgba(var(--fg-rgb, 255,255,255),0.22)", transition: "background 0.2s",
               }}>
                 <span style={{
                   position: "absolute", top: 2, left: expertMode ? 20 : 2,
@@ -486,7 +486,7 @@ export default function AgentChat({ open, onClose, isPremium }: Props) {
                   transition: "left 0.2s",
                 }} />
               </span>
-              <span style={{ fontSize: 13, fontWeight: 700, color: expertMode ? accent : "rgba(255,255,255,0.85)" }}>
+              <span style={{ fontSize: 13, fontWeight: 700, color: expertMode ? accent : "rgba(var(--fg-rgb, 255,255,255),0.85)" }}>
                 Tryb ekspercki
               </span>
             </button>
@@ -495,8 +495,8 @@ export default function AgentChat({ open, onClose, isPremium }: Props) {
               onClick={() => setShowInfoTooltip((v) => !v)}
               aria-label="Co to tryb ekspercki?"
               style={{
-                width: 26, height: 26, borderRadius: 13, border: "1px solid rgba(255,255,255,0.28)",
-                background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.85)",
+                width: 26, height: 26, borderRadius: 13, border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.28)",
+                background: "rgba(var(--fg-rgb, 255,255,255),0.06)", color: "rgba(var(--fg-rgb, 255,255,255),0.85)",
                 fontSize: 13, fontWeight: 800, cursor: "pointer",
               }}
             >
@@ -523,7 +523,7 @@ export default function AgentChat({ open, onClose, isPremium }: Props) {
                   "🤕 Porady przy kontuzjach i regeneracji",
                   "💊 Analiza interakcji suplementów i leków",
                 ].map((line) => (
-                  <li key={line} style={{ fontSize: 12, color: "rgba(255,255,255,0.75)", padding: "3px 0" }}>
+                  <li key={line} style={{ fontSize: 12, color: "rgba(var(--fg-rgb, 255,255,255),0.75)", padding: "3px 0" }}>
                     {line}
                   </li>
                 ))}
@@ -544,7 +544,7 @@ export default function AgentChat({ open, onClose, isPremium }: Props) {
                     display: "inline-flex", alignItems: "center", gap: 4, padding: "3px 9px",
                     borderRadius: 999, background: `rgba(${accentRgb},0.08)`,
                     border: `1px solid rgba(${accentRgb},0.18)`,
-                    fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.8)",
+                    fontSize: 11, fontWeight: 600, color: "rgba(var(--fg-rgb, 255,255,255),0.8)",
                   }}
                 >
                   <span>{p.label}</span><span>{p.value}</span>
@@ -580,7 +580,7 @@ export default function AgentChat({ open, onClose, isPremium }: Props) {
           )}
           {messages.length === 0 && (
             <div style={{ padding: "20px 0" }}>
-              <p style={{ fontSize: 12, color: "rgba(255,255,255,0.65)", textAlign: "center", marginBottom: 16 }}>
+              <p style={{ fontSize: 12, color: "rgba(var(--fg-rgb, 255,255,255),0.65)", textAlign: "center", marginBottom: 16 }}>
                 Zapytaj o cokolwiek
               </p>
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -590,9 +590,9 @@ export default function AgentChat({ open, onClose, isPremium }: Props) {
                     onClick={() => handleSend(s)}
                     style={{
                       padding: "12px 14px", borderRadius: 12,
-                      background: "rgba(255,255,255,0.04)",
-                      border: "1px solid rgba(255,255,255,0.08)",
-                      color: "rgba(255,255,255,0.85)", fontSize: 13, textAlign: "left",
+                      background: "rgba(var(--fg-rgb, 255,255,255),0.04)",
+                      border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.08)",
+                      color: "rgba(var(--fg-rgb, 255,255,255),0.85)", fontSize: 13, textAlign: "left",
                       cursor: "pointer",
                     }}
                   >
@@ -609,9 +609,9 @@ export default function AgentChat({ open, onClose, isPremium }: Props) {
                 <div key={i} style={{ display: "flex", justifyContent: "center", margin: "8px 0" }}>
                   <span style={{
                     padding: "4px 12px", borderRadius: 999,
-                    background: "rgba(255,255,255,0.05)",
-                    border: "1px solid rgba(255,255,255,0.08)",
-                    fontSize: 11, color: "rgba(255,255,255,0.7)", fontWeight: 600,
+                    background: "rgba(var(--fg-rgb, 255,255,255),0.05)",
+                    border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.08)",
+                    fontSize: 11, color: "rgba(var(--fg-rgb, 255,255,255),0.7)", fontWeight: 600,
                   }}>
                     {m.content}
                   </span>
@@ -629,12 +629,12 @@ export default function AgentChat({ open, onClose, isPremium }: Props) {
                   borderBottomRightRadius: isUser ? 4 : 16,
                   borderBottomLeftRadius: isUser ? 16 : 4,
                   background: isUser
-                    ? "rgba(255,255,255,0.08)"
+                    ? "rgba(var(--fg-rgb, 255,255,255),0.08)"
                     : `rgba(${accentRgb},0.08)`,
                   border: isUser
-                    ? "1px solid rgba(255,255,255,0.1)"
+                    ? "1px solid rgba(var(--fg-rgb, 255,255,255),0.1)"
                     : `1px solid rgba(${accentRgb},0.18)`,
-                  fontSize: 14, lineHeight: 1.5, color: "rgba(255,255,255,0.92)",
+                  fontSize: 14, lineHeight: 1.5, color: "rgba(var(--fg-rgb, 255,255,255),0.92)",
                   whiteSpace: "pre-wrap", wordBreak: "break-word",
                   position: "relative",
                 }}>
@@ -713,7 +713,7 @@ export default function AgentChat({ open, onClose, isPremium }: Props) {
                 style={{
                   position: "absolute", top: 8, right: 8,
                   width: 26, height: 26, borderRadius: 13, border: "none",
-                  background: "rgba(0,0,0,0.25)", color: "rgba(255,255,255,0.9)",
+                  background: "rgba(0,0,0,0.25)", color: "rgba(var(--fg-rgb, 255,255,255),0.9)",
                   fontSize: 13, lineHeight: 1, cursor: "pointer",
                 }}
               >
@@ -722,10 +722,10 @@ export default function AgentChat({ open, onClose, isPremium }: Props) {
               <p style={{ fontSize: 14, fontWeight: 800, color: "var(--c-amber, #FBBF24)", margin: 0, marginBottom: 8, paddingRight: 28 }}>
                 👑 Tryb ekspercki
               </p>
-              <p style={{ fontSize: 12.5, color: "rgba(255,255,255,0.85)", margin: 0, marginBottom: 8, lineHeight: 1.55 }}>
+              <p style={{ fontSize: 12.5, color: "rgba(var(--fg-rgb, 255,255,255),0.85)", margin: 0, marginBottom: 8, lineHeight: 1.55 }}>
                 Zaawansowany AI najlepszy do: analizy badań krwi, rozpisania diety, planowania treningu, porad przy kontuzjach i regeneracji, analizy interakcji suplementów i leków.
               </p>
-              <p style={{ fontSize: 11.5, color: "rgba(255,255,255,0.65)", margin: 0, marginBottom: 12, fontWeight: 600 }}>
+              <p style={{ fontSize: 11.5, color: "rgba(var(--fg-rgb, 255,255,255),0.65)", margin: 0, marginBottom: 12, fontWeight: 600 }}>
                 ⚡ Zużywa 5x więcej z puli wiadomości
               </p>
               <button
@@ -781,7 +781,7 @@ export default function AgentChat({ open, onClose, isPremium }: Props) {
               <p style={{ fontSize: 13, fontWeight: 800, color: "var(--c-amber, #FBBF24)", margin: 0, marginBottom: 6 }}>
                 ⚡ Wykorzystałeś 5 darmowych wiadomości
               </p>
-              <p style={{ fontSize: 12, color: "rgba(255,255,255,0.75)", margin: 0, marginBottom: 12, lineHeight: 1.5 }}>
+              <p style={{ fontSize: 12, color: "rgba(var(--fg-rgb, 255,255,255),0.75)", margin: 0, marginBottom: 12, lineHeight: 1.5 }}>
                 Odblokuj Agenta AI bez limitów — plan dietetyczny, trening, analiza skanów i więcej.
               </p>
               <button
@@ -825,7 +825,7 @@ export default function AgentChat({ open, onClose, isPremium }: Props) {
             iOS' home-indicator safe area (~34px) clipped it out of view.
             Border-top visually separates input from the scrollable
             messages above. */}
-        <div style={{ padding: "10px 18px 10px", flexShrink: 0, borderTop: "1px solid rgba(255,255,255,0.04)", background: "var(--bg, #0a0e0c)" }}>
+        <div style={{ padding: "10px 18px 10px", flexShrink: 0, borderTop: "1px solid rgba(var(--fg-rgb, 255,255,255),0.04)", background: "var(--bg, #0a0e0c)" }}>
           {/* Voice-input error / permission notice */}
           {voiceError && (
             <div
@@ -897,8 +897,8 @@ export default function AgentChat({ open, onClose, isPremium }: Props) {
               style={{
                 flex: 1, resize: "none", maxHeight: 120, minHeight: 44,
                 padding: "12px 14px", borderRadius: 12,
-                background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)",
-                color: "#fff", fontSize: 14, lineHeight: 1.4, outline: "none",
+                background: "rgba(var(--fg-rgb, 255,255,255),0.05)", border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.1)",
+                color: "var(--fg, #fff)", fontSize: 14, lineHeight: 1.4, outline: "none",
                 fontFamily: "inherit",
                 opacity: freeLimitReached ? 0.5 : 1,
               }}
@@ -964,8 +964,8 @@ export default function AgentChat({ open, onClose, isPremium }: Props) {
                   width: 44, height: 44, borderRadius: 12, flexShrink: 0, border: "none",
                   background: input.trim() && !sending && !freeLimitReached
                     ? `linear-gradient(135deg, ${accent}, ${expertMode ? "var(--c-amber-2, #F59E0B)" : "var(--c-green-2, #3dd990)"})`
-                    : "rgba(255,255,255,0.06)",
-                  color: input.trim() && !sending && !freeLimitReached ? "#000" : "rgba(255,255,255,0.3)",
+                    : "rgba(var(--fg-rgb, 255,255,255),0.06)",
+                  color: input.trim() && !sending && !freeLimitReached ? "#000" : "rgba(var(--fg-rgb, 255,255,255),0.3)",
                   fontSize: 18, cursor: input.trim() && !sending && !freeLimitReached ? "pointer" : "default",
                   transition: "all 0.2s",
                 }}
@@ -987,7 +987,7 @@ export default function AgentChat({ open, onClose, isPremium }: Props) {
           }}
         >
           <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
-            <span style={{ fontSize: 11, color: "rgba(255,255,255,0.65)", fontWeight: 700 }}>
+            <span style={{ fontSize: 11, color: "rgba(var(--fg-rgb, 255,255,255),0.65)", fontWeight: 700 }}>
               {isPremium
                 ? `Wiadomości${expertMode ? " (×5 w trybie eksperckim)" : ""}`
                 : "Darmowe wiadomości"}
@@ -996,7 +996,7 @@ export default function AgentChat({ open, onClose, isPremium }: Props) {
               {usedCount} / {limit}{isPremium ? " dziś" : ""}
             </span>
           </div>
-          <div style={{ height: 4, borderRadius: 2, background: "rgba(255,255,255,0.06)", overflow: "hidden" }}>
+          <div style={{ height: 4, borderRadius: 2, background: "rgba(var(--fg-rgb, 255,255,255),0.06)", overflow: "hidden" }}>
             <div style={{ height: "100%", width: `${counterPercent}%`, background: counterColor, transition: "width 0.4s ease" }} />
           </div>
           {IS_DEMO && (

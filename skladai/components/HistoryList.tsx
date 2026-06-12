@@ -126,7 +126,7 @@ export default function HistoryList({ isCosmetics = false, mode }: HistoryListPr
           >
             <div
               className="w-[85%] max-w-xs rounded-2xl p-5"
-              style={{ background: "#1a1a1a", border: "1px solid rgba(255,255,255,0.1)" }}
+              style={{ background: "#1a1a1a", border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.1)" }}
               onClick={(e) => e.stopPropagation()}
             >
               <p className="text-sm text-white mb-4">
@@ -137,7 +137,7 @@ export default function HistoryList({ isCosmetics = false, mode }: HistoryListPr
                   type="button"
                   onClick={() => setDeleteConfirm(null)}
                   className="flex-1 py-2.5 rounded-xl text-sm font-medium"
-                  style={{ background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.7)" }}
+                  style={{ background: "rgba(var(--fg-rgb, 255,255,255),0.06)", color: "rgba(var(--fg-rgb, 255,255,255),0.7)" }}
                 >
                   Nie
                 </button>

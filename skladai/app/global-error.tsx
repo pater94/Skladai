@@ -28,7 +28,7 @@ export default function GlobalError({
           margin: 0,
           minHeight: "100vh",
           background: "var(--bg, #0a0e0c)",
-          color: "#ffffff",
+          color: "var(--fg, #ffffff)",
           fontFamily: "system-ui, -apple-system, 'Segoe UI', sans-serif",
           display: "flex",
           alignItems: "center",
@@ -42,8 +42,8 @@ export default function GlobalError({
             width: "100%",
             padding: 28,
             borderRadius: 22,
-            background: "rgba(255,255,255,0.03)",
-            border: "1px solid rgba(255,255,255,0.06)",
+            background: "rgba(var(--fg-rgb, 255,255,255),0.03)",
+            border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.06)",
             textAlign: "center",
           }}
         >
@@ -69,7 +69,7 @@ export default function GlobalError({
           <p
             style={{
               fontSize: 13,
-              color: "rgba(255,255,255,0.6)",
+              color: "rgba(var(--fg-rgb, 255,255,255),0.6)",
               lineHeight: 1.55,
               margin: 0,
               marginBottom: 22,

@@ -88,9 +88,9 @@ export default function ActivityBadges({ theme = "dark" }: ActivityBadgesProps) 
   };
 
   const isDark = theme === "dark";
-  const pillBg = isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)";
+  const pillBg = isDark ? "rgba(var(--fg-rgb, 255,255,255),0.06)" : "rgba(0,0,0,0.06)";
   const pillBorder = isDark
-    ? "1px solid rgba(255,255,255,0.1)"
+    ? "1px solid rgba(var(--fg-rgb, 255,255,255),0.1)"
     : "1px solid rgba(0,0,0,0.08)";
   const emojiOpacity = isDark ? 0.9 : 0.8;
 

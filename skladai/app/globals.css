@@ -21,7 +21,13 @@
 :root {
   /* Tła */
   --bg: #0a0e0c;            /* tło aplikacji (html/body) */
+  --bg-rgb: 10, 14, 12;     /* to samo jako rgb — do półprzezroczystych powierzchni (nav, sticky bar) */
   --bg-panel: #0a0f0d;      /* głębokie panele / nakładki */
+  /* Foreground (tekst/ramki/subtelne powierzchnie). W ciemnych motywach biały;
+     w motywie jasnym ODWRACA się na ciemny → rgba(var(--fg-rgb),x) zachowuje
+     przezroczystość a zmienia kolor (tekst, border, tinted surface naraz). */
+  --fg: #ffffff;
+  --fg-rgb: 255, 255, 255;
   /* Akcent główny (mięta) */
   --c-mint: #6efcb4;
   --c-mint-rgb: 110, 252, 180;
@@ -84,6 +90,7 @@
 /* ── LAZUR — błękit electric na chłodnej granatowej czerni (clinical premium) ── */
 body.theme-azure {
   --bg: #080e18;
+  --bg-rgb: 8, 14, 24;
   --bg-panel: #0c1422;
   --c-mint: #38bdf8;
   --c-mint-rgb: 56, 189, 248;
@@ -105,6 +112,7 @@ body.theme-azure {
 /* ── AMETYST — fiolet/magenta na ciemnej śliwce (Whoop / Oura premium) ── */
 body.theme-violet {
   --bg: #0c0a14;
+  --bg-rgb: 12, 10, 20;
   --bg-panel: #130f1f;
   --c-mint: #a78bfa;
   --c-mint-rgb: 167, 139, 250;
@@ -126,6 +134,7 @@ body.theme-violet {
 /* ── BURSZTYN — ciepłe złoto na grafitowym brązie (luksusowy members-club) ── */
 body.theme-gold {
   --bg: #100c06;
+  --bg-rgb: 16, 12, 6;
   --bg-panel: #17110a;
   --c-mint: #f5c14e;
   --c-mint-rgb: 245, 193, 78;
@@ -142,6 +151,67 @@ body.theme-gold {
   --hero-2: #4a3210;
   --hero-3: #6e4d16;
   --hero-4: #946a20;
+}
+
+/* ── ŚNIEŻNY — tryb JASNY: białe tła, ciemny tekst, przyciemniony akcent ──
+   Kluczowa różnica od ciemnych: --fg-rgb ODWRACA się na ciemny (cały biały
+   tekst/ramki/subtelne powierzchnie stają się ciemne na bieli), hero stają
+   się jasne (tekst odwraca się jednolicie), akcent + kolory semantyczne
+   przyciemnione by były czytelne na białym, a --c-ink (tekst na akcencie)
+   robi się biały. Shadowy rgba(0,0,0,x) zostają (na bieli dają elewację). */
+body.theme-light {
+  color: #14211c;
+  --bg: #f4f6f5;
+  --bg-rgb: 244, 246, 245;
+  --bg-panel: #ffffff;
+  --fg: #14211c;
+  --fg-rgb: 20, 33, 28;
+  --c-ink: #ffffff;
+  /* Akcent — przyciemniona zieleń (mięta na bieli = niewidoczna) */
+  --c-mint: #059669;
+  --c-mint-rgb: 5, 150, 105;
+  --c-green: #10b981;
+  --c-green-rgb: 16, 185, 129;
+  --c-green-2: #059669;
+  --c-emerald: #059669;
+  --c-emerald-2: #047857;
+  --c-teal: #0d9488;
+  --c-teal-rgb: 13, 148, 136;
+  --c-teal-2: #0f766e;
+  --c-cyan: #0891b2;
+  --c-cyan-rgb: 8, 145, 178;
+  --c-cyan-2: #0e7490;
+  --c-blue: #2563eb;
+  --c-blue-rgb: 37, 99, 235;
+  --c-blue-2: #3b82f6;
+  --c-blue-3: #1d4ed8;
+  --c-violet: #7c3aed;
+  --c-violet-rgb: 124, 58, 237;
+  --c-violet-2: #6d28d9;
+  --c-violet-3: #5b21b6;
+  --c-amber: #d97706;
+  --c-amber-rgb: 217, 119, 6;
+  --c-amber-2: #b45309;
+  --c-amber-3: #f59e0b;
+  --c-orange: #ea580c;
+  --c-orange-rgb: 234, 88, 12;
+  --c-orange-2: #f97316;
+  --c-orange-3: #c2410c;
+  --c-red: #dc2626;
+  --c-red-rgb: 220, 38, 38;
+  --c-red-2: #ef4444;
+  --c-red-3: #b91c1c;
+  --c-pink: #db2777;
+  --c-pink-2: #ec4899;
+  /* Hero — jasne tinty (tekst odwraca się na ciemny przez --fg) */
+  --hero-1: #ecfdf5;
+  --hero-2: #d1fae5;
+  --hero-3: #a7f3d0;
+  --hero-4: #6ee7b7;
+  --hero-meal-1: #fffbeb;
+  --hero-meal-2: #fef3c7;
+  --hero-meal-3: #fde68a;
+  --hero-meal-4: #fcd34d;
 }
 
 * {
@@ -213,6 +283,7 @@ body.onboarding-active #scroll-container {
 }
 body.theme-azure .velvet-hero { background: #0a1018; }
 body.theme-violet .velvet-hero { background: #100c1a; }
+body.theme-light .velvet-hero { background: #f3eff8; }
 body.theme-gold .velvet-hero { background: #14100a; }
 
 /* === MEAL HERO === */

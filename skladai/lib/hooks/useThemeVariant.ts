@@ -9,6 +9,7 @@
  *   "azure"   — Lazur: błękit electric na granatowej czerni.
  *   "violet"  — Ametyst: fiolet/magenta na ciemnej śliwce.
  *   "gold"    — Bursztyn: ciepłe złoto na grafitowym brązie.
+ *   "light"   — Śnieżny: tryb JASNY (białe tła, ciemny tekst).
  *
  * Mechanika: body.theme-{variant} przestawia tokeny --c-* / --bg / --hero-*
  * zdefiniowane w globals.css. Persist: nsSet (Capacitor Preferences +
@@ -19,12 +20,12 @@
 import { useEffect, useState } from "react";
 import { nsGet, nsSet } from "@/lib/native-storage";
 
-export type ThemeVariant = "classic" | "azure" | "violet" | "gold";
+export type ThemeVariant = "classic" | "azure" | "violet" | "gold" | "light";
 
-export const THEME_VARIANTS: ThemeVariant[] = ["classic", "azure", "violet", "gold"];
+export const THEME_VARIANTS: ThemeVariant[] = ["classic", "azure", "violet", "gold", "light"];
 export const THEME_VARIANT_KEY = "skladai_theme_variant";
 // Wszystkie klasy motywów (poza klasycznym, który nie ma klasy).
-const THEME_CLASSES = ["theme-azure", "theme-violet", "theme-gold"];
+const THEME_CLASSES = ["theme-azure", "theme-violet", "theme-gold", "theme-light"];
 const EVENT = "theme-variant-changed";
 
 export function applyThemeVariant(variant: ThemeVariant): void {
