@@ -106,7 +106,7 @@ export const maxDuration = 120;
 //   - claude-haiku-4-5  (OCR fallback)              — bez zmian
 // Bump PROMPT_VERSION żeby scan_logs.prompt_version umożliwiał porównanie quality
 // stare modele vs nowe na tych samych etykietach.
-const PROMPT_VERSION = "v7";
+const PROMPT_VERSION = "v8";
 
 // ==================== SCAN LOGGING (fire-and-forget) ====================
 
@@ -439,11 +439,21 @@ ZASADY KRYTYCZNE:
 
 // ==================== STEP 2: ANALYZE (with image cross-reference) ====================
 
-const FOOD_ANALYSIS = `Jesteś ekspertem od żywienia. Otrzymujesz:
-1. ODCZYTANY TEKST z etykiety (z kroku OCR)
-2. ORYGINALNE ZDJĘCIE etykiety (do weryfikacji)
+// ── ŻELAZNE ZASADY ANTYHALUCYNACYJNE (audyt 137 realnych etykiet → v8) ──
+// Wstrzykiwane do FOOD / COSMETICS / SUPLEMENT — wspólne źródło prawdy.
+// Adresuje najczęstsze błędy: halucynacje składu z częściowego kadru,
+// zgadywanie/pomijanie marki, błędna kategoria z wyglądu, brak partial_label.
+const GROUND_TRUTH_RULES = `
+🎯 CZYTAJ I OCEŃ TO CO WIDAĆ — PO PROSTU NIE DOPISUJ TEGO CZEGO NIE MA:
+Oceniasz produkt na podstawie tego co fizycznie widać. Masz czytelną listę składników → wystaw score normalnie. Reguły poniżej dotyczą TYLKO tego, by nie ZMYŚLAĆ brakujących informacji — nie są powodem do odmowy oceny gdy dane są.
+• Do listy składników wpisuj wyłącznie realne pozycje z formalnej listy "Skład/Składniki/Ingredients/INCI". NIE wnioskuj składników z tabeli wartości odżywczych, listy witamin/minerałów, marketingowego boxu "składniki aktywne" ani z opisu przepisu na opakowaniu.
+• Markę odczytaj z faktycznego nadruku/logo/adresu www — wyraźnie widoczne marki (Dove, Pantene, Old Spice, KFD, Danone) MUSISZ odczytać. ALE NIE zgaduj konkretnego wariantu produktu z profilu odżywczego/wyglądu: przy samym logo Danone bez nazwy → brand="Danone", name="Nieznany produkt" (NIGDY "prawdopodobnie Actimel"). Badge "100% Polska Firma" to NIE marka.
+• Kategorię/typ ustal z ODCZYTANEGO TEKSTU (nazwa + skład), nie z wyglądu/koloru opakowania. Przy rażąco nieprawdopodobnym makro względem nazwy (gotowe danie warzywne 550 kcal/100g) przeczytaj tabelę ponownie zamiast zmyślać profil pod domniemaną kategorię.
+`;
 
-Twoim zadaniem jest PRZEANALIZOWAĆ produkt i zwrócić JSON.
+const FOOD_ANALYSIS = `Jesteś ekspertem od żywienia. Otrzymujesz ZDJĘCIE (czasem dwa) etykiety produktu spożywczego. Odczytaj je DOKŁADNIE i przeanalizuj produkt, zwróć JSON.
+${GROUND_TRUTH_RULES}
+📊 TABELA WARTOŚCI ODŻYWCZYCH — czytaj WIERSZ PO WIERSZU od góry: dla każdego wiersza odczytaj najpierw NAZWĘ (lewa kolumna), potem wartość z TEJ SAMEJ linii — nie przesuwaj wartości między wierszami. Obowiązkowo wyodrębnij osobno: energia, tłuszcz (w tym nasycone), węglowodany (w tym cukry), BŁONNIK, białko, sól. Wiersz "Błonnik/Błonnik pokarmowy/Fibre" jest CZĘSTO pomijany — zawsze go szukaj i dodaj do nutrition jeśli obecny. Po odczycie sanity-check: błonnik i białko to RÓŻNE wiersze; sól zwykle <2 g; jeśli "białko" wyszło podejrzanie blisko wartości soli lub błonnika — przeczytaj wiersz ponownie. Tabela często pod kątem/obrócona — mentalnie wyprostuj, czytaj cyfra po cyfrze.
 
 KRYTYCZNE ZASADY:
 - Nazwa produktu = ta z ODCZYTANEGO TEKSTU, NIE wymyślaj innej. Jeśli OCR napisał "NAZWA: niewidoczna" — wpisz "Nieznany produkt", NIE zgaduj
@@ -526,7 +536,10 @@ STYL — MĄDRY KUMPEL:
 6-8: "Solidny wybór, ale ten cukier mógłby być niższy."
 4-5: "9 składników w chlebie to jak CV na 5 stron — za dużo."
 1-3: "Koktajl chemiczny. Cisowianka jest obok na półce. Serio."
-SPÓJNOŚĆ: verdict to komentarz jakościowy. NIE podawaj w nim pozycji składnika na liście ("na 2. miejscu") ani liczb, chyba że DOKŁADNIE zgadzają się z ingredients[]/nutrition[]. Jeśli chcesz wspomnieć pozycję cukru — policz ją z tablicy ingredients PRZED napisaniem. Lepiej ogólnie ("cukier wysoko na liście") niż błędnie ("na drugim miejscu").
+SPÓJNOŚĆ (KRYTYCZNE — częsty błąd): verdict, pros, cons i verdict_short MUSZĄ być zgodne z polami strukturalnymi (ingredients[], nutrition[], allergens[]) ORAZ z napisami na froncie opakowania. NIE wolno w prozie podać faktu sprzecznego z tymi polami ani nieobecnego na etykiecie.
+- Pozycję składnika cytuj DOKŁADNIE wg własnej listy ingredients[] — jeśli cukier jest 3. na liście, pisz "trzeci/wysoko", NIGDY "drugi". Policz pozycję z tablicy PRZED napisaniem.
+- NIE zaprzeczaj frontowi: jeśli na opakowaniu jest "BEZ DODATKU CUKRU" lub "30 g BIAŁKA" — verdict NIE może twierdzić "dużo cukru" / "mało białka".
+- SAMOKONTROLA przed zwrotem: przejrzyj verdict/pros/cons i sprawdź, czy żadne zdanie nie przeczy ingredients[]/nutrition[]/frontowi. Jeśli przeczy — popraw.
 
 PORÓWNANIA: Big Mac=563kcal, Snickers=488, pączek=350, jabłko=52, jajko=78. Spalanie: bieganie ~6kcal/min.
 ŁYŻECZKI: 1 łyżeczka = 4g cukru. Zawsze oblicz.
@@ -557,7 +570,8 @@ Ta aplikacja śledzi kalorie użytkowników — wymyślone wartości = realne sz
 - Wartości odżywcze = TYLKO te z tabeli WIDOCZNEJ na zdjęciu. NIE zgaduj z nazwy/marki/kategorii.
 - Tabela CZĘSTO obrócona/pod kątem — mentalnie obróć, odczytaj cyfra po cyfrze.
 - ⚠️ Czytaj tabelę WIERSZ PO WIERSZU od góry: każdą wartość przypisz do ETYKIETY w TEJ SAMEJ linii. Szczególna uwaga na sąsiadujące wiersze "Błonnik"/"Błonnik pokarmowy" i "Białko" — to RÓŻNE pola, bardzo łatwo zamienić wartości. Po odczycie sprawdź: czy każda liczba stoi na wysokości swojej etykiety? Błonnik NIE może być większy niż węglowodany.
-- Marka TYLKO z tekstu fizycznie widocznego (logo/nadruk). NIE wnioskuj marki z kategorii/profilu odżywczego. Niewidoczna → null.
+- Marka: przeskanuj CAŁĄ etykietę pod kątem logo/adresu www (np. "dove.com")/symbolu ®™ — wyraźnie widoczną markę MUSISZ odczytać. ALE NIE wnioskuj marki z kategorii/profilu odżywczego ani z wyglądu (zakaz "prawdopodobnie X"). Niewidoczna → null. Badge typu "100% Polska Firma" to NIE marka.
+- Nazwa/kategoria wynika z ODCZYTANEGO TEKSTU, nie z wyglądu opakowania. Test spójności: czy kcal pasują do odczytanej nazwy? (gotowe danie warzywno-mięsne ~70-120 kcal/100g, nie 550). Rozbieżność → label_unreadable=true zamiast zmyślać.
 - Podaj wartości NA 100g/100ml (tak jak na etykiecie).
 - WALIDACJA ATWATER: kcal ≈ 4×białko + 4×węgle + 9×tłuszcz (±20%). Jeśli się nie zgadza → błędny odczyt → "brak danych".
 - Jeśli NIE widać tabeli wartości odżywczych → label_unreadable=true, verdict_short="Brak etykiety", nutrition wszystkie "brak danych".
@@ -584,7 +598,8 @@ Odpowiedz WYŁĄCZNIE poprawnym JSON (pierwszy znak {, ostatni }, BEZ tekstu prz
 UWAGA: nutrition NA 100g (z etykiety). sugar_teaspoons = cukry/4 (1 łyżeczka = 4g). Jeśli nazwa niewidoczna → "Nieznany produkt". Marka brak → null.`;
 
 
-const COSMETICS_ANALYSIS = `Jesteś PROFESJONALNYM DERMATOLOGIEM i kosmetologiem. Otrzymujesz ODCZYTANY TEKST ze składu INCI + ZDJĘCIE do weryfikacji.
+const COSMETICS_ANALYSIS = `Jesteś PROFESJONALNYM DERMATOLOGIEM i kosmetologiem. Otrzymujesz ZDJĘCIE (czasem dwa) etykiety kosmetyku ze składem INCI. Odczytaj je DOKŁADNIE i przeanalizuj.
+${GROUND_TRUTH_RULES}
 
 !!! ABSOLUTNIE KRYTYCZNE — PRZECZYTAJ 3 RAZY ZANIM ODPOWIESZ !!!
 
@@ -611,9 +626,18 @@ PRZYKŁADY FATALNYCH BŁĘDÓW (nigdy tego nie rób!):
    - Jeśli brak nazwy w OCR: "Nieznany [typ produktu]"
 
 2. NIGDY NIE WYMYŚLAJ SKŁADNIKÓW:
-   - Komentuj TYLKO składniki które są w ODCZYTANYM TEKŚCIE OCR
-   - Nie dodawaj składników "których na pewno tam są" bo kojarzysz markę
-   - Jeśli składnik nie jest na liście OCR → nie istnieje dla Ciebie
+   - Komentuj TYLKO składniki fizycznie widoczne na liście INCI na zdjęciu
+   - Nie dodawaj składników "których na pewno tam są" bo kojarzysz markę/typ
+   - Jeśli składnika nie ma na widocznej liście INCI → nie istnieje dla Ciebie
+
+2b. INCI — ODCZYTAJ DOSŁOWNIE, ZNAK PO ZNAKU (krytyczne — częste halucynacje agresywnych składników):
+   - NIE zastępuj składnika "typowym" dla kategorii (żel myjący ≠ automatycznie siarczany). Brak SLS dosłownie na liście → NIE pisz o SLS.
+   - NIE myl podobnych nazw: Sodium Salicylate (sól/konserwant) ≠ Salicylic Acid (kwas złuszczający); Sodium Laureth Sulfate (SLES) ≠ Sodium Lauryl Sulfate (SLS); Poloxamine ≠ Cyclomethicone; PEG-7 Glyceryl Cocoate ≠ olej z oliwek. Składniki bierz z formalnej listy INCI, NIE z marketingowego boxu "składniki aktywne".
+   - Czytaj listę DO KOŃCA, łącznie z barwnikami (CI XXXXX, np. CI 42090) i konserwantami (Benzyl Alcohol, Sodium Benzoate) na końcu — nie urywaj długiej listy.
+   - ingredient_count = DOKŁADNIE liczba wymienionych przez Ciebie pozycji (bez duplikatów). Niepewny czy doczytałeś koniec → partial_label=true zamiast zaniżać.
+   - Zanim oznaczysz risk HIGH / "odradzam" przez konkretny składnik — zacytuj jego DOKŁADNĄ nazwę z etykiety; jeśli nie ma go dosłownie w INCI, NIE buduj na nim ostrzeżenia.
+
+2c. PRODUKT CHEMII GOSPODARCZEJ (nie kosmetyk) — TWARDA REGUŁA: jeśli to środek do prania / płukania / mycia naczyń / mebli / powierzchni (rozpoznaj po NAZWIE, niezależnie od tego że opakowanie przypomina kosmetyk) — NIE oceniaj jak kosmetyku. Ustaw category="Produkt chemii gospodarczej", score=null, risk_level=null, ingredients=[], verdict="Nie oceniam pod kątem pielęgnacji skóry". NIE sugeruj doskanowania INCI ani alternatyw kosmetycznych.
 
 3. KLASYFIKACJA — bądź precyzyjny (bazuj na OCR + składnikach):
    - Sodium Fluoride + "ppm F" → PASTA DO ZĘBÓW (nie żel pod prysznic!)
@@ -1319,7 +1343,11 @@ function parseJsonResponse(text: string) {
 // If macros are physically impossible OR fail the Atwater self-check
 // (kcal ≈ 4P + 4C + 9F ±25%), we treat the AI response as a hallucination,
 // blank out the nutrition fields, and mark the result as "Brak etykiety".
-function validateNutrition(result: Record<string, unknown>): void {
+// forceUnreadableOnInvalid: gdy true (skan MAKRO, lub skład BEZ listy składników)
+// — błędna tabela = cały skan nieczytelny (tabela jest jedyną podstawą oceny).
+// Gdy false (skan SKŁADU z czytelną listą składników) — tylko WYCZYŚĆ błędną
+// tabelę ("brak danych"), ale ZACHOWAJ ocenę (opiera się na składzie, nie tabeli).
+function validateNutrition(result: Record<string, unknown>, forceUnreadableOnInvalid: boolean = true): void {
   if (!result.nutrition || !Array.isArray(result.nutrition)) return;
 
   const nutr = result.nutrition as Array<{ label: string; value: string }>;
@@ -1386,12 +1414,16 @@ function validateNutrition(result: Record<string, unknown>): void {
     // Blank out the nutrition fields rather than show fabricated data
     const blanked = nutr.map(n => ({ ...n, value: "brak danych" }));
     (result as Record<string, unknown>).nutrition = blanked;
-    // Force the result into "no label" state so the UI surfaces an honest message
-    (result as Record<string, unknown>).verdict_short = "Brak etykiety";
-    (result as Record<string, unknown>).verdict =
-      "Nie udało się odczytać tabeli wartości odżywczych z tego zdjęcia. Zrób ostrzejsze zdjęcie tabeli na opakowaniu — najlepiej prosto, bez zagięć i odbić światła.";
-    (result as Record<string, unknown>).score = null;
-    (result as Record<string, unknown>).label_unreadable = true;
+    if (forceUnreadableOnInvalid) {
+      // Tryb makro / brak składu: tabela to jedyna podstawa → cały skan nieczytelny.
+      (result as Record<string, unknown>).verdict_short = "Brak etykiety";
+      (result as Record<string, unknown>).verdict =
+        "Nie udało się odczytać tabeli wartości odżywczych z tego zdjęcia. Zrób ostrzejsze zdjęcie tabeli na opakowaniu — najlepiej prosto, bez zagięć i odbić światła.";
+      (result as Record<string, unknown>).score = null;
+      (result as Record<string, unknown>).label_unreadable = true;
+    }
+    // else (skan składu z listą składników): tabela wyczyszczona, ale ocena
+    // składu zostaje — score liczony niżej na podstawie ingredients[].
   }
 }
 
@@ -1820,6 +1852,12 @@ Odpowiedz WYŁĄCZNIE poprawnym JSON (bez markdown, bez komentarzy):
     // === SUPLEMENT MODE: OCR → Analysis ===
     if (mode === "suplement") {
       const supplementAnalysisPrompt = `Jesteś ekspertem od suplementów diety. Przeanalizuj etykietę suplementu i oceń jego wartość.
+${GROUND_TRUTH_RULES}
+💊 KOLUMNY DAWEK (krytyczne — najczęstszy błąd suplementów): tabela często ma KILKA kolumn (na 100 g / na porcję / %NRV). NAJPIERW znajdź nagłówek kolumny. Dawkę i %NRV raportuj WYŁĄCZNIE z kolumny opisanej jako "na porcję / na dawkę dzienną / per serving" — NIGDY nie przepisuj %NRV z kolumny /100g jako wartości na porcję (to powoduje fałszywe "przedawkowania", np. B12 1200% zamiast 15%). Jeśli nie widać jednoznacznie która kolumna to porcja → oznacz dawkę jako nieczytelną zamiast zgadywać. Zanim ostrzeżesz o przedawkowaniu witaminy/minerału, sprawdź że %NRV pochodzi z kolumny na porcję dzienną.
+
+🥛 ALERGENY + WEGAŃSKOŚĆ: zbieraj alergeny z DWÓCH miejsc: (1) wyróżnione/pogrubione składniki, (2) osobna linia "Może zawierać / May contain / śladowe ilości". Pozycje z "może zawierać" raportuj jako alergeny warunkowe (cross-contamination). is_vegan=true TYLKO gdy NIE ma żadnego składnika ani ostrzeżenia odzwierzęcego — jeśli widnieje "może zawierać pochodne mleka/jaja/ryby" → is_vegan=false i dodaj alergen. NIE dodawaj alergenów których nie ma na etykiecie (nie wnioskuj skorupiaków z glukozaminy).
+
+📋 PEŁNY SKŁAD: wylistuj CAŁY skład, nie tylko substancję aktywną — uwzględnij słodziki (sukraloza, glikozydy stewiolowe), aromaty, regulatory kwasowości, gumy, barwniki. NIE pisz "czysty / bez dodatków / bez aromatów", dopóki nie potwierdzisz że skład ich nie zawiera.
 
 OPAKOWANIA OKRĄGŁE (słoiki z kapsułkami, butelki z syropem, tubki):
 Etykiety na cylindrycznych opakowaniach suplementów zawijają się dookoła. Typowo widać tylko ~40% etykiety; kluczowa tabela składu z dawkami (mg, IU, %NRV) bywa po drugiej stronie.
@@ -2101,7 +2139,17 @@ Użytkownicy ufają Twojej ocenie składu kosmetyku.
       // Validate nutrition FIRST so the macro-rejection path can set
       // label_unreadable / score=null without being overwritten by the
       // generic normalization below. (Atwater + sanity checks)
-      if (!isCosmetics) validateNutrition(result);
+      // Skan SKŁADU z czytelną listą składników (≥3) → ocena opiera się na
+      // składzie, więc błędna/obrócona tabela wartości NIE może unieważnić skanu.
+      const hasUsableIngredients = !isCosmetics && Array.isArray(result.ingredients) && (result.ingredients as unknown[]).length >= 3;
+      if (!isCosmetics) validateNutrition(result, /* forceUnreadableOnInvalid */ isMacro || !hasUsableIngredients);
+
+      // Backstop: gdy mamy realny skład (≥3 składniki), a model mimo to ustawił
+      // label_unreadable=true (nadmierna ostrożność przy obróconej/niepełnej
+      // tabeli) — przywróć ocenę składu zamiast pokazywać "nieczytelne".
+      if (hasUsableIngredients && !isMacro && result.label_unreadable === true) {
+        result.label_unreadable = false;
+      }
 
       // Validation / normalization
       if (!result.name || result.name.length < 2) result.name = "Nieznany produkt";
