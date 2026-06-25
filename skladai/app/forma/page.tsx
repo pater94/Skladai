@@ -25,6 +25,9 @@ const ProgressChart = dynamic(() => import("@/components/ProgressChart"), { ssr:
 import { addToHistory, updateStreak, removeHistoryItem, getProfile as getStorageProfile } from "@/lib/storage";
 import { isNative, takePhotoForMode } from "@/lib/native-camera";
 import type { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
+import WorkoutJournalList from "@/components/forma/WorkoutJournalList";
+import ActiveWorkout from "@/components/forma/ActiveWorkout";
+import ExerciseHistory from "@/components/forma/ExerciseHistory";
 
 // ──────────────────────────────────────────
 // Types
@@ -67,7 +70,10 @@ type View =
   | "measurements"
   | "photos"
   | "strength-card"
-  | "checkform";
+  | "checkform"
+  | "journal"            // Dziennik treningowy — lista treningów (Faza 2)
+  | "workout"            // aktywny trening — logowanie serii (Faza 3)
+  | "exercise-history";  // historia ćwiczenia + wykres (Faza 4)
 
 // ──────────────────────────────────────────
 // Constants
@@ -344,6 +350,14 @@ export default function FormaPage() {
   const [view, setView] = useState<View>("main");
   const [autoOpenGallery, setAutoOpenGallery] = useState(false);
   const [autoOpenCamera, setAutoOpenCamera] = useState(false);
+  // Dziennik treningowy — parametry nawigacji między ekranami (Fazy 2-4).
+  const [jWorkoutId, setJWorkoutId] = useState<string | null>(null);
+  const [jSessionId, setJSessionId] = useState<string | null>(null);
+  const [jExerciseId, setJExerciseId] = useState<string | null>(null);
+  // openWorkout: wejście w aktywny trening (z listy / nowy). openExerciseHistory: wykres ćwiczenia.
+  const openJournal = () => { setView("journal"); };
+  const openWorkout = (sessionId: string, workoutId: string) => { setJSessionId(sessionId); setJWorkoutId(workoutId); setView("workout"); };
+  const openExerciseHistory = (exerciseId: string) => { setJExerciseId(exerciseId); setView("exercise-history"); };
   const [profile, setProfileState] = useState<ReturnType<typeof getProfile>>(null);
   const [records, setRecords] = useState<StrengthRecord[]>([]);
 
@@ -472,6 +486,20 @@ export default function FormaPage() {
         )}
         {view === "checkform" && (
           <CheckFormView goBack={goBack} router={router} autoOpenGallery={autoOpenGallery} autoOpenCamera={autoOpenCamera} />
+        )}
+        {view === "journal" && (
+          <WorkoutJournalList goBack={goBack} openWorkout={openWorkout} />
+        )}
+        {view === "workout" && jSessionId && jWorkoutId && (
+          <ActiveWorkout
+            goBack={() => setView("journal")}
+            sessionId={jSessionId}
+            workoutId={jWorkoutId}
+            openExerciseHistory={openExerciseHistory}
+          />
+        )}
+        {view === "exercise-history" && jExerciseId && (
+          <ExerciseHistory goBack={() => setView(jSessionId ? "workout" : "journal")} exerciseId={jExerciseId} />
         )}
       </div>
 
@@ -884,6 +912,33 @@ function MainView({
           />
         </div>
       )}
+
+      {/* Dziennik treningowy — główny punkt wejścia (nad NARZĘDZIA) */}
+      <button
+        onClick={() => setView("journal")}
+        data-testid="forma-open-journal"
+        className="w-full text-left active:scale-[0.98] transition-transform"
+        style={{
+          display: "flex", alignItems: "center", gap: 14,
+          padding: "16px 18px", borderRadius: 18, marginBottom: 20, cursor: "pointer",
+          background: "linear-gradient(135deg, rgba(var(--c-orange-rgb, 249,115,22),0.16), rgba(var(--c-orange-rgb, 249,115,22),0.04))",
+          border: "1px solid rgba(var(--c-orange-rgb, 249,115,22),0.35)",
+          boxShadow: "0 6px 22px rgba(var(--c-orange-rgb, 249,115,22),0.14)",
+          animation: "fadeInUp 0.4s ease both", animationDelay: "0.18s",
+        }}
+      >
+        <div style={{
+          width: 46, height: 46, borderRadius: 14, flexShrink: 0,
+          display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24,
+          background: "linear-gradient(135deg, var(--c-orange, #f97316), var(--c-orange-3, #ea580c))",
+          boxShadow: "0 4px 14px rgba(var(--c-orange-rgb, 249,115,22),0.35)",
+        }}>{"📓"}</div>
+        <div style={{ minWidth: 0, flex: 1 }}>
+          <div style={{ fontSize: 16, fontWeight: 800, color: "var(--fg, #fff)" }}>Dziennik treningowy</div>
+          <div style={{ fontSize: 12, color: "rgba(var(--fg-rgb, 255,255,255),0.55)", marginTop: 2 }}>Loguj serie, śledź progres i rekordy</div>
+        </div>
+        <span style={{ color: "var(--c-orange, #f97316)", fontSize: 22, flexShrink: 0 }}>›</span>
+      </button>
 
       {/* Separator */}
       <div className="flex items-center gap-3 mb-4" style={{ animation: "fadeInUp 0.4s ease both", animationDelay: "0.25s" }}>
