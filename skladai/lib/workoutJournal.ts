@@ -161,6 +161,12 @@ export async function getWorkoutWithExercises(workoutId: string): Promise<WnWork
 // ──────────────────────────────────────────────────────────────────
 // Ćwiczenia (exercises)
 // ──────────────────────────────────────────────────────────────────
+export async function getExercise(exerciseId: string): Promise<WnExercise | null> {
+  const supabase = createClient();
+  const { data } = await supabase.from("wn_exercises").select("*").eq("id", exerciseId).single();
+  return (data as WnExercise) ?? null;
+}
+
 /** Znajdź ćwiczenie po nazwie (case-insensitive) lub utwórz nowe. */
 export async function findOrCreateExercise(name: string, kind: WnKind = "weighted"): Promise<WnExercise | null> {
   const supabase = createClient();
