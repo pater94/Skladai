@@ -15,10 +15,13 @@ import {
   Lock,
   Trophy,
   Dumbbell,
+  Image as ImageIcon,
+  PersonStanding,
+  Sparkles,
+  Flame,
 } from "lucide-react";
 import BottomNav from "@/components/BottomNav";
 import Scanner from "@/components/Scanner";
-import ActivityBadges from "@/components/ActivityBadges";
 import dynamic from "next/dynamic";
 
 const ProgressChart = dynamic(() => import("@/components/ProgressChart"), { ssr: false });
@@ -678,11 +681,10 @@ function MainView({
               <span style={{ color: "var(--c-orange, #f97316)" }}>Forma</span>
             </h1>
             <p style={{ color: "rgba(var(--fg-rgb, 255,255,255),0.55)", fontSize: "13px", marginTop: "2px" }}>
-              Śledź siłę, pomiary i progres
+              · siła, pomiary, progres
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <ActivityBadges theme="dark" />
             <button
               onClick={() => onTimerOpen?.()}
               className="flex items-center justify-center transition-all active:scale-95"
@@ -725,45 +727,133 @@ function MainView({
           <div className="absolute pointer-events-none" style={{ bottom: -10, left: -10, width: 45, height: 45, borderRadius: "50%", background: "rgba(var(--c-orange-rgb, 249,115,22),0.04)" }} />
 
           {/* Content */}
-          <div className="flex flex-col items-center text-center relative z-10">
-            <div className="flex items-center justify-center mb-3" style={{
-              width: 52, height: 52, borderRadius: "16px",
-              background: "linear-gradient(135deg, var(--c-orange, #f97316), var(--c-orange-3, #ea580c))",
-              boxShadow: "0 4px 20px rgba(var(--c-orange-rgb, 249,115,22),0.3)",
-              fontSize: "26px",
-            }}>{"📸"}</div>
-            <h2 style={{ fontSize: "20px", fontWeight: 800, color: "var(--fg, #fff)" }}>CheckForm</h2>
-            <p style={{ fontSize: "12px", color: "rgba(var(--fg-rgb, 255,255,255),0.4)", marginTop: "4px", marginBottom: "16px" }}>
-              AI przeanalizuje Twoją sylwetkę
+          <div className="relative z-10">
+            <style>{`
+              @keyframes cfScan { 0% { top: 12%; opacity: .45 } 50% { opacity: 1 } 100% { top: 84%; opacity: .45 } }
+              .cf-scanbar { animation: cfScan 2.6s ease-in-out infinite alternate; }
+              @media (prefers-reduced-motion: reduce) { .cf-scanbar { animation: none; top: 48% } }
+            `}</style>
+
+            {/* Eyebrow */}
+            <div style={{ textAlign: "center", fontSize: "10px", fontWeight: 700, letterSpacing: "2px", color: "var(--c-orange, #f97316)", textTransform: "uppercase", marginBottom: "14px" }}>
+              {"✦"} CHECKFORM · AI VISION
+            </div>
+
+            {/* BodyScan — sylwetka + animowana linia skanu + odczyty */}
+            <div style={{ position: "relative", width: "100%", maxWidth: 240, margin: "0 auto 18px" }}>
+              <svg viewBox="0 0 230 190" width="100%" style={{ display: "block", overflow: "visible" }} aria-hidden="true">
+                <defs>
+                  <linearGradient id="bodyG" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="var(--c-orange, #f97316)" stopOpacity="0.55" />
+                    <stop offset="100%" stopColor="var(--c-orange-3, #ea580c)" stopOpacity="0.18" />
+                  </linearGradient>
+                  <radialGradient id="bgGlow" cx="50%" cy="42%" r="55%">
+                    <stop offset="0%" stopColor="var(--c-orange, #f97316)" stopOpacity="0.18" />
+                    <stop offset="100%" stopColor="var(--c-orange, #f97316)" stopOpacity="0" />
+                  </radialGradient>
+                </defs>
+                <ellipse cx="115" cy="92" rx="84" ry="86" fill="url(#bgGlow)" />
+                {/* sylwetka */}
+                <circle cx="115" cy="32" r="12" fill="url(#bodyG)" stroke="var(--c-orange, #f97316)" strokeOpacity="0.5" strokeWidth="1" />
+                <path d="M115 43 C 121 43 124 47 128 51 C 139 55 150 62 154 74 C 156 81 150 85 144 83 C 139 81 136 76 134 70 C 133 82 132 95 131 106 C 138 110 139 116 139 124 C 139 140 137 158 135 173 L 124 173 C 124 160 123 146 121 136 C 119 132 117 132 115 132 C 113 132 111 132 109 136 C 107 146 106 160 106 173 L 95 173 C 93 158 91 140 91 124 C 91 116 92 110 99 106 C 98 95 97 82 96 70 C 94 76 91 81 86 83 C 80 85 74 81 76 74 C 80 62 91 55 102 51 C 106 47 109 43 115 43 Z" fill="url(#bodyG)" stroke="var(--c-orange, #f97316)" strokeOpacity="0.5" strokeWidth="1" />
+                {/* linie definicji mięśni */}
+                <g stroke="var(--c-orange, #f97316)" strokeOpacity="0.35" strokeWidth="1" fill="none" strokeLinecap="round">
+                  <path d="M115 54 L115 116" />
+                  <path d="M101 66 Q115 74 129 66" />
+                  <path d="M104 88 L126 88 M105 98 L125 98 M106 108 L124 108" />
+                </g>
+                {/* narożniki skanu */}
+                <g stroke="var(--c-orange, #f97316)" strokeWidth="2.4" fill="none" strokeLinecap="round">
+                  <path d="M64 26 L64 18 L72 18" /><path d="M166 18 L174 18 L174 26" />
+                  <path d="M64 174 L64 182 L72 182" /><path d="M166 182 L174 182 L174 174" />
+                </g>
+                {/* liderzy + węzły */}
+                <g>
+                  <circle cx="133" cy="74" r="3" fill="var(--c-orange, #f97316)" />
+                  <path d="M133 74 L176 58" stroke="var(--c-orange, #f97316)" strokeOpacity="0.6" strokeWidth="1" fill="none" />
+                  <circle cx="97" cy="110" r="3" fill="var(--c-orange, #f97316)" />
+                  <path d="M97 110 L54 126" stroke="var(--c-orange, #f97316)" strokeOpacity="0.6" strokeWidth="1" fill="none" />
+                </g>
+              </svg>
+              {/* animowana linia skanu */}
+              <div className="cf-scanbar" style={{ position: "absolute", left: "16%", right: "16%", top: "12%", height: 2, borderRadius: 2, background: "linear-gradient(90deg, transparent, var(--c-orange, #f97316), transparent)", boxShadow: "0 0 14px 2px rgba(var(--c-orange-rgb, 249,115,22),0.5)" }} />
+              {/* pigułki odczytów */}
+              <div style={{ position: "absolute", top: "14%", right: "-4%", display: "flex", alignItems: "center", gap: 4, padding: "4px 9px", borderRadius: 99, fontSize: "11px", fontWeight: 700, color: "var(--fg, #fff)", background: "rgba(var(--bg-rgb, 10,14,12),0.7)", border: "1px solid rgba(var(--c-orange-rgb, 249,115,22),0.4)", backdropFilter: "blur(4px)", whiteSpace: "nowrap" }}>💪 Mięśnie: ~38&nbsp;kg</div>
+              <div style={{ position: "absolute", top: "56%", left: "-4%", display: "flex", alignItems: "center", gap: 4, padding: "4px 9px", borderRadius: 99, fontSize: "11px", fontWeight: 700, color: "var(--fg, #fff)", background: "rgba(var(--bg-rgb, 10,14,12),0.7)", border: "1px solid rgba(var(--c-orange-rgb, 249,115,22),0.4)", backdropFilter: "blur(4px)", whiteSpace: "nowrap" }}>🔥 Tłuszcz: ~14%</div>
+            </div>
+
+            {/* Tytuł + podtekst */}
+            <h2 style={{ textAlign: "center", fontSize: "21px", fontWeight: 800, color: "var(--fg, #fff)", letterSpacing: "-0.01em" }}>Zrób zdjęcie w lustrze</h2>
+            <p style={{ textAlign: "center", fontSize: "12.5px", lineHeight: 1.5, color: "rgba(var(--fg-rgb, 255,255,255),0.55)", margin: "8px 2px 18px" }}>
+              AI oszacuje Twój poziom <strong style={{ color: "var(--fg, #fff)" }}>tkanki tłuszczowej</strong> i <strong style={{ color: "var(--fg, #fff)" }}>masy mięśniowej</strong>, a do tego da wynik <strong style={{ color: "var(--fg, #fff)" }}>0–10</strong> z wskazówkami.
             </p>
+
+            {/* CTA główne */}
             <button
               onClick={() => { if (onCameraCheckForm) onCameraCheckForm(); else setView("checkform"); }}
-              className="w-full py-3.5 rounded-2xl font-bold text-white transition-all active:scale-[0.97]"
+              className="w-full transition-all active:scale-[0.97]"
               style={{
+                display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+                padding: "14px", borderRadius: "16px", border: "none", color: "#fff", fontWeight: 800, fontSize: "15.5px",
                 background: "linear-gradient(135deg, var(--c-orange, #f97316), var(--c-orange-3, #ea580c))",
-                fontSize: "15px",
-                boxShadow: "0 4px 24px rgba(var(--c-orange-rgb, 249,115,22),0.4)",
+                boxShadow: "0 6px 24px rgba(var(--c-orange-rgb, 249,115,22),0.4)", cursor: "pointer",
               }}
             >
-              {"🎯"} Rozpocznij analizę
+              <Camera size={19} /> Zrób zdjęcie
             </button>
-            <div className="flex items-center justify-center gap-4 mt-3">
-              <span style={{
-                fontSize: "10px",
-                color: "rgba(var(--fg-rgb, 255,255,255),0.5)",
-                textTransform: "uppercase",
-                letterSpacing: "1.5px",
-                fontWeight: 600,
-              }}>{"✦"} AI VISION</span>
-              <button
-                onClick={() => setShowDatePicker(true)}
-                className="transition-all active:scale-95"
-                style={{ fontSize: "12px", color: "var(--c-orange, #f97316)", fontWeight: 600 }}
-              >
-                z galerii
-              </button>
-            </div>
+
+            {/* link galeria */}
+            <button
+              onClick={() => setShowDatePicker(true)}
+              className="w-full active:scale-95 transition-transform"
+              style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, marginTop: 12, background: "none", border: "none", color: "rgba(var(--fg-rgb, 255,255,255),0.5)", fontSize: "13px", fontWeight: 600, cursor: "pointer" }}
+            >
+              <ImageIcon size={15} /> lub wybierz z galerii
+            </button>
           </div>
+        </div>
+      </div>
+
+      {/* CO OSZACUJE AI */}
+      <div style={{ marginBottom: 22, animation: "fadeInUp 0.5s ease both", animationDelay: "0.08s" }}>
+        <div style={{ fontSize: "10px", fontWeight: 800, letterSpacing: "2px", textTransform: "uppercase" as const, color: "rgba(var(--fg-rgb, 255,255,255),0.4)", marginBottom: 12 }}>CO OSZACUJE AI</div>
+        <div style={{ display: "flex", gap: 10 }}>
+          {([
+            { Icon: Flame, title: "Tkanka tłuszczowa", ex: "np. ~14%" },
+            { Icon: Dumbbell, title: "Masa mięśniowa", ex: "np. ~38 kg" },
+          ]).map((c, i) => (
+            <div key={i} style={{ flex: 1, padding: "14px 12px", borderRadius: 16, background: "linear-gradient(145deg, rgba(var(--c-orange-rgb, 249,115,22),0.08), rgba(var(--c-orange-rgb, 249,115,22),0.02))", border: "1px solid rgba(var(--c-orange-rgb, 249,115,22),0.25)" }}>
+              <div style={{ width: 38, height: 38, borderRadius: 11, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(var(--c-orange-rgb, 249,115,22),0.14)", marginBottom: 10 }}>
+                <c.Icon size={20} style={{ color: "var(--c-orange, #f97316)" }} />
+              </div>
+              <div style={{ fontSize: "13.5px", fontWeight: 800, color: "var(--fg, #fff)" }}>{c.title}</div>
+              <div style={{ fontSize: "11.5px", color: "rgba(var(--fg-rgb, 255,255,255),0.45)", marginTop: 3 }}>{c.ex}</div>
+            </div>
+          ))}
+        </div>
+        <p style={{ fontSize: "10.5px", color: "rgba(var(--fg-rgb, 255,255,255),0.35)", marginTop: 10, textAlign: "center" }}>
+          Wartości szacunkowe na podstawie zdjęcia — to nie pomiar medyczny.
+        </p>
+      </div>
+
+      {/* JAK TO DZIAŁA */}
+      <div style={{ marginBottom: 24, animation: "fadeInUp 0.5s ease both", animationDelay: "0.12s" }}>
+        <div style={{ fontSize: "10px", fontWeight: 800, letterSpacing: "2px", textTransform: "uppercase" as const, color: "rgba(var(--fg-rgb, 255,255,255),0.4)", marginBottom: 14 }}>JAK TO DZIAŁA</div>
+        <div style={{ display: "flex", gap: 8 }}>
+          {([
+            { n: 1, Icon: PersonStanding, t: "Stań przed lustrem", s: "całą sylwetką" },
+            { n: 2, Icon: Camera, t: "Zrób zdjęcie", s: "telefonem w lustrze" },
+            { n: 3, Icon: Sparkles, t: "Odbierz analizę", s: "skład ciała + wynik" },
+          ]).map((step) => (
+            <div key={step.n} style={{ flex: 1, textAlign: "center" }}>
+              <div style={{ position: "relative", width: 44, height: 44, margin: "0 auto 8px", borderRadius: 13, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(var(--fg-rgb, 255,255,255),0.04)", border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.08)" }}>
+                <step.Icon size={20} style={{ color: "var(--c-orange, #f97316)" }} />
+                <span style={{ position: "absolute", top: -6, right: -6, width: 18, height: 18, borderRadius: "50%", background: "var(--c-orange, #f97316)", color: "#fff", fontSize: "10px", fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center" }}>{step.n}</span>
+              </div>
+              <div style={{ fontSize: "12px", fontWeight: 700, color: "var(--fg, #fff)" }}>{step.t}</div>
+              <div style={{ fontSize: "10.5px", color: "rgba(var(--fg-rgb, 255,255,255),0.4)", marginTop: 2 }}>{step.s}</div>
+            </div>
+          ))}
         </div>
       </div>
 
