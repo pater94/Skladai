@@ -135,6 +135,17 @@ export default function ActiveWorkout({
     void saveActiveDraft({ sessionId, workoutId, sets: flat, updatedAt: new Date().toISOString() });
   }, [sessionId, workoutId]);
 
+  // Które serie są zapisane (✓). Klucz = exId:setIndex.
+  const [savedKeys, setSavedKeys] = useState<Set<string>>(new Set());
+
+  // Zapis serii do Supabase + oznaczenie jako zapisana (✓). Offline → upsertSet
+  // kolejkuje, ale oznaczamy zapisaną bo draft + kolejka gwarantują trwałość.
+  const saveSet = useCallback((exId: string, setIndex: number, w: number | null, r: number | null, d: number | null) => {
+    if (w == null && r == null && d == null) return;
+    void upsertSet({ sessionId, exerciseId: exId, setIndex, weightKg: w, reps: r, durationSec: d });
+    setSavedKeys((prev) => { const n = new Set(prev); n.add(`${exId}:${setIndex}`); return n; });
+  }, [sessionId]);
+
   const updateField = (exId: string, setIndex: number, field: "weight" | "reps" | "duration", value: string) => {
     setSetsBy((prev) => {
       const list = (prev[exId] ?? []).map((s) => s.setIndex === setIndex ? { ...s, [field]: value } : s);
@@ -142,15 +153,15 @@ export default function ActiveWorkout({
       persistDraft(next);
       return next;
     });
+    // edycja → seria "brudna" (do ponownego zapisu)
+    setSavedKeys((prev) => { const k = `${exId}:${setIndex}`; if (!prev.has(k)) return prev; const n = new Set(prev); n.delete(k); return n; });
   };
 
-  // zapis serii do Supabase (na blur)
+  // zapis serii (na blur pola lub klik znacznika „zapisz")
   const commitSet = (exId: string, setIndex: number) => {
     const s = (setsBy[exId] ?? []).find((x) => x.setIndex === setIndex);
     if (!s) return;
-    const w = num(s.weight), r = num(s.reps), d = num(s.duration);
-    if (w == null && r == null && d == null) return; // pusta seria — nie zapisuj
-    void upsertSet({ sessionId, exerciseId: exId, setIndex, weightKg: w, reps: r, durationSec: d });
+    saveSet(exId, setIndex, num(s.weight), num(s.reps), num(s.duration));
   };
 
   const addSet = (exId: string) => {
@@ -161,6 +172,18 @@ export default function ActiveWorkout({
       persistDraft(next);
       return next;
     });
+  };
+
+  // „Taka sama" — duplikuje ostatnią WYPEŁNIONĄ serię + od razu zapisuje (1 klik).
+  const addSameSet = (exId: string) => {
+    const list = setsBy[exId] ?? [];
+    const src = [...list].reverse().find((s) => num(s.weight) != null || num(s.reps) != null || num(s.duration) != null) ?? list[list.length - 1];
+    const nextIndex = list.length ? Math.max(...list.map((s) => s.setIndex)) + 1 : 0;
+    const ns: EditableSet = { setIndex: nextIndex, weight: src?.weight ?? "", reps: src?.reps ?? "", duration: src?.duration ?? "" };
+    const next = { ...setsBy, [exId]: [...list, ns] };
+    setSetsBy(next);
+    persistDraft(next);
+    saveSet(exId, nextIndex, num(ns.weight), num(ns.reps), num(ns.duration));
   };
 
   const handleAddExercise = async () => {
@@ -248,7 +271,8 @@ export default function ActiveWorkout({
               ex={ex} kind={kind} byReps={byReps}
               list={list} ghost={ghostBy[ex.id]} record={record} weekDelta={week}
               sinceStart={prog?.sinceStartDelta ?? null} history={histBy[ex.id] ?? []} liveTop={liveTop}
-              onField={updateField} onCommit={commitSet} onAddSet={addSet}
+              onField={updateField} onCommit={commitSet} onAddSet={addSet} onSame={addSameSet}
+              saved={savedKeys}
               onOpenHistory={() => openExerciseHistory(ex.id)}
             />
           );
@@ -286,7 +310,7 @@ export default function ActiveWorkout({
 // ── Karta pojedynczego ćwiczenia ──
 function ExerciseCard({
   ex, kind, byReps, list, ghost, record, weekDelta, sinceStart, history, liveTop,
-  onField, onCommit, onAddSet, onOpenHistory,
+  onField, onCommit, onAddSet, onSame, saved, onOpenHistory,
 }: {
   ex: WnExercise; kind: WnKind; byReps: boolean;
   list: EditableSet[]; ghost?: string; record: number | null; weekDelta: number | null;
@@ -294,8 +318,11 @@ function ExerciseCard({
   onField: (exId: string, setIndex: number, field: "weight" | "reps" | "duration", v: string) => void;
   onCommit: (exId: string, setIndex: number) => void;
   onAddSet: (exId: string) => void;
+  onSame: (exId: string) => void;
+  saved: Set<string>;
   onOpenHistory: () => void;
 }) {
+  const anyFilled = list.some((s) => num(s.weight) != null || num(s.reps) != null || num(s.duration) != null);
   const showWeight = kind === "weighted" || kind === "weighted_bw";
   const showReps = kind !== "duration";
   const showDuration = kind === "duration";
@@ -342,15 +369,55 @@ function ExerciseCard({
                   onBlur={() => onCommit(ex.id, s.setIndex)}
                   style={{ ...fieldStyle, flex: 2 }} />
               )}
-              <span style={{ width: 22, textAlign: "center", fontSize: 14 }}>{isPR ? "🏆" : ""}</span>
+              {(() => {
+                const hasVal = num(s.weight) != null || num(s.reps) != null || num(s.duration) != null;
+                const isSaved = saved.has(`${ex.id}:${s.setIndex}`);
+                return (
+                  <button
+                    onClick={() => onCommit(ex.id, s.setIndex)}
+                    disabled={!hasVal}
+                    aria-label={isSaved ? "Zapisano" : "Zapisz serię"}
+                    title={isSaved ? "Zapisano" : "Zapisz"}
+                    style={{
+                      width: 32, height: 32, flexShrink: 0, borderRadius: 9, display: "flex", alignItems: "center", justifyContent: "center",
+                      cursor: hasVal ? "pointer" : "default",
+                      background: !hasVal ? "transparent" : isSaved ? "rgba(95,211,154,0.16)" : "rgba(var(--fg-rgb, 255,255,255),0.06)",
+                      border: !hasVal ? "1px solid rgba(var(--fg-rgb, 255,255,255),0.06)" : isSaved ? "1px solid rgba(95,211,154,0.4)" : "1px solid rgba(var(--fg-rgb, 255,255,255),0.14)",
+                      color: isSaved ? GREEN : "rgba(var(--fg-rgb, 255,255,255),0.45)", fontSize: 14, fontWeight: 800,
+                    }}
+                  >
+                    {isPR ? "🏆" : "✓"}
+                  </button>
+                );
+              })()}
             </div>
           );
         })}
       </div>
 
-      <button onClick={() => onAddSet(ex.id)} style={{ marginTop: 8, fontSize: 12.5, fontWeight: 700, color: "var(--c-orange, #f97316)", background: "none", border: "none", cursor: "pointer", padding: "2px 0" }}>
-        + Dodaj serię
-      </button>
+      {/* Dodawanie serii — „Taka sama" dubluje ostatnią (1 klik, auto-zapis) */}
+      <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+        <button
+          onClick={() => onSame(ex.id)}
+          disabled={!anyFilled}
+          className="active:scale-[0.97] transition-transform"
+          style={{
+            flex: 1, padding: "9px", borderRadius: 10, cursor: anyFilled ? "pointer" : "default", fontSize: 12.5, fontWeight: 800,
+            background: anyFilled ? "rgba(var(--c-orange-rgb, 249,115,22),0.14)" : "rgba(var(--fg-rgb, 255,255,255),0.04)",
+            border: anyFilled ? "1px solid rgba(var(--c-orange-rgb, 249,115,22),0.3)" : "1px solid rgba(var(--fg-rgb, 255,255,255),0.08)",
+            color: anyFilled ? "var(--c-orange, #f97316)" : "rgba(var(--fg-rgb, 255,255,255),0.35)",
+          }}
+        >
+          + Taka sama
+        </button>
+        <button
+          onClick={() => onAddSet(ex.id)}
+          className="active:scale-[0.97] transition-transform"
+          style={{ flex: 1, padding: "9px", borderRadius: 10, cursor: "pointer", fontSize: 12.5, fontWeight: 700, background: "rgba(var(--fg-rgb, 255,255,255),0.05)", border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.1)", color: "rgba(var(--fg-rgb, 255,255,255),0.7)" }}
+        >
+          + Pusta seria
+        </button>
+      </div>
 
       {/* Stopka: rekord + od startu + sparkline */}
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 10, paddingTop: 10, borderTop: "1px solid rgba(var(--fg-rgb, 255,255,255),0.06)" }}>
