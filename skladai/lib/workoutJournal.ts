@@ -207,6 +207,94 @@ export async function getWorkoutExerciseSuggestions(workoutId: string): Promise<
   return (w?.exercises ?? []).map((e) => e.exercise).filter(Boolean);
 }
 
+/** Wszystkie ćwiczenia usera (do dopasowania importu). */
+export async function listExercises(): Promise<WnExercise[]> {
+  const supabase = createClient();
+  const { data } = await supabase.from("wn_exercises").select("*");
+  return (data ?? []) as WnExercise[];
+}
+
+/** Normalizacja nazwy do dopasowania: lowercase, bez diakrytyki, bez znaków spec. */
+function normName(s: string): string {
+  return (s || "")
+    .toLowerCase()
+    .normalize("NFD").replace(/[̀-ͯ]/g, "")   // usuń diakrytykę (ł→l po niżej)
+    .replace(/ł/g, "l")                              // ł nie rozkłada się w NFD
+    .replace(/[^a-z0-9]/g, "")
+    .trim();
+}
+
+/** Znajdź istniejące ćwiczenie o tej samej nazwie (po normalizacji). */
+export async function findExerciseByName(name: string, cache?: WnExercise[]): Promise<WnExercise | null> {
+  const list = cache ?? await listExercises();
+  const target = normName(name);
+  if (!target) return null;
+  return list.find((e) => normName(e.name) === target) ?? null;
+}
+
+/** Baza progresu ćwiczenia: ostatnia / pierwsza sesja + rekord (do porównań w imporcie). */
+export async function getExerciseBaseline(exerciseId: string): Promise<{ metric: "weight" | "reps"; lastTop: number | null; firstTop: number | null; record: number | null; sessions: number }> {
+  const byReps = await isBodyweight(exerciseId);
+  const hist = await getExerciseHistory(exerciseId);
+  const vals = hist.map((p) => (byReps ? p.topReps : p.topWeight)).filter((v): v is number => v != null);
+  return {
+    metric: byReps ? "reps" : "weight",
+    lastTop: vals.length ? vals[vals.length - 1] : null,
+    firstTop: vals.length ? vals[0] : null,
+    record: vals.length ? Math.max(...vals) : null,
+    sessions: vals.length,
+  };
+}
+
+// ── Import treningu ze zdjęcia (AI Vision → dopasowanie → zapis sesji) ──
+export interface ImportSet { weight?: number | null; reps?: number | null; duration?: number | null; }
+export interface ImportExercise { name: string; kind?: WnKind; sets: ImportSet[]; }
+export interface ImportResult {
+  sessionId: string;
+  exercises: { exerciseId: string; name: string; matched: boolean; setCount: number }[];
+}
+
+/**
+ * Zapisz zaimportowaną sesję: dla każdego ćwiczenia dopasuj po nazwie (lub utwórz),
+ * dopisz do szablonu treningu (jeśli podany), wstaw serie. Sesja od razu ukończona
+ * (finished_at = data), żeby liczyła się do progresu/historii.
+ */
+export async function importWorkoutSession(opts: { workoutId: string | null; date?: string | null; exercises: ImportExercise[] }): Promise<ImportResult | null> {
+  const supabase = createClient();
+  const userId = await getUserId();
+  if (!userId) return null;
+
+  const existing = await listExercises();
+  const when = opts.date ? new Date(opts.date + "T12:00:00").toISOString() : new Date().toISOString();
+
+  const { data: sessionData, error: sErr } = await supabase
+    .from("wn_sessions")
+    .insert({ user_id: userId, workout_id: opts.workoutId, started_at: when, finished_at: when })
+    .select("*").single();
+  if (sErr || !sessionData) { console.warn("[wn] importSession", sErr?.message); return null; }
+  const session = sessionData as WnSession;
+
+  const out: ImportResult["exercises"] = [];
+  for (const ie of opts.exercises) {
+    if (!ie.name?.trim()) continue;
+    let ex = await findExerciseByName(ie.name, existing);
+    const matched = !!ex;
+    if (!ex) {
+      ex = await findOrCreateExercise(ie.name, ie.kind ?? "weighted");
+      if (ex) existing.push(ex);
+    }
+    if (!ex) continue;
+    if (opts.workoutId) await addExerciseToWorkout(opts.workoutId, ex.id);
+    let idx = 0;
+    for (const st of ie.sets ?? []) {
+      await upsertSet({ sessionId: session.id, exerciseId: ex.id, setIndex: idx, weightKg: st.weight ?? null, reps: st.reps ?? null, durationSec: st.duration ?? null });
+      idx++;
+    }
+    out.push({ exerciseId: ex.id, name: ex.name, matched, setCount: (ie.sets ?? []).length });
+  }
+  return { sessionId: session.id, exercises: out };
+}
+
 // ──────────────────────────────────────────────────────────────────
 // Sesje (sessions) + serie (sets)
 // ──────────────────────────────────────────────────────────────────
