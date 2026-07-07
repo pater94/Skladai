@@ -31,6 +31,7 @@ import type { AppRouterInstance } from "next/dist/shared/lib/app-router-context.
 import WorkoutJournalList from "@/components/forma/WorkoutJournalList";
 import ActiveWorkout from "@/components/forma/ActiveWorkout";
 import ExerciseHistory from "@/components/forma/ExerciseHistory";
+import WorkoutImport from "@/components/forma/WorkoutImport";
 
 // ──────────────────────────────────────────
 // Types
@@ -76,7 +77,8 @@ type View =
   | "checkform"
   | "journal"            // Dziennik treningowy — lista treningów (Faza 2)
   | "workout"            // aktywny trening — logowanie serii (Faza 3)
-  | "exercise-history";  // historia ćwiczenia + wykres (Faza 4)
+  | "exercise-history"   // historia ćwiczenia + wykres (Faza 4)
+  | "workout-import";    // import treningu ze zdjęcia (AI Vision)
 
 // ──────────────────────────────────────────
 // Constants
@@ -491,7 +493,10 @@ export default function FormaPage() {
           <CheckFormView goBack={goBack} router={router} autoOpenGallery={autoOpenGallery} autoOpenCamera={autoOpenCamera} />
         )}
         {view === "journal" && (
-          <WorkoutJournalList goBack={goBack} openWorkout={openWorkout} />
+          <WorkoutJournalList goBack={goBack} openWorkout={openWorkout} onImport={() => setView("workout-import")} />
+        )}
+        {view === "workout-import" && (
+          <WorkoutImport goBack={() => setView("journal")} onSaved={() => setView("journal")} />
         )}
         {view === "workout" && jSessionId && jWorkoutId && (
           <ActiveWorkout

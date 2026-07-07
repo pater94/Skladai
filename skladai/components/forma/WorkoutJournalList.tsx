@@ -38,9 +38,11 @@ function relativeTime(iso: string | null): string | null {
 export default function WorkoutJournalList({
   goBack,
   openWorkout,
+  onImport,
 }: {
   goBack: () => void;
   openWorkout: (sessionId: string, workoutId: string) => void;
+  onImport?: () => void;
 }) {
   const [workouts, setWorkouts] = useState<WnWorkout[]>([]);
   const [meta, setMeta] = useState<Record<string, WorkoutMeta>>({});
@@ -191,6 +193,23 @@ export default function WorkoutJournalList({
       >
         {starting === "new" ? "Tworzę…" : "+ Nowy trening"}
       </button>
+
+      {onImport && (
+        <button
+          onClick={onImport}
+          data-testid="workout-import-entry"
+          className="w-full active:scale-[0.98] transition-transform"
+          style={{
+            marginTop: 10, padding: "13px", borderRadius: 16, cursor: "pointer",
+            display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+            background: "rgba(var(--c-orange-rgb, 249,115,22),0.1)",
+            border: "1px solid rgba(var(--c-orange-rgb, 249,115,22),0.28)",
+            color: "var(--c-orange, #f97316)", fontSize: 14, fontWeight: 800,
+          }}
+        >
+          📷 Zaimportuj trening ze zdjęcia
+        </button>
+      )}
     </div>
   );
 }
