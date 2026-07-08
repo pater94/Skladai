@@ -69,8 +69,40 @@ export default function WorkoutImport({ goBack, onSaved }: { goBack: () => void;
     } catch { setError("Błąd sieci. Spróbuj ponownie."); setStep("capture"); }
   }, []);
 
-  const openCam = async () => { if (isNative()) { const b = await takePhotoForMode("forma", "camera"); if (b) void parseImage(b); } else cameraRef.current?.click(); };
-  const openGal = async () => { if (isNative()) { const b = await takePhotoForMode("forma", "gallery"); if (b) void parseImage(b); } else galleryRef.current?.click(); };
+  // Aparat / galeria — odporne na 3 tryby awarii:
+  //  1) natywny plugin działa → takePhotoForMode (jak w Skanerze),
+  //  2) plugin rzuca realnym błędem → fallback do <input type=file>,
+  //  3) brak pluginu (isNative=false, np. build iOS bez @capacitor/camera) →
+  //     od razu <input type=file> (WKWebView-safe, patrz style hiddenFileInput).
+  // Nigdy „po cichu": jeśli nic nie zadziała, pokazujemy błąd.
+  const openCam = async () => {
+    setError(null);
+    if (isNative()) {
+      try {
+        const b = await takePhotoForMode("forma", "camera");
+        if (b) void parseImage(b);
+        return; // sukces lub anulowanie przez usera
+      } catch (e) {
+        console.warn("[WorkoutImport] natywny aparat zawiódł → fallback input", e);
+      }
+    }
+    if (cameraRef.current) cameraRef.current.click();
+    else setError("Nie udało się otworzyć aparatu. Spróbuj przez galerię.");
+  };
+  const openGal = async () => {
+    setError(null);
+    if (isNative()) {
+      try {
+        const b = await takePhotoForMode("forma", "gallery");
+        if (b) void parseImage(b);
+        return;
+      } catch (e) {
+        console.warn("[WorkoutImport] natywna galeria zawiodła → fallback input", e);
+      }
+    }
+    if (galleryRef.current) galleryRef.current.click();
+    else setError("Nie udało się otworzyć galerii.");
+  };
   const onFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
     if (f && f.type.startsWith("image/")) { try { const b = await compressImage(f, 2200); void parseImage(b); } catch {} }
@@ -106,8 +138,8 @@ export default function WorkoutImport({ goBack, onSaved }: { goBack: () => void;
   // ── RENDER ──
   return (
     <div style={{ animation: "fadeInUp 0.4s ease both", paddingBottom: 90 }}>
-      <input ref={cameraRef} type="file" accept="image/*" capture="environment" onChange={onFile} style={{ display: "none" }} />
-      <input ref={galleryRef} type="file" accept="image/*" onChange={onFile} style={{ display: "none" }} />
+      <input ref={cameraRef} type="file" accept="image/*" capture="environment" onChange={onFile} style={hiddenFileInput} />
+      <input ref={galleryRef} type="file" accept="image/*" onChange={onFile} style={hiddenFileInput} />
 
       {/* Header */}
       <div className="flex items-center gap-3 mb-4">
@@ -222,6 +254,10 @@ export default function WorkoutImport({ goBack, onSaved }: { goBack: () => void;
   );
 }
 
+// WKWebView (iOS) czasem NIE otwiera pickera dla input[type=file] z
+// display:none klikanego programowo. Trzymamy input w layoucie (1×1 px,
+// przezroczysty, poza ekranem) — wtedy .click() niezawodnie otwiera picker.
+const hiddenFileInput: React.CSSProperties = { position: "fixed", left: 0, bottom: 0, width: 1, height: 1, opacity: 0, border: 0, padding: 0, zIndex: -1 };
 const backBtn: React.CSSProperties = { width: 38, height: 38, borderRadius: 12, flexShrink: 0, background: "rgba(var(--fg-rgb, 255,255,255),0.06)", border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.1)", color: "var(--fg, #fff)", fontSize: 18, cursor: "pointer" };
 const chip: React.CSSProperties = { fontSize: 11, fontWeight: 800, padding: "5px 11px", borderRadius: 99, flexShrink: 0, background: "rgba(var(--c-orange-rgb, 249,115,22),0.15)", color: "var(--c-orange, #f97316)", border: "1px solid rgba(var(--c-orange-rgb, 249,115,22),0.3)" };
 const primaryBtn: React.CSSProperties = { padding: "14px", borderRadius: 16, border: "none", color: "#fff", fontWeight: 800, fontSize: 15, cursor: "pointer", background: "linear-gradient(135deg, var(--c-orange, #f97316), var(--c-orange-3, #ea580c))", boxShadow: "0 6px 22px rgba(var(--c-orange-rgb, 249,115,22),0.3)" };
