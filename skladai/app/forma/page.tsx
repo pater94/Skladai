@@ -32,6 +32,7 @@ import WorkoutJournalList from "@/components/forma/WorkoutJournalList";
 import ActiveWorkout from "@/components/forma/ActiveWorkout";
 import ExerciseHistory from "@/components/forma/ExerciseHistory";
 import WorkoutImport from "@/components/forma/WorkoutImport";
+import WorkoutSummary from "@/components/forma/WorkoutSummary";
 
 // ──────────────────────────────────────────
 // Types
@@ -78,7 +79,8 @@ type View =
   | "journal"            // Dziennik treningowy — lista treningów (Faza 2)
   | "workout"            // aktywny trening — logowanie serii (Faza 3)
   | "exercise-history"   // historia ćwiczenia + wykres (Faza 4)
-  | "workout-import";    // import treningu ze zdjęcia (AI Vision)
+  | "workout-import"     // import treningu ze zdjęcia (AI Vision)
+  | "workout-summary";   // skondensowane podsumowanie treningu (zrzut/udostępnij)
 
 // ──────────────────────────────────────────
 // Constants
@@ -359,10 +361,12 @@ export default function FormaPage() {
   const [jWorkoutId, setJWorkoutId] = useState<string | null>(null);
   const [jSessionId, setJSessionId] = useState<string | null>(null);
   const [jExerciseId, setJExerciseId] = useState<string | null>(null);
+  const [jSummarySessionId, setJSummarySessionId] = useState<string | null>(null);
   // openWorkout: wejście w aktywny trening (z listy / nowy). openExerciseHistory: wykres ćwiczenia.
   const openJournal = () => { setView("journal"); };
   const openWorkout = (sessionId: string, workoutId: string) => { setJSessionId(sessionId); setJWorkoutId(workoutId); setView("workout"); };
   const openExerciseHistory = (exerciseId: string) => { setJExerciseId(exerciseId); setView("exercise-history"); };
+  const openSummary = (sessionId: string) => { setJSummarySessionId(sessionId); setView("workout-summary"); };
   const [profile, setProfileState] = useState<ReturnType<typeof getProfile>>(null);
   const [records, setRecords] = useState<StrengthRecord[]>([]);
 
@@ -493,7 +497,7 @@ export default function FormaPage() {
           <CheckFormView goBack={goBack} router={router} autoOpenGallery={autoOpenGallery} autoOpenCamera={autoOpenCamera} />
         )}
         {view === "journal" && (
-          <WorkoutJournalList goBack={goBack} openWorkout={openWorkout} onImport={() => setView("workout-import")} />
+          <WorkoutJournalList goBack={goBack} openWorkout={openWorkout} onImport={() => setView("workout-import")} onOpenSummary={openSummary} />
         )}
         {view === "workout-import" && (
           <WorkoutImport goBack={() => setView("journal")} onSaved={() => setView("journal")} />
@@ -504,10 +508,14 @@ export default function FormaPage() {
             sessionId={jSessionId}
             workoutId={jWorkoutId}
             openExerciseHistory={openExerciseHistory}
+            onOpenSummary={openSummary}
           />
         )}
         {view === "exercise-history" && jExerciseId && (
           <ExerciseHistory goBack={() => setView(jSessionId ? "workout" : "journal")} exerciseId={jExerciseId} />
+        )}
+        {view === "workout-summary" && jSummarySessionId && (
+          <WorkoutSummary goBack={() => setView("journal")} sessionId={jSummarySessionId} />
         )}
       </div>
 
