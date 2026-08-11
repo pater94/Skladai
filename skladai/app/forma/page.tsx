@@ -387,6 +387,14 @@ export default function FormaPage() {
     (document.getElementById("scroll-container") || window).scrollTo(0, 0);
   }, [view]);
 
+  // Ukryj pływający czat AI (AgentFAB) na immersyjnych ekranach dziennika —
+  // logowanie serii / podsumowanie mają być bez rozpraszaczy. AgentFAB czyta tę klasę.
+  useEffect(() => {
+    const immersive = ["journal", "workout", "exercise-history", "workout-import", "workout-summary"].includes(view);
+    document.body.classList.toggle("forma-immersive", immersive);
+    return () => document.body.classList.remove("forma-immersive");
+  }, [view]);
+
   // Timer tick
   useEffect(() => {
     if (timerRunning && timerLeft > 0) {
@@ -509,6 +517,7 @@ export default function FormaPage() {
             workoutId={jWorkoutId}
             openExerciseHistory={openExerciseHistory}
             onOpenSummary={openSummary}
+            onOpenTimer={() => setTimerOpen(true)}
           />
         )}
         {view === "exercise-history" && jExerciseId && (
@@ -519,8 +528,9 @@ export default function FormaPage() {
         )}
       </div>
 
-      {/* Floating Timer Button (hidden on main view — timer icon in header instead) */}
-      {view !== "main" && <button
+      {/* Pływający timer — TYLKO gdy odpalony (odliczanie). Uruchamia się z nagłówka
+          (main) lub przycisku ⏱ w aktywnym treningu; poza tym nie zaśmieca ekranu. */}
+      {timerRunning && <button
         onClick={(e) => { e.preventDefault(); e.stopPropagation(); setTimerOpen(true); }}
         className="fixed z-[100] flex items-center justify-center rounded-full shadow-lg transition-transform active:scale-95"
         style={{

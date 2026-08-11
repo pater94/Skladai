@@ -13,7 +13,7 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
 import {
   getWorkoutWithExercises, getLastFinishedSession, getExerciseStats, getExerciseHistory,
-  upsertSet, finishSession, findOrCreateExercise, addExerciseToWorkout,
+  upsertSet, deleteSetByKey, finishSession, findOrCreateExercise, addExerciseToWorkout,
   saveActiveDraft, getActiveDraft, clearActiveDraft,
   type WnWorkoutWithExercises, type WnExercise, type WnKind, type WnExerciseStats, type WnHistoryPoint,
 } from "@/lib/workoutJournal";
@@ -41,13 +41,14 @@ function setTop(sets: EditableSet[], byReps: boolean): number | null {
 }
 
 export default function ActiveWorkout({
-  goBack, sessionId, workoutId, openExerciseHistory, onOpenSummary,
+  goBack, sessionId, workoutId, openExerciseHistory, onOpenSummary, onOpenTimer,
 }: {
   goBack: () => void;
   sessionId: string;
   workoutId: string;
   openExerciseHistory: (exerciseId: string) => void;
   onOpenSummary: (sessionId: string) => void;
+  onOpenTimer: () => void;
 }) {
   const [workout, setWorkout] = useState<WnWorkoutWithExercises | null>(null);
   const [loading, setLoading] = useState(true);
@@ -187,6 +188,17 @@ export default function ActiveWorkout({
     saveSet(exId, nextIndex, num(ns.weight), num(ns.reps), num(ns.duration));
   };
 
+  // Usuwa serię: z widoku, z bazy (po kluczu) i z listy zapisanych.
+  const deleteSetRow = (exId: string, setIndex: number) => {
+    setSetsBy((prev) => {
+      const next = { ...prev, [exId]: (prev[exId] ?? []).filter((s) => s.setIndex !== setIndex) };
+      persistDraft(next);
+      return next;
+    });
+    setSavedKeys((prev) => { const k = `${exId}:${setIndex}`; if (!prev.has(k)) return prev; const n = new Set(prev); n.delete(k); return n; });
+    void deleteSetByKey({ sessionId, exerciseId: exId, setIndex });
+  };
+
   const handleAddExercise = async () => {
     const name = newExName.trim();
     if (!name) return;
@@ -239,7 +251,8 @@ export default function ActiveWorkout({
           <h2 style={{ fontSize: 20, fontWeight: 900, color: "var(--fg, #fff)" }}>{workout?.name ?? "Trening"}</h2>
           <p style={{ fontSize: 11.5, color: "rgba(var(--fg-rgb, 255,255,255),0.5)" }}>{exDate} · {workout?.exercises.length ?? 0} ćwiczeń</p>
         </div>
-        <span style={{ fontSize: 11, fontWeight: 800, padding: "5px 11px", borderRadius: 99, flexShrink: 0, background: "rgba(var(--c-orange-rgb, 249,115,22),0.15)", color: "var(--c-orange, #f97316)", border: "1px solid rgba(var(--c-orange-rgb, 249,115,22),0.3)" }}>Trening</span>
+        {/* Timer odpoczynku — tutaj, bo pływający guzik pokazuje się dopiero po odpaleniu */}
+        <button onClick={onOpenTimer} aria-label="Timer odpoczynku" title="Timer odpoczynku" className="active:scale-95 transition-transform" style={{ width: 38, height: 38, borderRadius: 12, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(var(--c-orange-rgb, 249,115,22),0.12)", border: "1px solid rgba(var(--c-orange-rgb, 249,115,22),0.28)", color: "var(--c-orange, #f97316)", fontSize: 17, cursor: "pointer" }}>⏱</button>
       </div>
 
       {/* Pasek podsumowania */}
@@ -274,7 +287,7 @@ export default function ActiveWorkout({
               list={list} ghost={ghostBy[ex.id]} record={record} weekDelta={week}
               addedAbs={prog?.addedAbs ?? null} addedPct={prog?.addedPct ?? null} best1RM={prog?.best1RM ?? null}
               history={histBy[ex.id] ?? []} liveTop={liveTop}
-              onField={updateField} onCommit={commitSet} onAddSet={addSet} onSame={addSameSet}
+              onField={updateField} onCommit={commitSet} onAddSet={addSet} onSame={addSameSet} onDelete={deleteSetRow}
               saved={savedKeys}
               onOpenHistory={() => openExerciseHistory(ex.id)}
             />
@@ -313,7 +326,7 @@ export default function ActiveWorkout({
 // ── Karta pojedynczego ćwiczenia ──
 function ExerciseCard({
   ex, kind, byReps, list, ghost, record, weekDelta, addedAbs, addedPct, best1RM, history, liveTop,
-  onField, onCommit, onAddSet, onSame, saved, onOpenHistory,
+  onField, onCommit, onAddSet, onSame, onDelete, saved, onOpenHistory,
 }: {
   ex: WnExercise; kind: WnKind; byReps: boolean;
   list: EditableSet[]; ghost?: string; record: number | null; weekDelta: number | null;
@@ -323,6 +336,7 @@ function ExerciseCard({
   onCommit: (exId: string, setIndex: number) => void;
   onAddSet: (exId: string) => void;
   onSame: (exId: string) => void;
+  onDelete: (exId: string, setIndex: number) => void;
   saved: Set<string>;
   onOpenHistory: () => void;
 }) {
@@ -349,12 +363,12 @@ function ExerciseCard({
 
       {/* Serie */}
       <div className="flex flex-col gap-1.5">
-        {list.map((s) => {
+        {list.map((s, i) => {
           const metric = byReps ? num(s.reps) : num(s.weight);
           const isPR = record != null && metric != null && metric > record;
           return (
             <div key={s.setIndex} style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <span style={{ width: 22, textAlign: "center", fontSize: 12, fontWeight: 700, color: "rgba(var(--fg-rgb, 255,255,255),0.4)" }}>{s.setIndex + 1}</span>
+              <span style={{ width: 20, textAlign: "center", fontSize: 12, fontWeight: 700, color: "rgba(var(--fg-rgb, 255,255,255),0.4)" }}>{i + 1}</span>
               {showWeight && (
                 <input inputMode="decimal" value={s.weight} placeholder="kg"
                   onChange={(e) => onField(ex.id, s.setIndex, "weight", e.target.value)}
@@ -394,6 +408,13 @@ function ExerciseCard({
                   </button>
                 );
               })()}
+              <button
+                onClick={() => onDelete(ex.id, s.setIndex)}
+                aria-label="Usuń serię"
+                title="Usuń serię"
+                className="active:scale-90 transition-transform"
+                style={{ width: 30, height: 32, flexShrink: 0, borderRadius: 9, background: "rgba(var(--fg-rgb, 255,255,255),0.05)", border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.08)", color: "rgba(var(--fg-rgb, 255,255,255),0.4)", fontSize: 16, cursor: "pointer" }}
+              >×</button>
             </div>
           );
         })}

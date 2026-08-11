@@ -70,15 +70,20 @@ export default function AgentFAB() {
   // Avoid SSR/hydration drift — same pattern as ActivityBadges
   useEffect(() => { setMounted(true); }, []);
 
-  // Watch onboarding-active class on body (same as BottomNav) to hide during onboarding
+  // Watch body classes: onboarding-active (hide during onboarding) oraz
+  // forma-immersive (hide na immersyjnych ekranach dziennika treningowego —
+  // user chce mieć tam czysto, bez pływającego czatu).
   const [onboarding, setOnboarding] = useState(false);
+  const [immersive, setImmersive] = useState(false);
   useEffect(() => {
     if (typeof document === "undefined") return;
-    const obs = new MutationObserver(() => {
+    const sync = () => {
       setOnboarding(document.body.classList.contains("onboarding-active"));
-    });
+      setImmersive(document.body.classList.contains("forma-immersive"));
+    };
+    const obs = new MutationObserver(sync);
     obs.observe(document.body, { attributes: true, attributeFilter: ["class"] });
-    setOnboarding(document.body.classList.contains("onboarding-active"));
+    sync();
     return () => obs.disconnect();
   }, []);
 
@@ -86,7 +91,7 @@ export default function AgentFAB() {
   // ale jako bool, żeby coachmark effect odpalił się TYLKO gdy FAB widać.
   const path = pathname || "";
   const fabVisible =
-    mounted && !loading && !modeLoading && userMode === "fitness" && !onboarding &&
+    mounted && !loading && !modeLoading && userMode === "fitness" && !onboarding && !immersive &&
     !HIDDEN_PREFIXES.some((p) => path === p || path.startsWith(p + "/")) &&
     ALLOWED_PATHS.has(path);
 
@@ -113,6 +118,7 @@ export default function AgentFAB() {
   // Hotfix: AgentFAB tylko w fitness (TODO: health-specific agent)
   if (userMode !== "fitness") return null;
   if (onboarding) return null;
+  if (immersive) return null; // immersyjne ekrany dziennika treningowego
   if (HIDDEN_PREFIXES.some((p) => path === p || path.startsWith(p + "/"))) return null;
   if (!ALLOWED_PATHS.has(path)) return null;
   if (open) return <AgentChat open={open} onClose={() => setOpen(false)} isPremium={isPremium} />;
