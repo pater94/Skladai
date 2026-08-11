@@ -102,6 +102,13 @@ async function getUserId(): Promise<string | null> {
   return user?.id ?? null;
 }
 
+/** Publiczny helper: czy user jest zalogowany (zapis do chmury wymaga auth).
+ *  Zwraca id usera lub null (gość). Używane przez ekrany, by pokazać „zaloguj się"
+ *  zamiast cicho nie zapisać. */
+export async function getCurrentUserId(): Promise<string | null> {
+  return getUserId();
+}
+
 /** Najcięższa seria w grupie serii — po kg (weighted) lub powt. (bodyweight). */
 function topOfSets(sets: WnSet[], byReps: boolean): number | null {
   let top: number | null = null;

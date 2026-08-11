@@ -13,6 +13,7 @@ import { isNative, takePhotoForMode } from "@/lib/native-camera";
 import { compressImage } from "@/lib/compress";
 import {
   listWorkouts, listExercises, findExerciseByName, getExerciseBaseline, importWorkoutSession,
+  createWorkout, getCurrentUserId,
   type WnWorkout, type WnKind, type ImportExercise,
 } from "@/lib/workoutJournal";
 
@@ -36,13 +37,18 @@ export default function WorkoutImport({ goBack, onSaved }: { goBack: () => void;
   const [error, setError] = useState<string | null>(null);
   const [exercises, setExercises] = useState<EditExercise[]>([]);
   const [workouts, setWorkouts] = useState<WnWorkout[]>([]);
-  const [workoutId, setWorkoutId] = useState<string>("");
+  // Cel zapisu: "__new__" = nowy trening (z nazwą), "" = bez treningu, lub id istniejącego.
+  const [target, setTarget] = useState<string>("__new__");
+  const [newName, setNewName] = useState<string>("");
   const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [saving, setSaving] = useState(false);
+  // undefined = sprawdzam, null = gość (nie zapisze), string = zalogowany.
+  const [authUid, setAuthUid] = useState<string | null | undefined>(undefined);
   const cameraRef = useRef<HTMLInputElement>(null);
   const galleryRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => { void listWorkouts().then(setWorkouts); }, []);
+  useEffect(() => { void getCurrentUserId().then(setAuthUid); }, []);
 
   const parseImage = useCallback(async (base64: string) => {
     setStep("loading"); setError(null);
@@ -123,17 +129,37 @@ export default function WorkoutImport({ goBack, onSaved }: { goBack: () => void;
 
   const handleSave = async () => {
     if (saving) return;
-    setSaving(true);
+    setError(null);
+    // Zapis idzie do chmury (Supabase) → wymaga logowania. Gość: jasny komunikat + CTA.
+    const uid = authUid ?? await getCurrentUserId();
+    if (!uid) {
+      setAuthUid(null);
+      setError("Zaloguj się, aby zapisać trening — dane synchronizują się w chmurze.");
+      return;
+    }
     const payload: ImportExercise[] = exercises.map((ex) => ({
       name: ex.name,
       kind: ex.kind,
       sets: ex.sets.map((s) => ({ weight: pnum(s.weight), reps: pnum(s.reps), duration: pnum(s.duration) })).filter((s) => s.weight != null || s.reps != null || s.duration != null),
     })).filter((ex) => ex.name.trim() && ex.sets.length);
-    if (!payload.length) { setSaving(false); setError("Brak serii do zapisania."); return; }
-    const result = await importWorkoutSession({ workoutId: workoutId || null, date, exercises: payload });
+    if (!payload.length) { setError("Brak serii do zapisania — uzupełnij ciężar lub powtórzenia."); return; }
+    setSaving(true);
+    // Ustal trening docelowy: nowy (z nazwą) / istniejący / bez treningu.
+    let targetId: string | null;
+    if (target === "__new__") {
+      const nm = newName.trim() || `Trening ${date}`;
+      const w = await createWorkout(nm);
+      if (!w) { setSaving(false); setError("Nie udało się utworzyć treningu. Spróbuj ponownie."); return; }
+      targetId = w.id;
+    } else {
+      targetId = target || null; // "" = bez treningu
+    }
+    const result = await importWorkoutSession({ workoutId: targetId, date, exercises: payload });
     setSaving(false);
-    if (result) onSaved(); else setError("Nie udało się zapisać. Spróbuj ponownie.");
+    if (result) onSaved(); else setError("Nie udało się zapisać. Sprawdź połączenie i spróbuj ponownie.");
   };
+
+  const requestLogin = () => { try { window.dispatchEvent(new Event("request-login")); } catch { /* noop */ } };
 
   // ── RENDER ──
   return (
@@ -178,19 +204,43 @@ export default function WorkoutImport({ goBack, onSaved }: { goBack: () => void;
 
       {step === "preview" && (
         <>
-          {/* Data + trening */}
-          <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
-            <div style={{ flex: 1 }}>
-              <label style={miniLabel}>Data treningu</label>
-              <input type="date" value={date} onChange={(e) => setDate(e.target.value)} style={{ ...inputStyle, colorScheme: "dark" }} />
+          {/* Baner: gość nie zapisze do chmury */}
+          {authUid === null && (
+            <button onClick={requestLogin} className="w-full active:scale-[0.98] transition-transform" style={{ marginBottom: 14, padding: "11px 13px", borderRadius: 12, textAlign: "left", cursor: "pointer", display: "flex", alignItems: "center", gap: 8, background: "rgba(var(--c-orange-rgb, 249,115,22),0.1)", border: "1px solid rgba(var(--c-orange-rgb, 249,115,22),0.28)", color: "var(--fg, #fff)", fontSize: 12.5, fontWeight: 600 }}>
+              <span style={{ fontSize: 16 }}>🔒</span>
+              <span>Nie jesteś zalogowany — <strong style={{ color: "var(--c-orange, #f97316)", textDecoration: "underline" }}>zaloguj się</strong>, aby zapisać trening w chmurze.</span>
+            </button>
+          )}
+
+          {/* Cel zapisu: nowy trening (z nazwą) / istniejący / bez treningu */}
+          <div style={{ marginBottom: 12 }}>
+            <label style={miniLabel}>Zapisz do treningu</label>
+            <select value={target} onChange={(e) => setTarget(e.target.value)} style={{ ...inputStyle, colorScheme: "dark" }}>
+              <option value="__new__">➕ Nowy trening</option>
+              {workouts.length > 0 && (
+                <optgroup label="Dopisz do istniejącego">
+                  {workouts.map((w) => <option key={w.id} value={w.id}>{w.name}</option>)}
+                </optgroup>
+              )}
+              <option value="">Bez treningu (tylko wpis)</option>
+            </select>
+          </div>
+
+          {/* Nazwa nowego treningu */}
+          {target === "__new__" && (
+            <div style={{ marginBottom: 12 }}>
+              <label style={miniLabel}>Nazwa treningu</label>
+              <input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder={`np. Push A, Nogi, FBW`} style={inputStyle} />
+              <div style={{ fontSize: 10.5, color: "rgba(var(--fg-rgb, 255,255,255),0.4)", marginTop: 4 }}>
+                Puste = „Trening {date}"
+              </div>
             </div>
-            <div style={{ flex: 1 }}>
-              <label style={miniLabel}>Przypisz do</label>
-              <select value={workoutId} onChange={(e) => setWorkoutId(e.target.value)} style={{ ...inputStyle, colorScheme: "dark" }}>
-                <option value="">Bez treningu</option>
-                {workouts.map((w) => <option key={w.id} value={w.id}>{w.name}</option>)}
-              </select>
-            </div>
+          )}
+
+          {/* Data */}
+          <div style={{ marginBottom: 16 }}>
+            <label style={miniLabel}>Data treningu</label>
+            <input type="date" value={date} onChange={(e) => setDate(e.target.value)} style={{ ...inputStyle, colorScheme: "dark" }} />
           </div>
 
           {/* Ćwiczenia */}
@@ -242,8 +292,8 @@ export default function WorkoutImport({ goBack, onSaved }: { goBack: () => void;
           </div>
 
           {/* Zapisz */}
-          <button onClick={() => void handleSave()} disabled={saving} data-testid="import-save" className="w-full active:scale-[0.98] transition-transform" style={{ ...primaryBtn, marginTop: 20, opacity: saving ? 0.6 : 1 }}>
-            {saving ? "Zapisuję…" : `Zapisz trening (${exercises.length} ćw.)`}
+          <button onClick={() => authUid === null ? requestLogin() : void handleSave()} disabled={saving} data-testid="import-save" className="w-full active:scale-[0.98] transition-transform" style={{ ...primaryBtn, marginTop: 20, opacity: saving ? 0.6 : 1 }}>
+            {saving ? "Zapisuję…" : authUid === null ? "🔒 Zaloguj się, aby zapisać" : `Zapisz trening (${exercises.length} ćw.)`}
           </button>
           <button onClick={() => { setStep("capture"); setExercises([]); }} className="w-full active:scale-95 transition-transform" style={{ marginTop: 10, background: "none", border: "none", color: "rgba(var(--fg-rgb, 255,255,255),0.5)", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
             ↻ Zrób nowe zdjęcie
