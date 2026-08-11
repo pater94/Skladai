@@ -17,6 +17,7 @@ interface WorkoutMeta {
   exerciseCount: number;
   lastFinishedAt: string | null;
   lastVolume: number | null;
+  lastSessionId: string | null;
 }
 
 function relativeTime(iso: string | null): string | null {
@@ -39,10 +40,12 @@ export default function WorkoutJournalList({
   goBack,
   openWorkout,
   onImport,
+  onOpenSummary,
 }: {
   goBack: () => void;
   openWorkout: (sessionId: string, workoutId: string) => void;
   onImport?: () => void;
+  onOpenSummary?: (sessionId: string) => void;
 }) {
   const [workouts, setWorkouts] = useState<WnWorkout[]>([]);
   const [meta, setMeta] = useState<Record<string, WorkoutMeta>>({});
@@ -68,6 +71,7 @@ export default function WorkoutJournalList({
           exerciseCount: full?.exercises.length ?? 0,
           lastFinishedAt: last?.finished_at ?? null,
           lastVolume: lastVolume && lastVolume > 0 ? Math.round(lastVolume) : null,
+          lastSessionId: last?.id ?? null,
         }];
       })
     );
@@ -141,38 +145,55 @@ export default function WorkoutJournalList({
         {!loading && workouts.map((w) => {
           const m = meta[w.id];
           const rel = relativeTime(m?.lastFinishedAt ?? null);
+          const canSummary = !!(onOpenSummary && m?.lastSessionId);
           return (
-            <button
-              key={w.id}
-              onClick={() => handleStart(w.id)}
-              disabled={starting === w.id}
-              data-testid="workout-card"
-              className="w-full text-left active:scale-[0.985] transition-transform"
-              style={{
-                display: "flex", alignItems: "center", gap: 12, position: "relative", overflow: "hidden",
-                padding: "14px 16px 14px 18px", borderRadius: 16, cursor: "pointer",
-                background: "rgba(var(--fg-rgb, 255,255,255),0.04)",
-                border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.08)",
-                opacity: starting === w.id ? 0.6 : 1,
-              }}
-            >
-              {/* pasek akcentu po lewej */}
-              <span style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 4, background: "linear-gradient(180deg, var(--c-orange, #f97316), var(--c-orange-3, #ea580c))" }} />
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 15.5, fontWeight: 800, color: "var(--fg, #fff)" }}>{w.name}</div>
-                <div style={{ fontSize: 12, color: "rgba(var(--fg-rgb, 255,255,255),0.5)", marginTop: 3 }}>
-                  {m ? `${m.exerciseCount} ${m.exerciseCount === 1 ? "ćwiczenie" : "ćwiczeń"}` : "…"}
-                  {rel ? ` · ostatnio ${rel}` : ""}
+            <div key={w.id} style={{ display: "flex", gap: 8, alignItems: "stretch" }}>
+              <button
+                onClick={() => handleStart(w.id)}
+                disabled={starting === w.id}
+                data-testid="workout-card"
+                className="text-left active:scale-[0.985] transition-transform"
+                style={{
+                  flex: 1, minWidth: 0,
+                  display: "flex", alignItems: "center", gap: 12, position: "relative", overflow: "hidden",
+                  padding: "14px 16px 14px 18px", borderRadius: 16, cursor: "pointer",
+                  background: "rgba(var(--fg-rgb, 255,255,255),0.04)",
+                  border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.08)",
+                  opacity: starting === w.id ? 0.6 : 1,
+                }}
+              >
+                {/* pasek akcentu po lewej */}
+                <span style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 4, background: "linear-gradient(180deg, var(--c-orange, #f97316), var(--c-orange-3, #ea580c))" }} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 15.5, fontWeight: 800, color: "var(--fg, #fff)" }}>{w.name}</div>
+                  <div style={{ fontSize: 12, color: "rgba(var(--fg-rgb, 255,255,255),0.5)", marginTop: 3 }}>
+                    {m ? `${m.exerciseCount} ${m.exerciseCount === 1 ? "ćwiczenie" : "ćwiczeń"}` : "…"}
+                    {rel ? ` · ostatnio ${rel}` : ""}
+                  </div>
                 </div>
-              </div>
-              {m?.lastVolume != null && (
-                <div style={{ textAlign: "right", flexShrink: 0 }}>
-                  <div style={{ fontSize: 15, fontWeight: 800, color: "var(--fg, #fff)" }}>{m.lastVolume.toLocaleString("pl-PL")}</div>
-                  <div style={{ fontSize: 10, color: "rgba(var(--fg-rgb, 255,255,255),0.4)" }}>objętość</div>
-                </div>
+                {m?.lastVolume != null && (
+                  <div style={{ textAlign: "right", flexShrink: 0 }}>
+                    <div style={{ fontSize: 15, fontWeight: 800, color: "var(--fg, #fff)" }}>{m.lastVolume.toLocaleString("pl-PL")}</div>
+                    <div style={{ fontSize: 10, color: "rgba(var(--fg-rgb, 255,255,255),0.4)" }}>objętość</div>
+                  </div>
+                )}
+                <span style={{ color: "rgba(var(--fg-rgb, 255,255,255),0.3)", fontSize: 20, flexShrink: 0 }}>›</span>
+              </button>
+              {canSummary && (
+                <button
+                  onClick={() => onOpenSummary!(m!.lastSessionId!)}
+                  aria-label="Podsumowanie ostatniego treningu"
+                  title="Podsumowanie (do wysłania)"
+                  className="active:scale-95 transition-transform"
+                  style={{
+                    width: 48, flexShrink: 0, borderRadius: 16, cursor: "pointer", fontSize: 18,
+                    background: "rgba(var(--c-orange-rgb, 249,115,22),0.1)",
+                    border: "1px solid rgba(var(--c-orange-rgb, 249,115,22),0.25)",
+                    color: "var(--c-orange, #f97316)",
+                  }}
+                >📤</button>
               )}
-              <span style={{ color: "rgba(var(--fg-rgb, 255,255,255),0.3)", fontSize: 20, flexShrink: 0 }}>›</span>
-            </button>
+            </div>
           );
         })}
       </div>

@@ -449,6 +449,165 @@ export async function getExerciseProgress(exerciseId: string): Promise<WnExercis
 }
 
 function round2(n: number): number { return Math.round(n * 100) / 100; }
+/** Zaokrąglenie do 0,5 kg — realne talerze/hantle (nikt nie liczy 1RM co do grama). */
+function round05(n: number): number { return Math.round(n * 2) / 2; }
+
+// ──────────────────────────────────────────────────────────────────
+// 1RM (jedno powtórzenie maksymalne) + statystyki zaawansowane
+// ──────────────────────────────────────────────────────────────────
+
+/**
+ * Szacowany 1RM na podstawie serii (ciężar × powtórzenia).
+ * Uśredniamy dwa najlepiej zwalidowane wzory:
+ *   • Epley:   1RM = w · (1 + reps/30)
+ *   • Brzycki: 1RM = w · 36/(37 − reps)
+ * Najdokładniejsze dla ≤ ~12 powt. (powyżej wzory zawyżają — dlatego clamp do 12).
+ * reps = 1 → to już jest 1RM (zwracamy sam ciężar). Bez ciężaru/powt. → null.
+ */
+export function estimate1RM(weight: number | null | undefined, reps: number | null | undefined): number | null {
+  if (weight == null || reps == null || weight <= 0 || reps < 1) return null;
+  if (reps === 1) return round05(weight);
+  const r = Math.min(reps, 12);
+  const epley = weight * (1 + r / 30);
+  const brzycki = weight * 36 / (37 - r);
+  return round05((epley + brzycki) / 2);
+}
+
+export interface WnExerciseStats {
+  metric: "weight" | "reps";
+  sessions: number;
+  firstTop: number | null;      // najcięższa seria w PIERWSZEJ (najstarszej) sesji
+  firstDate: string | null;
+  lastTop: number | null;       // najcięższa seria w OSTATNIEJ sesji
+  lastDate: string | null;
+  record: number | null;        // rekord po wszystkich sesjach
+  recordDate: string | null;
+  weekDelta: number | null;     // ostatnia − poprzednia sesja
+  addedAbs: number | null;      // rekord − pierwsza (ile kg/powt. dodane od startu)
+  addedPct: number | null;      // addedAbs / firstTop · 100
+  best1RM: number | null;       // najlepszy szacowany 1RM po całej historii (weighted)
+  best1RMWeight: number | null; // ciężar serii dającej best1RM
+  best1RMReps: number | null;   // powt. serii dającej best1RM
+  current1RM: number | null;    // najlepszy szac. 1RM z OSTATNIEJ sesji
+}
+
+/** Pełne statystyki ćwiczenia: rekord, przyrost od startu (kg + %), 1RM, tydzień. */
+export async function getExerciseStats(exerciseId: string): Promise<WnExerciseStats> {
+  const byReps = await isBodyweight(exerciseId);
+  const history = await getExerciseHistory(exerciseId);
+  const metric: "weight" | "reps" = byReps ? "reps" : "weight";
+  const topOf = (p: WnHistoryPoint) => (byReps ? p.topReps : p.topWeight);
+  const empty: WnExerciseStats = {
+    metric, sessions: 0, firstTop: null, firstDate: null, lastTop: null, lastDate: null,
+    record: null, recordDate: null, weekDelta: null, addedAbs: null, addedPct: null,
+    best1RM: null, best1RMWeight: null, best1RMReps: null, current1RM: null,
+  };
+
+  const withVal = history.filter((p) => topOf(p) != null);
+  if (!withVal.length) return empty;
+
+  const first = withVal[0], last = withVal[withVal.length - 1];
+  const firstTop = topOf(first)!, lastTop = topOf(last)!;
+  let record = -Infinity, recordDate: string | null = null;
+  for (const p of withVal) { const v = topOf(p)!; if (v > record) { record = v; recordDate = p.finishedAt; } }
+  const prev = withVal.length >= 2 ? topOf(withVal[withVal.length - 2]) : null;
+  const addedAbs = round2(record - firstTop);
+  const addedPct = firstTop > 0 ? Math.round((addedAbs / firstTop) * 1000) / 10 : null;
+
+  // 1RM tylko dla ćwiczeń z ciężarem (bodyweight nie ma sensownego 1RM).
+  let best1RM: number | null = null, best1RMWeight: number | null = null, best1RMReps: number | null = null, current1RM: number | null = null;
+  if (!byReps) {
+    for (const p of history) for (const s of p.sets) {
+      const e = estimate1RM(s.weight_kg, s.reps);
+      if (e != null && (best1RM == null || e > best1RM)) { best1RM = e; best1RMWeight = s.weight_kg; best1RMReps = s.reps; }
+    }
+    for (const s of last.sets) {
+      const e = estimate1RM(s.weight_kg, s.reps);
+      if (e != null && (current1RM == null || e > current1RM)) current1RM = e;
+    }
+  }
+
+  return {
+    metric, sessions: withVal.length,
+    firstTop, firstDate: first.finishedAt, lastTop, lastDate: last.finishedAt,
+    record: record === -Infinity ? null : record, recordDate,
+    weekDelta: prev != null ? round2(lastTop - prev) : null,
+    addedAbs, addedPct, best1RM, best1RMWeight, best1RMReps, current1RM,
+  };
+}
+
+// ──────────────────────────────────────────────────────────────────
+// Podsumowanie sesji — skondensowany widok całego treningu (do zrzutu/wysłania)
+// ──────────────────────────────────────────────────────────────────
+export interface WnSummarySet { weight: number | null; reps: number | null; duration: number | null; }
+export interface WnSummaryExercise {
+  exerciseId: string; name: string; kind: WnKind;
+  sets: WnSummarySet[];
+  topWeight: number | null; topReps: number | null;
+  volume: number; est1RM: number | null; isPR: boolean;
+}
+export interface WnSessionSummary {
+  sessionId: string; workoutName: string | null; date: string;
+  exercises: WnSummaryExercise[];
+  totalVolume: number; totalSets: number; prCount: number;
+}
+
+/** Skondensowane podsumowanie jednej sesji treningowej. */
+export async function getSessionSummary(sessionId: string): Promise<WnSessionSummary | null> {
+  const supabase = createClient();
+  const { data: sess } = await supabase
+    .from("wn_sessions").select("*, workout:wn_workouts(name)").eq("id", sessionId).single();
+  if (!sess) return null;
+  const s = sess as WnSession & { workout: { name: string } | null };
+
+  const { data: setsData } = await supabase
+    .from("wn_sets")
+    .select("*, exercise:wn_exercises!inner(id, name, kind)")
+    .eq("session_id", sessionId)
+    .order("set_index", { ascending: true });
+  const rows = (setsData ?? []) as unknown as Array<WnSet & { exercise: { id: string; name: string; kind: WnKind } }>;
+
+  const order: string[] = [];
+  const byEx = new Map<string, { name: string; kind: WnKind; sets: WnSet[] }>();
+  for (const r of rows) {
+    const id = r.exercise.id;
+    if (!byEx.has(id)) { byEx.set(id, { name: r.exercise.name, kind: r.exercise.kind, sets: [] }); order.push(id); }
+    byEx.get(id)!.sets.push(r);
+  }
+
+  const exercises: WnSummaryExercise[] = [];
+  let totalVolume = 0, totalSets = 0, prCount = 0;
+  for (const id of order) {
+    const g = byEx.get(id)!;
+    const byReps = g.kind === "bodyweight";
+    const topWeight = topOfSets(g.sets, false);
+    const topReps = topOfSets(g.sets, true);
+    let volume = 0, est1RM: number | null = null;
+    for (const st of g.sets) {
+      if (st.weight_kg != null && st.reps != null) volume += st.weight_kg * st.reps;
+      const e = estimate1RM(st.weight_kg, st.reps);
+      if (e != null && (est1RM == null || e > est1RM)) est1RM = e;
+    }
+    // PR = najcięższa seria tej sesji ≥ rekord z pozostałych ukończonych sesji.
+    const hist = await getExerciseHistory(id);
+    const allTops = hist.map((p) => (byReps ? p.topReps : p.topWeight)).filter((v): v is number => v != null);
+    const allTime = allTops.length ? Math.max(...allTops) : null;
+    const myTop = byReps ? topReps : topWeight;
+    const isPR = allTime != null && myTop != null && myTop >= allTime;
+    if (isPR) prCount++;
+    totalVolume += volume; totalSets += g.sets.length;
+    exercises.push({
+      exerciseId: id, name: g.name, kind: g.kind,
+      sets: g.sets.map((st) => ({ weight: st.weight_kg, reps: st.reps, duration: st.duration_sec })),
+      topWeight, topReps, volume: Math.round(volume), est1RM, isPR,
+    });
+  }
+
+  return {
+    sessionId, workoutName: s.workout?.name ?? null, date: s.finished_at ?? s.started_at,
+    exercises, totalVolume: Math.round(totalVolume), totalSets, prCount,
+  };
+}
 
 // ──────────────────────────────────────────────────────────────────
 // Cache lokalny (offline safety) — @capacitor/preferences via native-storage

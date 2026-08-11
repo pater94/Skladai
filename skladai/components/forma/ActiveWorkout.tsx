@@ -12,10 +12,10 @@
 
 import { useEffect, useState, useCallback, useMemo } from "react";
 import {
-  getWorkoutWithExercises, getLastFinishedSession, getExerciseProgress, getExerciseHistory,
+  getWorkoutWithExercises, getLastFinishedSession, getExerciseStats, getExerciseHistory,
   upsertSet, finishSession, findOrCreateExercise, addExerciseToWorkout,
   saveActiveDraft, getActiveDraft, clearActiveDraft,
-  type WnWorkoutWithExercises, type WnExercise, type WnKind, type WnExerciseProgress, type WnHistoryPoint,
+  type WnWorkoutWithExercises, type WnExercise, type WnKind, type WnExerciseStats, type WnHistoryPoint,
 } from "@/lib/workoutJournal";
 
 const GREEN = "#5fd39a";
@@ -41,12 +41,13 @@ function setTop(sets: EditableSet[], byReps: boolean): number | null {
 }
 
 export default function ActiveWorkout({
-  goBack, sessionId, workoutId, openExerciseHistory,
+  goBack, sessionId, workoutId, openExerciseHistory, onOpenSummary,
 }: {
   goBack: () => void;
   sessionId: string;
   workoutId: string;
   openExerciseHistory: (exerciseId: string) => void;
+  onOpenSummary: (sessionId: string) => void;
 }) {
   const [workout, setWorkout] = useState<WnWorkoutWithExercises | null>(null);
   const [loading, setLoading] = useState(true);
@@ -55,8 +56,8 @@ export default function ActiveWorkout({
   const [setsBy, setSetsBy] = useState<Record<string, EditableSet[]>>({});
   // ghost "Ostatnio" per exerciseId
   const [ghostBy, setGhostBy] = useState<Record<string, string>>({});
-  // progres + historia per exerciseId
-  const [progBy, setProgBy] = useState<Record<string, WnExerciseProgress>>({});
+  // staty (rekord, przyrost, 1RM) + historia per exerciseId
+  const [progBy, setProgBy] = useState<Record<string, WnExerciseStats>>({});
   const [histBy, setHistBy] = useState<Record<string, WnHistoryPoint[]>>({});
   const [addingOpen, setAddingOpen] = useState(false);
   const [newExName, setNewExName] = useState("");
@@ -113,11 +114,11 @@ export default function ActiveWorkout({
     setGhostBy(ghost);
     setLoading(false);
 
-    // progres + historia (równolegle, nie blokuje renderu)
-    const prog: Record<string, WnExerciseProgress> = {};
+    // staty + historia (równolegle, nie blokuje renderu)
+    const prog: Record<string, WnExerciseStats> = {};
     const hist: Record<string, WnHistoryPoint[]> = {};
     await Promise.all(exIds.map(async (exId) => {
-      prog[exId] = await getExerciseProgress(exId);
+      prog[exId] = await getExerciseStats(exId);
       hist[exId] = await getExerciseHistory(exId);
     }));
     setProgBy(prog);
@@ -202,7 +203,8 @@ export default function ActiveWorkout({
     setFinishing(true);
     await finishSession(sessionId);
     await clearActiveDraft();
-    goBack();
+    // Po zakończeniu → skondensowane podsumowanie (do zrzutu / wysłania).
+    onOpenSummary(sessionId);
   };
 
   // ── Podsumowanie sesji (na żywo) ──
@@ -270,7 +272,8 @@ export default function ActiveWorkout({
               key={ex.id}
               ex={ex} kind={kind} byReps={byReps}
               list={list} ghost={ghostBy[ex.id]} record={record} weekDelta={week}
-              sinceStart={prog?.sinceStartDelta ?? null} history={histBy[ex.id] ?? []} liveTop={liveTop}
+              addedAbs={prog?.addedAbs ?? null} addedPct={prog?.addedPct ?? null} best1RM={prog?.best1RM ?? null}
+              history={histBy[ex.id] ?? []} liveTop={liveTop}
               onField={updateField} onCommit={commitSet} onAddSet={addSet} onSame={addSameSet}
               saved={savedKeys}
               onOpenHistory={() => openExerciseHistory(ex.id)}
@@ -309,12 +312,13 @@ export default function ActiveWorkout({
 
 // ── Karta pojedynczego ćwiczenia ──
 function ExerciseCard({
-  ex, kind, byReps, list, ghost, record, weekDelta, sinceStart, history, liveTop,
+  ex, kind, byReps, list, ghost, record, weekDelta, addedAbs, addedPct, best1RM, history, liveTop,
   onField, onCommit, onAddSet, onSame, saved, onOpenHistory,
 }: {
   ex: WnExercise; kind: WnKind; byReps: boolean;
   list: EditableSet[]; ghost?: string; record: number | null; weekDelta: number | null;
-  sinceStart: number | null; history: WnHistoryPoint[]; liveTop: number | null;
+  addedAbs: number | null; addedPct: number | null; best1RM: number | null;
+  history: WnHistoryPoint[]; liveTop: number | null;
   onField: (exId: string, setIndex: number, field: "weight" | "reps" | "duration", v: string) => void;
   onCommit: (exId: string, setIndex: number) => void;
   onAddSet: (exId: string) => void;
@@ -419,19 +423,25 @@ function ExerciseCard({
         </button>
       </div>
 
-      {/* Stopka: rekord + od startu + sparkline */}
-      <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 10, paddingTop: 10, borderTop: "1px solid rgba(var(--fg-rgb, 255,255,255),0.06)" }}>
-        <div style={{ fontSize: 11, color: "rgba(var(--fg-rgb, 255,255,255),0.55)" }}>
-          Rekord <strong style={{ color: "var(--fg, #fff)" }}>{record != null ? `${record}${byReps ? "" : " kg"}` : "—"}</strong>
-          {liveTop != null && record != null && liveTop > record && <span style={{ color: GREEN, marginLeft: 6 }}>nowy! 🏆</span>}
+      {/* Stopka: rekord + ≈1RM + przyrost od startu (kg/%) + sparkline */}
+      <div style={{ marginTop: 10, paddingTop: 10, borderTop: "1px solid rgba(var(--fg-rgb, 255,255,255),0.06)" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <div style={{ fontSize: 11, color: "rgba(var(--fg-rgb, 255,255,255),0.55)" }}>
+            Rekord <strong style={{ color: "var(--fg, #fff)" }}>{record != null ? `${record}${byReps ? "" : " kg"}` : "—"}</strong>
+            {liveTop != null && record != null && liveTop > record && <span style={{ color: GREEN, marginLeft: 6 }}>nowy! 🏆</span>}
+          </div>
+          {!byReps && best1RM != null && (
+            <div style={{ fontSize: 11, fontWeight: 800, color: "rgba(var(--c-orange-rgb, 249,115,22),0.85)" }}>≈1RM {best1RM} kg</div>
+          )}
+          <div style={{ flex: 1 }} />
+          <Sparkline history={history} byReps={byReps} />
         </div>
-        {sinceStart != null && sinceStart !== 0 && (
-          <div style={{ fontSize: 11, color: sinceStart > 0 ? GREEN : RED }}>
-            Od startu {sinceStart > 0 ? "↑" : "↓"} {Math.abs(sinceStart)}{byReps ? " powt." : " kg"}
+        {addedAbs != null && addedAbs !== 0 && (
+          <div style={{ fontSize: 11, marginTop: 6, color: addedAbs > 0 ? GREEN : RED, fontWeight: 600 }}>
+            Od startu {addedAbs > 0 ? "+" : ""}{addedAbs}{byReps ? " powt." : " kg"}
+            {addedPct != null && addedPct !== 0 && <span style={{ opacity: 0.85 }}> ({addedPct > 0 ? "+" : ""}{addedPct}%)</span>}
           </div>
         )}
-        <div style={{ flex: 1 }} />
-        <Sparkline history={history} byReps={byReps} />
       </div>
     </div>
   );
