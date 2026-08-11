@@ -381,6 +381,18 @@ export async function deleteSet(id: string): Promise<boolean> {
   return true;
 }
 
+/** Usuwa serię po kluczu logicznym (session+exercise+index) — ActiveWorkout nie
+ *  trzyma id serii, tylko indeks. Bezpieczne, gdy seria nie była jeszcze zapisana
+ *  (match nic nie znajdzie → brak błędu). */
+export async function deleteSetByKey(input: { sessionId: string; exerciseId: string; setIndex: number }): Promise<boolean> {
+  const supabase = createClient();
+  const { error } = await supabase
+    .from("wn_sets").delete()
+    .match({ session_id: input.sessionId, exercise_id: input.exerciseId, set_index: input.setIndex });
+  if (error) { console.warn("[wn] deleteSetByKey", error.message); return false; }
+  return true;
+}
+
 export async function getSessionSets(sessionId: string): Promise<WnSet[]> {
   const supabase = createClient();
   const { data } = await supabase
