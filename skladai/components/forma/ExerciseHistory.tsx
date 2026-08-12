@@ -7,11 +7,13 @@
  * Akcent pomarańcz #f97316. Liczby białe. Przyrosty zielone.
  */
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   getExercise, getExerciseHistory, getExerciseStats, estimate1RM,
   type WnExercise, type WnHistoryPoint, type WnExerciseStats,
 } from "@/lib/workoutJournal";
+import { matchExerciseAnatomy } from "@/lib/anatomy/exercises";
+import MuscleMap from "./MuscleMap";
 
 const GREEN = "#5fd39a";
 
@@ -47,6 +49,8 @@ export default function ExerciseHistory({
   const unit = byReps ? "" : " kg";
   const valOf = (p: WnHistoryPoint) => (byReps ? p.topReps : p.topWeight);
   const has1RM = !byReps && stats?.best1RM != null;
+  // Atlas anatomiczny — dopasowanie po nazwie ćwiczenia (niezależne od historii).
+  const anatomy = useMemo(() => (exercise ? matchExerciseAnatomy(exercise.name) : null), [exercise]);
 
   return (
     <div style={{ animation: "fadeInUp 0.4s ease both", paddingBottom: 60 }}>
@@ -61,13 +65,15 @@ export default function ExerciseHistory({
 
       {loading ? (
         <div style={{ padding: 50, textAlign: "center", color: "rgba(var(--fg-rgb, 255,255,255),0.4)" }}>Ładowanie…</div>
-      ) : history.length === 0 ? (
+      ) : (
+        <>
+        {history.length === 0 ? (
         <div style={{ textAlign: "center", padding: "44px 20px", borderRadius: 16, background: "rgba(var(--fg-rgb, 255,255,255),0.03)", border: "1px dashed rgba(var(--fg-rgb, 255,255,255),0.1)" }}>
           <div style={{ fontSize: 30, marginBottom: 8 }}>📈</div>
           <div style={{ fontSize: 14, fontWeight: 700, color: "var(--fg, #fff)" }}>Brak ukończonych sesji</div>
           <div style={{ fontSize: 12, color: "rgba(var(--fg-rgb, 255,255,255),0.5)", marginTop: 4 }}>Zaloguj i zakończ trening, by zobaczyć progres.</div>
         </div>
-      ) : (
+        ) : (
         <>
           {/* HERO: rekord + 1RM subtelnie z boku */}
           <div style={{ padding: "16px 18px", borderRadius: 18, marginBottom: 12, background: "linear-gradient(145deg, rgba(var(--c-orange-rgb, 249,115,22),0.1), rgba(var(--c-orange-rgb, 249,115,22),0.02))", border: "1px solid rgba(var(--c-orange-rgb, 249,115,22),0.2)" }}>
@@ -156,6 +162,22 @@ export default function ExerciseHistory({
               1RM szacowany wzorami Epleya i Brzyckiego (średnia). Najdokładniejszy dla serii do ~12 powtórzeń.
             </div>
           )}
+        </>
+        )}
+
+        {/* Atlas anatomiczny — które mięśnie i które ich głowy pracują */}
+        {anatomy ? (
+          <MuscleMap anatomy={anatomy} />
+        ) : exercise ? (
+          <div style={{ marginTop: 20, padding: "14px 16px", borderRadius: 14, background: "rgba(var(--fg-rgb, 255,255,255),0.035)", border: "1px dashed rgba(var(--fg-rgb, 255,255,255),0.1)", textAlign: "center" }}>
+            <div style={{ fontSize: 20, marginBottom: 6 }}>🧠</div>
+            <div style={{ fontSize: 12.5, fontWeight: 700, color: "var(--fg, #fff)" }}>Brak mapy mięśni dla tej nazwy</div>
+            <div style={{ fontSize: 11, lineHeight: 1.5, color: "rgba(var(--fg-rgb, 255,255,255),0.5)", marginTop: 4 }}>
+              Nie rozpoznaliśmy {"„"}{exercise.name}{"”"} w atlasie anatomicznym. Spróbuj bardziej standardowej
+              nazwy (np. {"„"}Wyciskanie sztangi leżąc{"”"}, {"„"}Przysiad ze sztangą{"”"}).
+            </div>
+          </div>
+        ) : null}
         </>
       )}
     </div>
