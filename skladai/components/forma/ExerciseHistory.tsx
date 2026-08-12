@@ -186,7 +186,7 @@ export default function ExerciseHistory({
         {/* Atlas anatomiczny — które mięśnie i które ich głowy pracują */}
         {anatomy ? (
           <>
-            <MuscleMap anatomy={anatomy} />
+            <MuscleMap key={anatomy.id} anatomy={anatomy} />
             {/* Furtka korekty — żadne automatyczne dopasowanie nie jest nieodwracalne */}
             <button
               onClick={() => { if (exercise) void forgetMapping(exercise.name); setNeedsPick(true); setAnatomy(null); }}
