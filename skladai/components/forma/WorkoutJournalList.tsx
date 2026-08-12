@@ -78,7 +78,11 @@ export default function WorkoutJournalList({
     setMeta(Object.fromEntries(entries));
   }, []);
 
-  useEffect(() => { void load(); }, [load]);
+  // odroczone o klatkę — bez synchronicznego setState w efekcie
+  useEffect(() => {
+    const raf = requestAnimationFrame(() => { void load(); });
+    return () => cancelAnimationFrame(raf);
+  }, [load]);
 
   const handleStart = async (workoutId: string) => {
     if (starting) return;
@@ -137,7 +141,7 @@ export default function WorkoutJournalList({
             <div style={{ fontSize: 32, marginBottom: 8 }}>📓</div>
             <div style={{ fontSize: 14, fontWeight: 700, color: "var(--fg, #fff)" }}>Brak treningów</div>
             <div style={{ fontSize: 12, color: "rgba(var(--fg-rgb, 255,255,255),0.5)", marginTop: 4 }}>
-              Stwórz pierwszy trening (np. „Góra A") i zacznij logować serie.
+              Stwórz pierwszy trening (np. {"„"}Góra A{"”"}) i zacznij logować serie.
             </div>
           </div>
         )}

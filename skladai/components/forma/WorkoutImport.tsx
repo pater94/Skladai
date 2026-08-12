@@ -232,7 +232,7 @@ export default function WorkoutImport({ goBack, onSaved }: { goBack: () => void;
               <label style={miniLabel}>Nazwa treningu</label>
               <input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder={`np. Push A, Nogi, FBW`} style={inputStyle} />
               <div style={{ fontSize: 10.5, color: "rgba(var(--fg-rgb, 255,255,255),0.4)", marginTop: 4 }}>
-                Puste = „Trening {date}"
+                Puste = {"„"}Trening {date}{"”"}
               </div>
             </div>
           )}
