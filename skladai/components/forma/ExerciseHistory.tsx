@@ -7,13 +7,15 @@
  * Akcent pomarańcz #f97316. Liczby białe. Przyrosty zielone.
  */
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   getExercise, getExerciseHistory, getExerciseStats, estimate1RM,
   type WnExercise, type WnHistoryPoint, type WnExerciseStats,
 } from "@/lib/workoutJournal";
-import { matchExerciseAnatomy } from "@/lib/anatomy/exercises";
+import type { ExerciseAnatomy } from "@/lib/anatomy/exercises";
+import { resolveExercise, forgetMapping, type MatchCandidate } from "@/lib/anatomy/matcher";
 import MuscleMap from "./MuscleMap";
+import ExercisePicker from "./ExercisePicker";
 
 const GREEN = "#5fd39a";
 
@@ -27,6 +29,11 @@ export default function ExerciseHistory({
   const [history, setHistory] = useState<WnHistoryPoint[]>([]);
   const [stats, setStats] = useState<WnExerciseStats | null>(null);
   const [loading, setLoading] = useState(true);
+  // Atlas anatomiczny: zapamiętane → lokalne → AI → pytanie do użytkownika.
+  const [anatomy, setAnatomy] = useState<ExerciseAnatomy | null>(null);
+  const [needsPick, setNeedsPick] = useState(false);
+  const [candidates, setCandidates] = useState<MatchCandidate[]>([]);
+  const [resolving, setResolving] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
@@ -41,6 +48,19 @@ export default function ExerciseHistory({
       setHistory(hist);
       setStats(st);
       setLoading(false);
+
+      // Rozpoznanie ćwiczenia (może odpytać AI → osobno, nie blokuje reszty ekranu)
+      if (ex?.name) {
+        setResolving(true);
+        const r = await resolveExercise(ex.name);
+        if (cancelled) return;
+        setAnatomy(r.source === "ask" ? null : r.ex);
+        setNeedsPick(r.source === "ask");
+        setCandidates(r.candidates);
+        setResolving(false);
+      } else {
+        setResolving(false);
+      }
     })();
     return () => { cancelled = true; };
   }, [exerciseId]);
@@ -49,8 +69,6 @@ export default function ExerciseHistory({
   const unit = byReps ? "" : " kg";
   const valOf = (p: WnHistoryPoint) => (byReps ? p.topReps : p.topWeight);
   const has1RM = !byReps && stats?.best1RM != null;
-  // Atlas anatomiczny — dopasowanie po nazwie ćwiczenia (niezależne od historii).
-  const anatomy = useMemo(() => (exercise ? matchExerciseAnatomy(exercise.name) : null), [exercise]);
 
   return (
     <div style={{ animation: "fadeInUp 0.4s ease both", paddingBottom: 60 }}>
@@ -167,16 +185,27 @@ export default function ExerciseHistory({
 
         {/* Atlas anatomiczny — które mięśnie i które ich głowy pracują */}
         {anatomy ? (
-          <MuscleMap anatomy={anatomy} />
-        ) : exercise ? (
-          <div style={{ marginTop: 20, padding: "14px 16px", borderRadius: 14, background: "rgba(var(--fg-rgb, 255,255,255),0.035)", border: "1px dashed rgba(var(--fg-rgb, 255,255,255),0.1)", textAlign: "center" }}>
-            <div style={{ fontSize: 20, marginBottom: 6 }}>🧠</div>
-            <div style={{ fontSize: 12.5, fontWeight: 700, color: "var(--fg, #fff)" }}>Brak mapy mięśni dla tej nazwy</div>
-            <div style={{ fontSize: 11, lineHeight: 1.5, color: "rgba(var(--fg-rgb, 255,255,255),0.5)", marginTop: 4 }}>
-              Nie rozpoznaliśmy {"„"}{exercise.name}{"”"} w atlasie anatomicznym. Spróbuj bardziej standardowej
-              nazwy (np. {"„"}Wyciskanie sztangi leżąc{"”"}, {"„"}Przysiad ze sztangą{"”"}).
-            </div>
+          <>
+            <MuscleMap anatomy={anatomy} />
+            {/* Furtka korekty — żadne automatyczne dopasowanie nie jest nieodwracalne */}
+            <button
+              onClick={() => { if (exercise) void forgetMapping(exercise.name); setNeedsPick(true); setAnatomy(null); }}
+              data-testid="anatomy-rebind"
+              style={{ width: "100%", marginTop: 10, padding: "9px", borderRadius: 11, cursor: "pointer", background: "none", border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.1)", color: "rgba(var(--fg-rgb, 255,255,255),0.45)", fontSize: 11.5, fontWeight: 600 }}
+            >
+              To nie to ćwiczenie? Zmień przypisanie
+            </button>
+          </>
+        ) : resolving ? (
+          <div style={{ marginTop: 20, padding: "18px 16px", borderRadius: 14, background: "rgba(var(--fg-rgb, 255,255,255),0.035)", border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.07)", textAlign: "center", fontSize: 12, color: "rgba(var(--fg-rgb, 255,255,255),0.5)" }}>
+            Rozpoznaję ćwiczenie…
           </div>
+        ) : needsPick && exercise ? (
+          <ExercisePicker
+            rawName={exercise.name}
+            candidates={candidates}
+            onPicked={(ex) => { setAnatomy(ex); setNeedsPick(false); }}
+          />
         ) : null}
         </>
       )}

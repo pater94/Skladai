@@ -305,6 +305,14 @@ export async function importWorkoutSession(opts: { workoutId: string | null; dat
 // ──────────────────────────────────────────────────────────────────
 // Sesje (sessions) + serie (sets)
 // ──────────────────────────────────────────────────────────────────
+/**
+ * Ostatnia ukończona sesja treningu, która MA ZAPISANE SERIE.
+ *
+ * Krytyczne: pusta sesja oznaczona jako ukończona (0 serii) nie może przesłaniać
+ * realnych danych sprzed tygodnia — inaczej podpowiedzi ciężarów i ghost
+ * „Ostatnio:" znikają, mimo że dane siedzą w bazie. Dlatego przeglądamy kilka
+ * ostatnich sesji i bierzemy pierwszą z serią.
+ */
 export async function getLastFinishedSession(workoutId: string): Promise<WnSessionWithSets | null> {
   const supabase = createClient();
   const { data: sessions, error } = await supabase
@@ -313,18 +321,44 @@ export async function getLastFinishedSession(workoutId: string): Promise<WnSessi
     .eq("workout_id", workoutId)
     .not("finished_at", "is", null)
     .order("finished_at", { ascending: false })
-    .limit(1);
+    .limit(12);
   if (error || !sessions || !sessions.length) return null;
-  const session = sessions[0] as WnSession;
-  const { data: sets } = await supabase
-    .from("wn_sets").select("*").eq("session_id", session.id).order("set_index", { ascending: true });
-  return { ...session, sets: (sets ?? []) as WnSet[] };
+
+  const list = sessions as WnSession[];
+  const { data: allSets } = await supabase
+    .from("wn_sets")
+    .select("*")
+    .in("session_id", list.map((s) => s.id))
+    .order("set_index", { ascending: true });
+  const rows = (allSets ?? []) as WnSet[];
+
+  for (const session of list) {
+    const sets = rows.filter((r) => r.session_id === session.id);
+    if (sets.length) return { ...session, sets };
+  }
+  return null; // wszystkie ostatnie sesje puste
 }
 
+/**
+ * Wchodzi w trening: WZNAWIA trwającą (nieukończoną) sesję zamiast tworzyć nową.
+ * Bez tego każde wejście w ekran generowało kolejną pustą sesję-śmiecia, a dane
+ * wpisane wcześniej lądowały w osieroconej sesji, niewidocznej w historii.
+ */
 export async function startSession(workoutId: string): Promise<WnSession | null> {
   const supabase = createClient();
   const userId = await getUserId();
   if (!userId) return null;
+
+  const { data: open } = await supabase
+    .from("wn_sessions")
+    .select("*")
+    .eq("workout_id", workoutId)
+    .eq("user_id", userId)
+    .is("finished_at", null)
+    .order("started_at", { ascending: false })
+    .limit(1);
+  if (open && open.length) return open[0] as WnSession;
+
   const { data, error } = await supabase
     .from("wn_sessions")
     .insert({ user_id: userId, workout_id: workoutId })
@@ -333,8 +367,25 @@ export async function startSession(workoutId: string): Promise<WnSession | null>
   return data as WnSession;
 }
 
+/**
+ * Kończy trening. Sesja BEZ ANI JEDNEJ SERII jest usuwana zamiast oznaczana jako
+ * ukończona — pusty „ukończony" trening zaśmieca historię i (co gorsza) przesłania
+ * podpowiedzi z poprzedniego, realnego treningu.
+ */
 export async function finishSession(sessionId: string): Promise<boolean> {
   const supabase = createClient();
+  const { count } = await supabase
+    .from("wn_sets")
+    .select("id", { count: "exact", head: true })
+    .eq("session_id", sessionId);
+
+  if (!count) {
+    const { error: delErr } = await supabase.from("wn_sessions").delete().eq("id", sessionId);
+    if (delErr) console.warn("[wn] finishSession (usuwanie pustej)", delErr.message);
+    await clearActiveDraft();
+    return true;
+  }
+
   const { error } = await supabase
     .from("wn_sessions").update({ finished_at: new Date().toISOString() }).eq("id", sessionId);
   if (error) { console.warn("[wn] finishSession", error.message); return false; }
