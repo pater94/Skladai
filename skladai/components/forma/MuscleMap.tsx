@@ -74,6 +74,9 @@ export default function MuscleMap({ anatomy }: { anatomy: ExerciseAnatomy }) {
   const [hover, setHover] = useState<{ muscle: MuscleId; head?: string } | null>(null);
   const [playing, setPlaying] = useState(true);
   const [reduced, setReduced] = useState(false);
+  // Opisy encyklopedyczne domyślnie ZWINIĘTE — ekran ma nie być przeładowany.
+  const [expanded, setExpanded] = useState(false);
+  const [tipOpen, setTipOpen] = useState(false);
 
   // Uwaga: przy zmianie ćwiczenia komponent jest remountowany przez key={anatomy.id}
   // w ExerciseHistory — dzięki temu widok startowy wylicza się od nowa bez efektu.
@@ -169,10 +172,10 @@ export default function MuscleMap({ anatomy }: { anatomy: ExerciseAnatomy }) {
       {/* Nagłówek */}
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: "1.5px", textTransform: "uppercase", color: "rgba(var(--fg-rgb, 255,255,255),0.4)" }}>
+          <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: "1.5px", textTransform: "uppercase", color: "rgba(var(--fg-rgb, 255,255,255),0.64)" }}>
             Pracujące mięśnie
           </div>
-          <div style={{ fontSize: 11.5, color: "rgba(var(--fg-rgb, 255,255,255),0.5)", marginTop: 3 }}>
+          <div style={{ fontSize: 11.5, color: "rgba(var(--fg-rgb, 255,255,255),0.72)", marginTop: 3 }}>
             {anatomy.name} · <span style={{ color: ORANGE, fontWeight: 700 }}>{anatomy.pattern}</span>
           </div>
         </div>
@@ -243,19 +246,19 @@ export default function MuscleMap({ anatomy }: { anatomy: ExerciseAnatomy }) {
             }}>
             {animate ? "⏸ Zatrzymaj puls" : "▶ Pokaż pracę"}
           </button>
-          <span style={{ fontSize: 10.5, color: "rgba(var(--fg-rgb, 255,255,255),0.45)", flex: 1, minWidth: 0 }}>
+          <span style={{ fontSize: 10.5, color: "rgba(var(--fg-rgb, 255,255,255),0.68)", flex: 1, minWidth: 0 }}>
             {reduced ? "Animacje wyłączone w ustawieniach systemu" : motion.label}
           </span>
         </div>
 
         {/* Legenda cieplna */}
         <div style={{ display: "flex", alignItems: "center", gap: 5, justifyContent: "center", padding: "8px 4px 2px", flexWrap: "wrap" }}>
-          <span style={{ fontSize: 9.5, color: "rgba(var(--fg-rgb, 255,255,255),0.4)" }}>słabiej</span>
+          <span style={{ fontSize: 9.5, color: "rgba(var(--fg-rgb, 255,255,255),0.64)" }}>słabiej</span>
           {HEAT.map((c, i) => (
             <span key={i} title={HEAT_LABEL[i]} style={{ width: 24, height: 9, borderRadius: 3, background: c, border: "1px solid rgba(0,0,0,0.3)" }} />
           ))}
-          <span style={{ fontSize: 9.5, color: "rgba(var(--fg-rgb, 255,255,255),0.4)" }}>mocniej</span>
-          <span style={{ fontSize: 9.5, color: "rgba(var(--fg-rgb, 255,255,255),0.32)", marginLeft: 4 }}>· dotknij partii</span>
+          <span style={{ fontSize: 9.5, color: "rgba(var(--fg-rgb, 255,255,255),0.64)" }}>mocniej</span>
+          <span style={{ fontSize: 9.5, color: "rgba(var(--fg-rgb, 255,255,255),0.56)", marginLeft: 4 }}>· dotknij partii</span>
         </div>
       </div>
 
@@ -269,17 +272,17 @@ export default function MuscleMap({ anatomy }: { anatomy: ExerciseAnatomy }) {
           <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontSize: 16, fontWeight: 900, color: "var(--fg, #fff)", lineHeight: 1.2 }}>{activeMuscle.name}</div>
-              <div style={{ fontSize: 11, fontStyle: "italic", color: "rgba(var(--fg-rgb, 255,255,255),0.45)", marginTop: 2 }}>{activeMuscle.latin}</div>
+              <div style={{ fontSize: 11, fontStyle: "italic", color: "rgba(var(--fg-rgb, 255,255,255),0.68)", marginTop: 2 }}>{activeMuscle.latin}</div>
             </div>
             {activeAct ? (
               <div style={{ textAlign: "right", flexShrink: 0 }}>
                 <div style={{ fontSize: 22, fontWeight: 900, color: HEAT[levelOf(activeAct.share)], lineHeight: 1 }}>{activeAct.share}%</div>
-                <div style={{ fontSize: 9.5, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.4px", color: "rgba(var(--fg-rgb, 255,255,255),0.45)", marginTop: 3 }}>
+                <div style={{ fontSize: 9.5, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.4px", color: "rgba(var(--fg-rgb, 255,255,255),0.68)", marginTop: 3 }}>
                   {ROLE_LABEL[activeAct.role]}
                 </div>
               </div>
             ) : (
-              <span style={{ fontSize: 10.5, fontWeight: 700, padding: "4px 9px", borderRadius: 99, flexShrink: 0, background: "rgba(var(--fg-rgb, 255,255,255),0.07)", color: "rgba(var(--fg-rgb, 255,255,255),0.5)" }}>nie pracuje</span>
+              <span style={{ fontSize: 10.5, fontWeight: 700, padding: "4px 9px", borderRadius: 99, flexShrink: 0, background: "rgba(var(--fg-rgb, 255,255,255),0.07)", color: "rgba(var(--fg-rgb, 255,255,255),0.72)" }}>nie pracuje</span>
             )}
           </div>
 
@@ -299,7 +302,7 @@ export default function MuscleMap({ anatomy }: { anatomy: ExerciseAnatomy }) {
                         {pct != null && (
                           <span style={{ fontSize: 11.5, fontWeight: 800, color: "var(--fg, #fff)", flexShrink: 0 }}>
                             {pct}%
-                            {contrib != null && <span style={{ fontSize: 9.5, fontWeight: 600, color: "rgba(var(--fg-rgb, 255,255,255),0.42)" }}> · {contrib.toFixed(1)}% pracy</span>}
+                            {contrib != null && <span style={{ fontSize: 9.5, fontWeight: 600, color: "rgba(var(--fg-rgb, 255,255,255),0.66)" }}> · {contrib.toFixed(1)}% pracy</span>}
                           </span>
                         )}
                       </div>
@@ -308,7 +311,9 @@ export default function MuscleMap({ anatomy }: { anatomy: ExerciseAnatomy }) {
                           <div style={{ width: `${Math.max(2, pct)}%`, height: "100%", borderRadius: 3, background: lvl >= 0 ? HEAT[lvl] : "#5b6472" }} />
                         </div>
                       )}
-                      <div style={{ fontSize: 10.5, lineHeight: 1.45, color: "rgba(var(--fg-rgb, 255,255,255),0.5)", marginTop: 3 }}>{h.role}</div>
+                      {expanded && (
+                        <div style={{ fontSize: 10.5, lineHeight: 1.45, color: "rgba(var(--fg-rgb, 255,255,255),0.72)", marginTop: 3 }}>{h.role}</div>
+                      )}
                     </div>
                   );
                 })}
@@ -319,17 +324,38 @@ export default function MuscleMap({ anatomy }: { anatomy: ExerciseAnatomy }) {
           {activeAct?.note && (
             <div style={{ marginTop: 13, padding: "10px 12px", borderRadius: 12, background: `rgba(${ORANGE_RGB},0.1)`, border: `1px solid rgba(${ORANGE_RGB},0.2)` }}>
               <div style={{ fontSize: 9.5, fontWeight: 800, letterSpacing: "0.5px", textTransform: "uppercase", color: ORANGE, marginBottom: 4 }}>W tym ćwiczeniu</div>
-              <div style={{ fontSize: 11.5, lineHeight: 1.5, color: "rgba(var(--fg-rgb, 255,255,255),0.8)" }}>{activeAct.note}</div>
+              <div style={{ fontSize: 11.5, lineHeight: 1.5, color: "rgba(var(--fg-rgb, 255,255,255),0.93)" }}>{activeAct.note}</div>
             </div>
           )}
 
-          <Block label="Co robi" text={activeMuscle.action} />
-          <Block label="Przyczepy" text={activeMuscle.attach} />
-          <Block label="Jak trenować" text={activeMuscle.training} />
-          {activeMuscle.fact && <Block label="Warto wiedzieć" text={activeMuscle.fact} accent />}
+          {/* Encyklopedia — zwinięta domyślnie */}
+          <button
+            onClick={() => setExpanded((e) => !e)}
+            data-testid="muscle-detail-expand"
+            className="w-full active:scale-[0.99] transition-transform"
+            style={{
+              marginTop: 13, padding: "10px 12px", borderRadius: 12, cursor: "pointer",
+              display: "flex", alignItems: "center", gap: 8, textAlign: "left",
+              background: `rgba(${ORANGE_RGB},0.1)`, border: `1px solid rgba(${ORANGE_RGB},0.24)`,
+              color: ORANGE, fontSize: 12.5, fontWeight: 800,
+            }}
+          >
+            <span style={{ fontSize: 14 }}>📖</span>
+            <span style={{ flex: 1 }}>{expanded ? "Ukryj pełny opis" : "Pokaż pełny opis mięśnia"}</span>
+            <span style={{ fontSize: 13, transform: expanded ? "rotate(180deg)" : "none", transition: "transform .2s ease" }}>⌄</span>
+          </button>
+
+          {expanded && (
+            <div style={{ animation: "fadeInUp 0.22s ease both" }}>
+              <Block label="Co robi" text={activeMuscle.action} />
+              <Block label="Przyczepy" text={activeMuscle.attach} />
+              <Block label="Jak trenować" text={activeMuscle.training} />
+              {activeMuscle.fact && <Block label="Warto wiedzieć" text={activeMuscle.fact} accent />}
+            </div>
+          )}
 
           <button onClick={() => { setSelected(null); setHover(null); }}
-            style={{ marginTop: 12, width: "100%", padding: "9px", borderRadius: 11, cursor: "pointer", background: "rgba(var(--fg-rgb, 255,255,255),0.05)", border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.1)", color: "rgba(var(--fg-rgb, 255,255,255),0.6)", fontSize: 12, fontWeight: 700 }}>
+            style={{ marginTop: 12, width: "100%", padding: "9px", borderRadius: 11, cursor: "pointer", background: "rgba(var(--fg-rgb, 255,255,255),0.05)", border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.1)", color: "rgba(var(--fg-rgb, 255,255,255),0.78)", fontSize: 12, fontWeight: 700 }}>
             Zamknij
           </button>
         </div>
@@ -361,7 +387,7 @@ export default function MuscleMap({ anatomy }: { anatomy: ExerciseAnatomy }) {
                 </div>
                 <div style={{ textAlign: "right", flexShrink: 0 }}>
                   <div style={{ fontSize: 13, fontWeight: 900, color: "var(--fg, #fff)" }}>{a.share}%</div>
-                  <div style={{ fontSize: 9, color: "rgba(var(--fg-rgb, 255,255,255),0.4)" }}>{ROLE_LABEL[a.role]}</div>
+                  <div style={{ fontSize: 9, color: "rgba(var(--fg-rgb, 255,255,255),0.64)" }}>{ROLE_LABEL[a.role]}</div>
                 </div>
               </button>
             );
@@ -370,18 +396,32 @@ export default function MuscleMap({ anatomy }: { anatomy: ExerciseAnatomy }) {
       </div>
 
       {anatomy.tip && (
-        <div style={{ marginTop: 12, padding: "12px 14px", borderRadius: 14, background: "rgba(var(--fg-rgb, 255,255,255),0.04)", border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.08)" }}>
-          <div style={{ fontSize: 9.5, fontWeight: 800, letterSpacing: "0.6px", textTransform: "uppercase", color: ORANGE, marginBottom: 5 }}>💡 Technika — co zmienia akcenty</div>
-          <div style={{ fontSize: 12, lineHeight: 1.55, color: "rgba(var(--fg-rgb, 255,255,255),0.78)" }}>{anatomy.tip}</div>
+        <div style={{ marginTop: 12, borderRadius: 14, overflow: "hidden", background: "rgba(var(--fg-rgb, 255,255,255),0.04)", border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.08)" }}>
+          <button
+            onClick={() => setTipOpen((t) => !t)}
+            data-testid="technique-toggle"
+            className="w-full active:scale-[0.995] transition-transform"
+            style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", padding: "12px 14px", background: "none", border: "none", cursor: "pointer", textAlign: "left" }}
+          >
+            <span style={{ fontSize: 11.5, fontWeight: 800, letterSpacing: "0.4px", textTransform: "uppercase", color: ORANGE, flex: 1 }}>
+              💡 Technika — co zmienia akcenty
+            </span>
+            <span style={{ fontSize: 13, color: ORANGE, transform: tipOpen ? "rotate(180deg)" : "none", transition: "transform .2s ease" }}>⌄</span>
+          </button>
+          {tipOpen && (
+            <div style={{ padding: "0 14px 13px", fontSize: 12.5, lineHeight: 1.6, color: "rgba(var(--fg-rgb, 255,255,255),0.92)", animation: "fadeInUp 0.22s ease both" }}>
+              {anatomy.tip}
+            </div>
+          )}
         </div>
       )}
 
-      <div style={{ marginTop: 12, fontSize: 10, lineHeight: 1.5, color: "rgba(var(--fg-rgb, 255,255,255),0.34)", textAlign: "center" }}>
+      <div style={{ marginTop: 12, fontSize: 10, lineHeight: 1.5, color: "rgba(var(--fg-rgb, 255,255,255),0.58)", textAlign: "center" }}>
         Wartości procentowe są szacunkowe — analiza biomechaniczna (dźwignie, zakres ruchu, pozycja stawów)
         skorelowana z danymi EMG z literatury.
       </div>
       {/* Atrybucja wymagana licencją CC BY-SA */}
-      <div style={{ marginTop: 6, fontSize: 9.5, lineHeight: 1.5, color: "rgba(var(--fg-rgb, 255,255,255),0.28)", textAlign: "center" }}>
+      <div style={{ marginTop: 6, fontSize: 9.5, lineHeight: 1.5, color: "rgba(var(--fg-rgb, 255,255,255),0.52)", textAlign: "center" }}>
         Plansza anatomiczna: {ANATOMY_ATTRIBUTION.author} ·{" "}
         <a href={ANATOMY_ATTRIBUTION.source} target="_blank" rel="noreferrer noopener" style={{ color: "inherit", textDecoration: "underline" }}>
           Wikimedia Commons
@@ -396,7 +436,7 @@ export default function MuscleMap({ anatomy }: { anatomy: ExerciseAnatomy }) {
 
 const sectionLabel: React.CSSProperties = {
   fontSize: 10, fontWeight: 800, letterSpacing: "1px", textTransform: "uppercase",
-  color: "rgba(var(--fg-rgb, 255,255,255),0.42)",
+  color: "rgba(var(--fg-rgb, 255,255,255),0.66)",
 };
 
 function Block({ label, text, accent }: { label: string; text: string; accent?: boolean }) {

@@ -77,19 +77,19 @@ export default function ExerciseHistory({
         <button onClick={goBack} aria-label="Wróć" style={{ width: 38, height: 38, borderRadius: 12, flexShrink: 0, background: "rgba(var(--fg-rgb, 255,255,255),0.06)", border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.1)", color: "var(--fg, #fff)", fontSize: 18, cursor: "pointer" }}>‹</button>
         <div style={{ flex: 1, minWidth: 0 }}>
           <h2 style={{ fontSize: 19, fontWeight: 900, color: "var(--fg, #fff)" }}>{exercise?.name ?? "Ćwiczenie"}</h2>
-          <p style={{ fontSize: 11.5, color: "rgba(var(--fg-rgb, 255,255,255),0.5)" }}>Progres w czasie</p>
+          <p style={{ fontSize: 11.5, color: "rgba(var(--fg-rgb, 255,255,255),0.72)" }}>Progres w czasie</p>
         </div>
       </div>
 
       {loading ? (
-        <div style={{ padding: 50, textAlign: "center", color: "rgba(var(--fg-rgb, 255,255,255),0.4)" }}>Ładowanie…</div>
+        <div style={{ padding: 50, textAlign: "center", color: "rgba(var(--fg-rgb, 255,255,255),0.64)" }}>Ładowanie…</div>
       ) : (
         <>
         {history.length === 0 ? (
         <div style={{ textAlign: "center", padding: "44px 20px", borderRadius: 16, background: "rgba(var(--fg-rgb, 255,255,255),0.03)", border: "1px dashed rgba(var(--fg-rgb, 255,255,255),0.1)" }}>
           <div style={{ fontSize: 30, marginBottom: 8 }}>📈</div>
           <div style={{ fontSize: 14, fontWeight: 700, color: "var(--fg, #fff)" }}>Brak ukończonych sesji</div>
-          <div style={{ fontSize: 12, color: "rgba(var(--fg-rgb, 255,255,255),0.5)", marginTop: 4 }}>Zaloguj i zakończ trening, by zobaczyć progres.</div>
+          <div style={{ fontSize: 12, color: "rgba(var(--fg-rgb, 255,255,255),0.72)", marginTop: 4 }}>Zaloguj i zakończ trening, by zobaczyć progres.</div>
         </div>
         ) : (
         <>
@@ -99,14 +99,14 @@ export default function ExerciseHistory({
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={miniLabel}>Rekord</div>
                 <div style={{ fontSize: 36, fontWeight: 900, color: "var(--fg, #fff)", lineHeight: 1, letterSpacing: "-0.02em" }}>
-                  {stats?.record ?? "—"}<span style={{ fontSize: 17, fontWeight: 700, color: "rgba(var(--fg-rgb, 255,255,255),0.55)" }}>{stats?.record != null ? unit : ""}</span>
+                  {stats?.record ?? "—"}<span style={{ fontSize: 17, fontWeight: 700, color: "rgba(var(--fg-rgb, 255,255,255),0.75)" }}>{stats?.record != null ? unit : ""}</span>
                 </div>
               </div>
               {has1RM && (
                 <div style={{ textAlign: "right", flexShrink: 0, paddingLeft: 12, borderLeft: "1px solid rgba(var(--fg-rgb, 255,255,255),0.1)" }}>
                   <div style={{ ...miniLabel, color: "rgba(var(--c-orange-rgb, 249,115,22),0.9)" }}>Szac. 1RM</div>
                   <div style={{ fontSize: 22, fontWeight: 900, color: "var(--c-orange, #f97316)", lineHeight: 1.05 }}>≈{stats!.best1RM}<span style={{ fontSize: 12, fontWeight: 700 }}> kg</span></div>
-                  <div style={{ fontSize: 9.5, color: "rgba(var(--fg-rgb, 255,255,255),0.4)", marginTop: 2 }}>z {stats!.best1RMWeight}kg × {stats!.best1RMReps}</div>
+                  <div style={{ fontSize: 9.5, color: "rgba(var(--fg-rgb, 255,255,255),0.64)", marginTop: 2 }}>z {stats!.best1RMWeight}kg × {stats!.best1RMReps}</div>
                 </div>
               )}
             </div>
@@ -114,7 +114,7 @@ export default function ExerciseHistory({
             {/* Przyrost od startu — kg + % */}
             {stats?.addedAbs != null && stats.addedAbs !== 0 && (
               <div style={{ marginTop: 13, paddingTop: 12, borderTop: "1px solid rgba(var(--fg-rgb, 255,255,255),0.08)", display: "flex", alignItems: "baseline", flexWrap: "wrap", gap: 8 }}>
-                <span style={{ fontSize: 12, color: "rgba(var(--fg-rgb, 255,255,255),0.55)" }}>Od startu</span>
+                <span style={{ fontSize: 12, color: "rgba(var(--fg-rgb, 255,255,255),0.75)" }}>Od startu</span>
                 <span style={{ fontSize: 17, fontWeight: 900, color: stats.addedAbs > 0 ? GREEN : "#f87171" }}>
                   {stats.addedAbs > 0 ? "+" : ""}{stats.addedAbs}{unit}
                 </span>
@@ -124,7 +124,7 @@ export default function ExerciseHistory({
                   </span>
                 )}
                 {stats.firstDate && (
-                  <span style={{ fontSize: 10.5, color: "rgba(var(--fg-rgb, 255,255,255),0.4)", marginLeft: "auto" }}>
+                  <span style={{ fontSize: 10.5, color: "rgba(var(--fg-rgb, 255,255,255),0.64)", marginLeft: "auto" }}>
                     od {new Date(stats.firstDate).toLocaleDateString("pl-PL", { day: "numeric", month: "short", year: "2-digit" })}
                   </span>
                 )}
@@ -147,7 +147,7 @@ export default function ExerciseHistory({
 
           {/* Historia sesji */}
           <div style={{ marginTop: 22 }}>
-            <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: "1.5px", textTransform: "uppercase", color: "rgba(var(--fg-rgb, 255,255,255),0.4)", marginBottom: 10 }}>Historia sesji</div>
+            <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: "1.5px", textTransform: "uppercase", color: "rgba(var(--fg-rgb, 255,255,255),0.64)", marginBottom: 10 }}>Historia sesji</div>
             <div className="flex flex-col gap-2">
               {[...history].reverse().map((p) => {
                 const top = valOf(p);
@@ -163,7 +163,7 @@ export default function ExerciseHistory({
                         {new Date(p.finishedAt).toLocaleDateString("pl-PL", { day: "numeric", month: "short", year: "numeric" })}
                         {isPR && <span style={{ marginLeft: 7 }}>🏆</span>}
                       </div>
-                      <div style={{ fontSize: 11, color: "rgba(var(--fg-rgb, 255,255,255),0.45)", marginTop: 2 }}>
+                      <div style={{ fontSize: 11, color: "rgba(var(--fg-rgb, 255,255,255),0.68)", marginTop: 2 }}>
                         {reps} powt.{s1rm != null && <span style={{ marginLeft: 7, color: "rgba(var(--c-orange-rgb, 249,115,22),0.75)" }}>≈1RM {s1rm} kg</span>}
                       </div>
                     </div>
@@ -176,7 +176,7 @@ export default function ExerciseHistory({
 
           {/* Metodologia 1RM — subtelna nota */}
           {has1RM && (
-            <div style={{ marginTop: 14, fontSize: 10.5, lineHeight: 1.5, color: "rgba(var(--fg-rgb, 255,255,255),0.35)", textAlign: "center" }}>
+            <div style={{ marginTop: 14, fontSize: 10.5, lineHeight: 1.5, color: "rgba(var(--fg-rgb, 255,255,255),0.58)", textAlign: "center" }}>
               1RM szacowany wzorami Epleya i Brzyckiego (średnia). Najdokładniejszy dla serii do ~12 powtórzeń.
             </div>
           )}
@@ -191,13 +191,13 @@ export default function ExerciseHistory({
             <button
               onClick={() => { if (exercise) void forgetMapping(exercise.name); setNeedsPick(true); setAnatomy(null); }}
               data-testid="anatomy-rebind"
-              style={{ width: "100%", marginTop: 10, padding: "9px", borderRadius: 11, cursor: "pointer", background: "none", border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.1)", color: "rgba(var(--fg-rgb, 255,255,255),0.45)", fontSize: 11.5, fontWeight: 600 }}
+              style={{ width: "100%", marginTop: 10, padding: "9px", borderRadius: 11, cursor: "pointer", background: "none", border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.1)", color: "rgba(var(--fg-rgb, 255,255,255),0.68)", fontSize: 11.5, fontWeight: 600 }}
             >
               To nie to ćwiczenie? Zmień przypisanie
             </button>
           </>
         ) : resolving ? (
-          <div style={{ marginTop: 20, padding: "18px 16px", borderRadius: 14, background: "rgba(var(--fg-rgb, 255,255,255),0.035)", border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.07)", textAlign: "center", fontSize: 12, color: "rgba(var(--fg-rgb, 255,255,255),0.5)" }}>
+          <div style={{ marginTop: 20, padding: "18px 16px", borderRadius: 14, background: "rgba(var(--fg-rgb, 255,255,255),0.035)", border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.07)", textAlign: "center", fontSize: 12, color: "rgba(var(--fg-rgb, 255,255,255),0.72)" }}>
             Rozpoznaję ćwiczenie…
           </div>
         ) : needsPick && exercise ? (
@@ -213,13 +213,13 @@ export default function ExerciseHistory({
   );
 }
 
-const miniLabel: React.CSSProperties = { fontSize: 10, fontWeight: 800, letterSpacing: "0.5px", textTransform: "uppercase", color: "rgba(var(--fg-rgb, 255,255,255),0.45)", marginBottom: 4 };
+const miniLabel: React.CSSProperties = { fontSize: 10, fontWeight: 800, letterSpacing: "0.5px", textTransform: "uppercase", color: "rgba(var(--fg-rgb, 255,255,255),0.68)", marginBottom: 4 };
 
 function Stat({ label, value, color }: { label: string; value: string; color: string }) {
   return (
     <div style={{ flex: 1, textAlign: "center", padding: "13px 6px", borderRadius: 14, background: "rgba(var(--fg-rgb, 255,255,255),0.04)", border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.07)" }}>
       <div style={{ fontSize: 16, fontWeight: 900, color }}>{value}</div>
-      <div style={{ fontSize: 9.5, color: "rgba(var(--fg-rgb, 255,255,255),0.45)", marginTop: 3 }}>{label}</div>
+      <div style={{ fontSize: 9.5, color: "rgba(var(--fg-rgb, 255,255,255),0.68)", marginTop: 3 }}>{label}</div>
     </div>
   );
 }

@@ -60,7 +60,7 @@ export default function ExercisePicker({
         <span style={{ fontSize: 22, lineHeight: 1 }}>🧩</span>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: 14.5, fontWeight: 900, color: "var(--fg, #fff)" }}>Które to ćwiczenie?</div>
-          <div style={{ fontSize: 11.5, lineHeight: 1.5, color: "rgba(var(--fg-rgb, 255,255,255),0.6)", marginTop: 3 }}>
+          <div style={{ fontSize: 11.5, lineHeight: 1.5, color: "rgba(var(--fg-rgb, 255,255,255),0.78)", marginTop: 3 }}>
             Zapisałeś je jako {"„"}<strong style={{ color: ORANGE }}>{rawName}</strong>{"”"}. Wskaż odpowiednik, a pokażę pracujące
             mięśnie. Zapamiętam wybór — zapytam tylko raz.
           </div>
@@ -87,7 +87,7 @@ export default function ExercisePicker({
       {/* Lista kandydatów */}
       <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 12, maxHeight: showAll ? 320 : undefined, overflowY: showAll ? "auto" : undefined }}>
         {list.length === 0 && (
-          <div style={{ padding: "14px 4px", textAlign: "center", fontSize: 12, color: "rgba(var(--fg-rgb, 255,255,255),0.45)" }}>
+          <div style={{ padding: "14px 4px", textAlign: "center", fontSize: 12, color: "rgba(var(--fg-rgb, 255,255,255),0.68)" }}>
             Brak wyników — spróbuj innego słowa.
           </div>
         )}
@@ -110,7 +110,7 @@ export default function ExercisePicker({
             >
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 13, fontWeight: 800, color: "var(--fg, #fff)" }}>{ex.name}</div>
-                <div style={{ fontSize: 10.5, color: "rgba(var(--fg-rgb, 255,255,255),0.5)", marginTop: 2 }}>
+                <div style={{ fontSize: 10.5, color: "rgba(var(--fg-rgb, 255,255,255),0.72)", marginTop: 2 }}>
                   {mainMuscleName(ex)} · {ex.pattern}
                 </div>
               </div>
@@ -119,7 +119,7 @@ export default function ExercisePicker({
                   {cand?.why === "podpowiedź AI" ? "AI" : "najlepsze"}
                 </span>
               )}
-              <span style={{ color: "rgba(var(--fg-rgb, 255,255,255),0.3)", fontSize: 17, flexShrink: 0 }}>›</span>
+              <span style={{ color: "rgba(var(--fg-rgb, 255,255,255),0.55)", fontSize: 17, flexShrink: 0 }}>›</span>
             </button>
           );
         })}
@@ -133,7 +133,7 @@ export default function ExercisePicker({
           width: "100%", marginTop: 10, padding: "9px", borderRadius: 11, cursor: "pointer",
           background: "rgba(var(--fg-rgb, 255,255,255),0.05)",
           border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.1)",
-          color: "rgba(var(--fg-rgb, 255,255,255),0.65)", fontSize: 12, fontWeight: 700,
+          color: "rgba(var(--fg-rgb, 255,255,255),0.82)", fontSize: 12, fontWeight: 700,
         }}
       >
         {showAll ? (candidates.length ? "‹ Pokaż podpowiedzi" : "Anuluj") : "🔍 Żadne z tych — przeglądaj wszystkie"}
