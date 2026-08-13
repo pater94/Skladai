@@ -17,7 +17,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { MUSCLES, type MuscleId } from "@/lib/anatomy/muscles";
-import { POSES, lerpPose, type Pose } from "./exercisePose";
+import { STANCES, poseFor, mergePose, lerpPose, type Pose } from "./exercisePose";
 
 // Three.js dociągany dopiero przy wejściu w widok 3D — nie obciąża reszty apki.
 const MuscleModel3D = dynamic(() => import("./MuscleModel3D"), {
@@ -112,10 +112,17 @@ export default function MuscleMap({ anatomy }: { anatomy: ExerciseAnatomy }) {
 
   // Animacja techniki w 3D: płynne przejście start ⇄ koniec ruchu.
   const archetypeForPose = useMemo(() => archetypeOf(anatomy), [anatomy]);
+  const movement = useMemo(() => poseFor(anatomy, archetypeForPose), [anatomy, archetypeForPose]);
+  const stanceDef = STANCES[movement.stance];
   useEffect(() => {
-    if (mode !== "model") { setPose3d(null); return; }
-    const pair = POSES[archetypeForPose];
-    if (!playing || reduced) { setPose3d(pair.start); return; }
+    if (mode !== "model") return; // komponent 3D i tak jest odmontowany
+    const pair = movement;
+    const base = STANCES[pair.stance].base;
+    if (!playing || reduced) {
+      // odroczone o klatkę — bez synchronicznego setState w efekcie
+      const id = requestAnimationFrame(() => setPose3d(mergePose(base, pair.start)));
+      return () => cancelAnimationFrame(id);
+    }
     const t0 = performance.now();
     const loop = () => {
       const el = (performance.now() - t0) / 1000;
@@ -123,12 +130,12 @@ export default function MuscleMap({ anatomy }: { anatomy: ExerciseAnatomy }) {
       const raw = (el % pair.dur) / pair.dur;
       const tri = raw < 0.5 ? raw * 2 : (1 - raw) * 2;
       const eased = tri * tri * (3 - 2 * tri);
-      setPose3d(lerpPose(pair.start, pair.end, eased));
+      setPose3d(lerpPose(mergePose(base, pair.start), mergePose(base, pair.end), eased));
       poseRaf.current = requestAnimationFrame(loop);
     };
     poseRaf.current = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(poseRaf.current);
-  }, [mode, playing, reduced, archetypeForPose]);
+  }, [mode, playing, reduced, movement]);
 
   const archetype = useMemo(() => archetypeOf(anatomy), [anatomy]);
   const motion = MOTIONS[archetype];
@@ -244,6 +251,8 @@ export default function MuscleMap({ anatomy }: { anatomy: ExerciseAnatomy }) {
             activation={anatomy.activation}
             selected={selected}
             pose={pose3d}
+            stance={stanceDef}
+            equipment={movement.equipment}
             onPick={(p) => setSelected(p)}
           />
         ) : (
@@ -301,7 +310,7 @@ export default function MuscleMap({ anatomy }: { anatomy: ExerciseAnatomy }) {
           </button>
           <span style={{ fontSize: 10.5, color: "rgba(var(--fg-rgb, 255,255,255),0.68)", flex: 1, minWidth: 0 }}>
             {reduced ? "Animacje wyłączone w ustawieniach systemu"
-              : mode === "model" ? `${POSES[archetypeForPose].label} · przeciągnij, by obrócić` : motion.label}
+              : mode === "model" ? `${movement.label} · ${stanceDef.name} · przeciągnij, by obrócić` : motion.label}
           </span>
         </div>
 

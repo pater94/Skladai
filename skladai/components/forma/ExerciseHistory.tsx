@@ -141,7 +141,7 @@ export default function ExerciseHistory({
             <Stat label="Sesje" value={String(stats?.sessions ?? 0)} color="var(--fg, #fff)" />
             {/* Postęp liczony INDEKSEM SIŁY — uczciwy także gdy zmieniłeś zakres powtórzeń */}
             <Stat
-              label="Vs poprzedni"
+              label="Vs ostatnia sesja"
               value={stats?.indexDelta == null ? "—" : stats.trend === "flat" ? "≈ tyle samo" : `${stats.indexDelta > 0 ? "↑ +" : "↓ "}${Math.abs(stats.indexDelta)}`}
               color={stats?.trend === "up" ? GREEN : stats?.trend === "down" ? "#f87171" : "rgba(var(--fg-rgb, 255,255,255),0.72)"}
             />

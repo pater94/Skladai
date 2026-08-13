@@ -19,7 +19,7 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { MUSCLES, type MuscleId } from "@/lib/anatomy/muscles";
 import { SKELETON, MUSCLES_3D, type SegmentId } from "@/lib/anatomy/muscles3d";
 import type { MuscleActivation } from "@/lib/anatomy/exercises";
-import type { Pose } from "./exercisePose";
+import type { Pose, StanceDef, Equipment } from "./exercisePose";
 
 const HEAT = ["#5b6472", "#d99a2b", "#f08a2c", "#f2621f", "#e0231c"];
 const INACTIVE = "#3a4049";
@@ -46,13 +46,17 @@ function levelOf(c: number | null): number {
 interface MeshInfo { muscle: MuscleId; head?: string; level: number; base: THREE.Color }
 
 export default function MuscleModel3D({
-  activation, onPick, selected, pose,
+  activation, onPick, selected, pose, stance, equipment,
 }: {
   activation: MuscleActivation[];
   onPick: (p: Pick) => void;
   selected: Pick | null;
   /** Docelowe kąty w stawach (pozycja ćwiczenia). */
   pose?: Pose | null;
+  /** Postawa ciała: leżąc / w siadzie / w opadzie / w zwisie… */
+  stance?: StanceDef | null;
+  /** Sprzęt trzymany w dłoniach. */
+  equipment?: Equipment | null;
 }) {
   const mountRef = useRef<HTMLDivElement>(null);
   const [hoverName, setHoverName] = useState<string | null>(null);
@@ -60,9 +64,13 @@ export default function MuscleModel3D({
   // referencje żywe — używane w pętli renderującej bez restartu sceny
   const selRef = useRef<Pick | null>(selected);
   const poseRef = useRef<Pose | null | undefined>(pose);
+  const stanceRef = useRef<StanceDef | null | undefined>(stance);
+  const equipRef = useRef<Equipment | null | undefined>(equipment);
   const actRef = useRef<MuscleActivation[]>(activation);
   useEffect(() => { selRef.current = selected; }, [selected]);
   useEffect(() => { poseRef.current = pose; }, [pose]);
+  useEffect(() => { stanceRef.current = stance; }, [stance]);
+  useEffect(() => { equipRef.current = equipment; }, [equipment]);
   useEffect(() => { actRef.current = activation; }, [activation]);
 
   const applyRef = useRef<(() => void) | null>(null);
@@ -77,7 +85,7 @@ export default function MuscleModel3D({
 
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(38, width / height, 0.1, 100);
-    camera.position.set(1.35, 1.12, 2.05); // ujęcie 3/4 — pozycje ćwiczeń czytelniejsze niż z przodu
+    camera.position.set(1.55, 1.20, 2.35); // ujęcie 3/4 — pozycje ćwiczeń czytelniejsze niż z przodu
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setSize(width, height);
@@ -100,7 +108,13 @@ export default function MuscleModel3D({
 
     // ── szkielet: grupy segmentów (parent-child), osobno dla L i R ──
     const groups: Record<string, THREE.Group> = {};
+    // root ma origin W BIODRACH — dzięki temu obrót postawy (leżenie, opad,
+    // odchylenie w suwnicy) odbywa się wokół bioder, a nie wokół podłogi.
+    const HIP_Y = 0.92;
     const root = new THREE.Group();
+    const bodyOffset = new THREE.Group();
+    bodyOffset.position.y = -HIP_Y;
+    root.add(bodyOffset);
     scene.add(root);
 
     const keyOf = (id: SegmentId, side: "L" | "R" | "C") => `${id}:${side}`;
@@ -112,7 +126,7 @@ export default function MuscleModel3D({
         const x = side === "L" ? -ox : ox;
         g.position.set(x, oy, oz);
         const parentKey = seg.parent ? keyOf(seg.parent, seg.paired && SKELETON.find((s) => s.id === seg.parent)?.paired ? side : "C") : null;
-        (parentKey && groups[parentKey] ? groups[parentKey] : root).add(g);
+        (parentKey && groups[parentKey] ? groups[parentKey] : bodyOffset).add(g);
         groups[keyOf(seg.id, side)] = g;
       }
     }
@@ -139,6 +153,109 @@ export default function MuscleModel3D({
         g.add(m);
       }
     }
+
+    // ── uchwyty dłoni (koniec przedramienia) — do trzymania sprzętu ──
+    const handAnchors: Record<"L" | "R", THREE.Object3D> = {} as never;
+    for (const side of ["L", "R"] as const) {
+      const fore = groups[keyOf("foreArm", side)];
+      if (!fore) continue;
+      const a = new THREE.Object3D();
+      a.position.set(0, -(SKELETON.find((s) => s.id === "foreArm")!.length + 0.03), 0);
+      fore.add(a);
+      handAnchors[side] = a;
+    }
+
+    // ── SPRZĘT trzymany w dłoniach ──
+    const steel = new THREE.MeshStandardMaterial({ color: 0xb9c2cf, roughness: 0.35, metalness: 0.75 });
+    const plate = new THREE.MeshStandardMaterial({ color: 0x2b3038, roughness: 0.6, metalness: 0.3 });
+    const rope = new THREE.MeshStandardMaterial({ color: 0x76808f, roughness: 0.9 });
+
+    // sztanga: gryf + talerze
+    const barbell = new THREE.Group();
+    const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.016, 1.5, 12), steel);
+    shaft.rotation.z = Math.PI / 2; barbell.add(shaft);
+    for (const sx of [-0.56, 0.56]) {
+      const d = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.16, 0.05, 18), plate);
+      d.rotation.z = Math.PI / 2; d.position.x = sx; barbell.add(d);
+    }
+    scene.add(barbell);
+
+    // hantle: dwa krótkie gryfy z talerzami
+    const dumbbells: THREE.Group[] = [];
+    for (let i = 0; i < 2; i++) {
+      const g = new THREE.Group();
+      const h = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.014, 0.20, 10), steel);
+      h.rotation.z = Math.PI / 2; g.add(h);
+      for (const sx of [-0.11, 0.11]) {
+        const d = new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.075, 0.07, 14), plate);
+        d.rotation.z = Math.PI / 2; d.position.x = sx; g.add(d);
+      }
+      scene.add(g); dumbbells.push(g);
+    }
+
+    // wyciąg: uchwyt + linka biegnąca do bloczka
+    const cableHandle = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.014, 0.42, 10), steel);
+    cableHandle.rotation.z = Math.PI / 2; scene.add(cableHandle);
+    const cableLine = new THREE.Mesh(new THREE.CylinderGeometry(0.007, 0.007, 1, 6), rope);
+    scene.add(cableLine);
+
+    // maszyna: rama + siedzisko z oparciem
+    const machine = new THREE.Group();
+    const frameMat = new THREE.MeshStandardMaterial({ color: 0x39414d, roughness: 0.75, metalness: 0.2 });
+    const post = new THREE.Mesh(new THREE.BoxGeometry(0.09, 1.5, 0.09), frameMat);
+    post.position.set(0, 0.75, -0.62); machine.add(post);
+    const rail = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.07, 0.09), frameMat);
+    rail.position.set(0, 0.06, -0.62); machine.add(rail);
+    scene.add(machine);
+
+    // ── REKWIZYTY POSTAWY (ławka / siedzisko / drążek / podłoga) ──
+    const gearMat = new THREE.MeshStandardMaterial({ color: 0x2f3540, roughness: 0.85, metalness: 0.1 });
+    const props: Record<string, THREE.Object3D> = {};
+
+    const bench = new THREE.Group();
+    const pad = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.09, 1.30), gearMat);
+    pad.position.set(0, 0.46, 0); bench.add(pad);
+    for (const pz of [-0.55, 0.55]) {
+      const leg = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.42, 0.08), frameMat);
+      leg.position.set(0, 0.21, pz); bench.add(leg);
+    }
+    scene.add(bench); props.bench = bench;
+
+    const inclineBench = new THREE.Group();
+    const iPad = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.09, 1.10), gearMat);
+    iPad.position.set(0, 0.52, -0.05); iPad.rotation.x = 42 * (Math.PI / 180); inclineBench.add(iPad);
+    const iLeg = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.5, 0.08), frameMat);
+    iLeg.position.set(0, 0.25, 0.32); inclineBench.add(iLeg);
+    scene.add(inclineBench); props.inclineBench = inclineBench;
+
+    const seat = new THREE.Group();
+    const sPad = new THREE.Mesh(new THREE.BoxGeometry(0.40, 0.09, 0.42), gearMat);
+    sPad.position.set(0, 0.52, 0.02); seat.add(sPad);
+    const sBack = new THREE.Mesh(new THREE.BoxGeometry(0.40, 0.62, 0.09), gearMat);
+    sBack.position.set(0, 0.84, -0.22); seat.add(sBack);
+    const sLeg = new THREE.Mesh(new THREE.BoxGeometry(0.10, 0.48, 0.10), frameMat);
+    sLeg.position.set(0, 0.24, 0); seat.add(sLeg);
+    scene.add(seat); props.seat = seat;
+
+    const barProp = new THREE.Group();
+    const bar = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 1.30, 12), steel);
+    bar.rotation.z = Math.PI / 2; bar.position.set(0, 2.14, 0); barProp.add(bar);
+    for (const sx of [-0.62, 0.62]) {
+      const up = new THREE.Mesh(new THREE.BoxGeometry(0.07, 2.14, 0.07), frameMat);
+      up.position.set(sx, 1.07, 0); barProp.add(up);
+    }
+    scene.add(barProp); props.bar = barProp;
+
+    const sled = new THREE.Group();
+    const platform = new THREE.Mesh(new THREE.BoxGeometry(0.70, 0.08, 0.55), gearMat);
+    platform.position.set(0, 0.95, -0.78); platform.rotation.x = -32 * (Math.PI / 180); sled.add(platform);
+    const backPad = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.10, 0.95), gearMat);
+    backPad.position.set(0, 0.40, 0.30); backPad.rotation.x = 32 * (Math.PI / 180); sled.add(backPad);
+    scene.add(sled); props.legPressSled = sled;
+
+    const floor = new THREE.Mesh(new THREE.CylinderGeometry(1.05, 1.05, 0.02, 40),
+      new THREE.MeshStandardMaterial({ color: 0x272c34, roughness: 1 }));
+    floor.position.y = -0.01; scene.add(floor); props.floor = floor;
 
     // ── mięśnie ──
     const meshes: THREE.Mesh[] = [];
@@ -226,6 +343,7 @@ export default function MuscleModel3D({
     // ── pętla renderująca (pozycja ćwiczenia + delikatny puls pracy) ──
     let raf = 0;
     const clock = new THREE.Clock();
+    const focus = new THREE.Vector3();
     const render = () => {
       raf = requestAnimationFrame(render);
       const t = clock.getElapsedTime();
@@ -245,6 +363,65 @@ export default function MuscleModel3D({
           g.rotation.y += (ty - g.rotation.y) * 0.12;
           g.rotation.z += (tz - g.rotation.z) * 0.12;
         }
+      }
+
+      // ── POSTAWA: obrót i przesunięcie całej sylwetki (leżąc / w siadzie / w opadzie) ──
+      const st = stanceRef.current;
+      const rp = st?.rootPos ?? [0, 0, 0];
+      const rr = st?.rootRot ?? [0, 0, 0];
+      root.position.x += (rp[0] - root.position.x) * 0.1;
+      root.position.y += (rp[1] - root.position.y) * 0.1;
+      root.position.z += (rp[2] - root.position.z) * 0.1;
+      root.rotation.x += (rr[0] - root.rotation.x) * 0.1;
+      root.rotation.y += (rr[1] - root.rotation.y) * 0.1;
+      root.rotation.z += (rr[2] - root.rotation.z) * 0.1;
+
+      // ── REKWIZYTY: pokaż tylko ten, który należy do postawy ──
+      const wantProp = st?.prop ?? "floor";
+      for (const [name, obj] of Object.entries(props)) obj.visible = name === wantProp;
+
+      // ── SPRZĘT: umieść w dłoniach, zgodnie z ich realnym położeniem ──
+      const eq = equipRef.current ?? "bodyweight";
+      const hl = new THREE.Vector3(), hr = new THREE.Vector3();
+      if (handAnchors.L && handAnchors.R) {
+        handAnchors.L.getWorldPosition(hl);
+        handAnchors.R.getWorldPosition(hr);
+      }
+      const mid = hl.clone().add(hr).multiplyScalar(0.5);
+      const span = hr.clone().sub(hl);
+
+      barbell.visible = eq === "barbell";
+      if (barbell.visible) {
+        barbell.position.copy(mid);
+        // obróć gryf tak, by przechodził przez obie dłonie
+        barbell.quaternion.setFromUnitVectors(new THREE.Vector3(1, 0, 0), span.clone().normalize());
+      }
+      dumbbells.forEach((d, i) => {
+        d.visible = eq === "dumbbells";
+        if (!d.visible) return;
+        d.position.copy(i === 0 ? hl : hr);
+        d.quaternion.setFromUnitVectors(new THREE.Vector3(1, 0, 0), span.clone().normalize());
+      });
+      cableHandle.visible = eq === "cable";
+      cableLine.visible = eq === "cable";
+      if (cableHandle.visible) {
+        cableHandle.position.copy(mid);
+        cableHandle.quaternion.setFromUnitVectors(new THREE.Vector3(1, 0, 0), span.clone().normalize());
+        // linka od bloczka (górny lub dolny, zależnie gdzie są dłonie) do uchwytu
+        const pulley = new THREE.Vector3(0, mid.y > 1.25 ? 2.05 : 0.16, -0.6);
+        const dir = pulley.clone().sub(mid);
+        cableLine.position.copy(mid.clone().add(dir.clone().multiplyScalar(0.5)));
+        cableLine.scale.set(1, Math.max(0.05, dir.length()), 1);
+        cableLine.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir.clone().normalize());
+      }
+      machine.visible = eq === "machine";
+
+      // ── KADR: kamera trzyma się tułowia, więc leżąca/siedząca sylwetka nie ucieka ──
+      const torsoG = groups[keyOf("torso", "C")];
+      if (torsoG) {
+        torsoG.getWorldPosition(focus);
+        focus.y += 0.18;
+        controls.target.lerp(focus, 0.07);
       }
 
       // puls najmocniej pracujących

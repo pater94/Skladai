@@ -354,8 +354,10 @@ function ExerciseCard({
           <span style={{ fontSize: 15, fontWeight: 800, color: "var(--fg, #fff)" }}>{ex.name}</span>
         </button>
         {weekDelta != null && weekDelta !== 0 && (
-          <span style={{ fontSize: 11.5, fontWeight: 800, padding: "3px 8px", borderRadius: 99, color: weekDelta > 0 ? GREEN : RED, background: weekDelta > 0 ? "rgba(95,211,154,0.14)" : "rgba(248,113,113,0.14)" }}>
+          <span title="Zmiana względem poprzedniej sesji tego treningu"
+            style={{ fontSize: 11.5, fontWeight: 800, padding: "3px 8px", borderRadius: 99, whiteSpace: "nowrap", color: weekDelta > 0 ? GREEN : RED, background: weekDelta > 0 ? "rgba(95,211,154,0.14)" : "rgba(248,113,113,0.14)" }}>
             {weekDelta > 0 ? "↑" : "↓"} {Math.abs(weekDelta)}{byReps ? " powt." : " kg"}
+            <span style={{ fontWeight: 600, opacity: 0.75 }}> vs ostatnio</span>
           </span>
         )}
       </div>
