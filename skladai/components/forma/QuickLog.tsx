@@ -42,6 +42,11 @@ export default function QuickLog({ goBack, onSaved }: { goBack: () => void; onSa
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  /** Odhaczone ćwiczenia — widzisz w trakcie treningu, co masz już z głowy. */
+  const [done, setDone] = useState<Set<string>>(new Set());
+
+  const toggleDone = (id: string) =>
+    setDone((prev) => { const n = new Set(prev); if (n.has(id)) n.delete(id); else n.add(id); return n; });
 
   useEffect(() => { void listWorkouts().then(setWorkouts); }, []);
 
@@ -53,7 +58,7 @@ export default function QuickLog({ goBack, onSaved }: { goBack: () => void; onSa
     setLoading(false);
   }, []);
 
-  const pickWorkout = (id: string) => { setWorkoutId(id); void loadTemplate(id); };
+  const pickWorkout = (id: string) => { setWorkoutId(id); setDone(new Set()); void loadTemplate(id); };
 
   const handleCreate = async () => {
     const name = newName.trim();
@@ -178,8 +183,19 @@ export default function QuickLog({ goBack, onSaved }: { goBack: () => void; onSa
           </div>
 
           {/* KROK 3 — ćwiczenia */}
-          <div style={{ ...label, marginTop: 20 }}>
-            3 · Ćwiczenia {exercises.length > 0 && <span style={{ color: "rgba(var(--fg-rgb, 255,255,255),0.6)", fontWeight: 600 }}>· wypełnione z ostatniego razu</span>}
+          <div style={{ ...label, marginTop: 20, display: "flex", alignItems: "center", gap: 8 }}>
+            <span style={{ flex: 1 }}>
+              3 · Ćwiczenia {exercises.length > 0 && <span style={{ color: "rgba(var(--fg-rgb, 255,255,255),0.6)", fontWeight: 600 }}>· wypełnione z ostatniego razu</span>}
+            </span>
+            {exercises.length > 0 && (
+              <span data-testid="ql-progress" style={{
+                fontSize: 11, fontWeight: 800, padding: "3px 9px", borderRadius: 99, letterSpacing: 0,
+                background: done.size === exercises.length ? "rgba(95,211,154,0.18)" : "rgba(var(--fg-rgb, 255,255,255),0.07)",
+                color: done.size === exercises.length ? GREEN : "rgba(var(--fg-rgb, 255,255,255),0.78)",
+              }}>
+                {done.size === exercises.length ? "✓ wszystko zrobione" : `${done.size}/${exercises.length} zrobione`}
+              </span>
+            )}
           </div>
 
           {loading && <div style={{ padding: 26, textAlign: "center", fontSize: 13, color: "rgba(var(--fg-rgb, 255,255,255),0.68)" }}>Wczytuję szablon…</div>}
@@ -197,10 +213,32 @@ export default function QuickLog({ goBack, onSaved }: { goBack: () => void; onSa
             {exercises.map((ex, ei) => {
               const v = verdict(ex);
               const byReps = ex.kind === "bodyweight";
+              const isDone = done.has(ex.exerciseId);
               return (
-                <div key={ex.exerciseId} data-testid="ql-exercise" style={card}>
-                  <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 8 }}>
-                    <div style={{ flex: 1, minWidth: 0, fontSize: 14.5, fontWeight: 800, color: "var(--fg, #fff)" }}>{ex.name}</div>
+                <div key={ex.exerciseId} data-testid="ql-exercise" style={{
+                  ...card,
+                  borderColor: isDone ? "rgba(95,211,154,0.45)" : "rgba(var(--fg-rgb, 255,255,255),0.09)",
+                  background: isDone ? "rgba(95,211,154,0.07)" : "rgba(var(--fg-rgb, 255,255,255),0.045)",
+                  transition: "background .2s ease, border-color .2s ease",
+                }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 9, marginBottom: 8 }}>
+                    {/* odhaczenie — wiesz, co masz już z głowy */}
+                    <button
+                      onClick={() => toggleDone(ex.exerciseId)}
+                      data-testid="ql-done"
+                      aria-label={isDone ? `Cofnij odhaczenie: ${ex.name}` : `Odhacz: ${ex.name}`}
+                      aria-pressed={isDone}
+                      className="active:scale-90 transition-transform"
+                      style={{
+                        width: 30, height: 30, flexShrink: 0, borderRadius: 99, cursor: "pointer",
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        fontSize: 15, fontWeight: 900, lineHeight: 1,
+                        background: isDone ? GREEN : "rgba(var(--fg-rgb, 255,255,255),0.06)",
+                        border: `2px solid ${isDone ? GREEN : "rgba(var(--fg-rgb, 255,255,255),0.22)"}`,
+                        color: isDone ? "#0d1512" : "transparent",
+                      }}
+                    >✓</button>
+                    <div style={{ flex: 1, minWidth: 0, fontSize: 14.5, fontWeight: 800, color: isDone ? GREEN : "var(--fg, #fff)" }}>{ex.name}</div>
                     {v && <div style={{ fontSize: 11, fontWeight: 800, color: v.color, flexShrink: 0 }}>{v.txt}</div>}
                   </div>
 

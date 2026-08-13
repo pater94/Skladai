@@ -34,12 +34,21 @@ export type Stance =
   | "seated"       // siad na maszynie / ławce
   | "bentOver"     // opad tułowia (wiosłowanie sztangą)
   | "hang"         // zwis na drążku
-  | "legPress";    // półleżąc w suwnicy
+  | "legPress"     // półleżąc w suwnicy
+  | "hipThrust";   // barki oparte o ławkę, biodra pracują
 
 export interface StanceDef {
   /** Przesunięcie i obrót CAŁEJ sylwetki. */
   rootPos: [number, number, number];
   rootRot: [number, number, number];
+  /**
+   * Kotwica: punkt ciała, który ma zostać na stałej wysokości.
+   * Bez tego przysiad „unosiłby się" w miejscu (stopy odjeżdżają od podłogi),
+   * a przy podciąganiu ciało stałoby w miejscu zamiast jechać do drążka.
+   *   ankle → stopy na podłodze (stanie, opad)
+   *   wrist → dłonie na drążku (zwis)
+   */
+  anchor?: { joint: "ankle" | "wrist" | "shoulder"; y: number };
   /** Domyślne kąty segmentów dla tej postawy (ruch dokłada się na to). */
   base: Pose;
   /** Rekwizyt sceny: ławka / siedzisko / drążek / podłoga. */
@@ -55,12 +64,14 @@ export interface StanceDef {
  */
 export const STANCES: Record<Stance, StanceDef> = {
   stand: {
-    rootPos: [0, 0.92, 0], rootRot: [0, 0, 0], base: {}, prop: "floor", name: "stojąc",
+    rootPos: [0, 0.92, 0], rootRot: [0, 0, 0], base: {},
+    anchor: { joint: "ankle", y: 0.04 }, prop: "floor", name: "stojąc",
   },
   supine: {
     // obrót −90° wokół X kładzie sylwetkę na plecach, biodra lądują na ławce
     rootPos: [0, 0.55, 0.10], rootRot: [-90 * D, 0, 0],
-    base: { thigh: [-86 * D, 0, 0], shin: [82 * D, 0, 0] }, // kolana zgięte, stopy na podłodze
+    // biodra PRAWIE wyprostowane (leżysz płasko), kolana zgięte ~85° → stopy na podłodze
+    base: { thigh: [-8 * D, 0, 0], shin: [86 * D, 0, 0] },
     prop: "bench", name: "leżąc na ławce",
   },
   incline: {
@@ -82,12 +93,18 @@ export const STANCES: Record<Stance, StanceDef> = {
   bentOver: {
     rootPos: [0, 0.90, 0], rootRot: [0, 0, 0],
     base: { torso: [64 * D, 0, 0], thigh: [-24 * D, 0, 0], shin: [18 * D, 0, 0] },
-    prop: "floor", name: "w opadzie tułowia",
+    anchor: { joint: "ankle", y: 0.04 }, prop: "floor", name: "w opadzie tułowia",
   },
   hang: {
     rootPos: [0, 1.20, 0], rootRot: [0, 0, 0],
     base: { thigh: [-10 * D, 0, 0], shin: [26 * D, 0, 0] },
-    prop: "bar", name: "w zwisie",
+    anchor: { joint: "wrist", y: 2.14 }, prop: "bar", name: "w zwisie",
+  },
+  hipThrust: {
+    // barki zostają na ławce — zmiana kąta tułowia unosi i opuszcza biodra
+    rootPos: [0, 0.42, 0], rootRot: [0, 0, 0],
+    base: { thigh: [-96 * D, 0, 0], shin: [92 * D, 0, 0] },
+    anchor: { joint: "shoulder", y: 0.52 }, prop: "bench", name: "barki na ławce",
   },
   legPress: {
     rootPos: [0, 0.58, 0.12], rootRot: [-32 * D, 0, 0],
@@ -114,8 +131,9 @@ export interface PosePair {
 export const POSES: Record<Archetype, PosePair> = {
   press_h: {
     stance: "supine", equipment: "barbell",
-    start: { upperArm: [-88 * D, 0, 52 * D], foreArm: [-98 * D, 0, 0] },
-    end:   { upperArm: [-88 * D, 0, 16 * D], foreArm: [-6 * D, 0, 0] },
+    // dół: łokcie na boki, sztanga NAD KLATKĄ (nie nad głową); góra: ramiona pionowo
+    start: { upperArm: [-5 * D, 0, 55 * D], foreArm: [-80 * D, 0, 0] },
+    end:   { upperArm: [-80 * D, 0, 5 * D], foreArm: [-2 * D, 0, 0] },
     label: "wypchnięcie sztangi znad klatki", dur: 2.4,
   },
   press_v: {
@@ -233,8 +251,8 @@ export const EXERCISE_POSES: Record<string, Partial<PosePair>> = {
           end:   { upperArm: [-4 * D, 0, 8 * D], foreArm: [-6 * D, 0, 0], torso: [10 * D, 0, 0] },
           label: "wypchnięcie ciała na poręczach" },
   close_grip_bench: { equipment: "barbell",
-          start: { upperArm: [-88 * D, 0, 26 * D], foreArm: [-98 * D, 0, 0] },
-          end:   { upperArm: [-88 * D, 0, 10 * D], foreArm: [-6 * D, 0, 0] },
+          start: { upperArm: [-10 * D, 0, 32 * D], foreArm: [-84 * D, 0, 0] },
+          end:   { upperArm: [-80 * D, 0, 6 * D], foreArm: [-2 * D, 0, 0] },
           label: "wyciskanie wąskim chwytem" },
   pullover: { stance: "supine", equipment: "dumbbells",
           start: { upperArm: [-168 * D, 0, 18 * D], foreArm: [-16 * D, 0, 0] },
@@ -315,14 +333,41 @@ export const EXERCISE_POSES: Record<string, Partial<PosePair>> = {
                   start: { torso: [10 * D, 0, 0], thigh: [-16 * D, 0, 0], shin: [12 * D, 0, 0] },
                   end:   { torso: [18 * D, 0, 0], thigh: [-92 * D, 0, 0], shin: [84 * D, 0, 0] },
                   label: "zejście na nodze zakrocznej" },
-  hip_thrust:   { stance: "supine", equipment: "barbell",
-                  start: { torso: [26 * D, 0, 0], thigh: [-96 * D, 0, 0], shin: [88 * D, 0, 0] },
-                  end:   { torso: [-4 * D, 0, 0], thigh: [-48 * D, 0, 0], shin: [86 * D, 0, 0] },
+  hip_thrust:   { stance: "hipThrust", equipment: "barbell",
+                  start: { torso: [66 * D, 0, 0], thigh: [-104 * D, 0, 0], shin: [96 * D, 0, 0] },
+                  end:   { torso: [14 * D, 0, 0], thigh: [-56 * D, 0, 0], shin: [88 * D, 0, 0] },
                   label: "wypchnięcie bioder w górę" },
   calf_seated:  { stance: "seated", equipment: "machine", label: "wspięcia w siadzie" },
   calf_standing:{ stance: "stand", equipment: "machine", label: "wspięcia stojąc" },
   leg_curl:     { stance: "prone", equipment: "machine", label: "uginanie nóg leżąc" },
   leg_extension:{ stance: "seated", equipment: "machine", label: "prostowanie nóg w siadzie" },
+  good_morning:  { stance: "stand", equipment: "barbell", label: "skłon z zawiasem w biodrach" },
+  sumo_deadlift: { stance: "stand", equipment: "barbell",
+                   // sumo: tułów bardziej pionowy, biodra niżej, kolana mocniej zgięte
+                   start: { torso: [8 * D, 0, 0], thigh: [-6 * D, 0, 0], shin: [4 * D, 0, 0], upperArm: [2 * D, 0, 14 * D] },
+                   end:   { torso: [42 * D, 0, 0], thigh: [-78 * D, 0, 0], shin: [62 * D, 0, 0], upperArm: [-10 * D, 0, 18 * D] },
+                   label: "oderwanie sztangi w postawie sumo" },
+  smith_squat:   { stance: "stand", equipment: "machine", label: "przysiad w prowadnicy" },
+  step_up:       { stance: "stand", equipment: "dumbbells",
+                   start: { torso: [10 * D, 0, 0], thigh: [-16 * D, 0, 0], shin: [12 * D, 0, 0] },
+                   end:   { torso: [16 * D, 0, 0], thigh: [-88 * D, 0, 0], shin: [80 * D, 0, 0] },
+                   label: "wejście na skrzynię" },
+  seated_leg_curl: { stance: "seated", equipment: "machine",
+                   start: { shin: [86 * D, 0, 0] },
+                   end:   { shin: [150 * D, 0, 0] },
+                   label: "zgięcie kolan w siadzie" },
+  hip_abduction: { stance: "seated", equipment: "machine",
+                   start: { thigh: [-88 * D, 0, 2 * D], shin: [86 * D, 0, 0] },
+                   end:   { thigh: [-88 * D, 0, 34 * D], shin: [86 * D, 0, 0] },
+                   label: "odwiedzenie ud na boki" },
+  hip_adduction: { stance: "seated", equipment: "machine",
+                   start: { thigh: [-88 * D, 0, 34 * D], shin: [86 * D, 0, 0] },
+                   end:   { thigh: [-88 * D, 0, 2 * D], shin: [86 * D, 0, 0] },
+                   label: "ściągnięcie ud do siebie" },
+  glute_kickback:{ stance: "bentOver", equipment: "cable",
+                   start: { thigh: [-30 * D, 0, 0], shin: [40 * D, 0, 0] },
+                   end:   { thigh: [26 * D, 0, 0], shin: [16 * D, 0, 0] },
+                   label: "wyprost nogi w tył" },
   nordic_curl:  { stance: "prone", equipment: "bodyweight",
                   start: { thigh: [-4 * D, 0, 0], shin: [92 * D, 0, 0], torso: [0, 0, 0] },
                   end:   { thigh: [-4 * D, 0, 0], shin: [92 * D, 0, 0], torso: [-46 * D, 0, 0] },
