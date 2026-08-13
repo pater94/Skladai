@@ -78,8 +78,12 @@ export interface WnSessionWithSets extends WnSession {
 export interface WnHistoryPoint {
   sessionId: string;
   finishedAt: string;
+  /** Trening, w ramach którego wykonano sesję (do rozdzielania progresu A vs B). */
+  workoutId?: string | null;
   topWeight: number | null;
   topReps: number | null;
+  /** Najlepszy indeks siły sesji — porównywalny między różnymi zakresami powtórzeń. */
+  topIndex?: number | null;
   sets: WnSet[];
 }
 export interface WnExerciseProgress {
@@ -344,6 +348,78 @@ export async function getLastFinishedSession(workoutId: string): Promise<WnSessi
  * Bez tego każde wejście w ekran generowało kolejną pustą sesję-śmiecia, a dane
  * wpisane wcześniej lądowały w osieroconej sesji, niewidocznej w historii.
  */
+/**
+ * Szablon treningu do SZYBKIEGO logowania: lista ćwiczeń w kolejności + serie
+ * z ostatniej sesji TEGO treningu. Dzięki temu dopisanie kolejnego (albo
+ * minionego) treningu to zmiana daty i ciężarów, bez przepisywania całości.
+ */
+export interface TemplateSet { weight: number | null; reps: number | null; duration: number | null }
+export interface TemplateExercise {
+  exerciseId: string;
+  name: string;
+  kind: WnKind;
+  sets: TemplateSet[];
+  /** Data sesji, z której wzięto wartości (null = brak historii). */
+  from: string | null;
+}
+
+export async function getWorkoutTemplate(workoutId: string): Promise<TemplateExercise[]> {
+  const full = await getWorkoutWithExercises(workoutId);
+  if (!full) return [];
+  const last = await getLastFinishedSession(workoutId);
+  return full.exercises.map((we) => {
+    const mine = (last?.sets ?? [])
+      .filter((s) => s.exercise_id === we.exercise.id)
+      .sort((a, b) => a.set_index - b.set_index);
+    return {
+      exerciseId: we.exercise.id,
+      name: we.exercise.name,
+      kind: we.exercise.kind,
+      sets: mine.length
+        ? mine.map((s) => ({ weight: s.weight_kg, reps: s.reps, duration: s.duration_sec }))
+        : [{ weight: null, reps: null, duration: null }],
+      from: mine.length ? (last?.finished_at ?? null) : null,
+    };
+  });
+}
+
+/** Zapisuje kompletną sesję jednym strzałem (szybkie logowanie / backdatowanie). */
+export async function logSession(opts: {
+  workoutId: string;
+  /** Data treningu (YYYY-MM-DD). Domyślnie dziś. */
+  date?: string | null;
+  exercises: Array<{ exerciseId: string; sets: TemplateSet[] }>;
+}): Promise<string | null> {
+  const supabase = createClient();
+  const userId = await getUserId();
+  if (!userId) return null;
+
+  const when = opts.date ? new Date(opts.date + "T12:00:00").toISOString() : new Date().toISOString();
+  const { data: sessionData, error: sErr } = await supabase
+    .from("wn_sessions")
+    .insert({ user_id: userId, workout_id: opts.workoutId, started_at: when, finished_at: when })
+    .select("*").single();
+  if (sErr || !sessionData) { console.warn("[wn] logSession", sErr?.message); return null; }
+  const session = sessionData as WnSession;
+
+  const rows: Array<Record<string, unknown>> = [];
+  for (const ex of opts.exercises) {
+    let idx = 0;
+    for (const s of ex.sets) {
+      if (s.weight == null && s.reps == null && s.duration == null) continue;
+      rows.push({
+        session_id: session.id, exercise_id: ex.exerciseId, set_index: idx++,
+        weight_kg: s.weight, reps: s.reps, duration_sec: s.duration,
+      });
+    }
+  }
+  if (rows.length) {
+    const { error } = await supabase.from("wn_sets").insert(rows);
+    if (error) { console.warn("[wn] logSession sets", error.message); return null; }
+  }
+  return session.id;
+}
+
 export async function startSession(workoutId: string): Promise<WnSession | null> {
   const supabase = createClient();
   const userId = await getUserId();
@@ -454,36 +530,55 @@ export async function getSessionSets(sessionId: string): Promise<WnSet[]> {
 // ──────────────────────────────────────────────────────────────────
 // Historia + progres (na bazie wn_exercise_top_sets / wn_sets)
 // ──────────────────────────────────────────────────────────────────
-export async function getExerciseHistory(exerciseId: string): Promise<WnHistoryPoint[]> {
+/**
+ * Historia ćwiczenia. `workoutId` ZAWĘŻA wynik do jednego treningu — to kluczowe,
+ * bo to samo ćwiczenie robione w treningu A (np. 15×100) i B (5×120) to dwie
+ * niezależne linie progresu i nie wolno ich mieszać.
+ *
+ * Gdy w danym treningu są mniej niż 2 sesje z tym ćwiczeniem, wracamy do
+ * historii globalnej — inaczej ktoś trenujący raz w tygodniu nie zobaczyłby nic.
+ */
+export async function getExerciseHistory(exerciseId: string, workoutId?: string | null): Promise<WnHistoryPoint[]> {
   const supabase = createClient();
-  // Wszystkie serie tego ćwiczenia z UKOŃCZONYCH sesji + data sesji.
+  // Wszystkie serie tego ćwiczenia z UKOŃCZONYCH sesji + data i trening sesji.
   const { data, error } = await supabase
     .from("wn_sets")
-    .select("*, session:wn_sessions!inner(id, finished_at)")
+    .select("*, session:wn_sessions!inner(id, finished_at, workout_id)")
     .eq("exercise_id", exerciseId)
     .not("session.finished_at", "is", null);
   if (error || !data) { if (error) console.warn("[wn] getExerciseHistory", error.message); return []; }
 
-  const byReps = await isBodyweight(exerciseId);
-  const bySession = new Map<string, { finishedAt: string; sets: WnSet[] }>();
-  for (const row of data as unknown as Array<WnSet & { session: { id: string; finished_at: string } }>) {
+  const bySession = new Map<string, { finishedAt: string; workoutId: string | null; sets: WnSet[] }>();
+  for (const row of data as unknown as Array<WnSet & { session: { id: string; finished_at: string; workout_id: string | null } }>) {
     const sid = row.session.id;
-    if (!bySession.has(sid)) bySession.set(sid, { finishedAt: row.session.finished_at, sets: [] });
+    if (!bySession.has(sid)) bySession.set(sid, { finishedAt: row.session.finished_at, workoutId: row.session.workout_id, sets: [] });
     const { session: _omit, ...setRow } = row;
     void _omit;
     bySession.get(sid)!.sets.push(setRow as WnSet);
   }
-  const points: WnHistoryPoint[] = [...bySession.entries()].map(([sessionId, v]) => ({
-    sessionId,
-    finishedAt: v.finishedAt,
-    topWeight: topOfSets(v.sets, false),
-    topReps: topOfSets(v.sets, true),
-    sets: v.sets.sort((a, b) => a.set_index - b.set_index),
-  }));
-  // chronologicznie (najstarsze → najnowsze) — wykres oczekuje rosnącej osi czasu
-  points.sort((a, b) => new Date(a.finishedAt).getTime() - new Date(b.finishedAt).getTime());
-  void byReps;
-  return points;
+
+  const toPoints = (entries: Array<[string, { finishedAt: string; workoutId: string | null; sets: WnSet[] }]>): WnHistoryPoint[] => {
+    const pts = entries.map(([sessionId, v]) => ({
+      sessionId,
+      finishedAt: v.finishedAt,
+      workoutId: v.workoutId,
+      topWeight: topOfSets(v.sets, false),
+      topReps: topOfSets(v.sets, true),
+      topIndex: topIndex(v.sets),
+      sets: v.sets.sort((a, b) => a.set_index - b.set_index),
+    }));
+    // chronologicznie (najstarsze → najnowsze) — wykres oczekuje rosnącej osi czasu
+    pts.sort((a, b) => new Date(a.finishedAt).getTime() - new Date(b.finishedAt).getTime());
+    return pts;
+  };
+
+  const all = [...bySession.entries()];
+  if (workoutId) {
+    const scoped = all.filter(([, v]) => v.workoutId === workoutId);
+    // za mało danych w tym treningu → pokaż globalne, żeby ekran nie był pusty
+    if (scoped.length >= 2) return toPoints(scoped);
+  }
+  return toPoints(all);
 }
 
 async function isBodyweight(exerciseId: string): Promise<boolean> {
@@ -527,6 +622,31 @@ function round05(n: number): number { return Math.round(n * 2) / 2; }
  * Najdokładniejsze dla ≤ ~12 powt. (powyżej wzory zawyżają — dlatego clamp do 12).
  * reps = 1 → to już jest 1RM (zwracamy sam ciężar). Bez ciężaru/powt. → null.
  */
+/**
+ * INDEKS SIŁY — wspólna miara do porównywania serii o RÓŻNYCH zakresach powtórzeń.
+ *
+ * Wzór Wathana. W przeciwieństwie do Epleya/Brzyckiego zachowuje się sensownie
+ * także przy 15-25 powtórzeniach, więc pozwala uczciwie odpowiedzieć na pytanie
+ * „czy 15×100 kg to progres względem 5×120 kg?" (indeks 151 vs 140 → tak, 15×100
+ * jest mocniejsze). Używany WYŁĄCZNIE do wykrywania progresu/regresu — do
+ * wyświetlania szacowanego 1RM zostaje estimate1RM.
+ */
+export function strengthIndex(weight: number | null | undefined, reps: number | null | undefined): number | null {
+  if (weight == null || reps == null || weight <= 0 || reps < 1) return null;
+  const r = Math.min(reps, 30);
+  return round05((100 * weight) / (48.8 + 53.8 * Math.exp(-0.075 * r)));
+}
+
+/** Najlepszy indeks siły w zestawie serii. */
+function topIndex(sets: WnSet[]): number | null {
+  let best: number | null = null;
+  for (const s of sets) {
+    const v = strengthIndex(s.weight_kg, s.reps);
+    if (v != null && (best == null || v > best)) best = v;
+  }
+  return best;
+}
+
 export function estimate1RM(weight: number | null | undefined, reps: number | null | undefined): number | null {
   if (weight == null || reps == null || weight <= 0 || reps < 1) return null;
   if (reps === 1) return round05(weight);
@@ -552,18 +672,34 @@ export interface WnExerciseStats {
   best1RMWeight: number | null; // ciężar serii dającej best1RM
   best1RMReps: number | null;   // powt. serii dającej best1RM
   current1RM: number | null;    // najlepszy szac. 1RM z OSTATNIEJ sesji
+
+  // ── porównanie odporne na różne zakresy powtórzeń (indeks siły) ──
+  /** Indeks siły ostatniej sesji. */
+  indexNow: number | null;
+  /** Indeks siły poprzedniej sesji (tego samego treningu). */
+  indexPrev: number | null;
+  /** Indeks pierwszej sesji. */
+  indexFirst: number | null;
+  /** Zmiana indeksu vs poprzednia sesja — DODATNIA = realny progres, nawet gdy ciężar spadł. */
+  indexDelta: number | null;
+  /** Kierunek: progres / regres / bez zmian. */
+  trend: "up" | "down" | "flat" | null;
+  /** true → statystyki policzone w obrębie JEDNEGO treningu (nie mieszane z innymi). */
+  scopedToWorkout: boolean;
 }
 
 /** Pełne statystyki ćwiczenia: rekord, przyrost od startu (kg + %), 1RM, tydzień. */
-export async function getExerciseStats(exerciseId: string): Promise<WnExerciseStats> {
+export async function getExerciseStats(exerciseId: string, workoutId?: string | null): Promise<WnExerciseStats> {
   const byReps = await isBodyweight(exerciseId);
-  const history = await getExerciseHistory(exerciseId);
+  const history = await getExerciseHistory(exerciseId, workoutId);
   const metric: "weight" | "reps" = byReps ? "reps" : "weight";
   const topOf = (p: WnHistoryPoint) => (byReps ? p.topReps : p.topWeight);
+  const scopedToWorkout = !!workoutId && history.length > 0 && history.every((p) => p.workoutId === workoutId);
   const empty: WnExerciseStats = {
     metric, sessions: 0, firstTop: null, firstDate: null, lastTop: null, lastDate: null,
     record: null, recordDate: null, weekDelta: null, addedAbs: null, addedPct: null,
     best1RM: null, best1RMWeight: null, best1RMReps: null, current1RM: null,
+    indexNow: null, indexPrev: null, indexFirst: null, indexDelta: null, trend: null, scopedToWorkout,
   };
 
   const withVal = history.filter((p) => topOf(p) != null);
@@ -590,12 +726,23 @@ export async function getExerciseStats(exerciseId: string): Promise<WnExerciseSt
     }
   }
 
+  // ── indeks siły: uczciwe porównanie sesji o różnych zakresach powtórzeń ──
+  const idxOf = (p: WnHistoryPoint) => p.topIndex ?? topIndex(p.sets);
+  const indexNow = idxOf(last);
+  const indexPrev = withVal.length >= 2 ? idxOf(withVal[withVal.length - 2]) : null;
+  const indexFirst = idxOf(first);
+  const indexDelta = indexNow != null && indexPrev != null ? round2(indexNow - indexPrev) : null;
+  // próg 1 kg — drobne wahania to nie progres ani regres
+  const trend: "up" | "down" | "flat" | null =
+    indexDelta == null ? null : indexDelta > 1 ? "up" : indexDelta < -1 ? "down" : "flat";
+
   return {
     metric, sessions: withVal.length,
     firstTop, firstDate: first.finishedAt, lastTop, lastDate: last.finishedAt,
     record: record === -Infinity ? null : record, recordDate,
     weekDelta: prev != null ? round2(lastTop - prev) : null,
     addedAbs, addedPct, best1RM, best1RMWeight, best1RMReps, current1RM,
+    indexNow, indexPrev, indexFirst, indexDelta, trend, scopedToWorkout,
   };
 }
 

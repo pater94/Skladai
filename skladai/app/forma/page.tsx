@@ -33,6 +33,7 @@ import ActiveWorkout from "@/components/forma/ActiveWorkout";
 import ExerciseHistory from "@/components/forma/ExerciseHistory";
 import WorkoutImport from "@/components/forma/WorkoutImport";
 import WorkoutSummary from "@/components/forma/WorkoutSummary";
+import QuickLog from "@/components/forma/QuickLog";
 
 // ──────────────────────────────────────────
 // Types
@@ -80,7 +81,8 @@ type View =
   | "workout"            // aktywny trening — logowanie serii (Faza 3)
   | "exercise-history"   // historia ćwiczenia + wykres (Faza 4)
   | "workout-import"     // import treningu ze zdjęcia (AI Vision)
-  | "workout-summary";   // skondensowane podsumowanie treningu (zrzut/udostępnij)
+  | "workout-summary"    // skondensowane podsumowanie treningu (zrzut/udostępnij)
+  | "quick-log";         // szybki zapis treningu (także minionego)
 
 // ──────────────────────────────────────────
 // Constants
@@ -505,7 +507,10 @@ export default function FormaPage() {
           <CheckFormView goBack={goBack} router={router} autoOpenGallery={autoOpenGallery} autoOpenCamera={autoOpenCamera} />
         )}
         {view === "journal" && (
-          <WorkoutJournalList goBack={goBack} openWorkout={openWorkout} onImport={() => setView("workout-import")} onOpenSummary={openSummary} />
+          <WorkoutJournalList goBack={goBack} openWorkout={openWorkout} onImport={() => setView("workout-import")} onOpenSummary={openSummary} onQuickLog={() => setView("quick-log")} />
+        )}
+        {view === "quick-log" && (
+          <QuickLog goBack={() => setView("journal")} onSaved={() => setView("journal")} />
         )}
         {view === "workout-import" && (
           <WorkoutImport goBack={() => setView("journal")} onSaved={() => setView("journal")} />
@@ -521,7 +526,7 @@ export default function FormaPage() {
           />
         )}
         {view === "exercise-history" && jExerciseId && (
-          <ExerciseHistory goBack={() => setView(jSessionId ? "workout" : "journal")} exerciseId={jExerciseId} />
+          <ExerciseHistory goBack={() => setView(jSessionId ? "workout" : "journal")} exerciseId={jExerciseId} workoutId={jWorkoutId} />
         )}
         {view === "workout-summary" && jSummarySessionId && (
           <WorkoutSummary goBack={() => setView("journal")} sessionId={jSummarySessionId} />

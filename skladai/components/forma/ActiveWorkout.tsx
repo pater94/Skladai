@@ -119,8 +119,9 @@ export default function ActiveWorkout({
     const prog: Record<string, WnExerciseStats> = {};
     const hist: Record<string, WnHistoryPoint[]> = {};
     await Promise.all(exIds.map(async (exId) => {
-      prog[exId] = await getExerciseStats(exId);
-      hist[exId] = await getExerciseHistory(exId);
+      // workoutId → progres liczony w obrębie TEGO treningu (A nie miesza się z B)
+      prog[exId] = await getExerciseStats(exId, workoutId);
+      hist[exId] = await getExerciseHistory(exId, workoutId);
     }));
     setProgBy(prog);
     setHistBy(hist);

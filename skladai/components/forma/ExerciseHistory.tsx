@@ -20,10 +20,12 @@ import ExercisePicker from "./ExercisePicker";
 const GREEN = "#5fd39a";
 
 export default function ExerciseHistory({
-  goBack, exerciseId,
+  goBack, exerciseId, workoutId,
 }: {
   goBack: () => void;
   exerciseId: string;
+  /** Zawęża progres do jednego treningu — to samo ćwiczenie w A i B to osobne linie. */
+  workoutId?: string | null;
 }) {
   const [exercise, setExercise] = useState<WnExercise | null>(null);
   const [history, setHistory] = useState<WnHistoryPoint[]>([]);
@@ -40,8 +42,8 @@ export default function ExerciseHistory({
     (async () => {
       const [ex, hist, st] = await Promise.all([
         getExercise(exerciseId),
-        getExerciseHistory(exerciseId),
-        getExerciseStats(exerciseId),
+        getExerciseHistory(exerciseId, workoutId),
+        getExerciseStats(exerciseId, workoutId),
       ]);
       if (cancelled) return;
       setExercise(ex);
@@ -63,7 +65,7 @@ export default function ExerciseHistory({
       }
     })();
     return () => { cancelled = true; };
-  }, [exerciseId]);
+  }, [exerciseId, workoutId]);
 
   const byReps = exercise?.kind === "bodyweight";
   const unit = byReps ? "" : " kg";
@@ -77,7 +79,9 @@ export default function ExerciseHistory({
         <button onClick={goBack} aria-label="Wróć" style={{ width: 38, height: 38, borderRadius: 12, flexShrink: 0, background: "rgba(var(--fg-rgb, 255,255,255),0.06)", border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.1)", color: "var(--fg, #fff)", fontSize: 18, cursor: "pointer" }}>‹</button>
         <div style={{ flex: 1, minWidth: 0 }}>
           <h2 style={{ fontSize: 19, fontWeight: 900, color: "var(--fg, #fff)" }}>{exercise?.name ?? "Ćwiczenie"}</h2>
-          <p style={{ fontSize: 11.5, color: "rgba(var(--fg-rgb, 255,255,255),0.72)" }}>Progres w czasie</p>
+          <p style={{ fontSize: 11.5, color: "rgba(var(--fg-rgb, 255,255,255),0.72)" }}>
+            {stats?.scopedToWorkout ? "Progres tylko w tym treningu" : "Progres w czasie"}
+          </p>
         </div>
       </div>
 
@@ -135,7 +139,12 @@ export default function ExerciseHistory({
           {/* 3 staty */}
           <div style={{ display: "flex", gap: 8, marginBottom: 18 }}>
             <Stat label="Sesje" value={String(stats?.sessions ?? 0)} color="var(--fg, #fff)" />
-            <Stat label="Ten tydzień" value={fmtDelta(stats?.weekDelta, unit)} color={deltaColor(stats?.weekDelta)} />
+            {/* Postęp liczony INDEKSEM SIŁY — uczciwy także gdy zmieniłeś zakres powtórzeń */}
+            <Stat
+              label="Vs poprzedni"
+              value={stats?.indexDelta == null ? "—" : stats.trend === "flat" ? "≈ tyle samo" : `${stats.indexDelta > 0 ? "↑ +" : "↓ "}${Math.abs(stats.indexDelta)}`}
+              color={stats?.trend === "up" ? GREEN : stats?.trend === "down" ? "#f87171" : "rgba(var(--fg-rgb, 255,255,255),0.72)"}
+            />
             {has1RM
               ? <Stat label="Teraz 1RM" value={stats?.current1RM != null ? `≈${stats.current1RM} kg` : "—"} color="var(--c-orange, #f97316)" />
               : <Stat label="Ostatnio" value={stats?.lastTop != null ? `${stats.lastTop}${unit}` : "—"} color="var(--fg, #fff)" />

@@ -41,11 +41,13 @@ export default function WorkoutJournalList({
   openWorkout,
   onImport,
   onOpenSummary,
+  onQuickLog,
 }: {
   goBack: () => void;
   openWorkout: (sessionId: string, workoutId: string) => void;
   onImport?: () => void;
   onOpenSummary?: (sessionId: string) => void;
+  onQuickLog?: () => void;
 }) {
   const [workouts, setWorkouts] = useState<WnWorkout[]>([]);
   const [meta, setMeta] = useState<Record<string, WorkoutMeta>>({});
@@ -124,6 +126,30 @@ export default function WorkoutJournalList({
           border: "1px solid rgba(var(--c-orange-rgb, 249,115,22),0.3)",
         }}>Forma</span>
       </div>
+
+      {/* Najszybsza ścieżka — zapis treningu bez przepisywania wszystkiego */}
+      {onQuickLog && (
+        <button
+          onClick={onQuickLog}
+          data-testid="workout-quick-log"
+          className="w-full active:scale-[0.98] transition-transform"
+          style={{
+            marginTop: 16, padding: "14px 16px", borderRadius: 16, cursor: "pointer",
+            display: "flex", alignItems: "center", gap: 11, textAlign: "left",
+            background: "linear-gradient(135deg, rgba(var(--c-orange-rgb, 249,115,22),0.18), rgba(var(--c-orange-rgb, 249,115,22),0.06))",
+            border: "1px solid rgba(var(--c-orange-rgb, 249,115,22),0.35)",
+          }}
+        >
+          <span style={{ fontSize: 21, flexShrink: 0 }}>⚡</span>
+          <span style={{ flex: 1, minWidth: 0 }}>
+            <span style={{ display: "block", fontSize: 14.5, fontWeight: 800, color: "var(--fg, #fff)" }}>Szybki zapis treningu</span>
+            <span style={{ display: "block", fontSize: 11.5, color: "rgba(var(--fg-rgb, 255,255,255),0.72)", marginTop: 2 }}>
+              Wypełnię z ostatniego razu — zmień datę i ciężary
+            </span>
+          </span>
+          <span style={{ color: "var(--c-orange, #f97316)", fontSize: 20, flexShrink: 0 }}>›</span>
+        </button>
+      )}
 
       {/* Lista */}
       <div className="flex flex-col gap-2.5 mt-5">
