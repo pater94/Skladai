@@ -17,8 +17,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { MUSCLES, type MuscleId } from "@/lib/anatomy/muscles";
 import type { ExerciseAnatomy, MuscleActivation, ActivationRole } from "@/lib/anatomy/exercises";
-import { BODY, LIMB_UNDERLAY, TENDONS, FRONT_REGIONS, BACK_REGIONS, PIVOT, type Region, type Segment } from "./anatomyFigure";
-import { MOTIONS, archetypeOf, smilValues } from "./anatomyMotion";
+import { FRONT_PLATE, BACK_PLATE, FRONT_MODESTY, MODESTY_FILL, ANATOMY_ATTRIBUTION, type PlateRegion } from "./anatomyPlate";
+import { MOTIONS, archetypeOf } from "./anatomyMotion";
 
 const ORANGE = "var(--c-orange, #f97316)";
 const ORANGE_RGB = "var(--c-orange-rgb, 249,115,22)";
@@ -26,7 +26,6 @@ const ORANGE_RGB = "var(--c-orange-rgb, 249,115,22)";
 /** Skala cieplna — od ledwie pracującego do maksymalnie obciążonego. */
 const HEAT = ["#5b6472", "#d99a2b", "#f08a2c", "#f2621f", "#e0231c"];
 const HEAT_LABEL = ["śladowo", "słabo", "średnio", "mocno", "maksymalnie"];
-const INACTIVE = "rgba(var(--fg-rgb, 255,255,255),0.05)";
 
 const ROLE_LABEL: Record<ActivationRole, string> = {
   primary: "główny", secondary: "wspomagający", support: "pomocniczy", stabilizer: "stabilizator",
@@ -50,24 +49,6 @@ function levelOf(c: number | null): number {
   return 0;
 }
 
-/** Linie striacji (włókna) w obrębie kształtu — przycinane clipPath-em. */
-function fiberLines(key: string, angle: number) {
-  const rad = (angle * Math.PI) / 180;
-  const dx = Math.cos(rad), dy = Math.sin(rad);
-  // prostopadły krok między włóknami
-  const px = -dy, py = dx;
-  const lines = [];
-  for (let i = -7; i <= 7; i++) {
-    const ox = px * i * 3.2, oy = py * i * 3.2;
-    lines.push(
-      <line key={`${key}-f${i}`}
-        x1={110 + ox - dx * 90} y1={220 + oy - dy * 90}
-        x2={110 + ox + dx * 90} y2={220 + oy + dy * 90}
-        stroke="rgba(0,0,0,0.28)" strokeWidth="0.7" />
-    );
-  }
-  return lines;
-}
 
 export default function MuscleMap({ anatomy }: { anatomy: ExerciseAnatomy }) {
   const actByMuscle = useMemo(() => {
@@ -108,7 +89,7 @@ export default function MuscleMap({ anatomy }: { anatomy: ExerciseAnatomy }) {
   }, []);
 
   const ranked = useMemo(() => [...anatomy.activation].sort((a, b) => b.share - a.share), [anatomy]);
-  const regions = view === "front" ? FRONT_REGIONS : BACK_REGIONS;
+  const plate = view === "front" ? FRONT_PLATE : BACK_PLATE;
 
   const archetype = useMemo(() => archetypeOf(anatomy), [anatomy]);
   const motion = MOTIONS[archetype];
@@ -125,108 +106,63 @@ export default function MuscleMap({ anatomy }: { anatomy: ExerciseAnatomy }) {
     setSelected((prev) => (prev?.muscle === id && !prev.head ? null : { muscle: id }));
   };
 
-  /** Rysuje jeden mięsień: wypełnienie cieplne + włókna + obrys. */
-  const renderRegion = (r: Region, idx: number) => {
-    const act = actByMuscle.get(r.muscle);
-    const contribution = contributionOf(act, r.head);
-    const lvl = levelOf(contribution);
-    const isSel = selected?.muscle === r.muscle;
-    const isHov = hover?.muscle === r.muscle;
-    const head = r.head ? MUSCLES[r.muscle].heads.find((h) => h.id === r.head) : undefined;
-    const clipId = `wnclip-${view}-${idx}`;
-    const hot = lvl >= 3;
+  /**
+   * Koloruje jeden mięsień na planszy. Podkład jest odbarwiony do szarości,
+   * a maska nakładana trybem „color" przejmuje barwę zachowując CAŁE cieniowanie
+   * i prążkowanie włókien z oryginalnej ilustracji.
+   */
+  const mirrorT = `translate(${plate.axis * 2},0) scale(-1,1)`;
 
+  /** Warstwa BARWY — rozmyta i przycięta do sylwetki, żeby maski nie wyglądały
+   *  jak naklejone prostokąty tylko jak ciepło rozlane po mięśniu. */
+  const renderPaint = (r: PlateRegion, idx: number, mirrored: boolean) => {
+    const act = actByMuscle.get(r.muscle);
+    const lvl = levelOf(contributionOf(act, r.head));
+    if (lvl < 0) return null; // nie pracuje → zostaje szary podkład
+    const hot = lvl >= 3;
+    const strength = [0.45, 0.62, 0.78, 0.9, 1][lvl];
     return (
-      <g key={`${view}-${idx}`}
-        onClick={() => setSelected({ muscle: r.muscle, head: r.head })}
-        onMouseEnter={() => setHover({ muscle: r.muscle, head: r.head })}
-        onMouseLeave={() => setHover(null)}
-        style={{ cursor: "pointer" }}
-      >
-        <defs><clipPath id={clipId}><path d={r.d} /></clipPath></defs>
-        <path
-          d={r.d}
-          fill={lvl >= 0 ? HEAT[lvl] : INACTIVE}
-          stroke={isSel || isHov ? "#fff" : "rgba(0,0,0,0.45)"}
-          strokeWidth={isSel || isHov ? 1.6 : 0.6}
-          style={{ transition: "fill .25s ease" }}
-        >
-          <title>
-            {MUSCLES[r.muscle].name}{head ? ` — ${head.name}` : ""}
-            {contribution != null ? ` · ${contribution.toFixed(1)}% pracy (${HEAT_LABEL[lvl]})` : " · nie pracuje"}
-          </title>
-        </path>
-        {/* włókna mięśniowe */}
-        {lvl >= 0 && (
-          <g clipPath={`url(#${clipId})`} style={{ pointerEvents: "none" }} opacity={lvl >= 2 ? 0.5 : 0.32}>
-            {fiberLines(clipId, r.fiber)}
-          </g>
-        )}
-        {/* puls pracy w fazie koncentrycznej */}
+      <g key={`p${idx}${mirrored ? "m" : ""}`} transform={mirrored ? mirrorT : undefined}>
+        <path d={r.d} fill={HEAT[lvl]} opacity={strength}
+          style={{ mixBlendMode: "color", transition: "opacity .25s ease" }} />
+        {hot && <path d={r.d} fill={HEAT[lvl]} opacity={lvl === 4 ? 0.34 : 0.2} style={{ mixBlendMode: "multiply" }} />}
         {animate && hot && (
-          <path d={r.d} fill="#fff" opacity="0" style={{ pointerEvents: "none" }}>
-            <animate attributeName="opacity" values="0;0.30;0" dur={`${motion.dur}s`} repeatCount="indefinite" />
+          <path d={r.d} fill="#fff" opacity="0">
+            <animate attributeName="opacity" values="0;0.20;0" dur={`${motion.dur}s`} repeatCount="indefinite" />
           </path>
         )}
       </g>
     );
   };
 
-  /** Grupa segmentu z animacją obrotu w stawie (zwykła funkcja — nie komponent). */
-  const joint = (range: [number, number] | undefined, pivot: readonly [number, number], children: React.ReactNode) => {
-    if (!range || !animate) return <g>{children}</g>;
+  /** Warstwa INTERAKCJI — ostra, nierozmyta: trafienia, podpowiedzi, zaznaczenie. */
+  const renderHit = (r: PlateRegion, idx: number, mirrored: boolean) => {
+    const act = actByMuscle.get(r.muscle);
+    const contribution = contributionOf(act, r.head);
+    const lvl = levelOf(contribution);
+    if (lvl < 0) return null;
+    const isActive = selected?.muscle === r.muscle || hover?.muscle === r.muscle;
+    const head = r.head ? MUSCLES[r.muscle].heads.find((h) => h.id === r.head) : undefined;
     return (
-      <g>
-        <animateTransform attributeName="transform" type="rotate"
-          values={smilValues(range, pivot[0], pivot[1])}
-          dur={`${motion.dur}s`} repeatCount="indefinite" calcMode="spline"
-          keyTimes="0;0.5;1" keySplines="0.4 0 0.2 1;0.4 0 0.2 1" />
-        {children}
+      <g key={`h${idx}${mirrored ? "m" : ""}`} transform={mirrored ? mirrorT : undefined}
+        onClick={() => setSelected({ muscle: r.muscle, head: r.head })}
+        onMouseEnter={() => setHover({ muscle: r.muscle, head: r.head })}
+        onMouseLeave={() => setHover(null)}
+        style={{ cursor: "pointer" }}
+      >
+        {isActive && (
+          <path d={r.d} fill="none" stroke="#fff" strokeWidth={4} opacity={0.85}
+            strokeLinejoin="round" style={{ pointerEvents: "none" }} />
+        )}
+        <path d={r.d} fill="transparent">
+          <title>
+            {MUSCLES[r.muscle].name}{head ? ` — ${head.name}` : ""}
+            {` · ${contribution!.toFixed(1)}% pracy (${HEAT_LABEL[lvl]})`}
+          </title>
+        </path>
       </g>
     );
   };
-
-  const bySeg = (s: Segment) => regions.filter((r) => r.segment === s && !r.center);
-  const centerRegions = regions.filter((r) => r.center);
-  const idxOf = (r: Region) => regions.indexOf(r);
-
-  /** Podkład („skóra") danego segmentu — jedzie razem z mięśniami w tej grupie. */
-  const limbSkin = (s: Segment) => (
-    <g fill="rgba(var(--fg-rgb, 255,255,255),0.055)" stroke="rgba(var(--fg-rgb, 255,255,255),0.13)" strokeWidth="0.8" style={{ pointerEvents: "none" }}>
-      {LIMB_UNDERLAY[s].map((d, i) => <path key={`${s}${i}`} d={d} />)}
-    </g>
-  );
-
-  /** Zawartość jednej połowy ciała (mięśnie parzyste + kończyny w stawach). */
-  const halfBody = (
-    <>
-      {bySeg("torso").map((r) => renderRegion(r, idxOf(r)))}
-      {joint(motion.shoulder, PIVOT.shoulder, (
-        <>
-          {limbSkin("armUpper")}
-          {bySeg("armUpper").map((r) => renderRegion(r, idxOf(r)))}
-          {joint(motion.elbow, PIVOT.elbow, (
-            <>
-              {limbSkin("armFore")}
-              {bySeg("armFore").map((r) => renderRegion(r, idxOf(r)))}
-            </>
-          ))}
-        </>
-      ))}
-      {joint(motion.hip, PIVOT.hip, (
-        <>
-          {limbSkin("thigh")}
-          {bySeg("thigh").map((r) => renderRegion(r, idxOf(r)))}
-          {joint(motion.knee, PIVOT.knee, (
-            <>
-              {limbSkin("shin")}
-              {bySeg("shin").map((r) => renderRegion(r, idxOf(r)))}
-            </>
-          ))}
-        </>
-      ))}
-    </>
-  );
 
   return (
     <div style={{ marginTop: 22 }}>
@@ -256,33 +192,47 @@ export default function MuscleMap({ anatomy }: { anatomy: ExerciseAnatomy }) {
 
       {/* Sylwetka */}
       <div style={{ borderRadius: 18, padding: "8px 8px 6px", background: "radial-gradient(120% 90% at 50% 8%, rgba(var(--fg-rgb, 255,255,255),0.07), rgba(var(--fg-rgb, 255,255,255),0.02))", border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.08)" }}>
-        <svg viewBox="0 0 220 430" width="100%" style={{ display: "block", maxHeight: 420, margin: "0 auto" }}
+        <svg viewBox={`0 0 ${plate.width} ${plate.height}`} width="100%"
+          style={{ display: "block", maxHeight: 520, margin: "0 auto" }}
           role="img" data-testid="muscle-map-svg"
           aria-label={`Mapa mięśni — ${anatomy.name}, widok ${view === "front" ? "z przodu" : "z tyłu"}`}>
-          <g>
-            {/* delikatny ruch całej sylwetki (przysiad / wspięcie) */}
-            {animate && motion.bodyY && (
-              <animateTransform attributeName="transform" type="translate"
-                values={`0 ${motion.bodyY[0]}; 0 ${motion.bodyY[1]}; 0 ${motion.bodyY[0]}`}
-                dur={`${motion.dur}s`} repeatCount="indefinite" calcMode="spline"
-                keyTimes="0;0.5;1" keySplines="0.4 0 0.2 1;0.4 0 0.2 1" />
-            )}
-            {/* podkład: sylwetka + ścięgna */}
-            <g fill="rgba(var(--fg-rgb, 255,255,255),0.055)" stroke="rgba(var(--fg-rgb, 255,255,255),0.13)" strokeWidth="0.8">
-              {BODY.map((d, i) => <path key={`b${i}`} d={d} />)}
-            </g>
-            <g fill="rgba(var(--fg-rgb, 255,255,255),0.17)" style={{ pointerEvents: "none" }}>
-              {TENDONS.map((d, i) => <path key={`t${i}`} d={d} />)}
-            </g>
-            {/* mięśnie centralne (brzuch) */}
-            {centerRegions.map((r) => renderRegion(r, idxOf(r)))}
-            {/* lewa i prawa połowa */}
-            <g>{halfBody}</g>
-            <g transform="translate(220,0) scale(-1,1)">{halfBody}</g>
+          <defs>
+            {/* Sylwetka wycięta z kanału alfa samej planszy — kolor nigdy nie wyjdzie poza ciało */}
+            <mask id={`bodyMask-${view}`} maskUnits="userSpaceOnUse" x={0} y={0} width={plate.width} height={plate.height} style={{ maskType: "alpha" }}>
+              <image href={plate.src} x={0} y={0} width={plate.width} height={plate.height} preserveAspectRatio="xMidYMid meet" />
+            </mask>
+          </defs>
+
+          {/* plansza anatomiczna — odbarwiona, żeby pracujące partie wybijały się kolorem */}
+          <image href={plate.src} x={0} y={0} width={plate.width} height={plate.height}
+            preserveAspectRatio="xMidYMid meet"
+            style={{ filter: "grayscale(1) contrast(1.06) brightness(1.04)" }} />
+
+          {/* WARSTWA BARWY: przycięta do sylwetki + rozmyta (miękkie przejścia) */}
+          <g mask={`url(#bodyMask-${view})`} style={{ filter: "blur(5px)", pointerEvents: "none" }}>
+            {plate.regions.map((r, i) => (
+              <g key={`paint${i}`}>
+                {renderPaint(r, i, false)}
+                {!r.center && renderPaint(r, i, true)}
+              </g>
+            ))}
           </g>
+
+          {/* zasłona okolicy krocza (tylko przód) */}
+          {view === "front" && (
+            <path d={FRONT_MODESTY} fill={MODESTY_FILL} opacity={0.99} style={{ pointerEvents: "none", filter: "blur(1.5px)" }} />
+          )}
+
+          {/* WARSTWA INTERAKCJI: ostra, na wierzchu */}
+          {plate.regions.map((r, i) => (
+            <g key={`hit${i}`}>
+              {renderHit(r, i, false)}
+              {!r.center && renderHit(r, i, true)}
+            </g>
+          ))}
         </svg>
 
-        {/* Sterowanie animacją + faza ruchu */}
+        {/* Sterowanie pulsem pracy */}
         <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "4px 4px 0" }}>
           <button onClick={() => setPlaying((p) => !p)} disabled={reduced} data-testid="muscle-anim-toggle"
             style={{
@@ -291,7 +241,7 @@ export default function MuscleMap({ anatomy }: { anatomy: ExerciseAnatomy }) {
               border: `1px solid ${animate ? `rgba(${ORANGE_RGB},0.32)` : "rgba(var(--fg-rgb, 255,255,255),0.1)"}`,
               color: animate ? ORANGE : "rgba(var(--fg-rgb, 255,255,255),0.55)", fontSize: 11, fontWeight: 800,
             }}>
-            {animate ? "⏸ Zatrzymaj" : "▶ Pokaż ruch"}
+            {animate ? "⏸ Zatrzymaj puls" : "▶ Pokaż pracę"}
           </button>
           <span style={{ fontSize: 10.5, color: "rgba(var(--fg-rgb, 255,255,255),0.45)", flex: 1, minWidth: 0 }}>
             {reduced ? "Animacje wyłączone w ustawieniach systemu" : motion.label}
@@ -428,7 +378,17 @@ export default function MuscleMap({ anatomy }: { anatomy: ExerciseAnatomy }) {
 
       <div style={{ marginTop: 12, fontSize: 10, lineHeight: 1.5, color: "rgba(var(--fg-rgb, 255,255,255),0.34)", textAlign: "center" }}>
         Wartości procentowe są szacunkowe — analiza biomechaniczna (dźwignie, zakres ruchu, pozycja stawów)
-        skorelowana z danymi EMG z literatury. Animacja jest uproszczoną ilustracją wzorca ruchu.
+        skorelowana z danymi EMG z literatury.
+      </div>
+      {/* Atrybucja wymagana licencją CC BY-SA */}
+      <div style={{ marginTop: 6, fontSize: 9.5, lineHeight: 1.5, color: "rgba(var(--fg-rgb, 255,255,255),0.28)", textAlign: "center" }}>
+        Plansza anatomiczna: {ANATOMY_ATTRIBUTION.author} ·{" "}
+        <a href={ANATOMY_ATTRIBUTION.source} target="_blank" rel="noreferrer noopener" style={{ color: "inherit", textDecoration: "underline" }}>
+          Wikimedia Commons
+        </a>{" "}·{" "}
+        <a href={ANATOMY_ATTRIBUTION.licenseUrl} target="_blank" rel="noreferrer noopener" style={{ color: "inherit", textDecoration: "underline" }}>
+          {ANATOMY_ATTRIBUTION.license}
+        </a>{" "}· zmodyfikowana (symetryzacja, kadr, kompresja)
       </div>
     </div>
   );
