@@ -14,8 +14,20 @@
  *   (wiosłowanie otwiera się na plecach, wyciskanie na klatce).
  */
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import dynamic from "next/dynamic";
 import { MUSCLES, type MuscleId } from "@/lib/anatomy/muscles";
+import { POSES, lerpPose, type Pose } from "./exercisePose";
+
+// Three.js dociągany dopiero przy wejściu w widok 3D — nie obciąża reszty apki.
+const MuscleModel3D = dynamic(() => import("./MuscleModel3D"), {
+  ssr: false,
+  loading: () => (
+    <div style={{ height: 460, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, color: "rgba(var(--fg-rgb, 255,255,255),0.6)" }}>
+      Ładuję model 3D…
+    </div>
+  ),
+});
 import type { ExerciseAnatomy, MuscleActivation, ActivationRole } from "@/lib/anatomy/exercises";
 import { FRONT_PLATE, BACK_PLATE, FRONT_MODESTY, MODESTY_FILL, ANATOMY_ATTRIBUTION, type PlateRegion } from "./anatomyPlate";
 import { MOTIONS, archetypeOf } from "./anatomyMotion";
@@ -77,6 +89,10 @@ export default function MuscleMap({ anatomy }: { anatomy: ExerciseAnatomy }) {
   // Opisy encyklopedyczne domyślnie ZWINIĘTE — ekran ma nie być przeładowany.
   const [expanded, setExpanded] = useState(false);
   const [tipOpen, setTipOpen] = useState(false);
+  // Tryb prezentacji: plansza anatomiczna (2D) albo obracany model (3D).
+  const [mode, setMode] = useState<"plate" | "model">("plate");
+  const [pose3d, setPose3d] = useState<Pose | null>(null);
+  const poseRaf = useRef<number>(0);
 
   // Uwaga: przy zmianie ćwiczenia komponent jest remountowany przez key={anatomy.id}
   // w ExerciseHistory — dzięki temu widok startowy wylicza się od nowa bez efektu.
@@ -93,6 +109,26 @@ export default function MuscleMap({ anatomy }: { anatomy: ExerciseAnatomy }) {
 
   const ranked = useMemo(() => [...anatomy.activation].sort((a, b) => b.share - a.share), [anatomy]);
   const plate = view === "front" ? FRONT_PLATE : BACK_PLATE;
+
+  // Animacja techniki w 3D: płynne przejście start ⇄ koniec ruchu.
+  const archetypeForPose = useMemo(() => archetypeOf(anatomy), [anatomy]);
+  useEffect(() => {
+    if (mode !== "model") { setPose3d(null); return; }
+    const pair = POSES[archetypeForPose];
+    if (!playing || reduced) { setPose3d(pair.start); return; }
+    const t0 = performance.now();
+    const loop = () => {
+      const el = (performance.now() - t0) / 1000;
+      // 0→1→0 z wygładzeniem (faza koncentryczna i ekscentryczna)
+      const raw = (el % pair.dur) / pair.dur;
+      const tri = raw < 0.5 ? raw * 2 : (1 - raw) * 2;
+      const eased = tri * tri * (3 - 2 * tri);
+      setPose3d(lerpPose(pair.start, pair.end, eased));
+      poseRaf.current = requestAnimationFrame(loop);
+    };
+    poseRaf.current = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(poseRaf.current);
+  }, [mode, playing, reduced, archetypeForPose]);
 
   const archetype = useMemo(() => archetypeOf(anatomy), [anatomy]);
   const motion = MOTIONS[archetype];
@@ -180,7 +216,7 @@ export default function MuscleMap({ anatomy }: { anatomy: ExerciseAnatomy }) {
           </div>
         </div>
         <div style={{ display: "flex", gap: 3, padding: 3, borderRadius: 11, background: "rgba(var(--fg-rgb, 255,255,255),0.06)", flexShrink: 0 }}>
-          {(["front", "back"] as const).map((v) => (
+          {mode === "plate" && (["front", "back"] as const).map((v) => (
             <button key={v} onClick={() => setView(v)} data-testid={`muscle-view-${v}`}
               style={{
                 padding: "5px 11px", borderRadius: 8, border: "none", cursor: "pointer", fontSize: 11.5, fontWeight: 800,
@@ -190,11 +226,27 @@ export default function MuscleMap({ anatomy }: { anatomy: ExerciseAnatomy }) {
               {v === "front" ? "Przód" : "Tył"}
             </button>
           ))}
+          <button onClick={() => setMode((m) => (m === "plate" ? "model" : "plate"))} data-testid="muscle-mode-toggle"
+            style={{
+              padding: "5px 11px", borderRadius: 8, border: "none", cursor: "pointer", fontSize: 11.5, fontWeight: 800,
+              background: mode === "model" ? ORANGE : "transparent",
+              color: mode === "model" ? "#fff" : "rgba(var(--fg-rgb, 255,255,255),0.6)",
+            }}>
+            {mode === "model" ? "◧ 2D" : "◈ 3D"}
+          </button>
         </div>
       </div>
 
       {/* Sylwetka */}
       <div style={{ borderRadius: 18, padding: "8px 8px 6px", background: "radial-gradient(120% 90% at 50% 8%, rgba(var(--fg-rgb, 255,255,255),0.07), rgba(var(--fg-rgb, 255,255,255),0.02))", border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.08)" }}>
+        {mode === "model" ? (
+          <MuscleModel3D
+            activation={anatomy.activation}
+            selected={selected}
+            pose={pose3d}
+            onPick={(p) => setSelected(p)}
+          />
+        ) : (
         <svg viewBox={`0 0 ${plate.width} ${plate.height}`} width="100%"
           style={{ display: "block", maxHeight: 520, margin: "0 auto" }}
           role="img" data-testid="muscle-map-svg"
@@ -234,6 +286,7 @@ export default function MuscleMap({ anatomy }: { anatomy: ExerciseAnatomy }) {
             </g>
           ))}
         </svg>
+        )}
 
         {/* Sterowanie pulsem pracy */}
         <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "4px 4px 0" }}>
@@ -244,10 +297,11 @@ export default function MuscleMap({ anatomy }: { anatomy: ExerciseAnatomy }) {
               border: `1px solid ${animate ? `rgba(${ORANGE_RGB},0.32)` : "rgba(var(--fg-rgb, 255,255,255),0.1)"}`,
               color: animate ? ORANGE : "rgba(var(--fg-rgb, 255,255,255),0.55)", fontSize: 11, fontWeight: 800,
             }}>
-            {animate ? "⏸ Zatrzymaj puls" : "▶ Pokaż pracę"}
+            {animate ? (mode === "model" ? "⏸ Zatrzymaj ruch" : "⏸ Zatrzymaj puls") : (mode === "model" ? "▶ Pokaż technikę" : "▶ Pokaż pracę")}
           </button>
           <span style={{ fontSize: 10.5, color: "rgba(var(--fg-rgb, 255,255,255),0.68)", flex: 1, minWidth: 0 }}>
-            {reduced ? "Animacje wyłączone w ustawieniach systemu" : motion.label}
+            {reduced ? "Animacje wyłączone w ustawieniach systemu"
+              : mode === "model" ? `${POSES[archetypeForPose].label} · przeciągnij, by obrócić` : motion.label}
           </span>
         </div>
 
