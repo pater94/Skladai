@@ -118,7 +118,12 @@ export default function ExerciseHistory({
             {/* Przyrost od startu — kg + % */}
             {stats?.addedAbs != null && stats.addedAbs !== 0 && (
               <div style={{ marginTop: 13, paddingTop: 12, borderTop: "1px solid rgba(var(--fg-rgb, 255,255,255),0.08)", display: "flex", alignItems: "baseline", flexWrap: "wrap", gap: 8 }}>
-                <span style={{ fontSize: 12, color: "rgba(var(--fg-rgb, 255,255,255),0.75)" }}>Od startu</span>
+                <span style={{ fontSize: 12, color: "rgba(var(--fg-rgb, 255,255,255),0.75)" }}>
+                  {stats.sinceDays == null ? "Od startu"
+                    : stats.sinceDays === 0 ? "Dziś"
+                    : stats.sinceDays === 1 ? "Przez 1 dzień"
+                    : `Przez ${stats.sinceDays} dni`}
+                </span>
                 <span style={{ fontSize: 17, fontWeight: 900, color: stats.addedAbs > 0 ? GREEN : "#f87171" }}>
                   {stats.addedAbs > 0 ? "+" : ""}{stats.addedAbs}{unit}
                 </span>

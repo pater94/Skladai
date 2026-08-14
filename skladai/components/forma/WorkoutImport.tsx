@@ -22,7 +22,7 @@ const RED = "#f87171";
 
 interface EditSet { weight: string; reps: string; duration: string; }
 interface Baseline { metric: "weight" | "reps"; lastTop: number | null; firstTop: number | null; record: number | null; }
-interface EditExercise { name: string; kind: WnKind; sets: EditSet[]; matched: boolean; baseline?: Baseline; }
+interface EditExercise { name: string; kind: WnKind; sets: EditSet[]; matched: boolean; baseline?: Baseline; exerciseId?: string; }
 
 function pnum(s: string): number | null {
   const t = (s || "").replace(",", ".").trim();
@@ -48,6 +48,29 @@ export default function WorkoutImport({ goBack, onSaved }: { goBack: () => void;
   const galleryRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => { void listWorkouts().then(setWorkouts); }, []);
+
+  /**
+   * Odniesienie („rekord", „vs ostatnio") liczymy DOPIERO po wyborze treningu
+   * docelowego i wyłącznie z jego historii — inaczej pokazywalibyśmy progres
+   * zlepiony z innych treningów. Nowy trening = brak historii = brak progresu.
+   */
+  useEffect(() => {
+    const realWorkout = target !== "__new__" && target !== "" ? target : null;
+    let cancelled = false;
+    (async () => {
+      const withBase = await Promise.all(exercises.map(async (ex) => {
+        if (!realWorkout || !ex.exerciseId) return { ...ex, baseline: undefined };
+        const b = await getExerciseBaseline(ex.exerciseId, realWorkout);
+        return b.sessions > 0
+          ? { ...ex, baseline: { metric: b.metric, lastTop: b.lastTop, firstTop: b.firstTop, record: b.record } }
+          : { ...ex, baseline: undefined };
+      }));
+      if (!cancelled) setExercises(withBase);
+    })();
+    return () => { cancelled = true; };
+    // celowo bez `exercises` w zależnościach — przeliczamy przy ZMIANIE treningu
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [target]);
   useEffect(() => { void getCurrentUserId().then(setAuthUid); }, []);
 
   const parseImage = useCallback(async (base64: string) => {
@@ -62,12 +85,12 @@ export default function WorkoutImport({ goBack, onSaved }: { goBack: () => void;
       const edit: EditExercise[] = await Promise.all(parsed.map(async (ie): Promise<EditExercise> => {
         const match = await findExerciseByName(ie.name, allEx);
         let baseline: Baseline | undefined;
-        if (match) { const b = await getExerciseBaseline(match.id); baseline = { metric: b.metric, lastTop: b.lastTop, firstTop: b.firstTop, record: b.record }; }
+        // odniesienie liczone dopiero po wyborze treningu docelowego (efekt niżej)
         return {
           name: ie.name || "Ćwiczenie",
           kind: (ie.kind as WnKind) || "weighted",
           sets: (ie.sets || []).map((s) => ({ weight: s.weight != null ? String(s.weight) : "", reps: s.reps != null ? String(s.reps) : "", duration: s.duration != null ? String(s.duration) : "" })),
-          matched: !!match, baseline,
+          matched: !!match, baseline, exerciseId: match?.id,
         };
       }));
       setExercises(edit);

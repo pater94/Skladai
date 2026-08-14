@@ -287,6 +287,7 @@ export default function ActiveWorkout({
               ex={ex} kind={kind} byReps={byReps}
               list={list} ghost={ghostBy[ex.id]} record={record} weekDelta={week}
               addedAbs={prog?.addedAbs ?? null} addedPct={prog?.addedPct ?? null} best1RM={prog?.best1RM ?? null}
+              sinceDays={prog?.sinceDays ?? null}
               history={histBy[ex.id] ?? []} liveTop={liveTop}
               onField={updateField} onCommit={commitSet} onAddSet={addSet} onSame={addSameSet} onDelete={deleteSetRow}
               saved={savedKeys}
@@ -326,12 +327,12 @@ export default function ActiveWorkout({
 
 // ── Karta pojedynczego ćwiczenia ──
 function ExerciseCard({
-  ex, kind, byReps, list, ghost, record, weekDelta, addedAbs, addedPct, best1RM, history, liveTop,
+  ex, kind, byReps, list, ghost, record, weekDelta, addedAbs, addedPct, best1RM, sinceDays, history, liveTop,
   onField, onCommit, onAddSet, onSame, onDelete, saved, onOpenHistory,
 }: {
   ex: WnExercise; kind: WnKind; byReps: boolean;
   list: EditableSet[]; ghost?: string; record: number | null; weekDelta: number | null;
-  addedAbs: number | null; addedPct: number | null; best1RM: number | null;
+  addedAbs: number | null; addedPct: number | null; best1RM: number | null; sinceDays: number | null;
   history: WnHistoryPoint[]; liveTop: number | null;
   onField: (exId: string, setIndex: number, field: "weight" | "reps" | "duration", v: string) => void;
   onCommit: (exId: string, setIndex: number) => void;
@@ -462,8 +463,13 @@ function ExerciseCard({
         </div>
         {addedAbs != null && addedAbs !== 0 && (
           <div style={{ fontSize: 11, marginTop: 6, color: addedAbs > 0 ? GREEN : RED, fontWeight: 600 }}>
-            Od startu {addedAbs > 0 ? "+" : ""}{addedAbs}{byReps ? " powt." : " kg"}
+            {addedAbs > 0 ? "+" : ""}{addedAbs}{byReps ? " powt." : " kg"}
             {addedPct != null && addedPct !== 0 && <span style={{ opacity: 0.85 }}> ({addedPct > 0 ? "+" : ""}{addedPct}%)</span>}
+            {sinceDays != null && (
+              <span style={{ color: "rgba(var(--fg-rgb, 255,255,255),0.66)", fontWeight: 600 }}>
+                {" · "}{sinceDays === 0 ? "dziś" : sinceDays === 1 ? "przez 1 dzień" : `przez ${sinceDays} dni`}
+              </span>
+            )}
           </div>
         )}
       </div>

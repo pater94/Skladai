@@ -143,8 +143,16 @@ export async function createWorkout(name: string): Promise<WnWorkout | null> {
   const supabase = createClient();
   const userId = await getUserId();
   if (!userId) return null;
-  // kolejna pozycja na końcu listy
   const existing = await listWorkouts();
+
+  // Nazwa już istnieje → UŻYJ tego treningu zamiast tworzyć bliźniaka.
+  // Duplikaty rozbijały historię: dwa razy „Góra B" = progres liczony osobno
+  // dla każdego, więc jeden pokazywał komplet, a drugi nic.
+  const wanted = name.trim().toLowerCase();
+  const twin = existing.find((w) => w.name.trim().toLowerCase() === wanted);
+  if (twin) return twin;
+
+  // kolejna pozycja na końcu listy
   const position = existing.length;
   const { data, error } = await supabase
     .from("wn_workouts")
@@ -244,9 +252,10 @@ export async function findExerciseByName(name: string, cache?: WnExercise[]): Pr
 }
 
 /** Baza progresu ćwiczenia: ostatnia / pierwsza sesja + rekord (do porównań w imporcie). */
-export async function getExerciseBaseline(exerciseId: string): Promise<{ metric: "weight" | "reps"; lastTop: number | null; firstTop: number | null; record: number | null; sessions: number }> {
+export async function getExerciseBaseline(exerciseId: string, workoutId?: string | null): Promise<{ metric: "weight" | "reps"; lastTop: number | null; firstTop: number | null; record: number | null; sessions: number }> {
   const byReps = await isBodyweight(exerciseId);
-  const hist = await getExerciseHistory(exerciseId);
+  // workoutId → odniesienie TYLKO z tego treningu (bez mieszania A z B)
+  const hist = await getExerciseHistory(exerciseId, workoutId);
   const vals = hist.map((p) => (byReps ? p.topReps : p.topWeight)).filter((v): v is number => v != null);
   return {
     metric: byReps ? "reps" : "weight",
@@ -574,9 +583,10 @@ export async function getExerciseHistory(exerciseId: string, workoutId?: string 
 
   const all = [...bySession.entries()];
   if (workoutId) {
-    const scoped = all.filter(([, v]) => v.workoutId === workoutId);
-    // za mało danych w tym treningu → pokaż globalne, żeby ekran nie był pusty
-    if (scoped.length >= 2) return toPoints(scoped);
+    // ŻADNEGO mieszania: historia zawężona do tego treningu, nawet jeśli jest
+    // w nim tylko jedna sesja. Wcześniejszy fallback do historii globalnej
+    // pokazywał „progres" złożony z innych treningów — czyli bzdurę.
+    return toPoints(all.filter(([, v]) => v.workoutId === workoutId));
   }
   return toPoints(all);
 }
@@ -686,6 +696,8 @@ export interface WnExerciseStats {
   trend: "up" | "down" | "flat" | null;
   /** true → statystyki policzone w obrębie JEDNEGO treningu (nie mieszane z innymi). */
   scopedToWorkout: boolean;
+  /** Ile dni minęło od pierwszej sesji (liczone przy pobraniu, nie w renderze). */
+  sinceDays: number | null;
 }
 
 /** Pełne statystyki ćwiczenia: rekord, przyrost od startu (kg + %), 1RM, tydzień. */
@@ -699,7 +711,7 @@ export async function getExerciseStats(exerciseId: string, workoutId?: string | 
     metric, sessions: 0, firstTop: null, firstDate: null, lastTop: null, lastDate: null,
     record: null, recordDate: null, weekDelta: null, addedAbs: null, addedPct: null,
     best1RM: null, best1RMWeight: null, best1RMReps: null, current1RM: null,
-    indexNow: null, indexPrev: null, indexFirst: null, indexDelta: null, trend: null, scopedToWorkout,
+    indexNow: null, indexPrev: null, indexFirst: null, indexDelta: null, trend: null, scopedToWorkout, sinceDays: null,
   };
 
   const withVal = history.filter((p) => topOf(p) != null);
@@ -743,6 +755,7 @@ export async function getExerciseStats(exerciseId: string, workoutId?: string | 
     weekDelta: prev != null ? round2(lastTop - prev) : null,
     addedAbs, addedPct, best1RM, best1RMWeight, best1RMReps, current1RM,
     indexNow, indexPrev, indexFirst, indexDelta, trend, scopedToWorkout,
+    sinceDays: Math.max(0, Math.floor((Date.now() - new Date(first.finishedAt).getTime()) / 86400000)),
   };
 }
 
