@@ -68,6 +68,14 @@ export const FRONT_PLATE: Plate = {
 };
 
 // ───────────────────────────── TYŁ ─────────────────────────────
+/**
+ * Tył złożony z DWÓCH powierzchownych połówek oryginału: górne plecy z prawej
+ * (nienaruszony czworoboczny i najszerszy), pośladki i nogi z lewej (nienaruszony
+ * pośladek wielki). Oryginał pokazuje po każdej stronie inną warstwę preparacji,
+ * więc pojedyncze odbicie dawało albo plecy bez czworobocznego, albo miednicę
+ * bez pośladków. Szew poprowadzony przez powięź lędźwiową — tam obie warstwy
+ * wyglądają tak samo, więc przejście jest niewidoczne.
+ */
 export const BACK_PLATE: Plate = {
   src: "/anatomy/body-back.webp",
   width: 620,
