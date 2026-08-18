@@ -348,6 +348,24 @@ export default function MuscleMap({ anatomy }: { anatomy: ExerciseAnatomy }) {
             ) : (
               <span style={{ fontSize: 10.5, fontWeight: 700, padding: "4px 9px", borderRadius: 99, flexShrink: 0, background: "rgba(var(--fg-rgb, 255,255,255),0.07)", color: "rgba(var(--fg-rgb, 255,255,255),0.72)" }}>nie pracuje</span>
             )}
+            {/* Zamykanie przy nagłówku panelu, a nie na jego końcu: przy dłuższym
+                opisie guzik „Zamknij" lądował daleko od tytułu i nie było wiadomo,
+                czego dotyczy. „×" w rogu czyta się od razu. */}
+            <button
+              onClick={() => { setSelected(null); setHover(null); }}
+              data-testid="muscle-detail-close"
+              aria-label={`Zamknij informacje o mięśniu ${activeMuscle.name}`}
+              title="Zamknij"
+              className="active:scale-90 transition-transform"
+              style={{
+                width: 30, height: 30, flexShrink: 0, borderRadius: 9, cursor: "pointer",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: 17, lineHeight: 1, fontWeight: 700,
+                background: "rgba(var(--fg-rgb, 255,255,255),0.07)",
+                border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.14)",
+                color: "rgba(var(--fg-rgb, 255,255,255),0.8)",
+              }}
+            >×</button>
           </div>
 
           {activeMuscle.heads.length > 0 && (
@@ -417,11 +435,6 @@ export default function MuscleMap({ anatomy }: { anatomy: ExerciseAnatomy }) {
               {activeMuscle.fact && <Block label="Warto wiedzieć" text={activeMuscle.fact} accent />}
             </div>
           )}
-
-          <button onClick={() => { setSelected(null); setHover(null); }}
-            style={{ marginTop: 12, width: "100%", padding: "9px", borderRadius: 11, cursor: "pointer", background: "rgba(var(--fg-rgb, 255,255,255),0.05)", border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.1)", color: "rgba(var(--fg-rgb, 255,255,255),0.78)", fontSize: 12, fontWeight: 700 }}>
-            Zamknij
-          </button>
         </div>
       )}
 
