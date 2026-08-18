@@ -241,7 +241,6 @@ export default function FormaPage() {
             router={router}
             onGalleryCheckForm={() => { setAutoOpenCamera(false); setAutoOpenGallery(true); setView("checkform"); }}
             onCameraCheckForm={() => { setAutoOpenGallery(false); setAutoOpenCamera(true); setView("checkform"); }}
-            onTimerOpen={() => setTimerOpen(true)}
           />
         )}
         {view === "checkform" && (
@@ -419,14 +418,12 @@ function MainView({
   router,
   onGalleryCheckForm,
   onCameraCheckForm,
-  onTimerOpen,
 }: {
   setView: (v: View) => void;
   onRunnerClick?: () => void;
   router: AppRouterInstance;
   onGalleryCheckForm?: () => void;
   onCameraCheckForm?: () => void;
-  onTimerOpen?: () => void;
 }) {
   const [checkFormHistory, setCheckFormHistory] = useState<CheckFormEntry[]>([]);
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -451,40 +448,13 @@ function MainView({
 
   return (
     <>
-      {/* Header with gradient bg */}
-      <div style={{
-        background: "linear-gradient(to bottom, rgba(26,16,8,0.9), transparent)",
-        margin: "-24px -16px 0",
-        padding: "24px 16px 16px",
-      }}>
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="flex items-center gap-2" style={{ fontSize: "26px", fontWeight: 900 }}>
-              <span>{"🔥"}</span>
-              <span style={{ color: "var(--c-orange, #f97316)" }}>Forma</span>
-            </h1>
-            <p style={{ color: "rgba(var(--fg-rgb, 255,255,255),0.55)", fontSize: "13px", marginTop: "2px" }}>
-              · dziennik treningowy i progres
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => onTimerOpen?.()}
-              className="flex items-center justify-center transition-all active:scale-95"
-              style={{
-                width: "42px", height: "42px", borderRadius: "50%",
-                background: "rgba(var(--c-orange-rgb, 249,115,22),0.1)",
-                border: "1px solid rgba(var(--c-orange-rgb, 249,115,22),0.15)",
-              }}
-            >
-              <Timer size={20} style={{ color: "var(--c-orange, #f97316)" }} />
-            </button>
-          </div>
-        </div>
-      </div>
+      {/* Nagłówek „🔥 Forma" usunięty — dolna nawigacja już mówi, gdzie jesteś,
+          a pasek tylko zabierał pierwszy ekran. Timer odpoczynku zostaje dostępny
+          tam, gdzie się go używa: przycisk ⏱ w aktywnym treningu oraz pływający
+          guzik w trakcie odliczania. */}
 
       {/* HERO: CheckForm */}
-      <div className="relative mt-5 mb-6" style={{ animation: "fadeInUp 0.5s ease both" }}>
+      <div className="relative mb-6" style={{ animation: "fadeInUp 0.5s ease both" }}>
         {/* Ambient glow */}
         <div className="absolute inset-0 -z-10" style={{
           background: "radial-gradient(ellipse at center, rgba(var(--c-orange-rgb, 249,115,22),0.12), transparent 70%)",
