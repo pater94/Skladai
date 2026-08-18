@@ -12,9 +12,10 @@
  */
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import AddExercise from "./AddExercise";
 import {
-  listWorkouts, createWorkout, getWorkoutTemplate, logSession, strengthIndex,
-  type WnWorkout, type TemplateExercise, type TemplateSet,
+  listWorkouts, createWorkout, findWorkoutByName, getWorkoutTemplate, logSession, strengthIndex,
+  type WnWorkout, type WnExercise, type TemplateExercise, type TemplateSet,
 } from "@/lib/workoutJournal";
 
 const ORANGE = "var(--c-orange, #f97316)";
@@ -44,6 +45,13 @@ export default function QuickLog({ goBack, onSaved }: { goBack: () => void; onSa
   const [error, setError] = useState<string | null>(null);
   /** Odhaczone ćwiczenia — widzisz w trakcie treningu, co masz już z głowy. */
   const [done, setDone] = useState<Set<string>>(new Set());
+  /**
+   * Trening o wpisanej nazwie, który JUŻ istnieje. Nie decydujemy za
+   * użytkownika: pytamy, czy dopisać do istniejącego, czy założyć osobny.
+   * Wcześniej apka po cichu otwierała stary trening, przez co wyglądało to
+   * jak nadpisanie poprzedniego.
+   */
+  const [twin, setTwin] = useState<WnWorkout | null>(null);
 
   const toggleDone = (id: string) =>
     setDone((prev) => { const n = new Set(prev); if (n.has(id)) n.delete(id); else n.add(id); return n; });
@@ -60,17 +68,35 @@ export default function QuickLog({ goBack, onSaved }: { goBack: () => void; onSa
 
   const pickWorkout = (id: string) => { setWorkoutId(id); setDone(new Set()); void loadTemplate(id); };
 
-  const handleCreate = async () => {
+  /** Zakłada NOWY trening; przy powtórzonej nazwie najpierw pyta. */
+  const handleCreate = async (force = false) => {
     const name = newName.trim();
     if (!name || creating) return;
+    if (!force) {
+      const existing = await findWorkoutByName(name);
+      if (existing) { setTwin(existing); return; }
+    }
     setCreating(true);
     const w = await createWorkout(name);
     setCreating(false);
     if (!w) { setError("Nie udało się utworzyć treningu."); return; }
     setWorkouts((p) => [...p, w]);
-    setNewName("");
+    setNewName(""); setTwin(null);
     pickWorkout(w.id);
   };
+
+  /** Dopisuje do treningu, który już istnieje pod tą nazwą. */
+  const useExisting = () => {
+    if (!twin) return;
+    const w = twin;
+    setTwin(null); setNewName("");
+    pickWorkout(w.id);
+  };
+
+  /** Dokłada ćwiczenie do listy — także takie, którego nie było w szablonie. */
+  const addExercise = (ex: WnExercise) => setExercises((p) =>
+    p.some((e) => e.exerciseId === ex.id) ? p
+      : [...p, { exerciseId: ex.id, name: ex.name, kind: ex.kind, sets: [{ weight: null, reps: null, duration: null }], prev: [], from: null }]);
 
   // ── edycja serii ──
   const bump = (ei: number, si: number, field: "weight" | "reps", delta: number) => {
@@ -158,9 +184,34 @@ export default function QuickLog({ goBack, onSaved }: { goBack: () => void; onSa
             onKeyDown={(e) => { if (e.key === "Enter") void handleCreate(); }}
             data-testid="ql-new-name" style={{ ...input, flex: 1 }} />
           <button onClick={() => void handleCreate()} disabled={!newName.trim() || creating}
-            style={{ ...chip(false), opacity: newName.trim() ? 1 : 0.45, fontWeight: 800 }}>
+            data-testid="ql-create" style={{ ...chip(false), opacity: newName.trim() ? 1 : 0.45, fontWeight: 800 }}>
             {creating ? "…" : "Dodaj"}
           </button>
+        </div>
+      )}
+
+      {/* Nazwa już zajęta — decyzja należy do użytkownika, nie do apki */}
+      {twin && (
+        <div data-testid="ql-twin" style={{
+          marginTop: 10, padding: 14, borderRadius: 14,
+          background: `rgba(${ORANGE_RGB},0.1)`, border: `1px solid rgba(${ORANGE_RGB},0.3)`,
+        }}>
+          <div style={{ fontSize: 13, fontWeight: 800, color: "var(--fg, #fff)" }}>
+            Masz już trening {"„"}{twin.name}{"”"}
+          </div>
+          <div style={{ fontSize: 11.5, lineHeight: 1.5, color: "rgba(var(--fg-rgb, 255,255,255),0.75)", marginTop: 4 }}>
+            Dopisać do niego kolejny zapis (progres liczy się dalej), czy założyć drugi, osobny trening o tej samej nazwie?
+          </div>
+          <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
+            <button onClick={useExisting} data-testid="ql-twin-use"
+              style={{ flex: 1, padding: 10, borderRadius: 11, border: "none", cursor: "pointer", fontSize: 12.5, fontWeight: 800, color: "#fff", background: `linear-gradient(135deg, ${ORANGE}, var(--c-orange-3, #ea580c))` }}>
+              Dopisz do istniejącego
+            </button>
+            <button onClick={() => void handleCreate(true)} disabled={creating} data-testid="ql-twin-new"
+              style={{ flex: 1, padding: 10, borderRadius: 11, cursor: "pointer", fontSize: 12.5, fontWeight: 800, background: "rgba(var(--fg-rgb, 255,255,255),0.07)", border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.14)", color: "var(--fg, #fff)" }}>
+              {creating ? "…" : "Utwórz osobny"}
+            </button>
+          </div>
         </div>
       )}
 
@@ -280,6 +331,10 @@ export default function QuickLog({ goBack, onSaved }: { goBack: () => void; onSa
               );
             })}
           </div>
+
+          {!loading && (
+            <AddExercise onAdded={addExercise} exclude={exercises.map((e) => e.exerciseId)} />
+          )}
 
           {exercises.length > 0 && (
             <button onClick={() => void handleSave()} disabled={saving} data-testid="ql-save"

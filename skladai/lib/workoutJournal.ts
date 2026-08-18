@@ -139,21 +139,28 @@ export async function listWorkouts(): Promise<WnWorkout[]> {
   return (data ?? []) as WnWorkout[];
 }
 
+/**
+ * Trening o tej nazwie (bez względu na wielkość liter) albo null.
+ *
+ * Służy do ZAPYTANIA użytkownika, a nie do cichego podmieniania. Wcześniej
+ * createWorkout sam zwracał bliźniaka — przez co wpisanie istniejącej nazwy
+ * nie tworzyło nowego treningu, tylko otwierało stary. Z zewnątrz wyglądało
+ * to jak nadpisanie poprzedniego treningu (dane były całe, ale ekran
+ * pokazywał wyłącznie ostatnią sesję).
+ */
+export async function findWorkoutByName(name: string): Promise<WnWorkout | null> {
+  const wanted = name.trim().toLowerCase();
+  if (!wanted) return null;
+  const all = await listWorkouts();
+  return all.find((w) => w.name.trim().toLowerCase() === wanted) ?? null;
+}
+
+/** Tworzy NOWY trening — zawsze osobny wpis, nawet przy powtórzonej nazwie. */
 export async function createWorkout(name: string): Promise<WnWorkout | null> {
   const supabase = createClient();
   const userId = await getUserId();
   if (!userId) return null;
-  const existing = await listWorkouts();
-
-  // Nazwa już istnieje → UŻYJ tego treningu zamiast tworzyć bliźniaka.
-  // Duplikaty rozbijały historię: dwa razy „Góra B" = progres liczony osobno
-  // dla każdego, więc jeden pokazywał komplet, a drugi nic.
-  const wanted = name.trim().toLowerCase();
-  const twin = existing.find((w) => w.name.trim().toLowerCase() === wanted);
-  if (twin) return twin;
-
-  // kolejna pozycja na końcu listy
-  const position = existing.length;
+  const position = (await listWorkouts()).length;
   const { data, error } = await supabase
     .from("wn_workouts")
     .insert({ user_id: userId, name: name.trim() || "Nowy trening", position })
@@ -161,6 +168,28 @@ export async function createWorkout(name: string): Promise<WnWorkout | null> {
     .single();
   if (error) { console.warn("[wn] createWorkout", error.message); return null; }
   return data as WnWorkout;
+}
+
+/** Zmiana nazwy treningu — historia i sesje zostają nietknięte. */
+export async function renameWorkout(workoutId: string, name: string): Promise<boolean> {
+  const trimmed = name.trim();
+  if (!trimmed) return false;
+  const supabase = createClient();
+  const { error } = await supabase.from("wn_workouts").update({ name: trimmed }).eq("id", workoutId);
+  if (error) { console.warn("[wn] renameWorkout", error.message); return false; }
+  return true;
+}
+
+/**
+ * Chowa trening z listy. Świadomie NIE usuwamy wiersza — sesje i serie zostają
+ * w bazie, więc pomyłkowe schowanie da się cofnąć, a historia ćwiczeń nie
+ * traci punktów.
+ */
+export async function archiveWorkout(workoutId: string): Promise<boolean> {
+  const supabase = createClient();
+  const { error } = await supabase.from("wn_workouts").update({ archived: true }).eq("id", workoutId);
+  if (error) { console.warn("[wn] archiveWorkout", error.message); return false; }
+  return true;
 }
 
 export async function getWorkoutWithExercises(workoutId: string): Promise<WnWorkoutWithExercises | null> {
@@ -427,6 +456,157 @@ export async function logSession(opts: {
     if (error) { console.warn("[wn] logSession sets", error.message); return null; }
   }
   return session.id;
+}
+
+// ──────────────────────────────────────────────────────────────────
+// Edycja ZAPISANYCH treningów (nazwa / data / ćwiczenia / serie)
+// ──────────────────────────────────────────────────────────────────
+export interface SavedSession {
+  id: string;
+  /** Data w formacie YYYY-MM-DD (do inputa typu date). */
+  date: string;
+  startedAt: string;
+  finished: boolean;
+  setCount: number;
+  exerciseCount: number;
+  volume: number;
+}
+
+/** Zapisane sesje treningu — od najnowszej. Puste sesje pomijamy. */
+export async function listSessions(workoutId: string): Promise<SavedSession[]> {
+  const supabase = createClient();
+  const { data: sessions, error } = await supabase
+    .from("wn_sessions").select("*").eq("workout_id", workoutId)
+    .order("started_at", { ascending: false }).limit(60);
+  if (error || !sessions?.length) return [];
+  const list = sessions as WnSession[];
+  const { data: setRows } = await supabase
+    .from("wn_sets").select("*").in("session_id", list.map((s) => s.id));
+  const rows = (setRows ?? []) as WnSet[];
+  return list
+    .map((s) => {
+      const mine = rows.filter((r) => r.session_id === s.id);
+      return {
+        id: s.id,
+        date: (s.started_at ?? "").slice(0, 10),
+        startedAt: s.started_at,
+        finished: !!s.finished_at,
+        setCount: mine.length,
+        exerciseCount: new Set(mine.map((r) => r.exercise_id)).size,
+        volume: Math.round(mine.reduce((sum, r) => sum + (r.weight_kg ?? 0) * (r.reps ?? 0), 0)),
+      };
+    })
+    .filter((s) => s.setCount > 0);
+}
+
+export interface EditableSession {
+  sessionId: string;
+  workoutId: string | null;
+  workoutName: string;
+  date: string;
+  exercises: Array<{ exerciseId: string; name: string; kind: WnKind; sets: TemplateSet[] }>;
+}
+
+/** Wczytuje zapisaną sesję do edycji: nazwa treningu, data, ćwiczenia z seriami. */
+export async function getSessionForEdit(sessionId: string): Promise<EditableSession | null> {
+  const supabase = createClient();
+  const { data: s } = await supabase.from("wn_sessions").select("*").eq("id", sessionId).single();
+  if (!s) return null;
+  const session = s as WnSession;
+
+  let workoutName = "Trening";
+  if (session.workout_id) {
+    const { data: w } = await supabase.from("wn_workouts").select("name").eq("id", session.workout_id).single();
+    if (w?.name) workoutName = w.name as string;
+  }
+
+  const { data: setRows } = await supabase
+    .from("wn_sets").select("*").eq("session_id", sessionId).order("set_index", { ascending: true });
+  const rows = (setRows ?? []) as WnSet[];
+  const ids = [...new Set(rows.map((r) => r.exercise_id))];
+  const { data: exRows } = ids.length
+    ? await supabase.from("wn_exercises").select("*").in("id", ids)
+    : { data: [] };
+  const byId = new Map((exRows ?? []).map((e) => [(e as WnExercise).id, e as WnExercise]));
+
+  return {
+    sessionId,
+    workoutId: session.workout_id,
+    workoutName,
+    date: (session.started_at ?? "").slice(0, 10),
+    exercises: ids.map((id) => ({
+      exerciseId: id,
+      name: byId.get(id)?.name ?? "Ćwiczenie",
+      kind: byId.get(id)?.kind ?? "weighted",
+      sets: rows.filter((r) => r.exercise_id === id)
+        .map((r) => ({ weight: r.weight_kg, reps: r.reps, duration: r.duration_sec })),
+    })),
+  };
+}
+
+/** Przesuwa zapisany trening na inną datę (start i koniec razem). */
+export async function updateSessionDate(sessionId: string, date: string): Promise<boolean> {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return false;
+  const supabase = createClient();
+  const when = new Date(date + "T12:00:00").toISOString();
+  const { data: cur } = await supabase.from("wn_sessions").select("finished_at").eq("id", sessionId).single();
+  const patch: Record<string, string> = { started_at: when };
+  if (cur?.finished_at) patch.finished_at = when;
+  const { error } = await supabase.from("wn_sessions").update(patch).eq("id", sessionId);
+  if (error) { console.warn("[wn] updateSessionDate", error.message); return false; }
+  return true;
+}
+
+/**
+ * Nadpisuje serie zapisanej sesji.
+ *
+ * Kasujemy i wstawiamy od nowa, bo edycja zmienia też LICZBĘ serii i skład
+ * ćwiczeń — update po kluczu zostawiałby sieroty po usuniętych wierszach.
+ * Nowe serie wstawiamy PRZED skasowaniem starych tylko wtedy, gdy jest co
+ * wstawiać: pusta lista oznaczałaby wykasowanie całego treningu, więc taką
+ * prośbę odrzucamy (od usuwania jest deleteSession).
+ */
+export async function replaceSessionSets(
+  sessionId: string,
+  exercises: Array<{ exerciseId: string; sets: TemplateSet[] }>,
+): Promise<boolean> {
+  const supabase = createClient();
+  const rows: Array<Record<string, unknown>> = [];
+  for (const ex of exercises) {
+    let idx = 0;
+    for (const s of ex.sets) {
+      if (s.weight == null && s.reps == null && s.duration == null) continue;
+      rows.push({
+        session_id: sessionId, exercise_id: ex.exerciseId, set_index: idx++,
+        weight_kg: s.weight, reps: s.reps, duration_sec: s.duration,
+      });
+    }
+  }
+  if (!rows.length) return false; // nie kasujemy treningu „przez pomyłkę"
+
+  const { error: delErr } = await supabase.from("wn_sets").delete().eq("session_id", sessionId);
+  if (delErr) { console.warn("[wn] replaceSessionSets delete", delErr.message); return false; }
+  const { error } = await supabase.from("wn_sets").insert(rows);
+  if (error) { console.warn("[wn] replaceSessionSets insert", error.message); return false; }
+  return true;
+}
+
+/** Usuwa zapisany trening razem z seriami. */
+export async function deleteSession(sessionId: string): Promise<boolean> {
+  const supabase = createClient();
+  await supabase.from("wn_sets").delete().eq("session_id", sessionId);
+  const { error } = await supabase.from("wn_sessions").delete().eq("id", sessionId);
+  if (error) { console.warn("[wn] deleteSession", error.message); return false; }
+  return true;
+}
+
+/** Wypisuje ćwiczenie z szablonu treningu (serie z historii zostają). */
+export async function removeExerciseFromWorkout(workoutId: string, exerciseId: string): Promise<boolean> {
+  const supabase = createClient();
+  const { error } = await supabase
+    .from("wn_workout_exercises").delete().eq("workout_id", workoutId).eq("exercise_id", exerciseId);
+  if (error) { console.warn("[wn] removeExerciseFromWorkout", error.message); return false; }
+  return true;
 }
 
 export async function startSession(workoutId: string): Promise<WnSession | null> {

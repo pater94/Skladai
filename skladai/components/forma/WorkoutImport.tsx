@@ -8,7 +8,7 @@
  * Akcent pomarańcz #f97316. Liczby białe. Przyrosty zielone / spadki czerwone.
  */
 
-import { useEffect, useState, useRef, useCallback } from "react";
+import { useEffect, useState, useRef, useCallback, useMemo } from "react";
 import { isNative, takePhotoForMode } from "@/lib/native-camera";
 import { compressImage } from "@/lib/compress";
 import {
@@ -40,6 +40,11 @@ export default function WorkoutImport({ goBack, onSaved }: { goBack: () => void;
   // Cel zapisu: "__new__" = nowy trening (z nazwą), "" = bez treningu, lub id istniejącego.
   const [target, setTarget] = useState<string>("__new__");
   const [newName, setNewName] = useState<string>("");
+  /** Istniejący trening o wpisanej nazwie — ostrzeżenie przed nieświadomym duplikatem. */
+  const nameTwin = useMemo(() => {
+    const q = newName.trim().toLowerCase();
+    return q ? workouts.find((w) => w.name.trim().toLowerCase() === q) ?? null : null;
+  }, [newName, workouts]);
   const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [saving, setSaving] = useState(false);
   // undefined = sprawdzam, null = gość (nie zapisze), string = zalogowany.
@@ -254,9 +259,23 @@ export default function WorkoutImport({ goBack, onSaved }: { goBack: () => void;
             <div style={{ marginBottom: 12 }}>
               <label style={miniLabel}>Nazwa treningu</label>
               <input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder={`np. Push A, Nogi, FBW`} style={inputStyle} />
-              <div style={{ fontSize: 10.5, color: "rgba(var(--fg-rgb, 255,255,255),0.4)", marginTop: 4 }}>
-                Puste = {"„"}Trening {date}{"”"}
-              </div>
+              {nameTwin ? (
+                /* Ta sama nazwa co istniejący trening — mówimy wprost, co się stanie,
+                   zamiast po cichu wybierać za użytkownika. */
+                <div data-testid="imp-twin" style={{ marginTop: 6, padding: "9px 11px", borderRadius: 10, background: "rgba(var(--c-orange-rgb, 249,115,22),0.1)", border: "1px solid rgba(var(--c-orange-rgb, 249,115,22),0.28)" }}>
+                  <div style={{ fontSize: 11.5, lineHeight: 1.5, color: "rgba(var(--fg-rgb, 255,255,255),0.85)" }}>
+                    Masz już trening {"„"}{nameTwin.name}{"”"} — powstanie <strong>drugi, osobny</strong> o tej samej nazwie.
+                  </div>
+                  <button onClick={() => { setTarget(nameTwin.id); setNewName(""); }} data-testid="imp-twin-use"
+                    style={{ marginTop: 7, padding: "6px 12px", borderRadius: 9, border: "none", cursor: "pointer", fontSize: 11.5, fontWeight: 800, color: "#fff", background: "var(--c-orange, #f97316)" }}>
+                    Dopisz do istniejącego
+                  </button>
+                </div>
+              ) : (
+                <div style={{ fontSize: 10.5, color: "rgba(var(--fg-rgb, 255,255,255),0.4)", marginTop: 4 }}>
+                  Puste = {"„"}Trening {date}{"”"}
+                </div>
+              )}
             </div>
           )}
 

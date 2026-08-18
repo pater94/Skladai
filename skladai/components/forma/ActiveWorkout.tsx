@@ -11,9 +11,10 @@
  */
 
 import { useEffect, useState, useCallback, useMemo } from "react";
+import AddExercise from "./AddExercise";
 import {
   getWorkoutWithExercises, getLastFinishedSession, getExerciseStats, getExerciseHistory,
-  upsertSet, deleteSetByKey, finishSession, findOrCreateExercise, addExerciseToWorkout,
+  upsertSet, deleteSetByKey, finishSession, addExerciseToWorkout,
   saveActiveDraft, getActiveDraft, clearActiveDraft,
   type WnWorkoutWithExercises, type WnExercise, type WnKind, type WnExerciseStats, type WnHistoryPoint,
 } from "@/lib/workoutJournal";
@@ -60,8 +61,6 @@ export default function ActiveWorkout({
   // staty (rekord, przyrost, 1RM) + historia per exerciseId
   const [progBy, setProgBy] = useState<Record<string, WnExerciseStats>>({});
   const [histBy, setHistBy] = useState<Record<string, WnHistoryPoint[]>>({});
-  const [addingOpen, setAddingOpen] = useState(false);
-  const [newExName, setNewExName] = useState("");
 
   // mapa exerciseId → kind
   const kindBy = useMemo(() => {
@@ -200,16 +199,6 @@ export default function ActiveWorkout({
     void deleteSetByKey({ sessionId, exerciseId: exId, setIndex });
   };
 
-  const handleAddExercise = async () => {
-    const name = newExName.trim();
-    if (!name) return;
-    const ex = await findOrCreateExercise(name, "weighted");
-    if (ex) {
-      await addExerciseToWorkout(workoutId, ex.id);
-      setNewExName(""); setAddingOpen(false);
-      await load();
-    }
-  };
 
   const handleFinish = async () => {
     if (finishing) return;
@@ -297,25 +286,12 @@ export default function ActiveWorkout({
         })}
       </div>
 
-      {/* Dodaj ćwiczenie */}
-      {!addingOpen ? (
-        <button onClick={() => setAddingOpen(true)} className="w-full active:scale-[0.98] transition-transform" style={{ marginTop: 14, padding: "13px", borderRadius: 14, cursor: "pointer", background: "rgba(var(--fg-rgb, 255,255,255),0.04)", border: "1px dashed rgba(var(--fg-rgb, 255,255,255),0.15)", color: "rgba(var(--fg-rgb, 255,255,255),0.7)", fontSize: 14, fontWeight: 700 }}>
-          + Dodaj ćwiczenie
-        </button>
-      ) : (
-        <div style={{ marginTop: 14, padding: 14, borderRadius: 14, background: "rgba(var(--fg-rgb, 255,255,255),0.04)", border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.1)" }}>
-          <input
-            value={newExName} onChange={(e) => setNewExName(e.target.value)} autoFocus
-            placeholder="Nazwa ćwiczenia (np. Wyciskanie płaskie)"
-            onKeyDown={(e) => { if (e.key === "Enter") void handleAddExercise(); }}
-            style={{ width: "100%", padding: "11px 13px", borderRadius: 11, background: "rgba(var(--fg-rgb, 255,255,255),0.06)", border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.12)", color: "var(--fg, #fff)", fontSize: 14, outline: "none" }}
-          />
-          <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
-            <button onClick={() => { setAddingOpen(false); setNewExName(""); }} style={{ flex: 1, padding: "10px", borderRadius: 11, background: "rgba(var(--fg-rgb, 255,255,255),0.05)", border: "none", color: "rgba(var(--fg-rgb, 255,255,255),0.7)", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>Anuluj</button>
-            <button onClick={() => void handleAddExercise()} style={{ flex: 1, padding: "10px", borderRadius: 11, background: "var(--c-orange, #f97316)", border: "none", color: "#fff", fontSize: 13, fontWeight: 800, cursor: "pointer" }}>Dodaj</button>
-          </div>
-        </div>
-      )}
+      {/* Dodaj ćwiczenie — ta sama kontrolka co w szybkim zapisie: podpowiada
+          nazwy już używane, żeby to samo ćwiczenie nie rozbiło historii na dwie. */}
+      <AddExercise
+        onAdded={(ex) => { void (async () => { await addExerciseToWorkout(workoutId, ex.id); await load(); })(); }}
+        exclude={(workout?.exercises ?? []).map((we) => we.exercise.id)}
+      />
 
       {/* Zakończ trening */}
       <button onClick={() => void handleFinish()} disabled={finishing} data-testid="workout-finish" className="w-full active:scale-[0.98] transition-transform" style={{ marginTop: 20, padding: "16px", borderRadius: 16, cursor: "pointer", border: "none", background: "linear-gradient(135deg, var(--c-orange, #f97316), var(--c-orange-3, #ea580c))", color: "#fff", fontSize: 15, fontWeight: 800, boxShadow: "0 6px 22px rgba(var(--c-orange-rgb, 249,115,22),0.3)", opacity: finishing ? 0.6 : 1 }}>

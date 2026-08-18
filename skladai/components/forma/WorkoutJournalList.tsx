@@ -9,7 +9,7 @@
 import { useEffect, useState, useCallback } from "react";
 import {
   listWorkouts, createWorkout, startSession,
-  getWorkoutWithExercises, getLastFinishedSession,
+  getWorkoutWithExercises, getLastFinishedSession, listSessions,
   type WnWorkout,
 } from "@/lib/workoutJournal";
 
@@ -18,6 +18,8 @@ interface WorkoutMeta {
   lastFinishedAt: string | null;
   lastVolume: number | null;
   lastSessionId: string | null;
+  /** Ile treningów już zapisano — bez tego karta wygląda, jakby był tylko ostatni. */
+  sessionCount: number;
 }
 
 function relativeTime(iso: string | null): string | null {
@@ -42,12 +44,15 @@ export default function WorkoutJournalList({
   onImport,
   onOpenSummary,
   onQuickLog,
+  onOpenHistory,
 }: {
   goBack: () => void;
   openWorkout: (sessionId: string, workoutId: string) => void;
   onImport?: () => void;
   onOpenSummary?: (sessionId: string) => void;
   onQuickLog?: () => void;
+  /** Wszystkie zapisane sesje treningu + zmiana nazwy. */
+  onOpenHistory?: (workoutId: string, name: string) => void;
 }) {
   const [workouts, setWorkouts] = useState<WnWorkout[]>([]);
   const [meta, setMeta] = useState<Record<string, WorkoutMeta>>({});
@@ -62,9 +67,10 @@ export default function WorkoutJournalList({
     // meta per trening (równolegle)
     const entries = await Promise.all(
       list.map(async (w): Promise<[string, WorkoutMeta]> => {
-        const [full, last] = await Promise.all([
+        const [full, last, saved] = await Promise.all([
           getWorkoutWithExercises(w.id),
           getLastFinishedSession(w.id),
+          listSessions(w.id),
         ]);
         const lastVolume = last
           ? last.sets.reduce((sum, s) => sum + (s.weight_kg ?? 0) * (s.reps ?? 0), 0)
@@ -74,6 +80,7 @@ export default function WorkoutJournalList({
           lastFinishedAt: last?.finished_at ?? null,
           lastVolume: lastVolume && lastVolume > 0 ? Math.round(lastVolume) : null,
           lastSessionId: last?.id ?? null,
+          sessionCount: saved.length,
         }];
       })
     );
@@ -198,6 +205,7 @@ export default function WorkoutJournalList({
                   <div style={{ fontSize: 15.5, fontWeight: 800, color: "var(--fg, #fff)" }}>{w.name}</div>
                   <div style={{ fontSize: 12, color: "rgba(var(--fg-rgb, 255,255,255),0.5)", marginTop: 3 }}>
                     {m ? `${m.exerciseCount} ${m.exerciseCount === 1 ? "ćwiczenie" : "ćwiczeń"}` : "…"}
+                    {m && m.sessionCount > 0 ? ` · ${m.sessionCount} ${m.sessionCount === 1 ? "zapis" : "zapisów"}` : ""}
                     {rel ? ` · ostatnio ${rel}` : ""}
                   </div>
                 </div>
@@ -209,6 +217,21 @@ export default function WorkoutJournalList({
                 )}
                 <span style={{ color: "rgba(var(--fg-rgb, 255,255,255),0.3)", fontSize: 20, flexShrink: 0 }}>›</span>
               </button>
+              {onOpenHistory && (
+                <button
+                  onClick={() => onOpenHistory(w.id, w.name)}
+                  aria-label={`Historia i edycja treningu ${w.name}`}
+                  title="Historia i edycja"
+                  data-testid="workout-history-btn"
+                  className="active:scale-95 transition-transform"
+                  style={{
+                    width: 48, flexShrink: 0, borderRadius: 16, cursor: "pointer", fontSize: 17,
+                    background: "rgba(var(--fg-rgb, 255,255,255),0.05)",
+                    border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.12)",
+                    color: "rgba(var(--fg-rgb, 255,255,255),0.75)",
+                  }}
+                >✎</button>
+              )}
               {canSummary && (
                 <button
                   onClick={() => onOpenSummary!(m!.lastSessionId!)}

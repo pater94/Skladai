@@ -34,6 +34,8 @@ import ExerciseHistory from "@/components/forma/ExerciseHistory";
 import WorkoutImport from "@/components/forma/WorkoutImport";
 import WorkoutSummary from "@/components/forma/WorkoutSummary";
 import QuickLog from "@/components/forma/QuickLog";
+import WorkoutHistory from "@/components/forma/WorkoutHistory";
+import SessionEdit from "@/components/forma/SessionEdit";
 
 // ──────────────────────────────────────────
 // Types
@@ -82,7 +84,9 @@ type View =
   | "exercise-history"   // historia ćwiczenia + wykres (Faza 4)
   | "workout-import"     // import treningu ze zdjęcia (AI Vision)
   | "workout-summary"    // skondensowane podsumowanie treningu (zrzut/udostępnij)
-  | "quick-log";         // szybki zapis treningu (także minionego)
+  | "quick-log"          // szybki zapis treningu (także minionego)
+  | "workout-history"    // wszystkie zapisane sesje treningu + zmiana nazwy
+  | "session-edit";      // edycja zapisanego treningu (data, ciężary, ćwiczenia)
 
 // ──────────────────────────────────────────
 // Constants
@@ -364,11 +368,17 @@ export default function FormaPage() {
   const [jSessionId, setJSessionId] = useState<string | null>(null);
   const [jExerciseId, setJExerciseId] = useState<string | null>(null);
   const [jSummarySessionId, setJSummarySessionId] = useState<string | null>(null);
+  const [jHistoryName, setJHistoryName] = useState<string>("");
+  const [jEditSessionId, setJEditSessionId] = useState<string | null>(null);
   // openWorkout: wejście w aktywny trening (z listy / nowy). openExerciseHistory: wykres ćwiczenia.
   const openJournal = () => { setView("journal"); };
   const openWorkout = (sessionId: string, workoutId: string) => { setJSessionId(sessionId); setJWorkoutId(workoutId); setView("workout"); };
   const openExerciseHistory = (exerciseId: string) => { setJExerciseId(exerciseId); setView("exercise-history"); };
   const openSummary = (sessionId: string) => { setJSummarySessionId(sessionId); setView("workout-summary"); };
+  const openWorkoutHistory = (workoutId: string, name: string) => {
+    setJWorkoutId(workoutId); setJHistoryName(name); setView("workout-history");
+  };
+  const openSessionEdit = (sessionId: string) => { setJEditSessionId(sessionId); setView("session-edit"); };
   const [profile, setProfileState] = useState<ReturnType<typeof getProfile>>(null);
   const [records, setRecords] = useState<StrengthRecord[]>([]);
 
@@ -507,7 +517,7 @@ export default function FormaPage() {
           <CheckFormView goBack={goBack} router={router} autoOpenGallery={autoOpenGallery} autoOpenCamera={autoOpenCamera} />
         )}
         {view === "journal" && (
-          <WorkoutJournalList goBack={goBack} openWorkout={openWorkout} onImport={() => setView("workout-import")} onOpenSummary={openSummary} onQuickLog={() => setView("quick-log")} />
+          <WorkoutJournalList goBack={goBack} openWorkout={openWorkout} onImport={() => setView("workout-import")} onOpenSummary={openSummary} onQuickLog={() => setView("quick-log")} onOpenHistory={openWorkoutHistory} />
         )}
         {view === "quick-log" && (
           <QuickLog goBack={() => setView("journal")} onSaved={() => setView("journal")} />
@@ -527,6 +537,22 @@ export default function FormaPage() {
         )}
         {view === "exercise-history" && jExerciseId && (
           <ExerciseHistory goBack={() => setView(jSessionId ? "workout" : "journal")} exerciseId={jExerciseId} workoutId={jWorkoutId} />
+        )}
+        {view === "workout-history" && jWorkoutId && (
+          <WorkoutHistory
+            workoutId={jWorkoutId}
+            workoutName={jHistoryName}
+            goBack={() => setView("journal")}
+            onEditSession={openSessionEdit}
+            onArchived={() => setView("journal")}
+          />
+        )}
+        {view === "session-edit" && jEditSessionId && (
+          <SessionEdit
+            sessionId={jEditSessionId}
+            goBack={() => setView(jWorkoutId ? "workout-history" : "journal")}
+            onSaved={() => setView(jWorkoutId ? "workout-history" : "journal")}
+          />
         )}
         {view === "workout-summary" && jSummarySessionId && (
           <WorkoutSummary goBack={() => setView("journal")} sessionId={jSummarySessionId} />
