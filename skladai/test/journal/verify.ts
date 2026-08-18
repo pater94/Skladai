@@ -213,6 +213,55 @@ async function main() {
       `Liczba serii zachowana po edycji (${editedSets.length})`,
       `Liczba serii zmieniona: bylo ${originalSets}, jest ${editedSets.length}`);
 
+    // ── 5. progres pokazywany w KILOGRAMACH i POWTÓRZENIACH, nie w „pkt siły" ──
+    console.log("\n-- 5. Progres: konkretne kg i powtorzenia --");
+    const post = async (table: string, body: unknown) => {
+      const r = await fetch(`${SB}/rest/v1/${table}`, {
+        method: "POST", headers: { ...admin(), Prefer: "return=representation" },
+        body: JSON.stringify(body),
+      });
+      return (await r.json()) as Record<string, unknown>[];
+    };
+    const wk = (await post("wn_workouts", { user_id: uid, name: "Progres test", position: 9 }))[0];
+    const exr = (await post("wn_exercises", { user_id: uid, name: "Wyciskanie progresowe", kind: "weighted", unit: "kg" }))[0];
+    await post("wn_workout_exercises", { workout_id: wk.id, exercise_id: exr.id, position: 0 });
+    // start 100 kg x 5  →  teraz 110 kg x 7  (czyli +10 kg i +2 powtorzenia)
+    for (const row of [["2026-06-01", 100, 5], ["2026-07-01", 110, 7]] as Array<[string, number, number]>) {
+      const ses = (await post("wn_sessions", {
+        user_id: uid, workout_id: wk.id,
+        started_at: `${row[0]}T12:00:00Z`, finished_at: `${row[0]}T13:00:00Z`,
+      }))[0];
+      await post("wn_sets", { session_id: ses.id, exercise_id: exr.id, set_index: 0, weight_kg: row[1], reps: row[2] });
+    }
+
+    await page.goto(`http://localhost:${PORT}/forma`, { waitUntil: "domcontentloaded" });
+    await page.waitForTimeout(2600);
+    await tap("forma-open-journal", 2400);
+    // karta treningu „Progres test" jest ostatnia na liście
+    await page.evaluate(() => {
+      const cards = [...document.querySelectorAll("[data-testid=workout-card]")] as HTMLElement[];
+      cards[cards.length - 1]?.click();
+    });
+    await page.waitForTimeout(3000);
+
+    const awTxt = await page.evaluate(() => document.body.textContent ?? "");
+    check(!/pkt siły/i.test(awTxt), "Aktywny trening: zero 'pkt sily' na ekranie", "Nadal widac 'pkt sily' w aktywnym treningu");
+    check(/\+10 kg/.test(awTxt), "Aktywny trening: pokazuje +10 kg", `Brak '+10 kg' w aktywnym treningu`);
+    check(/\+2 powt/.test(awTxt), "Aktywny trening: pokazuje +2 powtorzenia", "Brak '+2 powtorzenia' w aktywnym treningu");
+
+    // wejście w historię ćwiczenia (klik w nazwę na karcie)
+    await page.evaluate(() => {
+      const b = [...document.querySelectorAll("button")].find((x) => (x.textContent ?? "").trim() === "Wyciskanie progresowe");
+      (b as HTMLElement | undefined)?.click();
+    });
+    await page.waitForTimeout(3200);
+    const ehTxt = await page.evaluate(() => document.body.textContent ?? "");
+    check(!/pkt siły/i.test(ehTxt), "Historia cwiczenia: zero 'pkt sily'", "Nadal widac 'pkt sily' w historii cwiczenia");
+    check(/\+10 kg/.test(ehTxt) && /\+2 powt/.test(ehTxt),
+      "Historia cwiczenia: progres jako '+10 kg · +2 powtorzenia'",
+      "Historia cwiczenia nie pokazuje progresu w kg i powtorzeniach");
+    check(/100 kg × 5/.test(ehTxt), "Widac punkt startowy (100 kg x 5)", "Brak punktu startowego w opisie progresu");
+
     check(errs.length === 0, "Zero bledow JS", "Bledy JS: " + errs.join(" | "));
     await browser.close();
   } catch (e) {

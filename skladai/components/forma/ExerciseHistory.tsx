@@ -12,12 +12,12 @@ import {
   getExercise, getExerciseHistory, getExerciseStats, estimate1RM,
   type WnExercise, type WnHistoryPoint, type WnExerciseStats,
 } from "@/lib/workoutJournal";
+import { formatDelta, formatSet, shortDate, deltaColor } from "@/lib/progressFormat";
 import type { ExerciseAnatomy } from "@/lib/anatomy/exercises";
 import { resolveExercise, forgetMapping, type MatchCandidate } from "@/lib/anatomy/matcher";
 import MuscleMap from "./MuscleMap";
 import ExercisePicker from "./ExercisePicker";
 
-const GREEN = "#5fd39a";
 
 export default function ExerciseHistory({
   goBack, exerciseId, workoutId,
@@ -71,6 +71,11 @@ export default function ExerciseHistory({
   const unit = byReps ? "" : " kg";
   const valOf = (p: WnHistoryPoint) => (byReps ? p.topReps : p.topWeight);
   const has1RM = !byReps && stats?.best1RM != null;
+  // Progres pokazujemy w kilogramach i powtórzeniach — nigdy w „punktach siły".
+  const startTxt = formatDelta(stats?.sinceStart);
+  const lastTxt2 = formatDelta(stats?.sinceLast);
+  const firstTxt = formatSet(stats?.firstBest);
+  const lastTxt = formatSet(stats?.lastBest);
 
   return (
     <div style={{ animation: "fadeInUp 0.4s ease both", paddingBottom: 60 }}>
@@ -115,27 +120,26 @@ export default function ExerciseHistory({
               )}
             </div>
 
-            {/* Przyrost od startu — kg + % */}
-            {stats?.addedAbs != null && stats.addedAbs !== 0 && (
-              <div style={{ marginTop: 13, paddingTop: 12, borderTop: "1px solid rgba(var(--fg-rgb, 255,255,255),0.08)", display: "flex", alignItems: "baseline", flexWrap: "wrap", gap: 8 }}>
-                <span style={{ fontSize: 12, color: "rgba(var(--fg-rgb, 255,255,255),0.75)" }}>
-                  {stats.sinceDays == null ? "Od startu"
-                    : stats.sinceDays === 0 ? "Dziś"
-                    : stats.sinceDays === 1 ? "Przez 1 dzień"
-                    : `Przez ${stats.sinceDays} dni`}
-                </span>
-                <span style={{ fontSize: 17, fontWeight: 900, color: stats.addedAbs > 0 ? GREEN : "#f87171" }}>
-                  {stats.addedAbs > 0 ? "+" : ""}{stats.addedAbs}{unit}
-                </span>
-                {stats.addedPct != null && stats.addedPct !== 0 && (
-                  <span style={{ fontSize: 13, fontWeight: 800, padding: "2px 8px", borderRadius: 99, color: stats.addedPct > 0 ? GREEN : "#f87171", background: stats.addedPct > 0 ? "rgba(95,211,154,0.14)" : "rgba(248,113,113,0.14)" }}>
-                    {stats.addedPct > 0 ? "+" : ""}{stats.addedPct}%
+            {/* Przyrost OD PIERWSZEGO wpisanego treningu — kilogramy i powtórzenia */}
+            {startTxt && (
+              <div style={{ marginTop: 13, paddingTop: 12, borderTop: "1px solid rgba(var(--fg-rgb, 255,255,255),0.08)" }}>
+                <div style={{ display: "flex", alignItems: "baseline", flexWrap: "wrap", gap: 8 }}>
+                  <span style={{ fontSize: 12, color: "rgba(var(--fg-rgb, 255,255,255),0.75)" }}>
+                    {stats!.sinceDays == null ? "Od startu"
+                      : stats!.sinceDays === 0 ? "Dziś"
+                      : stats!.sinceDays === 1 ? "Przez 1 dzień"
+                      : `Przez ${stats!.sinceDays} dni`}
                   </span>
-                )}
-                {stats.firstDate && (
-                  <span style={{ fontSize: 10.5, color: "rgba(var(--fg-rgb, 255,255,255),0.64)", marginLeft: "auto" }}>
-                    od {new Date(stats.firstDate).toLocaleDateString("pl-PL", { day: "numeric", month: "short", year: "2-digit" })}
+                  <span data-testid="eh-since-start" style={{ fontSize: 17, fontWeight: 900, color: deltaColor(stats!.sinceStart) }}>
+                    {startTxt}
                   </span>
+                </div>
+                {/* Punkt odniesienia wprost: od czego i od kiedy liczymy */}
+                {firstTxt && (
+                  <div style={{ fontSize: 10.5, color: "rgba(var(--fg-rgb, 255,255,255),0.64)", marginTop: 5 }}>
+                    start {shortDate(stats!.firstBest?.date)}: {firstTxt}
+                    {lastTxt ? ` → teraz ${lastTxt}` : ""}
+                  </div>
                 )}
               </div>
             )}
@@ -144,11 +148,11 @@ export default function ExerciseHistory({
           {/* 3 staty */}
           <div style={{ display: "flex", gap: 8, marginBottom: 18 }}>
             <Stat label="Sesje" value={String(stats?.sessions ?? 0)} color="var(--fg, #fff)" />
-            {/* Postęp liczony INDEKSEM SIŁY — uczciwy także gdy zmieniłeś zakres powtórzeń */}
+            {/* Zmiana względem poprzedniej sesji — w kilogramach i powtórzeniach */}
             <Stat
-              label="Vs ostatnia sesja"
-              value={stats?.indexDelta == null ? "—" : stats.trend === "flat" ? "≈ tyle samo" : `${stats.indexDelta > 0 ? "↑ +" : "↓ "}${Math.abs(stats.indexDelta)}`}
-              color={stats?.trend === "up" ? GREEN : stats?.trend === "down" ? "#f87171" : "rgba(var(--fg-rgb, 255,255,255),0.72)"}
+              label="Vs poprzednia"
+              value={lastTxt2 ?? "—"}
+              color={deltaColor(stats?.sinceLast)}
             />
             {has1RM
               ? <Stat label="Teraz 1RM" value={stats?.current1RM != null ? `≈${stats.current1RM} kg` : "—"} color="var(--c-orange, #f97316)" />
@@ -236,15 +240,6 @@ function Stat({ label, value, color }: { label: string; value: string; color: st
       <div style={{ fontSize: 9.5, color: "rgba(var(--fg-rgb, 255,255,255),0.68)", marginTop: 3 }}>{label}</div>
     </div>
   );
-}
-
-function fmtDelta(d: number | null | undefined, unit: string): string {
-  if (d == null || d === 0) return "—";
-  return `${d > 0 ? "↑" : "↓"} ${Math.abs(d)}${unit}`;
-}
-function deltaColor(d: number | null | undefined): string {
-  if (d == null || d === 0) return "rgba(var(--fg-rgb, 255,255,255),0.5)";
-  return d > 0 ? GREEN : "#f87171";
 }
 
 // ── Wykres najcięższej serii w czasie ──

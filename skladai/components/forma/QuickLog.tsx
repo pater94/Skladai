@@ -13,15 +13,15 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import AddExercise from "./AddExercise";
+import { formatDelta, deltaColor } from "@/lib/progressFormat";
 import {
   listWorkouts, createWorkout, findWorkoutByName, getWorkoutTemplate, logSession, strengthIndex,
-  type WnWorkout, type WnExercise, type TemplateExercise, type TemplateSet,
+  type WnWorkout, type WnExercise, type TemplateExercise, type TemplateSet, type SetDelta,
 } from "@/lib/workoutJournal";
 
 const ORANGE = "var(--c-orange, #f97316)";
 const ORANGE_RGB = "var(--c-orange-rgb, 249,115,22)";
 const GREEN = "#5fd39a";
-const RED = "#f87171";
 
 interface EditEx extends TemplateExercise { prev: TemplateSet[] }
 
@@ -125,15 +125,29 @@ export default function QuickLog({ goBack, onSaved }: { goBack: () => void; onSa
     i !== ei ? ex : { ...ex, sets: ex.sets.filter((_, j) => j !== si) }));
 
   /** Czy dzisiejszy wynik bije poprzedni — liczone indeksem siły. */
+  /**
+   * Porównanie z poprzednim razem w KONKRETACH: ile kg i ile powtórzeń.
+   * Indeks siły wybiera tylko, która seria jest „tą jedną" do porównania —
+   * na ekran nigdy nie trafia.
+   */
   const verdict = (ex: EditEx) => {
-    const now = Math.max(...ex.sets.map((s) => strengthIndex(s.weight, s.reps) ?? 0), 0);
-    const before = Math.max(...ex.prev.map((s) => strengthIndex(s.weight, s.reps) ?? 0), 0);
+    const pick = (list: TemplateSet[]) => {
+      let best: TemplateSet | null = null, score = -Infinity;
+      for (const s of list) {
+        if (s.weight == null && s.reps == null) continue;
+        const v = strengthIndex(s.weight, s.reps) ?? (s.weight != null ? s.weight * 1000 : (s.reps ?? 0));
+        if (v > score) { score = v; best = s; }
+      }
+      return best;
+    };
+    const now = pick(ex.sets), before = pick(ex.prev);
     if (!now || !before) return null;
-    const d = Math.round((now - before) * 10) / 10;
-    if (Math.abs(d) <= 1) return { d: 0, txt: "bez zmian", color: "rgba(var(--fg-rgb, 255,255,255),0.6)" };
-    return d > 0
-      ? { d, txt: `+${d} pkt siły`, color: GREEN }
-      : { d, txt: `${d} pkt siły`, color: RED };
+    const d: SetDelta = {
+      weight: now.weight != null && before.weight != null ? Math.round((now.weight - before.weight) * 100) / 100 : null,
+      reps: now.reps != null && before.reps != null ? now.reps - before.reps : null,
+    };
+    const txt = formatDelta(d);
+    return txt ? { txt, color: deltaColor(d) } : null;
   };
 
   const filled = useMemo(

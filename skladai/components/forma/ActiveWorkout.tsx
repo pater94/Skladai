@@ -12,15 +12,16 @@
 
 import { useEffect, useState, useCallback, useMemo } from "react";
 import AddExercise from "./AddExercise";
+import { formatDelta, deltaColor, shortDate } from "@/lib/progressFormat";
 import {
   getWorkoutWithExercises, getLastFinishedSession, getExerciseStats, getExerciseHistory,
   upsertSet, deleteSetByKey, finishSession, addExerciseToWorkout,
   saveActiveDraft, getActiveDraft, clearActiveDraft,
   type WnWorkoutWithExercises, type WnExercise, type WnKind, type WnExerciseStats, type WnHistoryPoint,
+  type SetDelta, type BestSet,
 } from "@/lib/workoutJournal";
 
 const GREEN = "#5fd39a";
-const RED = "#f87171";
 
 interface EditableSet { setIndex: number; weight: string; reps: string; duration: string; }
 
@@ -268,14 +269,14 @@ export default function ActiveWorkout({
           const list = setsBy[ex.id] ?? [];
           const prog = progBy[ex.id];
           const record = prog?.record ?? null;
-          const week = prog?.weekDelta ?? null;
           const liveTop = setTop(list, byReps);
           return (
             <ExerciseCard
               key={ex.id}
               ex={ex} kind={kind} byReps={byReps}
-              list={list} ghost={ghostBy[ex.id]} record={record} weekDelta={week}
-              addedAbs={prog?.addedAbs ?? null} addedPct={prog?.addedPct ?? null} best1RM={prog?.best1RM ?? null}
+              list={list} ghost={ghostBy[ex.id]} record={record}
+              sinceStart={prog?.sinceStart ?? null} sinceLast={prog?.sinceLast ?? null}
+              firstBest={prog?.firstBest ?? null} best1RM={prog?.best1RM ?? null}
               sinceDays={prog?.sinceDays ?? null}
               history={histBy[ex.id] ?? []} liveTop={liveTop}
               onField={updateField} onCommit={commitSet} onAddSet={addSet} onSame={addSameSet} onDelete={deleteSetRow}
@@ -303,12 +304,13 @@ export default function ActiveWorkout({
 
 // ── Karta pojedynczego ćwiczenia ──
 function ExerciseCard({
-  ex, kind, byReps, list, ghost, record, weekDelta, addedAbs, addedPct, best1RM, sinceDays, history, liveTop,
+  ex, kind, byReps, list, ghost, record, sinceStart, sinceLast, firstBest, best1RM, sinceDays, history, liveTop,
   onField, onCommit, onAddSet, onSame, onDelete, saved, onOpenHistory,
 }: {
   ex: WnExercise; kind: WnKind; byReps: boolean;
-  list: EditableSet[]; ghost?: string; record: number | null; weekDelta: number | null;
-  addedAbs: number | null; addedPct: number | null; best1RM: number | null; sinceDays: number | null;
+  list: EditableSet[]; ghost?: string; record: number | null;
+  sinceStart: SetDelta | null; sinceLast: SetDelta | null; firstBest: BestSet | null;
+  best1RM: number | null; sinceDays: number | null;
   history: WnHistoryPoint[]; liveTop: number | null;
   onField: (exId: string, setIndex: number, field: "weight" | "reps" | "duration", v: string) => void;
   onCommit: (exId: string, setIndex: number) => void;
@@ -323,6 +325,10 @@ function ExerciseCard({
   const showReps = kind !== "duration";
   const showDuration = kind === "duration";
 
+  // Progres zawsze w kilogramach i powtórzeniach — bez abstrakcyjnych punktów.
+  const lastTxt = formatDelta(sinceLast);
+  const startTxt = formatDelta(sinceStart);
+
   return (
     <div style={{ padding: "14px 14px 12px", borderRadius: 16, background: "rgba(var(--fg-rgb, 255,255,255),0.04)", border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.08)" }}>
       {/* Nagłówek karty: nazwa (tap → historia) + chip progresu tygodniowego */}
@@ -330,10 +336,10 @@ function ExerciseCard({
         <button onClick={onOpenHistory} style={{ flex: 1, textAlign: "left", background: "none", border: "none", padding: 0, cursor: "pointer" }}>
           <span style={{ fontSize: 15, fontWeight: 800, color: "var(--fg, #fff)" }}>{ex.name}</span>
         </button>
-        {weekDelta != null && weekDelta !== 0 && (
-          <span title="Zmiana względem poprzedniej sesji tego treningu"
-            style={{ fontSize: 11.5, fontWeight: 800, padding: "3px 8px", borderRadius: 99, whiteSpace: "nowrap", color: weekDelta > 0 ? GREEN : RED, background: weekDelta > 0 ? "rgba(95,211,154,0.14)" : "rgba(248,113,113,0.14)" }}>
-            {weekDelta > 0 ? "↑" : "↓"} {Math.abs(weekDelta)}{byReps ? " powt." : " kg"}
+        {lastTxt && (
+          <span title="Zmiana względem poprzedniej sesji tego treningu" data-testid="aw-vs-last"
+            style={{ fontSize: 11.5, fontWeight: 800, padding: "3px 8px", borderRadius: 99, whiteSpace: "nowrap", color: deltaColor(sinceLast), background: "rgba(var(--fg-rgb, 255,255,255),0.07)" }}>
+            {lastTxt}
             <span style={{ fontWeight: 600, opacity: 0.75 }}> vs ostatnio</span>
           </span>
         )}
@@ -437,15 +443,13 @@ function ExerciseCard({
           <div style={{ flex: 1 }} />
           <Sparkline history={history} byReps={byReps} />
         </div>
-        {addedAbs != null && addedAbs !== 0 && (
-          <div style={{ fontSize: 11, marginTop: 6, color: addedAbs > 0 ? GREEN : RED, fontWeight: 600 }}>
-            {addedAbs > 0 ? "+" : ""}{addedAbs}{byReps ? " powt." : " kg"}
-            {addedPct != null && addedPct !== 0 && <span style={{ opacity: 0.85 }}> ({addedPct > 0 ? "+" : ""}{addedPct}%)</span>}
-            {sinceDays != null && (
-              <span style={{ color: "rgba(var(--fg-rgb, 255,255,255),0.66)", fontWeight: 600 }}>
-                {" · "}{sinceDays === 0 ? "dziś" : sinceDays === 1 ? "przez 1 dzień" : `przez ${sinceDays} dni`}
-              </span>
-            )}
+        {startTxt && (
+          <div data-testid="aw-since-start" style={{ fontSize: 11, marginTop: 6, color: deltaColor(sinceStart), fontWeight: 700 }}>
+            {startTxt}
+            <span style={{ color: "rgba(var(--fg-rgb, 255,255,255),0.66)", fontWeight: 600 }}>
+              {" · od "}{shortDate(firstBest?.date) ?? "pierwszego treningu"}
+              {sinceDays != null && sinceDays > 1 ? ` (${sinceDays} dni)` : ""}
+            </span>
           </div>
         )}
       </div>

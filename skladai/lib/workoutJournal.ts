@@ -837,6 +837,39 @@ function topIndex(sets: WnSet[]): number | null {
   return best;
 }
 
+/** Najmocniejsza seria sesji — konkretny ciężar i konkretne powtórzenia. */
+export interface BestSet { weight: number | null; reps: number | null; date: string }
+
+/**
+ * Wybiera NAJMOCNIEJSZĄ serię sesji.
+ *
+ * Indeks siły służy tu wyłącznie do WYBORU serii (żeby 5×120 kg wygrało
+ * z 12×60 kg), a nie do pokazywania użytkownikowi. Na ekran idą zawsze
+ * prawdziwe kilogramy i powtórzenia — „+3,4 pkt siły" nikomu nic nie mówi.
+ * Bez ciężaru (ćwiczenia z masą ciała) decydują same powtórzenia.
+ */
+export function bestSetOf(sets: WnSet[], date: string): BestSet | null {
+  let best: WnSet | null = null;
+  let bestScore = -Infinity;
+  for (const s of sets) {
+    if (s.weight_kg == null && s.reps == null) continue;
+    const score = strengthIndex(s.weight_kg, s.reps)
+      ?? (s.weight_kg != null ? s.weight_kg * 1000 : (s.reps ?? 0));
+    if (score > bestScore) { bestScore = score; best = s; }
+  }
+  return best ? { weight: best.weight_kg, reps: best.reps, date } : null;
+}
+
+/** Różnica dwóch serii: ile kilogramów i ile powtórzeń w górę/w dół. */
+export interface SetDelta { weight: number | null; reps: number | null }
+function deltaOf(now: BestSet | null, before: BestSet | null): SetDelta {
+  if (!now || !before) return { weight: null, reps: null };
+  return {
+    weight: now.weight != null && before.weight != null ? round2(now.weight - before.weight) : null,
+    reps: now.reps != null && before.reps != null ? now.reps - before.reps : null,
+  };
+}
+
 export function estimate1RM(weight: number | null | undefined, reps: number | null | undefined): number | null {
   if (weight == null || reps == null || weight <= 0 || reps < 1) return null;
   if (reps === 1) return round05(weight);
@@ -878,6 +911,18 @@ export interface WnExerciseStats {
   scopedToWorkout: boolean;
   /** Ile dni minęło od pierwszej sesji (liczone przy pobraniu, nie w renderze). */
   sinceDays: number | null;
+
+  // ── progres w KONKRETNYCH liczbach: kilogramy i powtórzenia ──
+  /** Najmocniejsza seria PIERWSZEGO wpisanego treningu — punkt odniesienia. */
+  firstBest: BestSet | null;
+  /** Najmocniejsza seria poprzedniej sesji. */
+  prevBest: BestSet | null;
+  /** Najmocniejsza seria ostatniej sesji. */
+  lastBest: BestSet | null;
+  /** Ile kg i powtórzeń przybyło (lub ubyło) OD PIERWSZEGO treningu. */
+  sinceStart: SetDelta;
+  /** To samo względem poprzedniej sesji. */
+  sinceLast: SetDelta;
 }
 
 /** Pełne statystyki ćwiczenia: rekord, przyrost od startu (kg + %), 1RM, tydzień. */
@@ -892,6 +937,8 @@ export async function getExerciseStats(exerciseId: string, workoutId?: string | 
     record: null, recordDate: null, weekDelta: null, addedAbs: null, addedPct: null,
     best1RM: null, best1RMWeight: null, best1RMReps: null, current1RM: null,
     indexNow: null, indexPrev: null, indexFirst: null, indexDelta: null, trend: null, scopedToWorkout, sinceDays: null,
+    firstBest: null, prevBest: null, lastBest: null,
+    sinceStart: { weight: null, reps: null }, sinceLast: { weight: null, reps: null },
   };
 
   const withVal = history.filter((p) => topOf(p) != null);
@@ -928,6 +975,12 @@ export async function getExerciseStats(exerciseId: string, workoutId?: string | 
   const trend: "up" | "down" | "flat" | null =
     indexDelta == null ? null : indexDelta > 1 ? "up" : indexDelta < -1 ? "down" : "flat";
 
+  // ── progres w liczbach, które coś znaczą: kilogramy i powtórzenia ──
+  const prevPoint = withVal.length >= 2 ? withVal[withVal.length - 2] : null;
+  const firstBest = bestSetOf(first.sets, first.finishedAt);
+  const lastBest = bestSetOf(last.sets, last.finishedAt);
+  const prevBest = prevPoint ? bestSetOf(prevPoint.sets, prevPoint.finishedAt) : null;
+
   return {
     metric, sessions: withVal.length,
     firstTop, firstDate: first.finishedAt, lastTop, lastDate: last.finishedAt,
@@ -936,6 +989,9 @@ export async function getExerciseStats(exerciseId: string, workoutId?: string | 
     addedAbs, addedPct, best1RM, best1RMWeight, best1RMReps, current1RM,
     indexNow, indexPrev, indexFirst, indexDelta, trend, scopedToWorkout,
     sinceDays: Math.max(0, Math.floor((Date.now() - new Date(first.finishedAt).getTime()) / 86400000)),
+    firstBest, prevBest, lastBest,
+    sinceStart: deltaOf(lastBest, firstBest),
+    sinceLast: deltaOf(lastBest, prevBest),
   };
 }
 
