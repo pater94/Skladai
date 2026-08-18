@@ -8,8 +8,8 @@
  * • Skala CIEPLNA: im mocniej pracuje partia, tym gorętszy kolor
  *   (szary → bursztyn → pomarańcz → czerwony).
  * • Głowy mięśni to osobne, klikalne kształty z własną intensywnością.
- * • ANIMACJA: sylwetka wykonuje ruch danego ćwiczenia; pracujące mięśnie
- *   pulsują w fazie koncentrycznej.
+ * • RUCH tylko w widoku 3D: model wykonuje dane ćwiczenie. Plansza 2D jest
+ *   celowo nieruchoma — to mapa cieplna do czytania, nie animacja.
  * • Widok startowy dobierany automatycznie do strony, po której jest praca
  *   (wiosłowanie otwiera się na plecach, wyciskanie na klatce).
  */
@@ -30,7 +30,7 @@ const MuscleModel3D = dynamic(() => import("./MuscleModel3D"), {
 });
 import type { ExerciseAnatomy, MuscleActivation, ActivationRole } from "@/lib/anatomy/exercises";
 import { FRONT_PLATE, BACK_PLATE, FRONT_MODESTY, MODESTY_FILL, ANATOMY_ATTRIBUTION, type PlateRegion } from "./anatomyPlate";
-import { MOTIONS, archetypeOf } from "./anatomyMotion";
+import { archetypeOf } from "./anatomyMotion";
 
 const ORANGE = "var(--c-orange, #f97316)";
 const ORANGE_RGB = "var(--c-orange-rgb, 249,115,22)";
@@ -140,8 +140,6 @@ export default function MuscleMap({ anatomy }: { anatomy: ExerciseAnatomy }) {
     return () => cancelAnimationFrame(poseRaf.current);
   }, [mode, playing, reduced, movement]);
 
-  const archetype = useMemo(() => archetypeOf(anatomy), [anatomy]);
-  const motion = MOTIONS[archetype];
   const animate = playing && !reduced;
 
   const active = hover ?? selected;
@@ -175,11 +173,6 @@ export default function MuscleMap({ anatomy }: { anatomy: ExerciseAnatomy }) {
         <path d={r.d} fill={HEAT[lvl]} opacity={strength}
           style={{ mixBlendMode: "color", transition: "opacity .25s ease" }} />
         {hot && <path d={r.d} fill={HEAT[lvl]} opacity={lvl === 4 ? 0.34 : 0.2} style={{ mixBlendMode: "multiply" }} />}
-        {animate && hot && (
-          <path d={r.d} fill="#fff" opacity="0">
-            <animate attributeName="opacity" values="0;0.20;0" dur={`${motion.dur}s`} repeatCount="indefinite" />
-          </path>
-        )}
       </g>
     );
   };
@@ -301,20 +294,24 @@ export default function MuscleMap({ anatomy }: { anatomy: ExerciseAnatomy }) {
         </svg>
         )}
 
-        {/* Sterowanie pulsem pracy */}
+        {/* Sterowanie ruchem — tylko w 3D. Na planszy 2D nie ma czego zatrzymywać:
+            mapa cieplna to nieruchomy obrazek, a migotanie tylko utrudniało czytanie. */}
         <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "4px 4px 0" }}>
-          <button onClick={() => setPlaying((p) => !p)} disabled={reduced} data-testid="muscle-anim-toggle"
-            style={{
-              padding: "5px 10px", borderRadius: 9, cursor: reduced ? "default" : "pointer", flexShrink: 0,
-              background: animate ? `rgba(${ORANGE_RGB},0.16)` : "rgba(var(--fg-rgb, 255,255,255),0.06)",
-              border: `1px solid ${animate ? `rgba(${ORANGE_RGB},0.32)` : "rgba(var(--fg-rgb, 255,255,255),0.1)"}`,
-              color: animate ? ORANGE : "rgba(var(--fg-rgb, 255,255,255),0.55)", fontSize: 11, fontWeight: 800,
-            }}>
-            {animate ? (mode === "model" ? "⏸ Zatrzymaj ruch" : "⏸ Zatrzymaj puls") : (mode === "model" ? "▶ Pokaż technikę" : "▶ Pokaż pracę")}
-          </button>
+          {mode === "model" && (
+            <button onClick={() => setPlaying((p) => !p)} disabled={reduced} data-testid="muscle-anim-toggle"
+              style={{
+                padding: "5px 10px", borderRadius: 9, cursor: reduced ? "default" : "pointer", flexShrink: 0,
+                background: animate ? `rgba(${ORANGE_RGB},0.16)` : "rgba(var(--fg-rgb, 255,255,255),0.06)",
+                border: `1px solid ${animate ? `rgba(${ORANGE_RGB},0.32)` : "rgba(var(--fg-rgb, 255,255,255),0.1)"}`,
+                color: animate ? ORANGE : "rgba(var(--fg-rgb, 255,255,255),0.55)", fontSize: 11, fontWeight: 800,
+              }}>
+              {animate ? "⏸ Zatrzymaj ruch" : "▶ Pokaż technikę"}
+            </button>
+          )}
           <span style={{ fontSize: 10.5, color: "rgba(var(--fg-rgb, 255,255,255),0.68)", flex: 1, minWidth: 0 }}>
-            {reduced ? "Animacje wyłączone w ustawieniach systemu"
-              : mode === "model" ? `${movement.label} · ${stanceDef.name} · przeciągnij, by obrócić` : motion.label}
+            {mode !== "model" ? "Kolor = jak mocno pracuje mięsień. Dotknij partii, by poznać szczegóły."
+              : reduced ? "Animacje wyłączone w ustawieniach systemu"
+              : `${movement.label} · ${stanceDef.name} · przeciągnij, by obrócić`}
           </span>
         </div>
 
