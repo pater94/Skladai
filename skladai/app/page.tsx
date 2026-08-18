@@ -23,7 +23,7 @@ import {
   removeRecentFood,
   todayStr,
 } from "@/lib/storage";
-import { compressImageSmall, clampBase64Size } from "@/lib/compress";
+import { compressImageSmall, clampBase64Size, rotateBase64 } from "@/lib/compress";
 
 // For 2-photo modes (cosmetics, suplement) the combined body must stay
 // well under Vercel's 4.5 MB request limit. Native Capacitor Camera
@@ -35,6 +35,22 @@ import { devLog } from "@/lib/dev-log";
 import ActivityBadges from "@/components/ActivityBadges";
 import type { ScanMode, ScanHistoryItem, RecentFood } from "@/lib/types";
 import { Zap, Leaf, ChevronRight, X, ScanLine, Apple, UtensilsCrossed, Pill } from "lucide-react";
+
+/** Tryby, w których skanujemy ETYKIETĘ (a nie talerz) — tylko tu ma sens prostowanie. */
+const LABEL_MODES: string[] = ["food", "food_macro", "food_sklad", "cosmetics", "suplement"];
+
+/** Czy odpowiedź oznacza „nie odczytałem etykiety" (a nie zwykły słabszy wynik). */
+function isLabelUnreadable(d: unknown): boolean {
+  if (!d || typeof d !== "object") return false;
+  const r = d as { label_unreadable?: boolean; verdict_short?: string; nutrition?: Array<{ value?: string }>; ingredients?: unknown[] };
+  if (r.label_unreadable === true) return true;
+  if (typeof r.verdict_short === "string" && /brak etykiety/i.test(r.verdict_short)) return true;
+  // wszystkie pola tabeli puste = etykieta nieodczytana, choćby nazwa się udała
+  const nut = Array.isArray(r.nutrition) ? r.nutrition : [];
+  if (nut.length > 0 && nut.every((n) => /brak danych/i.test(String(n?.value ?? "")))) return true;
+  return false;
+}
+
 
 // Subtelne ziarno (film grain) dla ekranu wyboru skanu — materiał, nie kolor.
 const SCAN_GRAIN =
@@ -589,6 +605,24 @@ export default function Home() {
             data = await doScan(base64);
           } else {
             throw err;
+          }
+        }
+
+        // ── ETYKIETA BOKIEM: wyprostuj i spróbuj jeszcze raz ──
+        // Etykiety fotografuje się bokiem (tekst wzdłuż dłuższej krawędzi
+        // opakowania, telefon trzymany pionowo). Zmierzone na realnym zdjęciu:
+        // obrócone = 6/6 pól „brak danych", wyprostowane = komplet wartości.
+        // Prompt prosi model o mentalny obrót od dawna i to nie wystarcza,
+        // więc prostujemy zdjęcie NAPRAWDĘ — jedno dodatkowe wywołanie tylko
+        // wtedy, gdy pierwsze podejście nic nie odczytało.
+        if (isLabelUnreadable(data) && LABEL_MODES.includes(scanMode)) {
+          for (const angle of [90, 270] as const) {
+            setLoadingMessage("Prostuję zdjęcie etykiety…");
+            try {
+              const rotated = await rotateBase64(base64, angle);
+              const retry = await doScan(rotated);
+              if (!isLabelUnreadable(retry)) { data = retry; break; }
+            } catch { /* obrót się nie udał — zostaje pierwotny wynik */ }
           }
         }
 

@@ -164,3 +164,34 @@ function canvasCompressFromBase64(base64: string, maxDim: number, quality: numbe
     img.src = base64;
   });
 }
+
+/**
+ * Obraca zdjęcie o zadany kąt (90/180/270°, zgodnie ze wskazówkami zegara).
+ *
+ * Po co: etykiety fotografuje się bokiem — tekst biegnie wzdłuż dłuższej
+ * krawędzi opakowania, a telefon trzymamy pionowo. Zmierzone na realnym
+ * zdjęciu z historii skanów: ta sama etykieta obrócona daje 6/6 pól
+ * „brak danych", a wyprostowana — komplet wartości. Sam prompt nie
+ * wystarcza (prosi o obrót od dawna), więc prostujemy zdjęcie naprawdę.
+ */
+export function rotateBase64(base64: string, degrees: 90 | 180 | 270): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      const swap = degrees === 90 || degrees === 270;
+      canvas.width = swap ? img.height : img.width;
+      canvas.height = swap ? img.width : img.height;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) { reject(new Error("Brak kontekstu canvas")); return; }
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = "high";
+      ctx.translate(canvas.width / 2, canvas.height / 2);
+      ctx.rotate((degrees * Math.PI) / 180);
+      ctx.drawImage(img, -img.width / 2, -img.height / 2);
+      resolve(canvas.toDataURL("image/jpeg", 0.85));
+    };
+    img.onerror = () => reject(new Error("Nie udało się wczytać zdjęcia do obrotu"));
+    img.src = base64;
+  });
+}
