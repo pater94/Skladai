@@ -1023,6 +1023,11 @@ export async function getSessionSummary(sessionId: string): Promise<WnSessionSum
     .from("wn_sets")
     .select("*, exercise:wn_exercises!inner(id, name, kind)")
     .eq("session_id", sessionId)
+    // Kolejność ĆWICZEŃ bierze się z kolejności wierszy, więc musi być
+    // deterministyczna — inaczej podsumowanie tego samego treningu układa się
+    // za każdym otwarciem inaczej. created_at = kolejność logowania serii,
+    // czyli ta, w jakiej trening był naprawdę wykonywany.
+    .order("created_at", { ascending: true })
     .order("set_index", { ascending: true });
   const rows = (setsData ?? []) as unknown as Array<WnSet & { exercise: { id: string; name: string; kind: WnKind } }>;
 

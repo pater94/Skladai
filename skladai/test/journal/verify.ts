@@ -80,11 +80,24 @@ async function main() {
       }));
     }, [STORAGE_KEY, JSON.stringify(sess)]);
 
+    /**
+     * Klika i UPEWNIA SIĘ, że kliknięcie zadziałało. Bez tego test bywał zależny
+     * od tego, czy React zdążył zhydratować stronę — pierwszy klik szedł
+     * w martwy HTML i cała reszta scenariusza leciała na sucho.
+     */
     const tap = async (testid: string, waitMs = 1800) => {
-      await page.evaluate((id: string) => {
-        (document.querySelector(`[data-testid=${id}]`) as HTMLElement | null)?.click();
-      }, testid);
-      await page.waitForTimeout(waitMs);
+      for (let i = 0; i < 12; i++) {
+        const gone = await page.evaluate((id: string) => {
+          const el = document.querySelector(`[data-testid=${id}]`) as HTMLElement | null;
+          if (!el) return true;           // już zniknął → ekran się przełączył
+          el.click();
+          return false;
+        }, testid);
+        await page.waitForTimeout(i === 0 ? waitMs : 500);
+        if (gone) return;
+        const still = await page.evaluate((id: string) => !!document.querySelector(`[data-testid=${id}]`), testid);
+        if (!still) return;
+      }
     };
 
     /** Wpisuje wartość tak, żeby React zobaczył zdarzenie (nie samo .value). */

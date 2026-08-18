@@ -204,7 +204,14 @@ export default function FormaPage() {
   };
 
   return (
-    <div className="min-h-screen relative overflow-hidden" style={{ background: "var(--bg, #0a0e0c)", color: "var(--fg, #fff)" }}>
+    // min-h-screen to 100vh (cała wysokość okna), a ten kawałek żyje w
+    // #scroll-container, który kończy się 68 px wyżej — nad dolną nawigacją.
+    // Efekt: strona zawsze miała 68 px do przewinięcia. Na ekranie podsumowania,
+    // który ma się mieścić w całości, bierzemy wysokość kontenera zamiast okna.
+    <div
+      className={`relative overflow-hidden ${view === "workout-summary" ? "min-h-full" : "min-h-screen"}`}
+      style={{ background: "var(--bg, #0a0e0c)", color: "var(--fg, #fff)" }}
+    >
       {/* Ambient blobs */}
       <div className="pointer-events-none absolute" style={{
         top: "-40px", right: "-60px", width: "220px", height: "220px",
@@ -232,7 +239,10 @@ export default function FormaPage() {
         @keyframes fadeInUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
       `}</style>
       <div className="max-w-md mx-auto px-4 pt-6 relative z-[2]" style={{
-        paddingBottom: "200px",
+        // Podsumowanie treningu ma się mieścić na jednym ekranie — pod nim nie
+        // rezerwujemy 200 px zapasu na przewijanie, bo to jedyne, co zostawiałoby
+        // stronie powód do scrollowania.
+        paddingBottom: view === "workout-summary" ? 0 : "200px",
       }}>
         {view === "main" && (
           <MainView
