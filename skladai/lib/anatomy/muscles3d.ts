@@ -13,9 +13,9 @@
 import type { MuscleId } from "./muscles";
 
 export type SegmentId =
-  | "torso" | "head"
-  | "upperArm" | "foreArm"
-  | "thigh" | "shin";
+  | "torso" | "neck" | "head"
+  | "upperArm" | "foreArm" | "hand"
+  | "thigh" | "shin" | "foot";
 
 /** Szkielet: gdzie leży staw danego segmentu względem rodzica. */
 export interface SegmentDef {
@@ -33,11 +33,14 @@ export interface SegmentDef {
 
 export const SKELETON: SegmentDef[] = [
   { id: "torso",    parent: null,      origin: [0, 0.92, 0],        length: 0.56, radius: 0.135, paired: false },
-  { id: "head",     parent: "torso",   origin: [0, 0.60, 0],        length: 0.24, radius: 0.095, paired: false },
+  { id: "neck",     parent: "torso",   origin: [0, 0.56, 0],        length: 0.10, radius: 0.052, paired: false },
+  { id: "head",     parent: "neck",    origin: [0, 0.10, 0],        length: 0.23, radius: 0.093, paired: false },
   { id: "upperArm", parent: "torso",   origin: [0.20, 0.54, 0],     length: 0.29, radius: 0.052, paired: true },
   { id: "foreArm",  parent: "upperArm",origin: [0, -0.29, 0],       length: 0.26, radius: 0.044, paired: true },
+  { id: "hand",     parent: "foreArm", origin: [0, -0.26, 0],       length: 0.11, radius: 0.038, paired: true },
   { id: "thigh",    parent: null,      origin: [0.10, 0.92, 0],     length: 0.44, radius: 0.085, paired: true },
   { id: "shin",     parent: "thigh",   origin: [0, -0.44, 0],       length: 0.42, radius: 0.058, paired: true },
+  { id: "foot",     parent: "shin",    origin: [0, -0.42, 0],       length: 0.16, radius: 0.045, paired: true },
 ];
 
 export interface Muscle3D {

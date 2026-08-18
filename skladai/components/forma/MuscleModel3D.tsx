@@ -46,7 +46,7 @@ function levelOf(c: number | null): number {
 interface MeshInfo { muscle: MuscleId; head?: string; level: number; base: THREE.Color }
 
 export default function MuscleModel3D({
-  activation, onPick, selected, pose, stance, equipment,
+  activation, onPick, selected, pose, stance, equipment, cableAt,
 }: {
   activation: MuscleActivation[];
   onPick: (p: Pick) => void;
@@ -57,6 +57,8 @@ export default function MuscleModel3D({
   stance?: StanceDef | null;
   /** Sprzęt trzymany w dłoniach. */
   equipment?: Equipment | null;
+  /** Pozycja bloczka wyciągu — skąd biegnie linka. */
+  cableAt?: [number, number, number] | null;
 }) {
   const mountRef = useRef<HTMLDivElement>(null);
   const [hoverName, setHoverName] = useState<string | null>(null);
@@ -66,11 +68,13 @@ export default function MuscleModel3D({
   const poseRef = useRef<Pose | null | undefined>(pose);
   const stanceRef = useRef<StanceDef | null | undefined>(stance);
   const equipRef = useRef<Equipment | null | undefined>(equipment);
+  const cableRef = useRef<[number, number, number] | null | undefined>(cableAt);
   const actRef = useRef<MuscleActivation[]>(activation);
   useEffect(() => { selRef.current = selected; }, [selected]);
   useEffect(() => { poseRef.current = pose; }, [pose]);
   useEffect(() => { stanceRef.current = stance; }, [stance]);
   useEffect(() => { equipRef.current = equipment; }, [equipment]);
+  useEffect(() => { cableRef.current = cableAt; }, [cableAt]);
   useEffect(() => { actRef.current = activation; }, [activation]);
 
   const applyRef = useRef<(() => void) | null>(null);
@@ -85,7 +89,7 @@ export default function MuscleModel3D({
 
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(38, width / height, 0.1, 100);
-    camera.position.set(1.55, 1.20, 2.35); // ujęcie 3/4 — pozycje ćwiczeń czytelniejsze niż z przodu
+    camera.position.set(1.75, 1.35, 2.95); // ujęcie 3/4 — pozycje ćwiczeń czytelniejsze niż z przodu
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setSize(width, height);
@@ -102,8 +106,8 @@ export default function MuscleModel3D({
     controls.enableDamping = true;
     controls.dampingFactor = 0.08;
     controls.target.set(0, 1.02, 0);
-    controls.minDistance = 1.2;
-    controls.maxDistance = 5;
+    controls.minDistance = 1.6;
+    controls.maxDistance = 6;
     controls.enablePan = false;
 
     // ── szkielet: grupy segmentów (parent-child), osobno dla L i R ──
@@ -133,24 +137,43 @@ export default function MuscleModel3D({
 
     // ── poglądowa sylwetka ciała (półprzezroczysta) ──
     const skinMat = new THREE.MeshStandardMaterial({
-      color: 0x8b95a5, transparent: true, opacity: 0.17, roughness: 0.85, metalness: 0,
+      color: 0x93a0b2, transparent: true, opacity: 0.28, roughness: 0.9, metalness: 0,
       depthWrite: false,
     });
+
+    /** Profil tułowia: barki szerokie, talia wcięta, miednica szersza. */
+    const torsoProfile = [
+      [0.128, 0.00], [0.120, 0.08], [0.113, 0.17], [0.118, 0.26],
+      [0.134, 0.35], [0.150, 0.43], [0.152, 0.50], [0.120, 0.56], [0.055, 0.575],
+    ].map(([r, y]) => new THREE.Vector2(r, y));
+    const torsoGeo = new THREE.LatheGeometry(torsoProfile, 22);
+
     for (const seg of SKELETON) {
       const sides: Array<"L" | "R" | "C"> = seg.paired ? ["L", "R"] : ["C"];
       for (const side of sides) {
         const g = groups[keyOf(seg.id, side)];
         if (!g) continue;
-        const geo = seg.id === "head"
-          ? new THREE.SphereGeometry(seg.radius, 20, 16)
-          : new THREE.CapsuleGeometry(seg.radius, Math.max(0.01, seg.length - seg.radius * 2), 6, 14);
+        let geo: THREE.BufferGeometry;
+        if (seg.id === "torso") geo = torsoGeo;
+        else if (seg.id === "head") geo = new THREE.SphereGeometry(seg.radius, 20, 16);
+        else if (seg.id === "hand" || seg.id === "foot") geo = new THREE.BoxGeometry(seg.radius * 1.7, seg.length, seg.radius * 2.4);
+        else geo = new THREE.CapsuleGeometry(seg.radius, Math.max(0.01, seg.length - seg.radius * 2), 6, 14);
+
         const m = new THREE.Mesh(geo, skinMat);
-        // tors rośnie W GÓRĘ od miednicy; kończyny zwisają W DÓŁ od stawu
-        m.position.y = seg.id === "head" ? seg.length * 0.35
-          : seg.id === "torso" ? seg.length / 2
+        // tors i szyja rosną W GÓRĘ od stawu; kończyny zwisają W DÓŁ
+        m.position.y = seg.id === "torso" ? 0
+          : seg.id === "head" ? seg.length * 0.34
+          : seg.id === "neck" ? seg.length / 2
           : -seg.length / 2;
+        if (seg.id === "foot") m.position.z = seg.length * 0.28; // stopa wysunięta do przodu
         m.userData.skin = true;
         g.add(m);
+
+        // kula w stawie — bez niej kończyny „urywają się" i model rozpada się na bryły
+        if (seg.id !== "torso" && seg.id !== "head") {
+          const j = new THREE.Mesh(new THREE.SphereGeometry(seg.radius * 1.06, 14, 10), skinMat);
+          g.add(j);
+        }
       }
     }
 
@@ -172,10 +195,10 @@ export default function MuscleModel3D({
 
     // sztanga: gryf + talerze
     const barbell = new THREE.Group();
-    const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.016, 1.5, 12), steel);
+    const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 1.52, 12), steel);
     shaft.rotation.z = Math.PI / 2; barbell.add(shaft);
-    for (const sx of [-0.56, 0.56]) {
-      const d = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.16, 0.05, 18), plate);
+    for (const sx of [-0.62, 0.62]) {
+      const d = new THREE.Mesh(new THREE.CylinderGeometry(0.135, 0.135, 0.045, 18), plate);
       d.rotation.z = Math.PI / 2; d.position.x = sx; barbell.add(d);
     }
     scene.add(barbell);
@@ -194,8 +217,10 @@ export default function MuscleModel3D({
     }
 
     // wyciąg: uchwyt + linka biegnąca do bloczka
-    const cableHandle = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.014, 0.42, 10), steel);
-    cableHandle.rotation.z = Math.PI / 2; scene.add(cableHandle);
+    const cableHandle = new THREE.Group();
+    const cableBar = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.014, 0.42, 10), steel);
+    cableBar.rotation.z = Math.PI / 2; cableHandle.add(cableBar);
+    scene.add(cableHandle);
     const cableLine = new THREE.Mesh(new THREE.CylinderGeometry(0.007, 0.007, 1, 6), rope);
     scene.add(cableLine);
 
@@ -213,11 +238,11 @@ export default function MuscleModel3D({
     const props: Record<string, THREE.Object3D> = {};
 
     const bench = new THREE.Group();
-    const pad = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.09, 1.30), gearMat);
-    pad.position.set(0, 0.46, 0); bench.add(pad);
-    for (const pz of [-0.55, 0.55]) {
-      const leg = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.42, 0.08), frameMat);
-      leg.position.set(0, 0.21, pz); bench.add(leg);
+    const pad = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.09, 1.62), gearMat);
+    pad.position.set(0, 0.405, -0.10); bench.add(pad);
+    for (const pz of [-0.78, 0.60]) {
+      const leg = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.36, 0.08), frameMat);
+      leg.position.set(0, 0.18, pz); bench.add(leg);
     }
     scene.add(bench); props.bench = bench;
 
@@ -253,14 +278,60 @@ export default function MuscleModel3D({
     backPad.position.set(0, 0.40, 0.30); backPad.rotation.x = 32 * (Math.PI / 180); sled.add(backPad);
     scene.add(sled); props.legPressSled = sled;
 
-    const floor = new THREE.Mesh(new THREE.CylinderGeometry(1.05, 1.05, 0.02, 40),
-      new THREE.MeshStandardMaterial({ color: 0x272c34, roughness: 1 }));
-    floor.position.y = -0.01; scene.add(floor); props.floor = floor;
+    // Podłoga z miękką krawędzią — twarda tarcza ucinała się w kadrze jak talerz.
+    const floorTex = (() => {
+      const c = document.createElement("canvas"); c.width = c.height = 128;
+      const g = c.getContext("2d")!;
+      const rg = g.createRadialGradient(64, 64, 8, 64, 64, 64);
+      rg.addColorStop(0, "rgba(255,255,255,1)");
+      rg.addColorStop(0.62, "rgba(255,255,255,0.85)");
+      rg.addColorStop(1, "rgba(255,255,255,0)");
+      g.fillStyle = rg; g.fillRect(0, 0, 128, 128);
+      return new THREE.CanvasTexture(c);
+    })();
+    const floor = new THREE.Mesh(new THREE.PlaneGeometry(3.2, 3.2),
+      new THREE.MeshBasicMaterial({ color: 0x1a1f27, map: floorTex, transparent: true, depthWrite: false }));
+    floor.rotation.x = -Math.PI / 2; floor.position.y = -0.005;
+    scene.add(floor); props.floor = floor;
+
+    /**
+     * Cień kontaktowy — miękka plama pod sylwetką. Bez niego postać wyglądała
+     * jakby unosiła się nad podłogą; cień „przykleja" ją do ziemi.
+     */
+    const shadowTex = (() => {
+      const c = document.createElement("canvas"); c.width = c.height = 128;
+      const g = c.getContext("2d")!;
+      const rg = g.createRadialGradient(64, 64, 2, 64, 64, 62);
+      rg.addColorStop(0, "rgba(0,0,0,0.85)");
+      rg.addColorStop(0.5, "rgba(0,0,0,0.42)");
+      rg.addColorStop(1, "rgba(0,0,0,0)");
+      g.fillStyle = rg; g.fillRect(0, 0, 128, 128);
+      return new THREE.CanvasTexture(c);
+    })();
+    const contactShadow = new THREE.Mesh(new THREE.PlaneGeometry(1.5, 1.5),
+      new THREE.MeshBasicMaterial({ map: shadowTex, transparent: true, depthWrite: false }));
+    contactShadow.rotation.x = -Math.PI / 2;
+    contactShadow.position.y = 0.004;
+    scene.add(contactShadow);
 
     // ── mięśnie ──
     const meshes: THREE.Mesh[] = [];
     const info = new Map<THREE.Mesh, MeshInfo>();
-    const sphere = new THREE.SphereGeometry(1, 18, 14);
+
+    /**
+     * Brzusiec mięśnia jest WRZECIONOWATY — gruby w środku, zbiegający do ścięgien
+     * na obu końcach. Kula dawała efekt „kulek naklejonych na patyk"; wrzeciono
+     * od razu czyta się jak mięsień. Wpisane w tę samą jednostkową bryłę co kula,
+     * więc dotychczasowe wartości `scale` działają bez zmian.
+     */
+    const spindlePts: THREE.Vector2[] = [];
+    const SEG = 14;
+    for (let i = 0; i <= SEG; i++) {
+      const t = i / SEG;
+      const r = Math.pow(Math.sin(Math.PI * t), 0.62);
+      spindlePts.push(new THREE.Vector2(Math.max(0.004, r), -1 + 2 * t));
+    }
+    const sphere = new THREE.LatheGeometry(spindlePts, 18);
 
     for (const m3 of MUSCLES_3D) {
       const sides: Array<"L" | "R" | "C"> = m3.center ? ["C"] : ["L", "R"];
@@ -295,7 +366,9 @@ export default function MuscleModel3D({
         const mat = mesh.material as THREE.MeshStandardMaterial;
         const isSel = !!sel && sel.muscle === nfo.muscle && (!sel.head || sel.head === nfo.head);
         mat.color.set(lvl >= 0 ? HEAT[lvl] : INACTIVE);
-        mat.opacity = lvl >= 0 ? 0.97 : 0.28;
+        // poziom 0 = mięsień ledwie pracuje → ma się cofnąć, żeby gorące partie
+        // czytały się jak mapa cieplna, a nie ginęły w tłumie szarych bryłek
+        mat.opacity = lvl >= 1 ? 0.97 : lvl === 0 ? 0.5 : 0.22;
         mat.emissive.set(isSel ? 0xffffff : 0x000000);
         mat.emissiveIntensity = isSel ? 0.42 : 0;
         nfo.base.set(mat.color.getHex());
@@ -344,6 +417,7 @@ export default function MuscleModel3D({
     let raf = 0;
     const clock = new THREE.Clock();
     const focus = new THREE.Vector3();
+    const shift = new THREE.Vector3();
     const render = () => {
       raf = requestAnimationFrame(render);
       const t = clock.getElapsedTime();
@@ -376,9 +450,11 @@ export default function MuscleModel3D({
       root.rotation.y += (rr[1] - root.rotation.y) * 0.1;
       root.rotation.z += (rr[2] - root.rotation.z) * 0.1;
 
-      // ── REKWIZYTY: pokaż tylko ten, który należy do postawy ──
+      // ── REKWIZYTY: rekwizyt postawy + ZAWSZE podłoga ──
+      // Bez podłogi ławka i drążek wisiały w próżni, a model wyglądał jakby
+      // lewitował. Podłoga daje punkt odniesienia „gdzie jest ziemia".
       const wantProp = st?.prop ?? "floor";
-      for (const [name, obj] of Object.entries(props)) obj.visible = name === wantProp;
+      for (const [name, obj] of Object.entries(props)) obj.visible = name === wantProp || name === "floor";
 
       // ── SPRZĘT: umieść w dłoniach, zgodnie z ich realnym położeniem ──
       const eq = equipRef.current ?? "bodyweight";
@@ -407,8 +483,11 @@ export default function MuscleModel3D({
       if (cableHandle.visible) {
         cableHandle.position.copy(mid);
         cableHandle.quaternion.setFromUnitVectors(new THREE.Vector3(1, 0, 0), span.clone().normalize());
-        // linka od bloczka (górny lub dolny, zależnie gdzie są dłonie) do uchwytu
-        const pulley = new THREE.Vector3(0, mid.y > 1.25 ? 2.05 : 0.16, -0.6);
+        // linka od bloczka do uchwytu; pozycja bloczka z definicji ćwiczenia,
+        // a gdy jej brak — zgadywana z wysokości dłoni
+        const ca = cableRef.current;
+        const pulley = ca ? new THREE.Vector3(ca[0], ca[1], ca[2])
+          : new THREE.Vector3(0, mid.y > 1.25 ? 2.05 : 0.16, -0.6);
         const dir = pulley.clone().sub(mid);
         cableLine.position.copy(mid.clone().add(dir.clone().multiplyScalar(0.5)));
         cableLine.scale.set(1, Math.max(0.05, dir.length()), 1);
@@ -416,12 +495,28 @@ export default function MuscleModel3D({
       }
       machine.visible = eq === "machine";
 
-      // ── KADR: kamera trzyma się tułowia, więc leżąca/siedząca sylwetka nie ucieka ──
+      // cień jedzie za sylwetką i blednie, gdy ciało odjeżdża od podłogi
+      const hipG = groups[keyOf("thigh", "R")];
+      if (hipG) {
+        hipG.getWorldPosition(focus);
+        contactShadow.position.x = focus.x - 0.10;
+        contactShadow.position.z = focus.z;
+        const h = Math.max(0, focus.y);
+        contactShadow.scale.setScalar(1 + h * 0.55);
+        (contactShadow.material as THREE.MeshBasicMaterial).opacity = Math.max(0.12, 1 - h * 0.55);
+      }
+
+      // ── KADR: kamera PODĄŻA za tułowiem zachowując dystans i kąt ──
+      // Sam lerp celu przesuwał obraz w bok (kamera stała w miejscu), więc przy
+      // przysiadzie czy leżeniu sylwetka uciekała poza ekran. Teraz o ten sam
+      // wektor przesuwamy też kamerę — obrót i zoom użytkownika zostają zachowane.
       const torsoG = groups[keyOf("torso", "C")];
       if (torsoG) {
         torsoG.getWorldPosition(focus);
-        focus.y += 0.18;
-        controls.target.lerp(focus, 0.07);
+        focus.y += 0.16;
+        shift.subVectors(focus, controls.target).multiplyScalar(0.07);
+        controls.target.add(shift);
+        camera.position.add(shift);
       }
 
       // puls najmocniej pracujących
@@ -462,6 +557,8 @@ export default function MuscleModel3D({
       meshes.forEach((m) => (m.material as THREE.Material).dispose());
       sphere.dispose();
       skinMat.dispose();
+      floorTex.dispose();
+      shadowTex.dispose();
       renderer.dispose();
       if (renderer.domElement.parentNode === mount) mount.removeChild(renderer.domElement);
     };

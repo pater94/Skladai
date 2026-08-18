@@ -10,7 +10,7 @@ import * as THREE from "three";
 import { SKELETON, type SegmentId } from "../../lib/anatomy/muscles3d";
 import { EXERCISE_ANATOMY } from "../../lib/anatomy/exercises";
 import { archetypeOf } from "../../components/forma/anatomyMotion";
-import { STANCES, poseFor, mergePose, type Pose } from "../../components/forma/exercisePose";
+import { STANCES, poseFor, mergePose, stanceAt, type Pose, type StanceDef } from "../../components/forma/exercisePose";
 
 const HIP_Y = 0.92;
 
@@ -19,9 +19,13 @@ export interface Joints {
   knee: THREE.Vector3; ankle: THREE.Vector3; headTop: THREE.Vector3; chest: THREE.Vector3;
 }
 
-/** Liczy pozycje stawów prawej strony ciała dla zadanej postawy i pozy. */
-export function solve(stanceName: keyof typeof STANCES, pose: Pose): Joints {
-  const st = STANCES[stanceName];
+/**
+ * Liczy pozycje stawów prawej strony ciała dla zadanej postawy i pozy.
+ * `override` pozwala podać postawę już przeliczoną na daną fazę ruchu
+ * (ćwiczenia obracające całą sylwetkę — patrz stanceAt).
+ */
+export function solve(stanceName: keyof typeof STANCES, pose: Pose, override?: StanceDef): Joints {
+  const st = override ?? STANCES[stanceName];
   const root = new THREE.Group();
   root.position.set(...st.rootPos);
   root.rotation.set(...st.rootRot);
@@ -157,29 +161,99 @@ const R = {
   /** Pięta jedzie do pośladka (uginanie nóg). */
   heelToGlute: (): Rule => (_t, b) =>
     Math.abs(b.ankle.z - b.knee.z) > 0.18 || Math.abs(b.ankle.y - b.knee.y) > 0.18 ? null : "pięta nie jedzie do pośladka",
+
+  /**
+   * Gryf leży ZA KARKIEM (przysiad tylny). Liczone wzdłuż normalnej tułowia,
+   * więc działa też przy pochyleniu w dole przysiadu.
+   */
+  barBehindNeck: (min = 0.03): Rule => (t, b) => {
+    const behind = (j: Joints) => {
+      const bz = j.chest.z - j.hip.z, by = j.chest.y - j.hip.y;
+      const L = Math.hypot(bz, by) || 1;
+      return (j.wrist.z - j.chest.z) * (-by / L) + (j.wrist.y - j.chest.y) * (bz / L);
+    };
+    const worst = Math.min(behind(t), behind(b));
+    return worst > min ? null : `gryf nie leży na karku (za tułowiem tylko ${worst.toFixed(2)} m)`;
+  },
+  /** Gryf na wysokości barków (nie zsuwa się na plecy ani nie jedzie nad głowę). */
+  barAtShoulderLine: (tol = 0.16): Rule => (t, b) => {
+    const worst = Math.max(Math.abs(t.wrist.y - t.shoulder.y), Math.abs(b.wrist.y - b.shoulder.y));
+    return worst < tol ? null : `gryf nie trzyma linii barków (Δy=${worst.toFixed(2)})`;
+  },
+  /** Stopy PŁASKO na podłodze — ostrzejsze niż feetDown (leżenie na ławce). */
+  feetPlanted: (maxY = 0.12): Rule => (t, b) => {
+    const worst = Math.max(t.ankle.y, b.ankle.y);
+    return worst < maxY ? null : `stopy nie stoją na podłodze (y=${worst.toFixed(2)})`;
+  },
+  /**
+   * Dłonie zostają NA DRĄŻKU — to ciało jedzie do góry, nie drążek do ciała.
+   * Wyłapuje pozycję „T" i ręce odjeżdżające w przód przy podciąganiu.
+   */
+  gripStaysOnBar: (maxDrift = 0.14): Rule => (t, b) => {
+    const dz = Math.abs(t.wrist.z - b.wrist.z), dx = Math.abs(t.wrist.x - b.wrist.x);
+    return Math.max(dz, dx) < maxDrift ? null : `dłonie zjeżdżają z drążka (Δz=${dz.toFixed(2)}, Δx=${dx.toFixed(2)})`;
+  },
+  /** Broda dochodzi do drążka (górna faza podciągania). */
+  chinToBar: (): Rule => (t, b) => {
+    const barY = Math.max(t.wrist.y, b.wrist.y);
+    const best = Math.max(t.headTop.y, b.headTop.y);
+    return best > barY + 0.04 ? null : `broda nie dochodzi do drążka (głowa ${best.toFixed(2)} vs drążek ${barY.toFixed(2)})`;
+  },
+  /** Łokcie ściągnięte POD barki w fazie skurczu (ściąganie drążka, wiosłowanie). */
+  elbowsDriveDown: (min = 0.10): Rule => (t, b) => {
+    const best = Math.max(t.shoulder.y - t.elbow.y, b.shoulder.y - b.elbow.y);
+    return best > min ? null : `łokcie nie schodzą pod barki (max Δ=${best.toFixed(2)})`;
+  },
+  /** Dłonie stoją na podłodze i NIE przesuwają się (pompka, deska). */
+  handsPlanted: (maxY = 0.10, maxDrift = 0.10): Rule => (t, b) => {
+    const hi = Math.max(t.wrist.y, b.wrist.y);
+    if (hi > maxY) return `dłonie nie dotykają podłogi (y=${hi.toFixed(2)})`;
+    const drift = Math.max(Math.abs(t.wrist.x - b.wrist.x), Math.abs(t.wrist.z - b.wrist.z));
+    return drift < maxDrift ? null : `dłonie ślizgają się po podłodze (Δ=${drift.toFixed(2)})`;
+  },
+  /** Palce stóp zostają na podłodze przez cały ruch. */
+  toesPlanted: (maxY = 0.16): Rule => (t, b) => {
+    const hi = Math.max(t.ankle.y, b.ankle.y);
+    return hi < maxY ? null : `stopy odrywają się od podłogi (y=${hi.toFixed(2)})`;
+  },
+  /** To CIAŁO jedzie w dół, nie ręce (pompka). */
+  bodyLowers: (min = 0.12): Rule => (t, b) => {
+    const d = Math.abs(t.chest.y - b.chest.y);
+    return d > min ? null : `tułów nie opuszcza się — sam ruch rąk (Δ=${d.toFixed(2)})`;
+  },
+  /** Przedramiona leżą na podłodze (deska na łokciach). */
+  forearmsDown: (maxY = 0.10): Rule => (t, b) => {
+    const hi = Math.max(Math.max(t.elbow.y, b.elbow.y), Math.max(t.wrist.y, b.wrist.y));
+    return hi < maxY ? null : `przedramiona nie leżą na podłodze (y=${hi.toFixed(2)})`;
+  },
+  /** Bark schodzi wyraźnie pod drążek w zwisie (pełny zakres ruchu). */
+  fullHang: (min = 0.42): Rule => (t, b) => {
+    const gap = Math.max(b.wrist.y - b.shoulder.y, t.wrist.y - t.shoulder.y);
+    return gap > min ? null : `brak pełnego zwisu (bark tylko ${gap.toFixed(2)} m pod drążkiem)`;
+  },
 };
 
 /** Reguły per ćwiczenie; klucz "*<archetyp>" = domyślne dla wzorca. */
 export const RULES: Record<string, Rule[]> = {
   // ── wyciskanie leżąc: tors poziomo, stopy na podłodze, sztanga nad klatką ──
-  bench_flat: [R.torsoHorizontal(), R.feetDown(), R.wristAboveShoulder(), R.barOverChest(), R.bottomAtChest(), R.elbowExtends(), R.elbowFlexes()],
-  db_bench:   [R.torsoHorizontal(), R.feetDown(), R.wristAboveShoulder(), R.barOverChest(), R.elbowExtends(), R.elbowFlexes()],
+  bench_flat: [R.torsoHorizontal(), R.feetPlanted(), R.wristAboveShoulder(), R.barOverChest(), R.bottomAtChest(), R.elbowExtends(), R.elbowFlexes()],
+  db_bench:   [R.torsoHorizontal(), R.feetPlanted(), R.wristAboveShoulder(), R.barOverChest(), R.elbowExtends(), R.elbowFlexes()],
   bench_decline: [R.torsoHorizontal(), R.wristAboveShoulder(), R.barOverChest(), R.elbowExtends()],
-  close_grip_bench: [R.torsoHorizontal(), R.feetDown(), R.wristAboveShoulder(), R.barOverChest(), R.elbowExtends(), R.elbowFlexes()],
-  fly:        [R.torsoHorizontal(), R.feetDown(), R.wristAboveShoulder(), R.armsOut()],
+  close_grip_bench: [R.torsoHorizontal(), R.feetPlanted(), R.wristAboveShoulder(), R.barOverChest(), R.elbowExtends(), R.elbowFlexes()],
+  fly:        [R.torsoHorizontal(), R.feetPlanted(), R.wristAboveShoulder(), R.armsOut()],
   machine_press: [R.torsoUpright(), R.elbowExtends(), R.elbowFlexes()],
   bench_incline: [R.wristAboveShoulder(), R.elbowExtends(), R.elbowFlexes()],
   db_incline:    [R.wristAboveShoulder(), R.elbowExtends(), R.elbowFlexes()],
 
   // ── francuskie: TU sztanga MA iść nad głowę (odwrotnie niż w wyciskaniu) ──
   skullcrusher: [R.torsoHorizontal(), R.wristAboveShoulder(), R.elbowExtends(), R.elbowFlexes()],
-  pullover:     [R.torsoHorizontal(), R.feetDown()],
+  pullover:     [R.torsoHorizontal(), R.feetPlanted()],
 
   // ── ciągnięcie pionowe ──
-  pullup:         [R.torsoUpright(), R.handsOverhead(), R.bodyRises(), R.elbowFlexes()],
-  chinup:         [R.torsoUpright(), R.handsOverhead(), R.bodyRises(), R.elbowFlexes()],
-  pullup_neutral: [R.torsoUpright(), R.handsOverhead(), R.bodyRises(), R.elbowFlexes()],
-  lat_pulldown:   [R.torsoUpright(), R.handsOverhead(), R.elbowFlexes()],
+  pullup:         [R.torsoUpright(), R.handsOverhead(), R.bodyRises(), R.elbowFlexes(), R.gripStaysOnBar(), R.chinToBar(), R.fullHang()],
+  chinup:         [R.torsoUpright(), R.handsOverhead(), R.bodyRises(), R.elbowFlexes(), R.gripStaysOnBar(), R.chinToBar(), R.fullHang()],
+  pullup_neutral: [R.torsoUpright(), R.handsOverhead(), R.bodyRises(), R.elbowFlexes(), R.gripStaysOnBar(), R.chinToBar(), R.fullHang()],
+  lat_pulldown:   [R.torsoUpright(), R.handsOverhead(), R.elbowFlexes(), R.elbowsDriveDown()],
 
   // ── ciągnięcie poziome ──
   bb_row:    [R.elbowFlexes(), R.elbowExtends()],
@@ -199,7 +273,7 @@ export const RULES: Record<string, Rule[]> = {
   overhead_ext: [R.elbowExtends(), R.elbowFlexes()],
 
   // ── nogi ──
-  squat:        [R.torsoUpright(0.25), R.hipsDrop(), R.kneeBends()],
+  squat:        [R.torsoUpright(0.25), R.hipsDrop(), R.kneeBends(), R.barBehindNeck(), R.barAtShoulderLine()],
   front_squat:  [R.torsoUpright(0.25), R.hipsDrop(), R.kneeBends()],
   goblet_squat: [R.torsoUpright(0.25), R.hipsDrop(), R.kneeBends()],
   hack_squat:   [R.hipsDrop(), R.kneeBends()],
@@ -213,7 +287,7 @@ export const RULES: Record<string, Rule[]> = {
   hip_thrust:   [R.hipsDrop(0.05), R.kneeBends()],
   good_morning:  [R.hipsDrop(0.02), R.torsoUpright()],
   sumo_deadlift: [R.hipsDrop(0.05), R.kneeBends(30)],
-  smith_squat:   [R.torsoUpright(0.25), R.hipsDrop(), R.kneeBends()],
+  smith_squat:   [R.torsoUpright(0.25), R.hipsDrop(), R.kneeBends(), R.barBehindNeck(), R.barAtShoulderLine()],
   step_up:       [R.hipsDrop(), R.kneeBends()],
   seated_leg_curl: [R.heelToGlute(), R.kneeBends()],
   hip_abduction: [R.torsoUpright()],
@@ -221,9 +295,9 @@ export const RULES: Record<string, Rule[]> = {
   glute_kickback:[R.kneeBends(30)],
 
   // ── core / masa ciała ──
-  pushup:    [R.torsoHorizontal(0.30), R.elbowExtends(), R.elbowFlexes()],
-  diamond_pushup: [R.torsoHorizontal(0.30), R.elbowExtends(), R.elbowFlexes()],
-  plank:     [R.torsoHorizontal(0.30)],
+  pushup:    [R.torsoHorizontal(0.30), R.elbowExtends(), R.elbowFlexes(), R.handsPlanted(), R.toesPlanted(), R.bodyLowers()],
+  diamond_pushup: [R.torsoHorizontal(0.30), R.elbowExtends(), R.elbowFlexes(), R.handsPlanted(), R.toesPlanted(), R.bodyLowers()],
+  plank:     [R.torsoHorizontal(0.30), R.forearmsDown(), R.toesPlanted()],
   dips:      [R.elbowExtends(), R.elbowFlexes()],
   leg_raise: [R.handsOverhead()],
 };
@@ -238,8 +312,9 @@ export function runTechniqueCheck() {
     if (!rules) continue;
     const mv = poseFor(ex, archetypeOf(ex));
     const base = STANCES[mv.stance].base;
-    const bottom = solve(mv.stance, mergePose(base, mv.start));
-    const top = solve(mv.stance, mergePose(base, mv.end));
+    const st = STANCES[mv.stance];
+    const bottom = solve(mv.stance, mergePose(base, mv.start), stanceAt(st, mv, 0));
+    const top = solve(mv.stance, mergePose(base, mv.end), stanceAt(st, mv, 1));
     const errs = rules.map((r) => r(top, bottom)).filter(Boolean) as string[];
     checks += rules.length;
     if (errs.length) {

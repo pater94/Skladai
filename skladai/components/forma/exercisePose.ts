@@ -30,7 +30,8 @@ export type Stance =
   | "stand"        // stojąc
   | "supine"       // leżąc na plecach (ławka płaska)
   | "incline"      // ławka skośna dodatnia
-  | "prone"        // leżąc przodem (pompki, deska, uginanie leżąc)
+  | "prone"        // leżąc płasko przodem (uginanie nóg leżąc, nordic)
+  | "pushupPos"    // podpór przodem (pompki, deska, kółko)
   | "seated"       // siad na maszynie / ławce
   | "bentOver"     // opad tułowia (wiosłowanie sztangą)
   | "hang"         // zwis na drążku
@@ -69,9 +70,12 @@ export const STANCES: Record<Stance, StanceDef> = {
   },
   supine: {
     // obrót −90° wokół X kładzie sylwetkę na plecach, biodra lądują na ławce
-    rootPos: [0, 0.55, 0.10], rootRot: [-90 * D, 0, 0],
-    // biodra PRAWIE wyprostowane (leżysz płasko), kolana zgięte ~85° → stopy na podłodze
-    base: { thigh: [-8 * D, 0, 0], shin: [86 * D, 0, 0] },
+    rootPos: [0, 0.58, 0.10], rootRot: [-90 * D, 0, 0],
+    // Nogi jak na ławce: uda lekko W DÓŁ od bioder, kolana zgięte ~76°, STOPY
+    // PŁASKO NA PODŁODZE (kostka y≈0.07). Wcześniejsze −8°/86° trzymało kolana
+    // wyżej niż biodra, a stopy 20 cm nad podłogą — wyglądało jak leżenie z nogami
+    // w powietrzu. Kąty wyliczone solverem pod cel „kostka na podłodze".
+    base: { thigh: [11 * D, 0, 0], shin: [73 * D, 0, 0] },
     prop: "bench", name: "leżąc na ławce",
   },
   incline: {
@@ -80,9 +84,21 @@ export const STANCES: Record<Stance, StanceDef> = {
     prop: "inclineBench", name: "na ławce skośnej",
   },
   prone: {
+    // leżenie płasko przodem (uginanie nóg leżąc, nordic) — biodra na leżance
     rootPos: [0, 0.34, 0], rootRot: [90 * D, 0, 0],
     base: {},
-    prop: "floor", name: "podpór przodem",
+    prop: "floor", name: "leżąc przodem",
+  },
+  /**
+   * Podpór przodem (pompka, deska, kółko). Ciało jest lekko pochylone — barki
+   * wyżej niż palce stóp — a KOTWICA trzyma palce na podłodze. Dzięki temu
+   * zmiana kąta całej sylwetki między fazami opuszcza i podnosi TUŁÓW,
+   * zamiast machać rękami przy nieruchomym ciele.
+   */
+  pushupPos: {
+    rootPos: [0, 0.34, 0], rootRot: [72 * D, 0, 0],
+    base: {},
+    anchor: { joint: "ankle", y: 0.07 }, prop: "floor", name: "podpór przodem",
   },
   seated: {
     // biodra na siedzisku, uda poziomo, podudzia w dół
@@ -125,6 +141,20 @@ export interface PosePair {
   label: string;
   /** Czas przejścia w sekundach. */
   dur: number;
+  /**
+   * Kąt CAŁEJ sylwetki w fazie startowej/końcowej — dla ruchów, w których ciało
+   * obraca się jak sztywna bryła wokół punktu podparcia (pompka: obrót wokół
+   * palców stóp). Bez tego opuszczanie ciała wyglądałoby jak machanie rękami.
+   * Pominięte → sylwetka trzyma kąt z postawy.
+   */
+  rootRotStart?: [number, number, number];
+  rootRotEnd?: [number, number, number];
+  /**
+   * Pozycja BLOCZKA wyciągu w scenie. Bez tego model zgadywał go z wysokości
+   * dłoni, więc ściąganie drążka (dłonie schodzą na wysokość obojczyków)
+   * dostawało linkę od DOLNEGO bloczka — biegła w dół zamiast w górę.
+   */
+  cableAt?: [number, number, number];
 }
 
 /** Domyślny ruch dla archetypu — używany, gdy ćwiczenie nie ma własnej definicji. */
@@ -143,10 +173,13 @@ export const POSES: Record<Archetype, PosePair> = {
     label: "wyciskanie nad głowę", dur: 2.6,
   },
   pull_v: {
+    // Dłonie zostają NA DRĄŻKU (wrist.z ≈ 0 w obu fazach), a do góry jedzie ciało.
+    // Poprzednie kąty rozkładały ramiona poziomo (poza „T") i wypychały dłonie
+    // 24 cm w przód — czyli drążek jechał razem z rękami. Kąty z solvera.
     stance: "hang", equipment: "bodyweight",
-    start: { upperArm: [-4 * D, 0, 158 * D], foreArm: [-10 * D, 0, 0] },
-    end:   { upperArm: [-4 * D, 0, 96 * D], foreArm: [-112 * D, 0, 0] },
-    label: "podciągnięcie — łokcie w dół", dur: 2.8,
+    start: { upperArm: [-4 * D, 3 * D, 162 * D], foreArm: [-10 * D, 0, 0] },
+    end:   { upperArm: [-80 * D, 3 * D, 102 * D], foreArm: [-115 * D, 0, 0] },
+    label: "podciągnięcie — broda nad drążkiem", dur: 2.8,
   },
   pull_h: {
     stance: "bentOver", equipment: "barbell",
@@ -173,15 +206,19 @@ export const POSES: Record<Archetype, PosePair> = {
     label: "zgięcie łokci", dur: 2.2,
   },
   ext_elbow: {
-    stance: "stand", equipment: "cable",
+    stance: "stand", equipment: "cable", cableAt: [0, 2.05, -0.35],
     start: { upperArm: [-10 * D, 0, 8 * D], foreArm: [-112 * D, 0, 0] },
     end:   { upperArm: [-10 * D, 0, 8 * D], foreArm: [-8 * D, 0, 0] },
     label: "wyprost łokci", dur: 2.2,
   },
   squat: {
+    // PRZYSIAD TYLNY: gryf leży NA KARKU, nie przed klatką. Poprzednie kąty
+    // wypychały dłonie 30 cm PRZED tułów (wyglądało jak trzymanie sztangi
+    // z przodu). Rotacja Y ramienia obraca płaszczyznę zgięcia łokcia tak, że
+    // przedramię idzie do tyłu — dłonie lądują ~7 cm za karkiem w obu fazach.
     stance: "stand", equipment: "barbell",
-    start: { torso: [8 * D, 0, 0], thigh: [-6 * D, 0, 0], shin: [4 * D, 0, 0], upperArm: [0, 0, 74 * D], foreArm: [-118 * D, 0, 0] },
-    end:   { torso: [36 * D, 0, 0], thigh: [-98 * D, 0, 0], shin: [88 * D, 0, 0], upperArm: [0, 0, 74 * D], foreArm: [-118 * D, 0, 0] },
+    start: { torso: [8 * D, 0, 0], thigh: [-6 * D, 0, 0], shin: [4 * D, 0, 0], upperArm: [-19 * D, 80 * D, 60 * D], foreArm: [-119 * D, 0, 0] },
+    end:   { torso: [36 * D, 0, 0], thigh: [-98 * D, 0, 0], shin: [88 * D, 0, 0], upperArm: [-19 * D, 80 * D, 60 * D], foreArm: [-119 * D, 0, 0] },
     label: "zejście do równoległości i wstanie", dur: 3.0,
   },
   hinge: {
@@ -215,9 +252,10 @@ export const POSES: Record<Archetype, PosePair> = {
     label: "spięcie brzucha", dur: 2.6,
   },
   hold: {
-    stance: "prone", equipment: "bodyweight",
-    start: { upperArm: [-84 * D, 0, 14 * D], foreArm: [-88 * D, 0, 0] },
-    end:   { upperArm: [-86 * D, 0, 14 * D], foreArm: [-90 * D, 0, 0] },
+    stance: "pushupPos", equipment: "bodyweight",
+    start: { upperArm: [-80 * D, 0, 0], foreArm: [-88 * D, 0, 0] },
+    end:   { upperArm: [-80 * D, 0, 0], foreArm: [-88 * D, 0, 0] },
+    rootRotStart: [78.7 * D, 0, 0], rootRotEnd: [78.7 * D, 0, 0],
     label: "napięcie izometryczne", dur: 3.2,
   },
 };
@@ -234,17 +272,21 @@ export const EXERCISE_POSES: Record<string, Partial<PosePair>> = {
   db_bench:      { equipment: "dumbbells", label: "wyciskanie hantli znad klatki" },
   bench_decline: { label: "wyciskanie na skosie ujemnym" },
   machine_press: { stance: "seated", equipment: "machine", label: "wypchnięcie uchwytów maszyny" },
-  cable_fly:     { stance: "stand", equipment: "cable",
+  cable_fly:     { stance: "stand", equipment: "cable", cableAt: [0, 1.70, -0.95],
                    start: { upperArm: [-72 * D, 0, 74 * D], foreArm: [-24 * D, 0, 0] },
                    end:   { upperArm: [-80 * D, 0, 12 * D], foreArm: [-24 * D, 0, 0] },
                    label: "krzyżowanie linek przed klatką" },
-  pushup: { stance: "prone", equipment: "bodyweight",
-            start: { upperArm: [-70 * D, 0, 48 * D], foreArm: [-92 * D, 0, 0] },
-            end:   { upperArm: [-84 * D, 0, 24 * D], foreArm: [-8 * D, 0, 0] },
+  // Kąty z solvera: dłonie zostają w TYM SAMYM punkcie podłogi w obu fazach,
+  // palce stóp też — opuszcza się KLATKA (0.44 → 0.25 m) dzięki obrotowi sylwetki.
+  pushup: { stance: "pushupPos", equipment: "bodyweight",
+            start: { upperArm: [10 * D, 0, 13 * D], foreArm: [-93 * D, 0, 0] },
+            end:   { upperArm: [-43 * D, 0, 6 * D], foreArm: [-2 * D, 0, 0] },
+            rootRotStart: [81.5 * D, 0, 0], rootRotEnd: [72 * D, 0, 0],
             label: "wypchnięcie ciała od podłoża" },
-  diamond_pushup: { stance: "prone", equipment: "bodyweight",
-            start: { upperArm: [-74 * D, 0, 16 * D], foreArm: [-96 * D, 0, 0] },
-            end:   { upperArm: [-86 * D, 0, 8 * D], foreArm: [-8 * D, 0, 0] },
+  diamond_pushup: { stance: "pushupPos", equipment: "bodyweight",
+            start: { upperArm: [10 * D, 0, 3 * D], foreArm: [-95 * D, 0, 0] },
+            end:   { upperArm: [-43 * D, 0, 0, ], foreArm: [-2 * D, 0, 0] },
+            rootRotStart: [81.5 * D, 0, 0], rootRotEnd: [72 * D, 0, 0],
             label: "wypchnięcie na wąskim podparciu" },
   dips: { stance: "hang", equipment: "bodyweight",
           start: { upperArm: [-6 * D, 0, 16 * D], foreArm: [-96 * D, 0, 0], torso: [16 * D, 0, 0] },
@@ -260,8 +302,13 @@ export const EXERCISE_POSES: Record<string, Partial<PosePair>> = {
           label: "przeniesienie ciężaru zza głowy" },
 
   // ── plecy ──
-  lat_pulldown: { stance: "seated", equipment: "cable", label: "ściągnięcie drążka do klatki" },
-  cable_row:    { stance: "seated", equipment: "cable",
+  lat_pulldown: { stance: "seated", equipment: "cable", cableAt: [0, 2.10, -0.10],
+                  // pozycja podciągania dawała dłonie przy głowie; tu drążek
+                  // schodzi na wysokość obojczyków, a łokcie jadą W DÓŁ
+                  start: { upperArm: [-6 * D, 0, 155 * D], foreArm: [-10 * D, 0, 0] },
+                  end:   { upperArm: [-20 * D, 8 * D, 44 * D], foreArm: [-113 * D, 0, 0] },
+                  label: "ściągnięcie drążka do klatki" },
+  cable_row:    { stance: "seated", equipment: "cable", cableAt: [0, 0.42, 1.05],
                   start: { torso: [14 * D, 0, 0], upperArm: [-46 * D, 0, 10 * D], foreArm: [-10 * D, 0, 0] },
                   end:   { torso: [-4 * D, 0, 0], upperArm: [6 * D, 0, 10 * D], foreArm: [-82 * D, 0, 0] },
                   label: "przyciągnięcie uchwytu do brzucha" },
@@ -274,7 +321,7 @@ export const EXERCISE_POSES: Record<string, Partial<PosePair>> = {
                start: { upperArm: [0, 0, 4 * D], foreArm: [-4 * D, 0, 0] },
                end:   { upperArm: [0, 0, 4 * D], foreArm: [-4 * D, 0, 0], torso: [-3 * D, 0, 0] },
                label: "unoszenie barków do uszu", dur: 1.9 },
-  face_pull: { stance: "stand", equipment: "cable",
+  face_pull: { stance: "stand", equipment: "cable", cableAt: [0, 1.85, 1.10],
                start: { upperArm: [-78 * D, 0, 20 * D], foreArm: [-16 * D, 0, 0] },
                end:   { upperArm: [-30 * D, 0, 84 * D], foreArm: [-104 * D, 0, 0] },
                label: "przyciągnięcie liny do twarzy" },
@@ -311,7 +358,7 @@ export const EXERCISE_POSES: Record<string, Partial<PosePair>> = {
                    start: { upperArm: [-104 * D, 0, 14 * D], foreArm: [-118 * D, 0, 0] },
                    end:   { upperArm: [-92 * D, 0, 12 * D], foreArm: [-6 * D, 0, 0] },
                    label: "wyprost łokci znad głowy" },
-  overhead_ext:  { stance: "stand", equipment: "cable",
+  overhead_ext:  { stance: "stand", equipment: "cable", cableAt: [0, 0.30, -0.95],
                    start: { upperArm: [-160 * D, 0, 16 * D], foreArm: [-124 * D, 0, 0] },
                    end:   { upperArm: [-162 * D, 0, 14 * D], foreArm: [-8 * D, 0, 0] },
                    label: "wyprost łokci zza głowy" },
@@ -364,7 +411,7 @@ export const EXERCISE_POSES: Record<string, Partial<PosePair>> = {
                    start: { thigh: [-88 * D, 0, 34 * D], shin: [86 * D, 0, 0] },
                    end:   { thigh: [-88 * D, 0, 2 * D], shin: [86 * D, 0, 0] },
                    label: "ściągnięcie ud do siebie" },
-  glute_kickback:{ stance: "bentOver", equipment: "cable",
+  glute_kickback:{ stance: "bentOver", equipment: "cable", cableAt: [0, 0.16, 0.95],
                    start: { thigh: [-30 * D, 0, 0], shin: [40 * D, 0, 0] },
                    end:   { thigh: [26 * D, 0, 0], shin: [16 * D, 0, 0] },
                    label: "wyprost nogi w tył" },
@@ -374,7 +421,11 @@ export const EXERCISE_POSES: Record<string, Partial<PosePair>> = {
                   label: "opuszczanie ekscentryczne" },
 
   // ── core ──
-  plank:         { stance: "prone", equipment: "bodyweight", label: "utrzymanie deski" },
+  plank:         { stance: "pushupPos", equipment: "bodyweight",
+                   start: { upperArm: [-80 * D, 0, 0], foreArm: [-88 * D, 0, 0] },
+                   end:   { upperArm: [-80 * D, 0, 0], foreArm: [-88 * D, 0, 0] },
+                   rootRotStart: [78.7 * D, 0, 0], rootRotEnd: [78.7 * D, 0, 0],
+                   label: "utrzymanie deski" },
   crunch:        { stance: "supine", equipment: "bodyweight", label: "spięcie brzucha" },
   leg_raise:     { stance: "hang", equipment: "bodyweight",
                    start: { upperArm: [0, 0, 168 * D], foreArm: [-6 * D, 0, 0], thigh: [-6 * D, 0, 0], shin: [8 * D, 0, 0] },
@@ -384,7 +435,7 @@ export const EXERCISE_POSES: Record<string, Partial<PosePair>> = {
                    start: { torso: [22 * D, -34 * D, 0], upperArm: [-72 * D, 0, 14 * D], foreArm: [-52 * D, 0, 0] },
                    end:   { torso: [22 * D, 34 * D, 0], upperArm: [-72 * D, 0, 14 * D], foreArm: [-52 * D, 0, 0] },
                    label: "skręt tułowia" },
-  ab_wheel:      { stance: "prone", equipment: "bodyweight",
+  ab_wheel:      { stance: "pushupPos", equipment: "bodyweight",
                    start: { upperArm: [-88 * D, 0, 12 * D], foreArm: [-10 * D, 0, 0], torso: [10 * D, 0, 0] },
                    end:   { upperArm: [-166 * D, 0, 12 * D], foreArm: [-8 * D, 0, 0], torso: [-6 * D, 0, 0] },
                    label: "wyjazd kółkiem w przód" },
@@ -395,6 +446,10 @@ export function poseFor(ex: ExerciseAnatomy, archetype: Archetype): PosePair {
   const base = POSES[archetype];
   const over = EXERCISE_POSES[ex.id];
   if (!over) return base;
+  // Obrót całej sylwetki należy do KONKRETNEJ postawy. Gdy ćwiczenie zmienia
+  // postawę (np. archetyp „hold" w podporze → przywodzenie nóg w siadzie),
+  // kąt z archetypu trzeba odrzucić — inaczej przewracał sylwetkę na twarz.
+  const sameStance = (over.stance ?? base.stance) === base.stance;
   return {
     stance: over.stance ?? base.stance,
     equipment: over.equipment ?? base.equipment,
@@ -402,12 +457,30 @@ export function poseFor(ex: ExerciseAnatomy, archetype: Archetype): PosePair {
     end: over.end ?? base.end,
     label: over.label ?? base.label,
     dur: over.dur ?? base.dur,
+    rootRotStart: over.rootRotStart ?? (sameStance ? base.rootRotStart : undefined),
+    rootRotEnd: over.rootRotEnd ?? (sameStance ? base.rootRotEnd : undefined),
+    cableAt: over.cableAt ?? base.cableAt,
   };
 }
 
 /** Łączy kąty postawy z kątami ruchu (ruch nadpisuje postawę). */
 export function mergePose(stanceBase: Pose, motion: Pose): Pose {
   return { ...stanceBase, ...motion };
+}
+
+/**
+ * Postawa w danej fazie ruchu (t 0→1). Gdy ćwiczenie definiuje obrót sylwetki
+ * per faza, zwraca kopię postawy z zinterpolowanym kątem — inaczej oryginał.
+ */
+export function stanceAt(stance: StanceDef, pair: PosePair, t: number): StanceDef {
+  const a = pair.rootRotStart, b = pair.rootRotEnd;
+  if (!a && !b) return stance;
+  const from = a ?? stance.rootRot, to = b ?? stance.rootRot;
+  return { ...stance, rootRot: [
+    from[0] + (to[0] - from[0]) * t,
+    from[1] + (to[1] - from[1]) * t,
+    from[2] + (to[2] - from[2]) * t,
+  ] };
 }
 
 /** Liniowa interpolacja dwóch pozycji (t 0→1). */

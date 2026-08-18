@@ -17,7 +17,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { MUSCLES, type MuscleId } from "@/lib/anatomy/muscles";
-import { STANCES, poseFor, mergePose, lerpPose, type Pose } from "./exercisePose";
+import { STANCES, poseFor, mergePose, lerpPose, stanceAt, type Pose } from "./exercisePose";
 
 // Three.js dociągany dopiero przy wejściu w widok 3D — nie obciąża reszty apki.
 const MuscleModel3D = dynamic(() => import("./MuscleModel3D"), {
@@ -92,6 +92,8 @@ export default function MuscleMap({ anatomy }: { anatomy: ExerciseAnatomy }) {
   // Tryb prezentacji: plansza anatomiczna (2D) albo obracany model (3D).
   const [mode, setMode] = useState<"plate" | "model">("plate");
   const [pose3d, setPose3d] = useState<Pose | null>(null);
+  // faza ruchu 0→1 — potrzebna, bo część ćwiczeń obraca CAŁĄ sylwetkę (pompka)
+  const [poseT, setPoseT] = useState(0);
   const poseRaf = useRef<number>(0);
 
   // Uwaga: przy zmianie ćwiczenia komponent jest remountowany przez key={anatomy.id}
@@ -113,14 +115,14 @@ export default function MuscleMap({ anatomy }: { anatomy: ExerciseAnatomy }) {
   // Animacja techniki w 3D: płynne przejście start ⇄ koniec ruchu.
   const archetypeForPose = useMemo(() => archetypeOf(anatomy), [anatomy]);
   const movement = useMemo(() => poseFor(anatomy, archetypeForPose), [anatomy, archetypeForPose]);
-  const stanceDef = STANCES[movement.stance];
+  const stanceDef = useMemo(() => stanceAt(STANCES[movement.stance], movement, poseT), [movement, poseT]);
   useEffect(() => {
     if (mode !== "model") return; // komponent 3D i tak jest odmontowany
     const pair = movement;
     const base = STANCES[pair.stance].base;
     if (!playing || reduced) {
       // odroczone o klatkę — bez synchronicznego setState w efekcie
-      const id = requestAnimationFrame(() => setPose3d(mergePose(base, pair.start)));
+      const id = requestAnimationFrame(() => { setPose3d(mergePose(base, pair.start)); setPoseT(0); });
       return () => cancelAnimationFrame(id);
     }
     const t0 = performance.now();
@@ -131,6 +133,7 @@ export default function MuscleMap({ anatomy }: { anatomy: ExerciseAnatomy }) {
       const tri = raw < 0.5 ? raw * 2 : (1 - raw) * 2;
       const eased = tri * tri * (3 - 2 * tri);
       setPose3d(lerpPose(mergePose(base, pair.start), mergePose(base, pair.end), eased));
+      setPoseT(eased);
       poseRaf.current = requestAnimationFrame(loop);
     };
     poseRaf.current = requestAnimationFrame(loop);
@@ -253,6 +256,7 @@ export default function MuscleMap({ anatomy }: { anatomy: ExerciseAnatomy }) {
             pose={pose3d}
             stance={stanceDef}
             equipment={movement.equipment}
+            cableAt={movement.cableAt}
             onPick={(p) => setSelected(p)}
           />
         ) : (
