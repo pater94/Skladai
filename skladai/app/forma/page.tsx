@@ -463,8 +463,37 @@ function MainView({
           tam, gdzie się go używa: przycisk ⏱ w aktywnym treningu oraz pływający
           guzik w trakcie odliczania. */}
 
+      {/* Dziennik treningowy — PIERWSZA rzecz na ekranie. To po niego
+          użytkownik wchodzi w Formę najczęściej; wcześniej trzeba było go
+          szukać pod całą sekcją CheckForm. */}
+      <button
+        onClick={() => setView("journal")}
+        data-testid="forma-open-journal"
+        className="w-full text-left active:scale-[0.98] transition-transform"
+        style={{
+          display: "flex", alignItems: "center", gap: 14,
+          padding: "16px 18px", borderRadius: 18, marginBottom: 20, cursor: "pointer",
+          background: "linear-gradient(135deg, rgba(var(--c-orange-rgb, 249,115,22),0.16), rgba(var(--c-orange-rgb, 249,115,22),0.04))",
+          border: "1px solid rgba(var(--c-orange-rgb, 249,115,22),0.35)",
+          boxShadow: "0 6px 22px rgba(var(--c-orange-rgb, 249,115,22),0.14)",
+          animation: "fadeInUp 0.4s ease both", animationDelay: "0.02s",
+        }}
+      >
+        <div style={{
+          width: 46, height: 46, borderRadius: 14, flexShrink: 0,
+          display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24,
+          background: "linear-gradient(135deg, var(--c-orange, #f97316), var(--c-orange-3, #ea580c))",
+          boxShadow: "0 4px 14px rgba(var(--c-orange-rgb, 249,115,22),0.35)",
+        }}>{"📓"}</div>
+        <div style={{ minWidth: 0, flex: 1 }}>
+          <div style={{ fontSize: 16, fontWeight: 800, color: "var(--fg, #fff)" }}>Dziennik treningowy</div>
+          <div style={{ fontSize: 12, color: "rgba(var(--fg-rgb, 255,255,255),0.55)", marginTop: 2 }}>Loguj serie, śledź progres i rekordy</div>
+        </div>
+        <span style={{ color: "var(--c-orange, #f97316)", fontSize: 22, flexShrink: 0 }}>›</span>
+      </button>
+
       {/* HERO: CheckForm */}
-      <div className="relative mb-6" style={{ animation: "fadeInUp 0.5s ease both" }}>
+      <div className="relative mb-4" style={{ animation: "fadeInUp 0.5s ease both" }}>
         {/* Ambient glow */}
         <div className="absolute inset-0 -z-10" style={{
           background: "radial-gradient(ellipse at center, rgba(var(--c-orange-rgb, 249,115,22),0.12), transparent 70%)",
@@ -473,18 +502,18 @@ function MainView({
           transform: "scale(1.2)",
         }} />
         <div className="relative" style={{
-          padding: "24px",
-          borderRadius: "20px",
+          padding: "16px 16px 18px",
+          borderRadius: "18px",
           background: "linear-gradient(145deg, rgba(var(--c-orange-rgb, 249,115,22),0.1), rgba(var(--c-orange-rgb, 249,115,22),0.03))",
           border: "1.5px solid rgba(var(--c-orange-rgb, 249,115,22),0.18)",
           backdropFilter: "blur(16px)",
           overflow: "hidden",
         }}>
           {/* Scanner corners */}
-          <div className="absolute" style={{ top: 10, left: 10, width: 22, height: 22, borderTop: "2.5px solid var(--c-orange, #f97316)", borderLeft: "2.5px solid var(--c-orange, #f97316)", borderRadius: "4px 0 0 0" }} />
-          <div className="absolute" style={{ top: 10, right: 10, width: 22, height: 22, borderTop: "2.5px solid var(--c-orange, #f97316)", borderRight: "2.5px solid var(--c-orange, #f97316)", borderRadius: "0 4px 0 0" }} />
-          <div className="absolute" style={{ bottom: 10, left: 10, width: 22, height: 22, borderBottom: "2.5px solid var(--c-orange, #f97316)", borderLeft: "2.5px solid var(--c-orange, #f97316)", borderRadius: "0 0 0 4px" }} />
-          <div className="absolute" style={{ bottom: 10, right: 10, width: 22, height: 22, borderBottom: "2.5px solid var(--c-orange, #f97316)", borderRight: "2.5px solid var(--c-orange, #f97316)", borderRadius: "0 0 4px 0" }} />
+          <div className="absolute" style={{ top: 8, left: 8, width: 16, height: 16, borderTop: "2.5px solid var(--c-orange, #f97316)", borderLeft: "2.5px solid var(--c-orange, #f97316)", borderRadius: "4px 0 0 0" }} />
+          <div className="absolute" style={{ top: 8, right: 8, width: 16, height: 16, borderTop: "2.5px solid var(--c-orange, #f97316)", borderRight: "2.5px solid var(--c-orange, #f97316)", borderRadius: "0 4px 0 0" }} />
+          <div className="absolute" style={{ bottom: 8, left: 8, width: 16, height: 16, borderBottom: "2.5px solid var(--c-orange, #f97316)", borderLeft: "2.5px solid var(--c-orange, #f97316)", borderRadius: "0 0 0 4px" }} />
+          <div className="absolute" style={{ bottom: 8, right: 8, width: 16, height: 16, borderBottom: "2.5px solid var(--c-orange, #f97316)", borderRight: "2.5px solid var(--c-orange, #f97316)", borderRadius: "0 0 4px 0" }} />
           {/* Decorative circles */}
           <div className="absolute pointer-events-none" style={{ top: -20, right: -20, width: 80, height: 80, borderRadius: "50%", background: "rgba(var(--c-orange-rgb, 249,115,22),0.06)" }} />
           <div className="absolute pointer-events-none" style={{ bottom: -10, left: -10, width: 45, height: 45, borderRadius: "50%", background: "rgba(var(--c-orange-rgb, 249,115,22),0.04)" }} />
@@ -498,12 +527,12 @@ function MainView({
             `}</style>
 
             {/* Eyebrow */}
-            <div style={{ textAlign: "center", fontSize: "10px", fontWeight: 700, letterSpacing: "2px", color: "var(--c-orange, #f97316)", textTransform: "uppercase", marginBottom: "14px" }}>
+            <div style={{ textAlign: "center", fontSize: "10px", fontWeight: 700, letterSpacing: "2px", color: "var(--c-orange, #f97316)", textTransform: "uppercase", marginBottom: "10px" }}>
               {"✦"} CHECKFORM · AI VISION
             </div>
 
             {/* BodyScan — sylwetka + animowana linia skanu + odczyty */}
-            <div style={{ position: "relative", width: "100%", maxWidth: 240, margin: "0 auto 18px" }}>
+            <div style={{ position: "relative", width: "100%", maxWidth: 186, margin: "0 auto 12px" }}>
               <svg viewBox="0 0 230 190" width="100%" style={{ display: "block", overflow: "visible" }} aria-hidden="true">
                 <defs>
                   <linearGradient id="bodyG" x1="0" y1="0" x2="0" y2="1">
@@ -541,15 +570,12 @@ function MainView({
               {/* animowana linia skanu */}
               <div className="cf-scanbar" style={{ position: "absolute", left: "16%", right: "16%", top: "12%", height: 2, borderRadius: 2, background: "linear-gradient(90deg, transparent, var(--c-orange, #f97316), transparent)", boxShadow: "0 0 14px 2px rgba(var(--c-orange-rgb, 249,115,22),0.5)" }} />
               {/* pigułki odczytów */}
-              <div style={{ position: "absolute", top: "14%", right: "-4%", display: "flex", alignItems: "center", gap: 4, padding: "4px 9px", borderRadius: 99, fontSize: "11px", fontWeight: 700, color: "var(--fg, #fff)", background: "rgba(var(--bg-rgb, 10,14,12),0.7)", border: "1px solid rgba(var(--c-orange-rgb, 249,115,22),0.4)", backdropFilter: "blur(4px)", whiteSpace: "nowrap" }}>💪 Mięśnie: ~38&nbsp;kg</div>
-              <div style={{ position: "absolute", top: "56%", left: "-4%", display: "flex", alignItems: "center", gap: 4, padding: "4px 9px", borderRadius: 99, fontSize: "11px", fontWeight: 700, color: "var(--fg, #fff)", background: "rgba(var(--bg-rgb, 10,14,12),0.7)", border: "1px solid rgba(var(--c-orange-rgb, 249,115,22),0.4)", backdropFilter: "blur(4px)", whiteSpace: "nowrap" }}>🔥 Tłuszcz: ~14%</div>
+              <div style={{ position: "absolute", top: "10%", right: "-17%", display: "flex", alignItems: "center", gap: 4, padding: "3px 7px", borderRadius: 99, fontSize: "10px", fontWeight: 700, color: "var(--fg, #fff)", background: "rgba(var(--bg-rgb, 10,14,12),0.7)", border: "1px solid rgba(var(--c-orange-rgb, 249,115,22),0.4)", backdropFilter: "blur(4px)", whiteSpace: "nowrap" }}>💪 Mięśnie: ~38&nbsp;kg</div>
+              <div style={{ position: "absolute", top: "58%", left: "-17%", display: "flex", alignItems: "center", gap: 4, padding: "3px 7px", borderRadius: 99, fontSize: "10px", fontWeight: 700, color: "var(--fg, #fff)", background: "rgba(var(--bg-rgb, 10,14,12),0.7)", border: "1px solid rgba(var(--c-orange-rgb, 249,115,22),0.4)", backdropFilter: "blur(4px)", whiteSpace: "nowrap" }}>🔥 Tłuszcz: ~14%</div>
             </div>
 
             {/* Tytuł + podtekst */}
-            <h2 style={{ textAlign: "center", fontSize: "21px", fontWeight: 800, color: "var(--fg, #fff)", letterSpacing: "-0.01em" }}>Zrób zdjęcie w lustrze</h2>
-            <p style={{ textAlign: "center", fontSize: "12.5px", lineHeight: 1.5, color: "rgba(var(--fg-rgb, 255,255,255),0.55)", margin: "8px 2px 18px" }}>
-              AI oszacuje Twój poziom <strong style={{ color: "var(--fg, #fff)" }}>tkanki tłuszczowej</strong> i <strong style={{ color: "var(--fg, #fff)" }}>masy mięśniowej</strong>, a do tego da wynik <strong style={{ color: "var(--fg, #fff)" }}>0–10</strong> z wskazówkami.
-            </p>
+            <h2 style={{ textAlign: "center", fontSize: "17px", fontWeight: 800, color: "var(--fg, #fff)", letterSpacing: "-0.01em", marginBottom: 12 }}>Zrób zdjęcie w lustrze</h2>
 
             {/* CTA główne */}
             <button
@@ -557,7 +583,7 @@ function MainView({
               className="w-full transition-all active:scale-[0.97]"
               style={{
                 display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-                padding: "14px", borderRadius: "16px", border: "none", color: "#fff", fontWeight: 800, fontSize: "15.5px",
+                padding: "12px", borderRadius: "14px", border: "none", color: "#fff", fontWeight: 800, fontSize: "14.5px",
                 background: "linear-gradient(135deg, var(--c-orange, #f97316), var(--c-orange-3, #ea580c))",
                 boxShadow: "0 6px 24px rgba(var(--c-orange-rgb, 249,115,22),0.4)", cursor: "pointer",
               }}
@@ -569,7 +595,7 @@ function MainView({
             <button
               onClick={() => setShowDatePicker(true)}
               className="w-full active:scale-95 transition-transform"
-              style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, marginTop: 12, background: "none", border: "none", color: "rgba(var(--fg-rgb, 255,255,255),0.5)", fontSize: "13px", fontWeight: 600, cursor: "pointer" }}
+              style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, marginTop: 9, background: "none", border: "none", color: "rgba(var(--fg-rgb, 255,255,255),0.5)", fontSize: "12.5px", fontWeight: 600, cursor: "pointer" }}
             >
               <ImageIcon size={15} /> lub wybierz z galerii
             </button>
@@ -578,15 +604,15 @@ function MainView({
       </div>
 
       {/* CO OSZACUJE AI */}
-      <div style={{ marginBottom: 22, animation: "fadeInUp 0.5s ease both", animationDelay: "0.08s" }}>
-        <div style={{ fontSize: "10px", fontWeight: 800, letterSpacing: "2px", textTransform: "uppercase" as const, color: "rgba(var(--fg-rgb, 255,255,255),0.4)", marginBottom: 12 }}>CO OSZACUJE AI</div>
+      <div style={{ marginBottom: 16, animation: "fadeInUp 0.5s ease both", animationDelay: "0.08s" }}>
+        <div style={{ fontSize: "10px", fontWeight: 800, letterSpacing: "2px", textTransform: "uppercase" as const, color: "rgba(var(--fg-rgb, 255,255,255),0.4)", marginBottom: 9 }}>CO OSZACUJE AI</div>
         <div style={{ display: "flex", gap: 10 }}>
           {([
             { Icon: Flame, title: "Tkanka tłuszczowa", ex: "np. ~14%" },
             { Icon: Dumbbell, title: "Masa mięśniowa", ex: "np. ~38 kg" },
           ]).map((c, i) => (
             <div key={i} style={{ flex: 1, padding: "14px 12px", borderRadius: 16, background: "linear-gradient(145deg, rgba(var(--c-orange-rgb, 249,115,22),0.08), rgba(var(--c-orange-rgb, 249,115,22),0.02))", border: "1px solid rgba(var(--c-orange-rgb, 249,115,22),0.25)" }}>
-              <div style={{ width: 38, height: 38, borderRadius: 11, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(var(--c-orange-rgb, 249,115,22),0.14)", marginBottom: 10 }}>
+              <div style={{ width: 30, height: 30, borderRadius: 9, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(var(--c-orange-rgb, 249,115,22),0.14)", marginBottom: 7 }}>
                 <c.Icon size={20} style={{ color: "var(--c-orange, #f97316)" }} />
               </div>
               <div style={{ fontSize: "13.5px", fontWeight: 800, color: "var(--fg, #fff)" }}>{c.title}</div>
@@ -600,8 +626,8 @@ function MainView({
       </div>
 
       {/* JAK TO DZIAŁA */}
-      <div style={{ marginBottom: 24, animation: "fadeInUp 0.5s ease both", animationDelay: "0.12s" }}>
-        <div style={{ fontSize: "10px", fontWeight: 800, letterSpacing: "2px", textTransform: "uppercase" as const, color: "rgba(var(--fg-rgb, 255,255,255),0.4)", marginBottom: 14 }}>JAK TO DZIAŁA</div>
+      <div style={{ marginBottom: 18, animation: "fadeInUp 0.5s ease both", animationDelay: "0.12s" }}>
+        <div style={{ fontSize: "10px", fontWeight: 800, letterSpacing: "2px", textTransform: "uppercase" as const, color: "rgba(var(--fg-rgb, 255,255,255),0.4)", marginBottom: 10 }}>JAK TO DZIAŁA</div>
         <div style={{ display: "flex", gap: 8 }}>
           {([
             { n: 1, Icon: PersonStanding, t: "Stań przed lustrem", s: "całą sylwetką" },
@@ -609,7 +635,7 @@ function MainView({
             { n: 3, Icon: Sparkles, t: "Odbierz analizę", s: "skład ciała + wynik" },
           ]).map((step) => (
             <div key={step.n} style={{ flex: 1, textAlign: "center" }}>
-              <div style={{ position: "relative", width: 44, height: 44, margin: "0 auto 8px", borderRadius: 13, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(var(--fg-rgb, 255,255,255),0.04)", border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.08)" }}>
+              <div style={{ position: "relative", width: 34, height: 34, margin: "0 auto 6px", borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(var(--fg-rgb, 255,255,255),0.04)", border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.08)" }}>
                 <step.Icon size={20} style={{ color: "var(--c-orange, #f97316)" }} />
                 <span style={{ position: "absolute", top: -6, right: -6, width: 18, height: 18, borderRadius: "50%", background: "var(--c-orange, #f97316)", color: "#fff", fontSize: "10px", fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center" }}>{step.n}</span>
               </div>
@@ -765,33 +791,6 @@ function MainView({
           />
         </div>
       )}
-
-      {/* Dziennik treningowy — główny punkt wejścia (nad NARZĘDZIA) */}
-      <button
-        onClick={() => setView("journal")}
-        data-testid="forma-open-journal"
-        className="w-full text-left active:scale-[0.98] transition-transform"
-        style={{
-          display: "flex", alignItems: "center", gap: 14,
-          padding: "16px 18px", borderRadius: 18, marginBottom: 20, cursor: "pointer",
-          background: "linear-gradient(135deg, rgba(var(--c-orange-rgb, 249,115,22),0.16), rgba(var(--c-orange-rgb, 249,115,22),0.04))",
-          border: "1px solid rgba(var(--c-orange-rgb, 249,115,22),0.35)",
-          boxShadow: "0 6px 22px rgba(var(--c-orange-rgb, 249,115,22),0.14)",
-          animation: "fadeInUp 0.4s ease both", animationDelay: "0.18s",
-        }}
-      >
-        <div style={{
-          width: 46, height: 46, borderRadius: 14, flexShrink: 0,
-          display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24,
-          background: "linear-gradient(135deg, var(--c-orange, #f97316), var(--c-orange-3, #ea580c))",
-          boxShadow: "0 4px 14px rgba(var(--c-orange-rgb, 249,115,22),0.35)",
-        }}>{"📓"}</div>
-        <div style={{ minWidth: 0, flex: 1 }}>
-          <div style={{ fontSize: 16, fontWeight: 800, color: "var(--fg, #fff)" }}>Dziennik treningowy</div>
-          <div style={{ fontSize: 12, color: "rgba(var(--fg-rgb, 255,255,255),0.55)", marginTop: 2 }}>Loguj serie, śledź progres i rekordy</div>
-        </div>
-        <span style={{ color: "var(--c-orange, #f97316)", fontSize: 22, flexShrink: 0 }}>›</span>
-      </button>
 
       {/* Separator */}
       <div className="flex items-center gap-3 mb-4" style={{ animation: "fadeInUp 0.4s ease both", animationDelay: "0.25s" }}>
