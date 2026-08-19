@@ -33,6 +33,7 @@ const CAMERA_CLAMP_KB = (mode: string) =>
 import { isNative, takePhotoForMode } from "@/lib/native-camera";
 import { devLog } from "@/lib/dev-log";
 import ActivityBadges from "@/components/ActivityBadges";
+import CharacterCard from "@/components/game/CharacterCard";
 import type { ScanMode, ScanHistoryItem, RecentFood } from "@/lib/types";
 import { Zap, Leaf, ChevronRight, X, ScanLine, Apple, UtensilsCrossed, Pill } from "lucide-react";
 
@@ -876,6 +877,7 @@ export default function Home() {
             <span style={{ color: accent.hex, textShadow: `0 0 20px ${accent.hex}60` }} className="transition-colors duration-300">AI</span>
           </h1>
           <ActivityBadges theme="dark" />
+          <CharacterCard />
         </div>
 
         {/* ══ 2. HEADLINE ══ */}
