@@ -7,6 +7,7 @@
  */
 
 import { useEffect, useState, useCallback } from "react";
+import { History, FileText } from "lucide-react";
 import {
   listWorkouts, createWorkout, startSession,
   getWorkoutWithExercises, getLastFinishedSession, listSessions,
@@ -225,26 +226,29 @@ export default function WorkoutJournalList({
                   data-testid="workout-history-btn"
                   className="active:scale-95 transition-transform"
                   style={{
-                    width: 48, flexShrink: 0, borderRadius: 16, cursor: "pointer", fontSize: 17,
+                    width: 46, flexShrink: 0, borderRadius: 16, cursor: "pointer",
+                    display: "flex", alignItems: "center", justifyContent: "center",
                     background: "rgba(var(--fg-rgb, 255,255,255),0.05)",
                     border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.12)",
                     color: "rgba(var(--fg-rgb, 255,255,255),0.75)",
                   }}
-                >✎</button>
+                ><History size={18} /></button>
               )}
               {canSummary && (
                 <button
                   onClick={() => onOpenSummary!(m!.lastSessionId!)}
-                  aria-label="Podsumowanie ostatniego treningu"
-                  title="Podsumowanie (do wysłania)"
+                  aria-label={`Podsumowanie ostatniego treningu ${w.name}`}
+                  title="Podsumowanie ostatniego treningu"
+                  data-testid="workout-summary-btn"
                   className="active:scale-95 transition-transform"
                   style={{
-                    width: 48, flexShrink: 0, borderRadius: 16, cursor: "pointer", fontSize: 18,
+                    width: 46, flexShrink: 0, borderRadius: 16, cursor: "pointer",
+                    display: "flex", alignItems: "center", justifyContent: "center",
                     background: "rgba(var(--c-orange-rgb, 249,115,22),0.1)",
                     border: "1px solid rgba(var(--c-orange-rgb, 249,115,22),0.25)",
                     color: "var(--c-orange, #f97316)",
                   }}
-                >📤</button>
+                ><FileText size={18} /></button>
               )}
             </div>
           );

@@ -23,6 +23,15 @@ interface ProgressChartProps {
   invertTrend?: boolean;
   targetValue?: number;
   targetLabel?: string;
+  /**
+   * Twarde granice skali — dla wyników zamkniętych w przedziale (np. ocena
+   * 0–10). Bez nich oś sama dobierała zakres, więc różnica 7 → 8 wyglądała
+   * jak skok pod sufit, a prosta regresja wyliczała „12,4/10 za 60 dni".
+   */
+  min?: number;
+  max?: number;
+  /** Wykres stoi już w cudzej karcie — bez własnego tła i ramki. */
+  bare?: boolean;
 }
 
 // ── Linear regression ──
@@ -72,24 +81,17 @@ export default function ProgressChart({
   invertTrend = false,
   targetValue,
   targetLabel,
+  min,
+  max,
+  bare = false,
 }: ProgressChartProps) {
-  // Not enough data
-  if (data.length < 2) {
-    return (
-      <div
-        className="rounded-2xl p-5 text-center"
-        style={{
-          background: "rgba(var(--fg-rgb, 255,255,255),0.03)",
-          border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.06)",
-        }}
-      >
-        <p style={{ color: "rgba(var(--fg-rgb, 255,255,255),0.4)", fontSize: "13px" }}>
-          Dodaj więcej wyników żeby zobaczyć wykres progresu
-        </p>
-      </div>
-    );
-  }
-
+  /** Przycina wartość do zadanych granic skali (jeśli podano). */
+  const clamp = (v: number) => {
+    let out = v;
+    if (min !== undefined) out = Math.max(min, out);
+    if (max !== undefined) out = Math.min(max, out);
+    return Math.round(out * 10) / 10;
+  };
   const sorted = useMemo(
     () => [...data].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()),
     [data]
@@ -128,7 +130,7 @@ export default function ProgressChart({
       const predDays = [30, 60, 90].filter((d) => d <= predictionDays);
       for (const pd of predDays) {
         const day = lastDay + pd;
-        const val = Math.round((regression.slope * day + regression.intercept) * 10) / 10;
+        const val = clamp(regression.slope * day + regression.intercept);
         if (val > 0) {
           const futureDate = new Date(sorted[sorted.length - 1].date);
           futureDate.setDate(futureDate.getDate() + pd);
@@ -143,7 +145,9 @@ export default function ProgressChart({
     }
 
     return points;
-  }, [sorted, regression, predictionDays]);
+    // clamp zależy tylko od min/max, które są w liście
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sorted, regression, predictionDays, min, max]);
 
   // Prediction text
   const predictionText = useMemo(() => {
@@ -154,7 +158,7 @@ export default function ProgressChart({
     const preds: string[] = [];
     for (const pd of [30, 60]) {
       const day = lastDay + pd;
-      const val = Math.round((regression.slope * day + regression.intercept) * 10) / 10;
+      const val = clamp(regression.slope * day + regression.intercept);
       if (val > 0) {
         preds.push(`${val}${label} za ${pd} dni`);
       }
@@ -170,9 +174,28 @@ export default function ProgressChart({
       text: `Przy tym tempie: ${preds.join(", ")}`,
       warning: trendBad,
     };
-  }, [regression, sorted, label, invertTrend]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [regression, sorted, label, invertTrend, min, max]);
 
   const lighterColor = color + "80";
+
+  // Za mało punktów na wykres — komunikat zamiast pustej ramki.
+  // (Świadomie PO hakach: wczesny return przed nimi łamie zasady haków.)
+  if (data.length < 2) {
+    return (
+      <div
+        className="rounded-2xl p-5 text-center"
+        style={{
+          background: "rgba(var(--fg-rgb, 255,255,255),0.03)",
+          border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.06)",
+        }}
+      >
+        <p style={{ color: "rgba(var(--fg-rgb, 255,255,255),0.4)", fontSize: "13px" }}>
+          Dodaj więcej wyników żeby zobaczyć wykres progresu
+        </p>
+      </div>
+    );
+  }
 
   // Message when not enough unique dates for prediction
   const noPredictionMsg = showPrediction && sorted.length >= 2 && numUniqueDates < 3
@@ -182,10 +205,11 @@ export default function ProgressChart({
   return (
     <div>
       <div
-        className="rounded-2xl p-4"
+        className="rounded-2xl"
         style={{
-          background: "rgba(var(--fg-rgb, 255,255,255),0.03)",
-          border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.06)",
+          background: bare ? "none" : "rgba(var(--fg-rgb, 255,255,255),0.03)",
+          border: bare ? "none" : "1px solid rgba(var(--fg-rgb, 255,255,255),0.06)",
+          padding: bare ? 0 : 16,
         }}
       >
         <ResponsiveContainer width="100%" height={200}>
@@ -212,7 +236,8 @@ export default function ProgressChart({
               axisLine={false}
               tickLine={false}
               tickFormatter={(v: number) => `${v}${label}`}
-              domain={["auto", "auto"]}
+              domain={[min ?? "auto", max ?? "auto"]}
+              allowDataOverflow={false}
             />
             <Tooltip
               contentStyle={{
@@ -236,7 +261,9 @@ export default function ProgressChart({
                 strokeWidth={1.5}
                 label={{
                   value: targetLabel || `Cel: ${targetValue}${label}`,
-                  position: "right",
+                  // „right" wypychało napis poza obszar rysowania i ucinało go
+                  // do jednej litery; wewnątrz mieści się zawsze
+                  position: "insideTopRight",
                   style: { fontSize: 10, fill: "var(--c-emerald-2, #10B981)" },
                 }}
               />

@@ -439,6 +439,7 @@ function MainView({
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [galleryDate, setGalleryDate] = useState(() => new Date().toISOString().split("T")[0]);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [chartOpen, setChartOpen] = useState(false);
 
   // odczyt localStorage odroczony o klatkę — bez synchronicznego setState w efekcie
   useEffect(() => {
@@ -447,6 +448,22 @@ function MainView({
   }, []);
 
   const recentCheckForms = checkFormHistory.slice(0, 2);
+
+  /**
+   * Jedno zdanie zamiast wykresu: aktualny wynik i zmiana od pierwszego pomiaru.
+   * Świadomie BEZ przewidywań — ocena 0–10 ze zdjęcia jest subiektywna, a prosta
+   * regresja potrafiła wypisać „12,4/10 za 60 dni". Lepiej podać fakt.
+   */
+  const checkFormSummary = (() => {
+    if (checkFormHistory.length === 0) return "";
+    const byDate = [...checkFormHistory].sort((a, b) => a.date.localeCompare(b.date));
+    const first = byDate[0].score, last = byDate[byDate.length - 1].score;
+    const d = Math.round((last - first) * 10) / 10;
+    const n = byDate.length;
+    const pomiar = n === 1 ? "pomiar" : n < 5 ? "pomiary" : "pomiarów";
+    if (n < 2 || d === 0) return `${last}/10 · ${n} ${pomiar}`;
+    return `${last}/10 · ${d > 0 ? "+" : "−"}${Math.abs(d)} od pierwszego pomiaru · ${n} ${pomiar}`;
+  })();
 
   const getScoreColor = (score: number) => score >= 8 ? "#22c55e" : score >= 5 ? "var(--c-orange, #f97316)" : "var(--c-red, #ef4444)";
 
@@ -775,20 +792,48 @@ function MainView({
         </div>
       )}
 
-      {/* CheckForm score chart */}
+      {/* Wykres CheckForm — SCHOWANY do czasu kliknięcia.
+          Domyślnie pokazujemy jedną linijkę podsumowania; wykres to szczegół
+          dla zainteresowanych, nie coś, czym trzeba zalewać ekran startowy. */}
       {checkFormHistory.length >= 2 && (
-        <div className="mb-6 rounded-[14px] p-4" style={{
+        <div className="mb-6 rounded-[14px]" style={{
           background: "rgba(var(--fg-rgb, 255,255,255),0.03)",
           border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.06)",
+          overflow: "hidden",
         }}>
-          <p className="text-xs font-semibold mb-2" style={{ color: "rgba(var(--fg-rgb, 255,255,255),0.4)" }}>Wynik CheckForm — trend</p>
-          <ProgressChart
-            data={checkFormHistory.map((h) => ({ date: h.date, value: h.score }))}
-            label="/10"
-            color="#f97316"
-            targetValue={8}
-            targetLabel="Cel: 8/10"
-          />
+          <button
+            onClick={() => setChartOpen((v) => !v)}
+            data-testid="checkform-chart-toggle"
+            className="w-full text-left active:scale-[0.99] transition-transform"
+            style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", background: "none", border: "none", cursor: "pointer" }}
+          >
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 12.5, fontWeight: 700, color: "var(--fg, #fff)" }}>Wynik CheckForm</div>
+              {/* Konkret zamiast wykresu: gdzie jesteś i ile się zmieniło */}
+              <div style={{ fontSize: 11, color: "rgba(var(--fg-rgb, 255,255,255),0.55)", marginTop: 2 }}>
+                {checkFormSummary}
+              </div>
+            </div>
+            <span style={{ fontSize: 11.5, fontWeight: 700, color: "var(--c-orange, #f97316)", flexShrink: 0 }}>
+              {chartOpen ? "Ukryj wykres" : "Pokaż wykres"}
+            </span>
+            <span style={{ fontSize: 12, color: "var(--c-orange, #f97316)", flexShrink: 0, transform: chartOpen ? "rotate(180deg)" : "none", transition: "transform .2s ease" }}>⌄</span>
+          </button>
+          {chartOpen && (
+            <div style={{ padding: "0 14px 14px" }}>
+              <ProgressChart
+                data={checkFormHistory.map((h) => ({ date: h.date, value: h.score }))}
+                label="/10"
+                color="#f97316"
+                targetValue={8}
+                targetLabel="Cel: 8/10"
+                min={0}
+                max={10}
+                showPrediction={false}
+                bare
+              />
+            </div>
+          )}
         </div>
       )}
 
