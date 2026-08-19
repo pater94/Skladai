@@ -13,10 +13,10 @@
  * Warstwa danych bez zmian: wszystko pochodzi z getSessionSummary().
  */
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Share2 } from "lucide-react";
 import { inter } from "@/lib/fonts";
-import { getSessionSummary, type WnSessionSummary, type WnSummaryExercise } from "@/lib/workoutJournal";
+import { getSessionSummary, type WnSessionSummary } from "@/lib/workoutJournal";
 
 // ── paleta ekranu (kontrast wg specyfikacji, nie obniżać) ──
 const PRIMARY = "#F2EEE6";
@@ -41,12 +41,6 @@ function setLabel(s: { weight: number | null; reps: number | null; duration: num
   return "—";
 }
 
-/** Kolumna TOP: najcięższa seria (albo najwięcej powtórzeń przy masie ciała). */
-function topValue(ex: WnSummaryExercise): string {
-  if (ex.kind === "bodyweight") return ex.topReps != null ? num(ex.topReps) : "—";
-  return ex.topWeight != null ? num(ex.topWeight) : "—";
-}
-
 function buildShareText(s: WnSessionSummary): string {
   const d = new Date(s.date).toLocaleDateString("pl-PL", { day: "numeric", month: "long", year: "numeric" });
   const lines: string[] = [];
@@ -68,6 +62,10 @@ export default function WorkoutSummary({ goBack, sessionId }: { goBack: () => vo
   const [sum, setSum] = useState<WnSessionSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
+  const [sharing, setSharing] = useState(false);
+  /** Karta w trybie zrzutu: pełna wysokość, bez obcinania listy. */
+  const [capturing, setCapturing] = useState(false);
+  const cardRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     let c = false;
@@ -75,16 +73,69 @@ export default function WorkoutSummary({ goBack, sessionId }: { goBack: () => vo
     return () => { c = true; };
   }, [sessionId]);
 
-  const canShare = typeof navigator !== "undefined" && typeof (navigator as Navigator).share === "function";
-
+  /**
+   * Udostępnia PODSUMOWANIE JAKO OBRAZ — dokładnie to, co widać na ekranie.
+   * Suchy tekst gubił układ, kolory i markę; odbiorca dostawał listę liczb
+   * zamiast raportu. Kartę renderujemy na chwilę w pełnej wysokości, żeby na
+   * obrazku znalazły się WSZYSTKIE ćwiczenia, także te poniżej krawędzi ekranu.
+   */
   const doShare = async () => {
-    if (!sum) return;
-    const text = buildShareText(sum);
+    if (!sum || sharing) return;
+    setSharing(true);
+    setCapturing(true);
+    // dwie klatki: React przemalowuje kartę do pełnej wysokości zanim ją zrzucimy
+    await new Promise<void>((r) => requestAnimationFrame(() => requestAnimationFrame(() => r())));
+
     try {
-      if (canShare) { await (navigator as Navigator).share({ text }); return; }
-      await navigator.clipboard.writeText(text);
-      setCopied(true); setTimeout(() => setCopied(false), 2000);
-    } catch { /* anulowano */ }
+      const node = cardRef.current;
+      if (!node) throw new Error("brak karty");
+      // html-to-image, a NIE html2canvas: ten drugi układa tekst po swojemu
+      // i ucinał nazwy ćwiczeń oraz tytuł w połowie liter. Tu render idzie przez
+      // SVG foreignObject, więc tekst rozkłada sama przeglądarka — obraz wychodzi
+      // taki sam jak to, co widać na ekranie.
+      const { toBlob } = await import("html-to-image");
+      const blob = await toBlob(node, {
+        pixelRatio: 2,
+        backgroundColor: CARD_BG,
+        cacheBust: true,
+      });
+      if (!blob) throw new Error("brak obrazu");
+
+      // Nazwa pliku bez polskich znaków — część komunikatorów potyka się
+      // na diakrytykach przy zapisie załącznika.
+      const slug = (sum.workoutName ?? "trening")
+        .normalize("NFD").replace(/\p{M}/gu, "")
+        .replace(/[^a-zA-Z0-9]+/g, "-")
+        .replace(/^-|-$/g, "")
+        .toLowerCase() || "trening";
+      const name = `skladai-${slug}-${sum.date.slice(0, 10)}.png`;
+      const file = new File([blob], name, { type: "image/png" });
+
+      // Sprawdzane W MOMENCIE kliknięcia, nie przy renderze — inaczej wynik
+      // pochodzi ze stanu sprzed pierwszego malowania ekranu.
+      const nav = navigator as Navigator;
+      if (typeof nav.share === "function" && nav.canShare?.({ files: [file] })) {
+        await (navigator as Navigator).share({ files: [file], title: sum.workoutName ?? "Trening" });
+      } else {
+        // Bez Web Share (np. przeglądarka na desktopie) — zapisujemy obraz na dysk.
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url; a.download = name;
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 4000);
+        setCopied(true); setTimeout(() => setCopied(false), 2200);
+      }
+    } catch {
+      // Zrzut się nie udał (albo user anulował) — zostaje wersja tekstowa,
+      // żeby przycisk nigdy nie kończył się niczym.
+      try {
+        await navigator.clipboard.writeText(buildShareText(sum));
+        setCopied(true); setTimeout(() => setCopied(false), 2200);
+      } catch { /* anulowano */ }
+    } finally {
+      setCapturing(false);
+      setSharing(false);
+    }
   };
 
   const dateStr = sum
@@ -134,15 +185,23 @@ export default function WorkoutSummary({ goBack, sessionId }: { goBack: () => vo
           }}
         >
           <Share2 size={14} />
-          {copied ? "Skopiowano" : "Udostępnij"}
+          {sharing ? "Tworzę obraz…" : copied ? "Zapisano" : "Udostępnij"}
         </button>
       </div>
 
       {/* ── Karta ── */}
       <div
+        ref={cardRef}
+        data-testid="summary-card"
         style={{
-          flex: 1, minHeight: 0, display: "flex", flexDirection: "column",
-          borderRadius: 10, background: CARD_BG, border: `1px solid ${LINE}`, overflow: "hidden",
+          // W trybie zrzutu karta rozciąga się na całą treść, żeby obraz
+          // zawierał komplet ćwiczeń, a nie tylko widoczny fragment listy.
+          flex: capturing ? "none" : 1,
+          minHeight: 0,
+          height: capturing ? "auto" : undefined,
+          display: "flex", flexDirection: "column",
+          borderRadius: 10, background: CARD_BG, border: `1px solid ${LINE}`,
+          overflow: capturing ? "visible" : "hidden",
         }}
       >
         {loading ? (
@@ -199,12 +258,16 @@ export default function WorkoutSummary({ goBack, sessionId }: { goBack: () => vo
               fontSize: 9, fontWeight: 600, letterSpacing: "1.3px", textTransform: "uppercase", color: META, flexShrink: 0,
             }}>
               <span style={{ flex: 1, minWidth: 0 }}>Ćwiczenie</span>
-              <span style={{ width: 62, textAlign: "right" }}>Top</span>
               <span style={{ width: 56, textAlign: "right" }}>1RM</span>
             </div>
 
             {/* Lista ćwiczeń — JEDYNY element, który się przewija */}
-            <div data-testid="summary-list" style={{ flex: 1, minHeight: 0, overflowY: "auto", padding: "0 14px" }}>
+            <div data-testid="summary-list" style={{
+              flex: capturing ? "none" : 1,
+              minHeight: 0,
+              overflowY: capturing ? "visible" : "auto",
+              padding: "0 14px",
+            }}>
               {sum.exercises.map((ex, i) => (
                 <div key={ex.exerciseId} style={{ padding: "9px 0", borderTop: i === 0 ? "none" : `1px solid ${LINE}` }}>
                   <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
@@ -222,10 +285,7 @@ export default function WorkoutSummary({ goBack, sessionId }: { goBack: () => vo
                         }}>PR</span>
                       )}
                     </span>
-                    <span style={{ width: 62, textAlign: "right", flexShrink: 0, fontSize: 13.5, fontWeight: 700, color: PRIMARY }}>
-                      {topValue(ex)}
-                    </span>
-                    <span style={{ width: 56, textAlign: "right", flexShrink: 0, fontSize: 12, fontWeight: 600, color: ACCENT }}>
+                    <span style={{ width: 56, textAlign: "right", flexShrink: 0, fontSize: 12.5, fontWeight: 600, color: ACCENT }}>
                       {ex.est1RM != null ? num(ex.est1RM) : ""}
                     </span>
                   </div>
