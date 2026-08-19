@@ -214,7 +214,7 @@ export default function ActiveWorkout({
   const summary = useMemo(() => {
     let volume = 0, series = 0, prDziś = 0;
     for (const [exId, list] of Object.entries(setsBy)) {
-      const byReps = kindBy[exId] === "bodyweight";
+      const byReps = progBy[exId] ? progBy[exId].metric === "reps" : kindBy[exId] === "bodyweight";
       const record = progBy[exId]?.record ?? null;
       for (const s of list) {
         const w = num(s.weight), r = num(s.reps);
@@ -265,9 +265,10 @@ export default function ActiveWorkout({
         {(workout?.exercises ?? []).map((we) => {
           const ex = we.exercise;
           const kind = ex.kind;
-          const byReps = kind === "bodyweight";
           const list = setsBy[ex.id] ?? [];
           const prog = progBy[ex.id];
+          // jak wyżej: dociążenie przełącza ćwiczenie na kilogramy
+          const byReps = prog ? prog.metric === "reps" : kind === "bodyweight";
           const record = prog?.record ?? null;
           const liveTop = setTop(list, byReps);
           return (
@@ -321,7 +322,10 @@ function ExerciseCard({
   onOpenHistory: () => void;
 }) {
   const anyFilled = list.some((s) => num(s.weight) != null || num(s.reps) != null || num(s.duration) != null);
-  const showWeight = kind === "weighted" || kind === "weighted_bw";
+  // Także dla „bodyweight": dipy i podciąganie robi się z czasem na pasie.
+  // Bez tego pola nie dało się w ogóle zapisać dociążenia.
+  const showWeight = kind !== "duration";
+  const weightPlaceholder = kind === "bodyweight" ? "+kg" : "kg";
   const showReps = kind !== "duration";
   const showDuration = kind === "duration";
 
@@ -356,7 +360,7 @@ function ExerciseCard({
             <div key={s.setIndex} style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <span style={{ width: 20, textAlign: "center", fontSize: 12, fontWeight: 700, color: "rgba(var(--fg-rgb, 255,255,255),0.4)" }}>{i + 1}</span>
               {showWeight && (
-                <input inputMode="decimal" value={s.weight} placeholder="kg"
+                <input inputMode="decimal" value={s.weight} placeholder={weightPlaceholder}
                   onChange={(e) => onField(ex.id, s.setIndex, "weight", e.target.value)}
                   onBlur={() => onCommit(ex.id, s.setIndex)}
                   style={fieldStyle} />

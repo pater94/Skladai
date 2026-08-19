@@ -67,7 +67,9 @@ export default function ExerciseHistory({
     return () => { cancelled = true; };
   }, [exerciseId, workoutId]);
 
-  const byReps = exercise?.kind === "bodyweight";
+  // Metryka pochodzi z warstwy danych, a NIE z samego typu ćwiczenia: dipy
+  // zaczynają się na masie ciała, a po dociążeniu mierzy się je kilogramami.
+  const byReps = stats ? stats.metric === "reps" : exercise?.kind === "bodyweight";
   const unit = byReps ? "" : " kg";
   const valOf = (p: WnHistoryPoint) => (byReps ? p.topReps : p.topWeight);
   const has1RM = !byReps && stats?.best1RM != null;

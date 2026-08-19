@@ -282,9 +282,9 @@ export async function findExerciseByName(name: string, cache?: WnExercise[]): Pr
 
 /** Baza progresu ćwiczenia: ostatnia / pierwsza sesja + rekord (do porównań w imporcie). */
 export async function getExerciseBaseline(exerciseId: string, workoutId?: string | null): Promise<{ metric: "weight" | "reps"; lastTop: number | null; firstTop: number | null; record: number | null; sessions: number }> {
-  const byReps = await isBodyweight(exerciseId);
   // workoutId → odniesienie TYLKO z tego treningu (bez mieszania A z B)
-  const hist = await getExerciseHistory(exerciseId, workoutId);
+  const [kind, hist] = await Promise.all([kindOfExercise(exerciseId), getExerciseHistory(exerciseId, workoutId)]);
+  const byReps = repsMetric(kind, hist);
   const vals = hist.map((p) => (byReps ? p.topReps : p.topWeight)).filter((v): v is number => v != null);
   return {
     metric: byReps ? "reps" : "weight",
@@ -771,15 +771,31 @@ export async function getExerciseHistory(exerciseId: string, workoutId?: string 
   return toPoints(all);
 }
 
-async function isBodyweight(exerciseId: string): Promise<boolean> {
+/** Surowy typ ćwiczenia. */
+async function kindOfExercise(exerciseId: string): Promise<WnKind | null> {
   const supabase = createClient();
   const { data } = await supabase.from("wn_exercises").select("kind").eq("id", exerciseId).single();
-  return (data as { kind?: WnKind } | null)?.kind === "bodyweight";
+  return (data as { kind?: WnKind } | null)?.kind ?? null;
+}
+
+/**
+ * Czy progres tego ćwiczenia liczymy POWTÓRZENIAMI, a nie kilogramami.
+ *
+ * Sam typ „bodyweight" nie wystarcza: dipy czy podciąganie robi się najpierw
+ * z masą ciała, a potem z pasem i dociążeniem. Od chwili, gdy w historii
+ * pojawi się seria z ciężarem, ćwiczenie mierzymy kilogramami — inaczej
+ * dołożone 20 kg nie miałoby żadnego odzwierciedlenia w progresie.
+ *
+ * Liczone z historii, którą i tak pobieramy — bez dodatkowego zapytania.
+ */
+function repsMetric(kind: WnKind | null, history: WnHistoryPoint[]): boolean {
+  if (kind !== "bodyweight") return false;
+  return !history.some((p) => p.sets.some((s) => (s.weight_kg ?? 0) > 0));
 }
 
 export async function getExerciseProgress(exerciseId: string): Promise<WnExerciseProgress> {
-  const byReps = await isBodyweight(exerciseId);
-  const history = await getExerciseHistory(exerciseId);
+  const [kind, history] = await Promise.all([kindOfExercise(exerciseId), getExerciseHistory(exerciseId)]);
+  const byReps = repsMetric(kind, history);
   const metric: "weight" | "reps" = byReps ? "reps" : "weight";
   const valOf = (p: WnHistoryPoint) => (byReps ? p.topReps : p.topWeight);
   const vals = history.map(valOf).filter((v): v is number => v != null);
@@ -927,8 +943,8 @@ export interface WnExerciseStats {
 
 /** Pełne statystyki ćwiczenia: rekord, przyrost od startu (kg + %), 1RM, tydzień. */
 export async function getExerciseStats(exerciseId: string, workoutId?: string | null): Promise<WnExerciseStats> {
-  const byReps = await isBodyweight(exerciseId);
-  const history = await getExerciseHistory(exerciseId, workoutId);
+  const [kind, history] = await Promise.all([kindOfExercise(exerciseId), getExerciseHistory(exerciseId, workoutId)]);
+  const byReps = repsMetric(kind, history);
   const metric: "weight" | "reps" = byReps ? "reps" : "weight";
   const topOf = (p: WnHistoryPoint) => (byReps ? p.topReps : p.topWeight);
   const scopedToWorkout = !!workoutId && history.length > 0 && history.every((p) => p.workoutId === workoutId);

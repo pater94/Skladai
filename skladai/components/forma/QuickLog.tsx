@@ -313,11 +313,13 @@ export default function QuickLog({ goBack, onSaved }: { goBack: () => void; onSa
                       return (
                         <div key={si} style={{ display: "flex", alignItems: "center", gap: 6 }}>
                           <span style={{ width: 16, fontSize: 11.5, fontWeight: 700, color: "rgba(var(--fg-rgb, 255,255,255),0.6)" }}>{si + 1}</span>
-                          {!byReps && (
+                          {/* Ciężar także przy ćwiczeniach z masą ciała — dipy
+                              czy podciąganie z dociążeniem trzeba mieć gdzie wpisać. */}
+                          {ex.kind !== "duration" && (
                             <div style={stepper}>
                               <button onClick={() => bump(ei, si, "weight", -2.5)} style={stepBtn} aria-label="mniej kg">−</button>
                               <input inputMode="decimal" value={s.weight ?? ""} onChange={(e) => setField(ei, si, "weight", e.target.value)}
-                                style={stepInput} aria-label="ciężar" />
+                                style={stepInput} placeholder={byReps ? "+kg" : ""} aria-label={byReps ? "dodatkowy ciężar" : "ciężar"} />
                               <button onClick={() => bump(ei, si, "weight", 2.5)} style={stepBtn} aria-label="więcej kg">+</button>
                             </div>
                           )}

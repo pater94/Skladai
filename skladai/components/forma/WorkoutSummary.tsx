@@ -34,7 +34,10 @@ function setLabel(s: { weight: number | null; reps: number | null; duration: num
   if (kind === "duration" || (s.duration != null && s.weight == null && s.reps == null)) {
     return s.duration != null ? `${s.duration}s` : "—";
   }
-  if (kind === "bodyweight") return s.reps != null ? num(s.reps) : "—";
+  // Masa ciała Z dociążeniem ma się pokazać jako „20 × 8", bez — jako samo „8".
+  if (kind === "bodyweight" && (s.weight == null || s.weight === 0)) {
+    return s.reps != null ? num(s.reps) : "—";
+  }
   if (s.weight != null && s.reps != null) return `${num(s.weight)} × ${num(s.reps)}`;
   if (s.weight != null) return num(s.weight);
   if (s.reps != null) return num(s.reps);
