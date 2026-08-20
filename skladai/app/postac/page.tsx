@@ -16,7 +16,7 @@ import {
   getMyProfile, syncCharacter, getRanking, setNick, validateNick,
   type GameProfile, type RankRow, type RankMode,
 } from "@/lib/game/client";
-import { levelFromXp, titleForLevel, totalXpForLevel, XP, XP_BACKDATE_DAYS, DAILY_XP_CAP } from "@/lib/game/rules";
+import { levelFromXp, titleForLevel, totalXpForLevel, XP, XP_BACKDATE_DAYS, DAILY_XP_CAP, WEEKLY_XP_CAP } from "@/lib/game/rules";
 
 const ORANGE = "var(--c-orange, #f97316)";
 const GREEN = "#5fd39a";
@@ -208,13 +208,16 @@ export default function PostacPage() {
                 {/* Liczby brane WPROST z reguł — opis nie może się rozjechać z punktacją. */}
                 <li><strong>{XP.sessionDay} XP</strong> za każdy dzień z treningiem — najwięcej, bo rytmu nie da się podrobić</li>
                 <li><strong>do {XP.volumeCap} XP</strong> za objętość, ale pierwiastkiem: podwojenie ciężarów nie podwaja nagrody</li>
-                <li><strong>{XP.perRecord} XP</strong> za rekord życiowy (maks. {XP.maxRecordsPerDay} dziennie, to samo ćwiczenie raz na {XP.recordCooldownDays} dni)</li>
+                <li><strong>{XP.perRecord} XP</strong> za rekord życiowy (maks. {XP.maxRecordsPer7} na {XP.recordCooldownDays} dni, to samo ćwiczenie raz na {XP.recordCooldownDays} dni)</li>
+                <li>rekord musi być wiarygodny — skok o ponad <strong>{Math.round(XP.maxRecordJumpPct * 100)} %</strong> nad poprzedni wynik nie płaci</li>
                 <li><strong>do {XP.stepsCap} XP</strong> za kroki i <strong>do {XP.streakCap} XP</strong> za serię dni pod rząd</li>
-                <li>dziennie maksymalnie <strong>{DAILY_XP_CAP} XP</strong> — nikt nie wyskoczy w górę jednym wieczorem</li>
+                <li>za trening płaci najwyżej <strong>{XP.maxScoringDaysPer7} z {7} dni</strong> — regeneracja jest częścią treningu</li>
+                <li>maksymalnie <strong>{DAILY_XP_CAP} XP</strong> dziennie i <strong>{WEEKLY_XP_CAP} XP</strong> tygodniowo</li>
                 <li>trening wpisany wstecz liczy się do historii, ale XP daje tylko za ostatnie <strong>{XP_BACKDATE_DAYS} dni</strong></li>
               </ul>
               <div style={{ fontSize: 11, color: "rgba(var(--fg-rgb, 255,255,255),0.55)", marginTop: 8 }}>
                 Wszystko liczy serwer na podstawie zapisanych serii — nie da się wysłać sobie punktów.
+                Zawyżanie ciężarów nic nie daje: objętość nasyca się już przy zwykłym treningu.
                 Do {lvl.level + 1}. poziomu brakuje {lvl.xpToNext - lvl.xpInLevel} XP, a do 50. — {Math.max(0, totalXpForLevel(50) - (p?.xp ?? 0)).toLocaleString("pl-PL")} XP.
               </div>
             </div>

@@ -13,7 +13,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase";
 import {
   xpForDay, levelFromXp, statsFrom, conditionFromLastTraining,
-  XP, XP_BACKDATE_DAYS, type RawSet, type XpSource,
+  XP, XP_BACKDATE_DAYS, DAILY_XP_CAP, WEEKLY_XP_CAP, type RawSet, type XpSource,
 } from "@/lib/game/rules";
 
 export const maxDuration = 30;
@@ -122,32 +122,58 @@ export async function POST(request: NextRequest) {
 
   const lastRecordDay = new Map<string, string>();   // cooldown na rekordy
   const rows: Array<{ user_id: string; day: string; source: XpSource; amount: number; meta: unknown }> = [];
+  /** Dni, które zapłaciły za trening — do okna „najwyżej 5 z 7". */
+  const scoringDays: number[] = [];
+  /** Dni z przyznanym rekordem — do okna „najwyżej 3 z 7". */
+  const paidRecordDays: number[] = [];
+  const within7 = (list: number[], t: number) => list.filter((d) => (t - d) / DAY < 7).length;
   let streak = 0;
   let volume28 = 0, steps28 = 0, trainingDays28 = 0, records28 = 0;
   let lastTraining: string | null = null;
   const oldestScoring = dayKey(new Date(today.getTime() - (XP_BACKDATE_DAYS - 1) * DAY));
 
   for (const day of days) {
+    const dayT = new Date(day + "T12:00:00Z").getTime();
     const sets = setsByDay.get(day) ?? [];
     const trained = sets.length >= 3;
     streak = trained ? streak + 1 : 0;
     if (trained) { trainingDays28++; lastTraining = day; }
 
-    // rekordy tego dnia (z cooldownem na ćwiczenie)
+    /*
+      Najwyżej 5 z 7 dni płaci za trening. Szósty i siódmy dzień pod rząd
+      trafia do dziennika i do statystyk, ale postaci nie rusza — regeneracja
+      jest częścią treningu, a codzienne „ciężkie sesje" to znak, że ktoś
+      wpisuje zamiast ćwiczyć.
+    */
+    const scoring = trained && within7(scoringDays, dayT) < XP.maxScoringDaysPer7;
+    if (scoring) scoringDays.push(dayT);
+
+    // rekordy tego dnia: cooldown na ćwiczenie + limit tygodniowy + wiarygodność skoku
     let records = 0;
     for (const [exId, score] of bestByDayEx.get(day) ?? []) {
       const prev = priorBest.get(exId) ?? 0;
       if (score > prev) {
         const last = lastRecordDay.get(exId);
         const okCooldown = !last ||
-          (new Date(day).getTime() - new Date(last).getTime()) / DAY >= XP.recordCooldownDays;
-        if (okCooldown) { records++; lastRecordDay.set(exId, day); }
+          (dayT - new Date(last + "T12:00:00Z").getTime()) / DAY >= XP.recordCooldownDays;
+        // Skok o ponad 20 % nad poprzedni wynik = literówka albo ściema.
+        const okJump = prev === 0 || score <= prev * (1 + XP.maxRecordJumpPct);
+        const okWeek = within7(paidRecordDays, dayT) + records < XP.maxRecordsPer7;
+        if (scoring && okCooldown && okJump && okWeek) {
+          records++;
+          lastRecordDay.set(exId, day);
+          paidRecordDays.push(dayT);
+        }
         priorBest.set(exId, score);
       }
     }
 
     const daySteps = Math.max(0, Number(steps[day] ?? 0));
-    const br = xpForDay({ sets, records, steps: daySteps, streakDays: streak });
+    // Kroki liczą się nawet w dniu bez punktowanego treningu — chodzenie to
+    // chodzenie. Reszta źródeł milczy, jeśli dzień nie punktuje.
+    const br = scoring
+      ? xpForDay({ sets, records, steps: daySteps, streakDays: streak })
+      : xpForDay({ sets: [], records: 0, steps: daySteps, streakDays: 0 });
 
     volume28 += br.volumeKg;
     steps28 += daySteps;
@@ -173,16 +199,21 @@ export async function POST(request: NextRequest) {
   for (const r of (logAll ?? []) as Array<{ day: string; amount: number }>) {
     perDay.set(r.day, (perDay.get(r.day) ?? 0) + r.amount);
   }
-  // Sufit dzienny egzekwowany także na sumie — gdyby reguły kiedyś się zmieniły,
-  // stare wpisy nadal nie przekroczą limitu.
-  let totalXp = 0;
-  const thisWeek = weekKey(today);
-  let weekXp = 0;
+  /*
+    Sufity egzekwowane jeszcze raz na sumie — gdyby reguły kiedyś się zmieniły,
+    stare wpisy w dzienniku nadal ich nie przebiją. Najpierw dzienny, potem
+    tygodniowy, bo to ten drugi zamyka drogę „wpisuję sobie trening 7 dni w
+    tygodniu".
+  */
+  const perWeek = new Map<string, number>();
   for (const [day, amount] of perDay) {
-    const capped = Math.min(300, amount);
-    totalXp += capped;
-    if (weekKey(new Date(day + "T12:00:00Z")) === thisWeek) weekXp += capped;
+    const wk = weekKey(new Date(day + "T12:00:00Z"));
+    perWeek.set(wk, (perWeek.get(wk) ?? 0) + Math.min(DAILY_XP_CAP, amount));
   }
+  const thisWeek = weekKey(today);
+  let totalXp = 0;
+  for (const sum of perWeek.values()) totalXp += Math.min(WEEKLY_XP_CAP, sum);
+  const weekXp = Math.min(WEEKLY_XP_CAP, perWeek.get(thisWeek) ?? 0);
 
   const lvl = levelFromXp(totalXp);
   const stats = statsFrom({ volume28, steps28, trainingDays28, records28 });

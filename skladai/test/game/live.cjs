@@ -100,11 +100,56 @@ const post = async (t, b) => (await (await fetch(SB + "/rest/v1/" + t, { method:
   const dopisz = await fetch(SB + "/rest/v1/gm_xp_log", { method: "POST", headers: asUser(ofiara.token), body: JSON.stringify({ user_id: ofiara.id, day: "2026-08-20", source: "session", amount: 99999 }) });
   check(dopisz.status >= 400, `Dopisanie sobie XP do dziennika zablokowane (HTTP ${dopisz.status})`, "Da się dopisać XP do dziennika!");
 
+  console.log("\n── Kto wpisuje codziennie, nie wygrywa z trenującym ──");
+  /*
+    Najgroźniejsze oszustwo nie polega na zawyżaniu ciężarów (objętość i tak
+    się nasyca), tylko na wpisywaniu zmyślonego treningu KAŻDEGO dnia.
+    Tu siedzą obok siebie: uczciwy z czterema treningami w tygodniu i ktoś,
+    kto „trenował" siedem dni z siedmiu.
+  */
+  const uczciwy = await makeUser("u"), codzienny = await makeUser("c");
+  async function zasiej(user, dni) {
+    const e = await post("wn_exercises", { user_id: user.id, name: "Wyciskanie sztangi leżąc", kind: "weighted", unit: "kg" });
+    const wo = await post("wn_workouts", { user_id: user.id, name: "Trening", position: 0 });
+    await post("wn_workout_exercises", { workout_id: wo.id, exercise_id: e.id, position: 0 });
+    for (const d of dni) {
+      const day = new Date(Date.now() - d * 86400000).toISOString().slice(0, 10);
+      const se = await post("wn_sessions", { user_id: user.id, workout_id: wo.id, started_at: `${day}T12:00:00Z`, finished_at: `${day}T13:00:00Z` });
+      for (let i = 0; i < 20; i++) await post("wn_sets", { session_id: se.id, exercise_id: e.id, set_index: i, weight_kg: 80, reps: 6 });
+    }
+  }
+  await zasiej(uczciwy, [1, 2, 4, 6]);                 // 4 dni w tygodniu
+  await zasiej(codzienny, [0, 1, 2, 3, 4, 5, 6]);      // 7 dni z 7
+  const xpOf = async (u) => ((await (await fetch(`http://localhost:${PORT}/api/game/sync`, { method: "POST", headers: { Authorization: "Bearer " + u.token } })).json()).profile ?? {}).xp ?? 0;
+  const xpU = await xpOf(uczciwy), xpC = await xpOf(codzienny);
+  const dniPlatne = await (await fetch(SB + `/rest/v1/gm_xp_log?user_id=eq.${codzienny.id}&source=eq.session&select=day`, { headers: H })).json();
+  check(dniPlatne.length === 5, `Z siedmiu „treningów" zapłaciło ${dniPlatne.length} (limit 5 z 7)`, `Zapłaciło ${dniPlatne.length} dni zamiast 5`);
+  check(xpC / Math.max(1, xpU) < 1.35,
+    `Codzienny wpisywacz ma ${(xpC / xpU).toFixed(2)}× tego co uczciwy (${xpC} vs ${xpU})`,
+    `Codzienny wpisywacz zbyt opłacalny: ${(xpC / xpU).toFixed(2)}×`);
+
+  console.log("\n── Nieprawdopodobny rekord nie płaci ──");
+  // Skok ze 100 na 300 kg z tygodnia na tydzień to literówka albo ściema.
+  const skoczek = await makeUser("s");
+  const sex = await post("wn_exercises", { user_id: skoczek.id, name: "Przysiad ze sztangą", kind: "weighted", unit: "kg" });
+  const sw = await post("wn_workouts", { user_id: skoczek.id, name: "Nogi", position: 0 });
+  await post("wn_workout_exercises", { workout_id: sw.id, exercise_id: sex.id, position: 0 });
+  const dzienSkoku = new Date(Date.now() - 2 * 86400000).toISOString().slice(0, 10);
+  for (const [d, kg] of [[5, 100], [2, 300]]) {
+    const day = new Date(Date.now() - d * 86400000).toISOString().slice(0, 10);
+    const ss = await post("wn_sessions", { user_id: skoczek.id, workout_id: sw.id, started_at: `${day}T12:00:00Z`, finished_at: `${day}T13:00:00Z` });
+    for (let i = 0; i < 5; i++) await post("wn_sets", { session_id: ss.id, exercise_id: sex.id, set_index: i, weight_kg: kg, reps: 3 });
+  }
+  await xpOf(skoczek);
+  const rek = await (await fetch(SB + `/rest/v1/gm_xp_log?user_id=eq.${skoczek.id}&source=eq.record&select=day,amount`, { headers: H })).json();
+  const zaSkok = rek.find((r) => r.day === dzienSkoku);
+  check(!zaSkok, "Skok 100 → 300 kg nie dostał XP za rekord", `Absurdalny rekord zapłacił ${zaSkok && zaSkok.amount} XP`);
+
   console.log("\n── Sync bez tokenu ──");
   const goscia = await fetch(`http://localhost:${PORT}/api/game/sync`, { method: "POST" });
   check(goscia.status === 401, `Sync bez logowania odrzucony (HTTP ${goscia.status})`, `Sync bez tokenu -> ${goscia.status}`);
 
-  for (const u of [ofiara, napastnik]) await fetch(SB + "/auth/v1/admin/users/" + u.id, { method: "DELETE", headers: H });
+  for (const u of [ofiara, napastnik, uczciwy, codzienny, skoczek]) await fetch(SB + "/auth/v1/admin/users/" + u.id, { method: "DELETE", headers: H });
   console.log(fails.length === 0 ? "\nGRA NA ZYWO OK - 0 bledow" : `\nBLEDOW: ${fails.length}`);
   process.exit(fails.length ? 1 : 0);
 })();

@@ -18,6 +18,21 @@
  *   • seria dni pod rząd   → do 30 XP
  * Dzienny sufit 300 XP zamyka temat: nawet idealne oszustwo nie da więcej niż
  * bardzo dobry uczciwy dzień.
+ *
+ * ── Czego NIE da się ugrać liczbami ───────────────────────────────────────
+ * Objętość nasyca się już przy zwykłym treningu (20 serii × 80 kg × 6 to 9,6 t,
+ * czyli sufit 60 XP). Zawyżenie ciężarów dwu- czy czterokrotnie daje DOKŁADNIE
+ * ZERO dodatkowych XP — sprawdza to test/game/rules.ts. Wpisywanie sobie
+ * większych sztang jest więc bezcelowe z definicji, a nie z dobrej woli.
+ *
+ * Prawdziwa dziura była gdzie indziej: ktoś, kto nie trenuje wcale, ale
+ * CODZIENNIE wpisuje zmyślony trening, zbierał przez rok dwa razy tyle co
+ * uczciwy trenujący cztery razy w tygodniu. Nie ratował tego dzienny sufit,
+ * bo oszust brał go 365 razy, a uczciwy 208. Stąd trzy dodatkowe zapory:
+ *   • najwyżej 5 z 7 dni płaci za trening (regeneracja jest częścią treningu),
+ *   • sufit TYGODNIOWY, nie tylko dzienny,
+ *   • rekord życiowy musi być wiarygodny: skok o ponad 20 % nad poprzedni
+ *     wynik to literówka albo ściema, więc nie płaci.
  */
 
 // ── Granice zdrowego rozsądku ────────────────────────────────────────────
@@ -38,6 +53,16 @@ export const LIMITS = {
 
 /** Dzienny sufit XP — twardy, ponad wszystkimi źródłami razem. */
 export const DAILY_XP_CAP = 300;
+
+/**
+ * Sufit TYGODNIOWY (tydzień ISO).
+ *
+ * Sam dzienny limit nie wystarczał: oszust bierze go siedem razy w tygodniu,
+ * uczciwy trenujący cztery. Ten sufit ustawiono tuż nad tym, co realnie zbiera
+ * bardzo zaangażowany człowiek (5-6 treningów + kroki ≈ 1300 XP), więc
+ * uczciwego nie dotyka, a codziennemu zmyślaczowi ścina jedną trzecią wyniku.
+ */
+export const WEEKLY_XP_CAP = 1400;
 
 /**
  * Ile dni wstecz trening jeszcze daje XP.
@@ -70,6 +95,24 @@ export const XP = {
   /** Seria dni z treningiem: 5 XP za każdy dzień serii, do sufitu. */
   streakPerDay: 5,
   streakCap: 30,
+  /**
+   * Ile dni z każdych siedmiu w ogóle płaci za trening.
+   *
+   * Regeneracja jest częścią treningu — nikt nie robi ciężkich sesji 7/7
+   * tygodniami. Kto tak „trenuje", ten wpisuje, nie ćwiczy. Uczciwych to nie
+   * dotyka: przy czterech treningach w tygodniu limit nigdy się nie odzywa.
+   * Dni ponad limit dalej trafiają do dziennika i statystyk — po prostu nie
+   * dają XP.
+   */
+  maxScoringDaysPer7: 5,
+  /** Rekordy życiowe: najwyżej tyle w każdym oknie 7 dni. */
+  maxRecordsPer7: 3,
+  /**
+   * Maksymalny wiarygodny skok nad poprzedni rekord. Siła rośnie o kilka
+   * procent, nie o połowę — większy przeskok to albo literówka, albo ściema.
+   * Wynik zostaje w dzienniku, ale za rekord nie płaci.
+   */
+  maxRecordJumpPct: 0.20,
 } as const;
 
 export type XpSource = "session" | "volume" | "record" | "steps" | "streak";
