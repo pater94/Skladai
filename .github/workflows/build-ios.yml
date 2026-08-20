@@ -163,29 +163,92 @@ jobs:
           path: skladai/ios/App/build/ipa-output/*.ipa
           retention-days: 30
 
-      - name: Upload to App Store Connect
-        working-directory: skladai/ios/App
+      - name: Decode App Store Connect API key
         env:
           APP_STORE_CONNECT_API_KEY: ${{ secrets.APP_STORE_API_KEY }}
           APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.APP_STORE_API_KEY_ID }}
-          APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_API_ISSUER_ID }}
         run: |
-          # Decode base64-encoded .p8 key
           mkdir -p ~/.private_keys
           KEY_FILE=~/.private_keys/AuthKey_${APP_STORE_CONNECT_API_KEY_ID}.p8
           echo "$APP_STORE_CONNECT_API_KEY" | base64 --decode > "$KEY_FILE"
-
-          # Verify the key file looks valid
           echo "Key file size: $(wc -c < "$KEY_FILE") bytes"
+          # Sama STRUKTURA, nie zawartość — klucz prywatny nie trafia do logu.
           head -1 "$KEY_FILE"
           tail -1 "$KEY_FILE"
+          echo "KEY_FILE=$KEY_FILE" >> "$GITHUB_ENV"
 
-          # Upload IPA to App Store Connect
+      # Diagnostyka — nie przerywa builda.
+      #
+      # Błąd "Cannot determine the Apple ID from Bundle ID" znaczy, że klucz
+      # API uwierzytelnił się poprawnie, ale NIE WIDZI aplikacji. Ta lista
+      # rozstrzyga sprawę: jeśli com.skladai.app się na niej nie pojawi,
+      # problem jest w uprawnieniach albo zespole klucza, a nie w buildzie.
+      - name: Diagnose API key access
+        continue-on-error: true
+        env:
+          APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.APP_STORE_API_KEY_ID }}
+          APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_API_ISSUER_ID }}
+        run: |
+          echo "== Aplikacje widoczne dla tego klucza =="
+          xcrun altool --list-apps \
+            --apiKey "$APP_STORE_CONNECT_API_KEY_ID" \
+            --apiIssuer "$APP_STORE_CONNECT_ISSUER_ID" \
+            || echo "!! --list-apps nie powiodlo sie - to samo w sobie wskazuje na problem z dostepem klucza"
+
+      - name: Upload to App Store Connect
+        working-directory: skladai/ios/App
+        env:
+          APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.APP_STORE_API_KEY_ID }}
+          APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_API_ISSUER_ID }}
+        run: |
+          set -o pipefail
+          IPA=$(ls build/ipa-output/*.ipa | head -1)
+          echo "IPA: $IPA"
+
+          # Droga główna: xcodebuild wysyła archiwum sam, tym samym kluczem API.
+          # Nowsza i mniej kapryśna ścieżka niż altool, który pod Xcode 26
+          # potrafi nie rozwiązać bundle ID na Apple ID.
+          cat > ExportOptionsUpload.plist <<'PLIST'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+            "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>method</key>
+            <string>app-store-connect</string>
+            <key>destination</key>
+            <string>upload</string>
+            <key>teamID</key>
+            <string>AWRQPLPRL6</string>
+            <key>signingStyle</key>
+            <string>manual</string>
+            <key>provisioningProfiles</key>
+            <dict>
+              <key>com.skladai.app</key>
+              <string>SkladAI Distribution</string>
+            </dict>
+          </dict>
+          </plist>
+          PLIST
+
+          if xcodebuild -exportArchive \
+               -archivePath build/App.xcarchive \
+               -exportPath build/upload \
+               -exportOptionsPlist ExportOptionsUpload.plist \
+               -authenticationKeyPath "$KEY_FILE" \
+               -authenticationKeyID "$APP_STORE_CONNECT_API_KEY_ID" \
+               -authenticationKeyIssuerID "$APP_STORE_CONNECT_ISSUER_ID"; then
+            echo "Wyslane przez xcodebuild"
+            exit 0
+          fi
+
+          echo "xcodebuild nie dal rady - probuje altool z pelnym logiem"
           xcrun altool --upload-app \
             --type ios \
-            --file build/ipa-output/*.ipa \
+            --file "$IPA" \
             --apiKey "$APP_STORE_CONNECT_API_KEY_ID" \
-            --apiIssuer "$APP_STORE_CONNECT_ISSUER_ID"
+            --apiIssuer "$APP_STORE_CONNECT_ISSUER_ID" \
+            --verbose
 
       - name: Clean up keychain
         if: always()
