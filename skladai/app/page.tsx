@@ -877,8 +877,12 @@ export default function Home() {
             <span style={{ color: accent.hex, textShadow: `0 0 20px ${accent.hex}60` }} className="transition-colors duration-300">AI</span>
           </h1>
           <ActivityBadges theme="dark" />
-          <CharacterCard />
         </div>
+
+        {/* ══ 1b. KARTA POSTACI ══
+            Własny wiersz, nie pasek z logo — karta jest pełnej szerokości
+            i wciśnięta w flex topbara wychodziła poza ekran. */}
+        <CharacterCard />
 
         {/* ══ 2. HEADLINE ══ */}
         {(() => {
