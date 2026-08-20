@@ -2,8 +2,10 @@
 /**
  * Daily Ground Truth Auditor for SkładAI scan quality.
  *
- * Uruchamiany przez GitHub Actions cron 06:30 UTC (po 06:00 QA Playwright).
- * Można też lokalnie: `npm run audit:run` (wymaga env vars).
+ * NIE MA już crona — decyzja Patryka 2026-08-20: codzienny audyt zużywał
+ * kredyty Anthropic, choć aplikacji jeszcze nikt nie używał. Uruchamiany
+ * wyłącznie na żądanie: workflow „Daily Quality" z zaznaczonym `run_audit`,
+ * albo lokalnie `npm run audit:run` (wymaga env vars).
  *
  * Env vars (wszystkie WYMAGANE):
  *   AUDITOR_USER_IDS              — comma-separated UUID(s) z Supabase Auth.

@@ -4,8 +4,16 @@ on:
   schedule:
     # 06:00 UTC = 08:00 PL summer / 07:00 PL winter
     - cron: '0 6 * * *'   # Playwright QA suite
-    - cron: '30 6 * * *'  # Ground Truth Audit (po QA)
+    # Ground Truth Audit NIE MA już swojego crona — decyzja Patryka
+    # 2026-08-20. Codzienny audyt zużywał kredyty Anthropic bez żadnego
+    # ruchu w aplikacji. Zostaje wyłącznie na żądanie: uruchom ten
+    # workflow ręcznie i przestaw `run_audit` na true.
   workflow_dispatch:      # Manual trigger z UI
+    inputs:
+      run_audit:
+        description: 'Odpalić też Ground Truth Audit? (zużywa kredyty Anthropic)'
+        type: boolean
+        default: false
   push:
     branches: [main]      # Po każdym merge na main — tylko QA
     paths:
@@ -129,12 +137,16 @@ jobs:
         run: exit 1
 
   # ──────────────────────────────────────────────────────────────────
-  # Audit Job: Ground Truth audit (TYLKO daily 06:30 + manual)
+  # Audit Job: Ground Truth audit — WYŁĄCZNIE na wyraźne żądanie.
+  #
+  # Kosztuje kredyty Anthropic, więc nie odpala się ani z crona, ani przy
+  # zwykłym ręcznym uruchomieniu tego workflow. Trzeba świadomie zaznaczyć
+  # `run_audit` w formularzu „Run workflow".
   # ──────────────────────────────────────────────────────────────────
   audit:
     if: |
-      github.event.schedule == '30 6 * * *' ||
-      github.event_name == 'workflow_dispatch'
+      github.event_name == 'workflow_dispatch' &&
+      inputs.run_audit
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
