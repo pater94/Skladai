@@ -637,6 +637,25 @@ export async function startSession(workoutId: string): Promise<WnSession | null>
  * ukończona — pusty „ukończony" trening zaśmieca historię i (co gorsza) przesłania
  * podpowiedzi z poprzedniego, realnego treningu.
  */
+/**
+ * Chowa trening, po którym nie zostało NIC: zero ćwiczeń i zero sesji.
+ *
+ * „+ Nowy trening" zakłada wiersz od razu przy kliknięciu, więc każde wycofanie
+ * się bez wpisania czegokolwiek zostawiało na liście pustą kartę
+ * „Nowy trening · 0 ćwiczeń". Archiwizujemy, a nie kasujemy — operacja jest
+ * odwracalna, a przy okazji nie ruszamy niczego, co miałoby jakąkolwiek treść.
+ */
+async function archiveIfEmpty(workoutId: string): Promise<void> {
+  const supabase = createClient();
+  const { count: exCount } = await supabase
+    .from("wn_workout_exercises").select("id", { count: "exact", head: true }).eq("workout_id", workoutId);
+  if (exCount) return;
+  const { count: sesCount } = await supabase
+    .from("wn_sessions").select("id", { count: "exact", head: true }).eq("workout_id", workoutId);
+  if (sesCount) return;
+  await supabase.from("wn_workouts").update({ archived: true }).eq("id", workoutId);
+}
+
 export async function finishSession(sessionId: string): Promise<boolean> {
   const supabase = createClient();
   const { count } = await supabase
@@ -645,8 +664,14 @@ export async function finishSession(sessionId: string): Promise<boolean> {
     .eq("session_id", sessionId);
 
   if (!count) {
+    // Zapamiętujemy trening PRZED usunięciem sesji — potem nie będzie już skąd.
+    const { data: sess } = await supabase
+      .from("wn_sessions").select("workout_id").eq("id", sessionId).maybeSingle();
+    const workoutId = (sess as { workout_id: string | null } | null)?.workout_id ?? null;
+
     const { error: delErr } = await supabase.from("wn_sessions").delete().eq("id", sessionId);
     if (delErr) console.warn("[wn] finishSession (usuwanie pustej)", delErr.message);
+    if (workoutId) await archiveIfEmpty(workoutId);
     await clearActiveDraft();
     return true;
   }

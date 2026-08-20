@@ -63,8 +63,6 @@ export default function WorkoutJournalList({
   const load = useCallback(async () => {
     setLoading(true);
     const list = await listWorkouts();
-    setWorkouts(list);
-    setLoading(false);
     // meta per trening (równolegle)
     const entries = await Promise.all(
       list.map(async (w): Promise<[string, WorkoutMeta]> => {
@@ -85,7 +83,22 @@ export default function WorkoutJournalList({
         }];
       })
     );
-    setMeta(Object.fromEntries(entries));
+    const metaMap = Object.fromEntries(entries);
+    setMeta(metaMap);
+
+    /*
+      Treningi BEZ ćwiczeń i BEZ ani jednej zapisanej serii nie trafiają na listę.
+      Bierze się to stąd, że „+ Nowy trening" zakłada wiersz od razu przy
+      kliknięciu — kto wycofa się bez dodania czegokolwiek, zostawia po sobie
+      pustą kartę „Nowy trening · 0 ćwiczeń", która wygląda jak zdublowany
+      przycisk na dole ekranu. Wiersz zostaje w bazie (nic nie kasujemy),
+      po prostu nie zaśmieca widoku — jedno kliknięcie odtwarza taki trening.
+    */
+    setWorkouts(list.filter((w) => {
+      const m = metaMap[w.id];
+      return !m || m.exerciseCount > 0 || m.sessionCount > 0;
+    }));
+    setLoading(false);
   }, []);
 
   // odroczone o klatkę — bez synchronicznego setState w efekcie
