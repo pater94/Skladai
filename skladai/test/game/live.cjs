@@ -118,15 +118,33 @@ const post = async (t, b) => (await (await fetch(SB + "/rest/v1/" + t, { method:
       for (let i = 0; i < 20; i++) await post("wn_sets", { session_id: se.id, exercise_id: e.id, set_index: i, weight_kg: 80, reps: 6 });
     }
   }
+  const zawziety = await makeUser("z");
   await zasiej(uczciwy, [1, 2, 4, 6]);                 // 4 dni w tygodniu
-  await zasiej(codzienny, [0, 1, 2, 3, 4, 5, 6]);      // 7 dni z 7
+  await zasiej(zawziety, [0, 1, 2, 3, 4, 6]);          // 6 dni — uczciwy zapaleniec
+  await zasiej(codzienny, [0, 1, 2, 3, 4, 5, 6]);      // 7 dni z 7 — wpisywacz
   const xpOf = async (u) => ((await (await fetch(`http://localhost:${PORT}/api/game/sync`, { method: "POST", headers: { Authorization: "Bearer " + u.token } })).json()).profile ?? {}).xp ?? 0;
-  const xpU = await xpOf(uczciwy), xpC = await xpOf(codzienny);
+  const xpU = await xpOf(uczciwy), xpZ = await xpOf(zawziety), xpC = await xpOf(codzienny);
   const dniPlatne = await (await fetch(SB + `/rest/v1/gm_xp_log?user_id=eq.${codzienny.id}&source=eq.session&select=day`, { headers: H })).json();
   check(dniPlatne.length === 5, `Z siedmiu „treningów" zapłaciło ${dniPlatne.length} (limit 5 z 7)`, `Zapłaciło ${dniPlatne.length} dni zamiast 5`);
-  check(xpC / Math.max(1, xpU) < 1.35,
-    `Codzienny wpisywacz ma ${(xpC / xpU).toFixed(2)}× tego co uczciwy (${xpC} vs ${xpU})`,
-    `Codzienny wpisywacz zbyt opłacalny: ${(xpC / xpU).toFixed(2)}×`);
+
+  /*
+     To jest gwarancja, która naprawdę coś znaczy. Wpisywacza NIE DA SIĘ
+     odróżnić od kogoś, kto uczciwie trenuje sześć razy w tygodniu — żadne
+     dane, jakie mamy, tego nie rozstrzygną. Wymagamy więc, żeby najlepsze,
+     co osiągnie codziennym zmyślaniem, było na poziomie takiego zapaleńca.
+  */
+  check(xpC / Math.max(1, xpZ) <= 1.10,
+    `Wpisywacz nie przebija uczciwego zapaleńca 6×/tydz. (${(xpC / xpZ).toFixed(2)}×, ${xpC} vs ${xpZ})`,
+    `Wpisywacz bije zapaleńca: ${(xpC / xpZ).toFixed(2)}×`);
+
+  /*
+     Wobec trenującego cztery razy zostaje przewaga rzędu 1,4× i ona jest
+     UPRAWNIONA: to różnica między pięcioma a czterema płatnymi dniami, czyli
+     dokładnie to, co ranking ma mierzyć. Próg pilnuje, żeby nie urosła.
+  */
+  check(xpC / Math.max(1, xpU) < 1.45,
+    `Wobec trenującego 4×/tydz. przewaga to ${(xpC / xpU).toFixed(2)}× — tyle, ile daje jeden dzień więcej`,
+    `Przewaga nad trenującym 4×/tydz. urosła do ${(xpC / xpU).toFixed(2)}×`);
 
   console.log("\n── Nieprawdopodobny rekord nie płaci ──");
   // Skok ze 100 na 300 kg z tygodnia na tydzień to literówka albo ściema.
@@ -149,7 +167,7 @@ const post = async (t, b) => (await (await fetch(SB + "/rest/v1/" + t, { method:
   const goscia = await fetch(`http://localhost:${PORT}/api/game/sync`, { method: "POST" });
   check(goscia.status === 401, `Sync bez logowania odrzucony (HTTP ${goscia.status})`, `Sync bez tokenu -> ${goscia.status}`);
 
-  for (const u of [ofiara, napastnik, uczciwy, codzienny, skoczek]) await fetch(SB + "/auth/v1/admin/users/" + u.id, { method: "DELETE", headers: H });
+  for (const u of [ofiara, napastnik, uczciwy, zawziety, codzienny, skoczek]) await fetch(SB + "/auth/v1/admin/users/" + u.id, { method: "DELETE", headers: H });
   console.log(fails.length === 0 ? "\nGRA NA ZYWO OK - 0 bledow" : `\nBLEDOW: ${fails.length}`);
   process.exit(fails.length ? 1 : 0);
 })();

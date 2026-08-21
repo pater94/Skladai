@@ -15,6 +15,12 @@ import {
   xpForDay, levelFromXp, statsFrom, conditionFromLastTraining,
   XP, XP_BACKDATE_DAYS, DAILY_XP_CAP, WEEKLY_XP_CAP, type RawSet, type XpSource,
 } from "@/lib/game/rules";
+import {
+  seasonFor, seasonKey, leagueOutcome, nextLeague, COHORT_SIZE,
+} from "@/lib/game/season";
+import { dailyQuests, weeklyQuests, withProgress, questReward, type QuestProgress } from "@/lib/game/quests";
+import { newlyUnlocked, type AchievementStats } from "@/lib/game/achievements";
+import { bodyStateFrom, parseFatRange, PHOTOS_PER_SESSION, type BodyReading, type MuscleMassLabel } from "@/lib/game/body";
 
 export const maxDuration = 30;
 
@@ -127,8 +133,15 @@ export async function POST(request: NextRequest) {
   /** Dni z przyznanym rekordem — do okna „najwyżej 3 z 7". */
   const paidRecordDays: number[] = [];
   const within7 = (list: number[], t: number) => list.filter((d) => (t - d) / DAY < 7).length;
-  let streak = 0;
+  let streak = 0, bestStreak = 0;
   let volume28 = 0, steps28 = 0, trainingDays28 = 0, records28 = 0;
+  /* Metryki celów — zbierane przy okazji tej samej pętli, żeby nie odpytywać
+     bazy drugi raz o to samo. */
+  const todayKey = dayKey(today);
+  const thisWeekKey = weekKey(today);
+  const dayMetrics: QuestProgress = {};
+  const weekMetrics: QuestProgress = {};
+  const bump = (bag: QuestProgress, k: keyof QuestProgress, v: number) => { bag[k] = (bag[k] ?? 0) + v; };
   let lastTraining: string | null = null;
   const oldestScoring = dayKey(new Date(today.getTime() - (XP_BACKDATE_DAYS - 1) * DAY));
 
@@ -147,6 +160,7 @@ export async function POST(request: NextRequest) {
     */
     const scoring = trained && within7(scoringDays, dayT) < XP.maxScoringDaysPer7;
     if (scoring) scoringDays.push(dayT);
+    bestStreak = Math.max(bestStreak, streak);
 
     // rekordy tego dnia: cooldown na ćwiczenie + limit tygodniowy + wiarygodność skoku
     let records = 0;
@@ -179,6 +193,21 @@ export async function POST(request: NextRequest) {
     steps28 += daySteps;
     records28 += records;
 
+    const exCount = (bestByDayEx.get(day) ?? new Map()).size;
+    for (const bag of [
+      day === todayKey ? dayMetrics : null,
+      weekKey(new Date(day + "T12:00:00Z")) === thisWeekKey ? weekMetrics : null,
+    ]) {
+      if (!bag) continue;
+      bump(bag, "trainingDays", trained ? 1 : 0);
+      bump(bag, "sets", sets.length);
+      bump(bag, "volumeKg", br.volumeKg);
+      bump(bag, "steps", daySteps);
+      bump(bag, "records", records);
+      bump(bag, "exercises", exCount);
+      bag.streakDays = Math.max(bag.streakDays ?? 0, streak);
+    }
+
     // XP zapisujemy TYLKO za świeże dni — starsze wpisy w dzienniku są
     // pełnoprawną historią, ale postaci już nie podbijają.
     if (day >= oldestScoring) {
@@ -186,6 +215,15 @@ export async function POST(request: NextRequest) {
         if (amount > 0) rows.push({ user_id: userId, day, source, amount, meta: { volumeKg: br.volumeKg, rejected: br.rejectedSets } });
       }
     }
+  }
+
+  // Cele liczymy tu, bo ich XP ma trafić do dziennika w tym samym przebiegu.
+  const dq = withProgress(dailyQuests(userId, todayKey), dayMetrics);
+  const wq = withProgress(weeklyQuests(userId, thisWeekKey), weekMetrics);
+  const questPay = questReward(dq, wq);
+  if (questPay.xp > 0) {
+    rows.push({ user_id: userId, day: todayKey, source: "quest" as XpSource, amount: questPay.xp,
+      meta: { daily: dq.filter((q) => q.done).map((q) => q.id), weekly: wq.filter((q) => q.done).map((q) => q.id) } });
   }
 
   if (rows.length) {
@@ -217,17 +255,164 @@ export async function POST(request: NextRequest) {
 
   const lvl = levelFromXp(totalXp);
   const stats = statsFrom({ volume28, steps28, trainingDays28, records28 });
+
   const daysSince = lastTraining
     ? Math.round((new Date(dayKey(today)).getTime() - new Date(lastTraining).getTime()) / DAY)
     : null;
   const condition = conditionFromLastTraining(daysSince);
 
-  const { data: saved, error } = await admin
+  // ── CIAŁO ─────────────────────────────────────────────────────────────
+  /*
+     Sesja zdjęć = wszystkie skany CheckForm z jednego dnia. Liczy się tylko
+     taka, która ma komplet ujęć — jedno zdjęcie potrafi skłamać o kilka
+     punktów procentowych przez samo światło i porę dnia.
+  */
+  const { data: formaScans } = await admin
+    .from("scan_logs")
+    .select("created_at, ai_result")
+    .eq("user_id", userId)
+    .eq("mode", "forma")
+    .order("created_at", { ascending: true });
+
+  const byDayPhotos = new Map<string, { fats: number[]; labels: MuscleMassLabel[]; photos: number }>();
+  for (const row of (formaScans ?? []) as Array<{ created_at: string; ai_result: unknown }>) {
+    const day = String(row.created_at).slice(0, 10);
+    const res = (row.ai_result ?? {}) as Record<string, unknown>;
+    const entry = byDayPhotos.get(day) ?? { fats: [], labels: [], photos: 0 };
+    entry.photos += 1;
+    const fat = parseFatRange(res.body_fat_range as string | undefined);
+    if (fat != null) entry.fats.push(fat);
+    const label = res.muscle_mass as MuscleMassLabel | undefined;
+    if (label) entry.labels.push(label);
+    byDayPhotos.set(day, entry);
+  }
+  const readings: BodyReading[] = [...byDayPhotos.entries()].map(([day, e]) => ({
+    day,
+    bodyFatPct: e.fats.length ? e.fats.reduce((a, b) => a + b, 0) / e.fats.length : null,
+    muscleMass: e.labels[0] ?? null,
+    photos: e.photos,
+  }));
+  const photoSessions = readings.filter((r) => r.photos >= PHOTOS_PER_SESSION).length;
+
+  const { data: prof } = await admin
+    .from("profiles").select("gender, weight_kg").eq("id", userId).maybeSingle();
+  const gender = ((prof?.gender === "female" || prof?.gender === "male") ? prof.gender : null) as "male" | "female" | null;
+
+  const body = bodyStateFrom({
+    gender,
+    readings,
+    weightsKg: prof?.weight_kg ? [Number(prof.weight_kg)] : [],
+    volume28Kg: volume28,
+    trainingDays28,
+  });
+
+  // ── SEZON I LIGA ──────────────────────────────────────────────────────
+  const season = seasonFor(today);
+  const sKey = seasonKey(season);
+
+  /* Punkty okresowe = dzienne XP po sufitach + punkty za domknięte cele.
+     Liczone od nowa z dziennika, więc odporne na wielokrotne przeliczanie. */
+  let seasonPoints = questPay.points;
+  for (const [day, amount] of perDay) {
+    if (day >= season.startISO && day <= season.endISO) seasonPoints += Math.min(DAILY_XP_CAP, amount);
+  }
+  const weekPoints = weekXp + questPay.points;
+
+  const { data: current } = await admin
     .from("gm_profiles")
-    .upsert({
+    .select("league, best_league, league_week, cohort, season_key, season_points, best_streak")
+    .eq("user_id", userId).maybeSingle();
+
+  let league = current?.league ?? 0;
+  let cohort = current?.cohort ?? 0;
+  let settled: { rank: number; outcome: string; league: number } | null = null;
+
+  /*
+     Rozliczenie tygodnia następuje RAZ — przy pierwszym przeliczeniu po
+     zmianie tygodnia ISO. `league_week` jest zapadką: dopóki się zgadza,
+     nic się nie dzieje, choćby ktoś wołał sync co sekundę.
+  */
+  if (current && current.league_week && current.league_week !== thisWeekKey) {
+    const prevPoints = Math.max(0, (current as { week_points?: number }).week_points ?? 0);
+    const { count: above } = await admin
+      .from("gm_profiles")
+      .select("user_id", { count: "exact", head: true })
+      .eq("league", league).eq("cohort", cohort)
+      .gt("week_points", prevPoints);
+    const rank = (above ?? 0) + 1;
+    const outcome = leagueOutcome(league, rank, prevPoints);
+    const after = nextLeague(league, outcome);
+    await admin.from("gm_league_history").upsert({
+      user_id: userId, week_key: current.league_week,
+      league, cohort, rank, points: prevPoints, outcome,
+    }, { onConflict: "user_id,week_key" });
+    settled = { rank, outcome, league: after };
+    league = after;
+  }
+
+  // Kohorta przydzielana na każdy nowy tydzień — dobiera ~30 osób z ligi.
+  if (!current || current.league_week !== thisWeekKey) {
+    const { count: inLeague } = await admin
+      .from("gm_profiles").select("user_id", { count: "exact", head: true }).eq("league", league);
+    const groups = Math.max(1, Math.ceil((inLeague ?? 1) / COHORT_SIZE));
+    let h = 0;
+    for (const ch of `${userId}|${thisWeekKey}`) h = (Math.imul(h ^ ch.charCodeAt(0), 0x01000193) >>> 0);
+    cohort = h % groups;
+  }
+
+  const bestLeague = Math.max(current?.best_league ?? 0, league);
+  // Sezon się zmienił → dorobek sezonowy startuje od zera (poziom nigdy).
+  if (current?.season_key && current.season_key !== sKey) seasonPoints = questPay.points;
+
+  // ── OSIĄGNIĘCIA ───────────────────────────────────────────────────────
+  const { data: ownedRows, error: achErr } = await admin
+    .from("gm_achievements").select("achievement_id, xp").eq("user_id", userId);
+  const owned = ((ownedRows ?? []) as Array<{ achievement_id: string }>).map((r) => r.achievement_id);
+
+  const { count: scansTotal } = await admin
+    .from("scan_logs").select("id", { count: "exact", head: true }).eq("user_id", userId);
+
+  const achStats: AchievementStats = {
+    trainingDaysTotal: trainingDays28,
+    bestStreak: Math.max(bestStreak, current?.best_streak ?? 0),
+    volumeTotalKg: volume28,
+    recordsTotal: records28,
+    level: lvl.level,
+    bestLeague,
+    photoSessions,
+    muscleGained: Math.max(0, body.muscleDelta ?? 0),
+    leannessGained: Math.max(0, body.leannessDelta ?? 0),
+    scansTotal: scansTotal ?? 0,
+    oddHourSessions: 0,
+    seasonsCompleted: 0,
+  };
+  /* Bez migracji tabela odznak nie istnieje. Wtedy NIE przyznajemy nic —
+     inaczej co przeliczenie doliczałoby te same XP od nowa, bo nie miałoby
+     gdzie zapisać, że odznaka już padła. */
+  const fresh = achErr ? [] : newlyUnlocked(achStats, owned);
+  if (fresh.length) {
+    await admin.from("gm_achievements").upsert(
+      fresh.map((a) => ({ user_id: userId, achievement_id: a.id, xp: a.xp })),
+      { onConflict: "user_id,achievement_id" },
+    );
+  }
+  const achXp = ((ownedRows ?? []) as Array<{ xp: number }>).reduce((a, r) => a + (r.xp ?? 0), 0)
+    + fresh.reduce((a, r) => a + r.xp, 0);
+  const finalXp = totalXp + achXp;
+  const finalLvl = levelFromXp(finalXp);
+
+
+  /*
+     Migracja 20260821_game_seasons.sql jest uruchamiana ręcznie w panelu
+     Supabase. Dopóki jej nie ma, nowych kolumn nie ma też w bazie — zapis
+     całości poleciałby błędem i gra przestałaby działać w ogóle. Dlatego
+     najpierw próba pełna, a przy błędzie o brakującej kolumnie cofamy się
+     do zestawu sprzed etapu drugiego. Gra działa dalej, tylko bez sezonów.
+  */
+  const fullRow = {
       user_id: userId,
-      level: lvl.level,
-      xp: totalXp,
+      level: finalLvl.level,
+      xp: finalXp,
       condition,
       stat_sila: stats.sila,
       stat_wytrz: stats.wytrzymalosc,
@@ -235,10 +420,39 @@ export async function POST(request: NextRequest) {
       week_xp: weekXp,
       week_key: thisWeek,
       last_training: lastTraining,
+      league,
+      best_league: bestLeague,
+      league_week: thisWeekKey,
+      cohort,
+      season_key: sKey,
+      season_points: seasonPoints,
+      week_points: weekPoints,
+      streak_days: streak,
+      best_streak: achStats.bestStreak,
+      muscle: body.muscle,
+      leanness: body.leanness,
+      body_samples: body.samples,
+      gender,
       synced_at: new Date().toISOString(),
-    }, { onConflict: "user_id" })
-    .select("nick, level, xp, condition, stat_sila, stat_wytrz, stat_dyscyp, week_xp, last_training")
-    .single();
+  };
+  const LEGACY_COLS = "nick, level, xp, condition, stat_sila, stat_wytrz, stat_dyscyp, week_xp, last_training";
+  const FULL_COLS = LEGACY_COLS + ", league, best_league, cohort, season_key, season_points, week_points, streak_days, best_streak, muscle, leanness, body_samples, gender";
+
+  let { data: saved, error } = await admin
+    .from("gm_profiles").upsert(fullRow, { onConflict: "user_id" }).select(FULL_COLS).single();
+
+  let legacyMode = false;
+  if (error && /column|schema cache/i.test(error.message)) {
+    legacyMode = true;
+    const legacyRow = {
+      user_id: fullRow.user_id, level: fullRow.level, xp: fullRow.xp, condition: fullRow.condition,
+      stat_sila: fullRow.stat_sila, stat_wytrz: fullRow.stat_wytrz, stat_dyscyp: fullRow.stat_dyscyp,
+      week_xp: fullRow.week_xp, week_key: fullRow.week_key, last_training: fullRow.last_training,
+      synced_at: fullRow.synced_at,
+    };
+    ({ data: saved, error } = await admin
+      .from("gm_profiles").upsert(legacyRow, { onConflict: "user_id" }).select(LEGACY_COLS).single());
+  }
 
   if (error) {
     console.warn("[game] sync", error.message);
@@ -247,10 +461,17 @@ export async function POST(request: NextRequest) {
 
   return NextResponse.json({
     profile: saved,
-    level: lvl,
+    level: finalLvl,
     stats,
     condition,
     trainingDays28,
     volume28: Math.round(volume28),
+    body: { ...body, photoSessions },
+    season: { ...season, key: sKey, points: seasonPoints },
+    league: { id: league, cohort, weekPoints, settled },
+    quests: { daily: dq, weekly: wq, reward: questPay },
+    achievements: { unlockedNow: fresh.map((a) => ({ id: a.id, name: a.name, xp: a.xp })), ownedCount: owned.length + fresh.length },
+    // true = migracja etapu 2 jeszcze nieuruchomiona; UI ukrywa sezony i ligi
+    legacyMode,
   });
 }
