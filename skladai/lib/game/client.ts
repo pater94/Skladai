@@ -9,6 +9,7 @@
  */
 
 import { createClient } from "@/lib/supabase";
+import type { BodyState } from "@/lib/game/body";
 import { getWeekSteps } from "@/lib/health-steps";
 
 export interface GameProfile {
@@ -21,6 +22,47 @@ export interface GameProfile {
   stat_dyscyp: number;
   week_xp: number;
   last_training: string | null;
+  // Etap 2 — obecne dopiero po migracji 20260821_game_seasons.sql.
+  league?: number;
+  best_league?: number;
+  cohort?: number;
+  season_key?: string | null;
+  season_points?: number;
+  week_points?: number;
+  streak_days?: number;
+  best_streak?: number;
+  muscle?: number;
+  leanness?: number;
+  body_samples?: number;
+  gender?: "male" | "female" | null;
+}
+
+/** Pełna odpowiedź /api/game/sync — profil plus wszystko, co policzył serwer. */
+export interface SyncResult {
+  profile: GameProfile;
+  body: BodyState & { photoSessions: number };
+  season: { index: number; name: string; weekOfSeason: number; daysLeft: number; key: string; points: number };
+  league: { id: number; cohort: number; weekPoints: number; settled: { rank: number; outcome: string; league: number } | null };
+  quests: {
+    daily: Array<{ id: string; text: string; target: number; have: number; done: boolean; xp: number; points: number }>;
+    weekly: Array<{ id: string; text: string; target: number; have: number; done: boolean; xp: number; points: number }>;
+    reward: { xp: number; points: number; dailyBonus: boolean };
+  };
+  achievements: { unlockedNow: Array<{ id: string; name: string; xp: number }>; ownedCount: number };
+  legacyMode?: boolean;
+}
+
+export interface BoardRow {
+  nick: string;
+  league: number;
+  cohort: number;
+  week_points: number;
+  season_points: number;
+  level: number;
+  muscle: number;
+  leanness: number;
+  gender: "male" | "female" | null;
+  condition: number;
 }
 
 export interface RankRow {
@@ -41,7 +83,7 @@ export async function getMyProfile(): Promise<GameProfile | null> {
   if (!user) return null;
   const { data } = await supabase
     .from("gm_profiles")
-    .select("nick, level, xp, condition, stat_sila, stat_wytrz, stat_dyscyp, week_xp, last_training")
+    .select("*")
     .eq("user_id", user.id)
     .maybeSingle();
   return (data as GameProfile) ?? null;
@@ -74,6 +116,58 @@ export async function syncCharacter(): Promise<GameProfile | null> {
   } catch {
     return null;
   }
+}
+
+/** To samo przeliczenie, ale z pełnym wynikiem (sezon, liga, cele, odznaki). */
+export async function syncFull(): Promise<SyncResult | null> {
+  const supabase = createClient();
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session?.access_token) return null;
+
+  let steps: Record<string, number> = {};
+  try {
+    const week = await getWeekSteps();
+    steps = Object.fromEntries(week.map((d) => [d.date, d.steps]));
+  } catch { /* brak zgody na dane zdrowotne albo przeglądarka */ }
+
+  try {
+    const res = await fetch("/api/game/sync", {
+      method: "POST",
+      headers: { "content-type": "application/json", authorization: `Bearer ${session.access_token}` },
+      body: JSON.stringify({ steps }),
+    });
+    if (!res.ok) return null;
+    return (await res.json()) as SyncResult;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Tablica ligowa własnej kohorty — te ~30 osób, z którymi realnie się ścigasz.
+ * Zwraca pustą listę, gdy migracja etapu 2 jeszcze nie poszła.
+ */
+export async function getLeagueBoard(league: number, cohort: number): Promise<BoardRow[]> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("gm_league_board")
+    .select("nick, league, cohort, week_points, season_points, level, muscle, leanness, gender, condition")
+    .eq("league", league).eq("cohort", cohort)
+    .order("week_points", { ascending: false })
+    .limit(40);
+  if (error) return [];
+  return (data as BoardRow[]) ?? [];
+}
+
+/** Zdobyte odznaki. Pusta lista również wtedy, gdy tabeli jeszcze nie ma. */
+export async function getMyAchievements(): Promise<string[]> {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return [];
+  const { data, error } = await supabase
+    .from("gm_achievements").select("achievement_id").eq("user_id", user.id);
+  if (error) return [];
+  return ((data ?? []) as Array<{ achievement_id: string }>).map((r) => r.achievement_id);
 }
 
 /** Zasady dla nicku — krótko i bez pola do podszywania się. */

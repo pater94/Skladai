@@ -15,6 +15,8 @@ import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getMyProfile, syncCharacter, type GameProfile } from "@/lib/game/client";
 import { levelFromXp, titleForLevel } from "@/lib/game/rules";
+import { leagueById } from "@/lib/game/season";
+import Character from "./Character";
 
 const ORANGE = "var(--c-orange, #f97316)";
 const GREEN = "#5fd39a";
@@ -69,15 +71,26 @@ export default function CharacterCard() {
       }}
     >
       <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-        {/* Poziom */}
-        <div style={{
-          width: 52, height: 52, borderRadius: 15, flexShrink: 0,
-          display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-          background: `linear-gradient(135deg, ${ORANGE}, var(--c-orange-3, #ea580c))`,
-          boxShadow: "0 4px 16px rgba(var(--c-orange-rgb, 249,115,22),0.32)",
-        }}>
-          <div style={{ fontSize: 19, fontWeight: 900, color: "#fff", lineHeight: 1 }}>{lvl.level}</div>
-          <div style={{ fontSize: 8, fontWeight: 700, color: "rgba(255,255,255,0.85)", letterSpacing: 0.5 }}>POZIOM</div>
+        {/* Postać — to ona ma być pierwszą rzeczą, którą widać */}
+        <div style={{ position: "relative", flexShrink: 0, width: 62, height: 96, display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
+          <Character
+            muscle={p.muscle ?? 30}
+            leanness={p.leanness ?? 50}
+            gender={p.gender ?? null}
+            level={lvl.level}
+            condition={p.condition}
+            auraColor={(p.league ?? 0) >= 3 ? leagueById(p.league ?? 0).color : null}
+            height={96}
+          />
+          {/* Poziom w rogu, na postaci */}
+          <div style={{
+            position: "absolute", bottom: -2, right: -4,
+            minWidth: 26, height: 26, borderRadius: 9, padding: "0 5px",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            background: `linear-gradient(135deg, ${ORANGE}, var(--c-orange-3, #ea580c))`,
+            boxShadow: "0 2px 10px rgba(var(--c-orange-rgb, 249,115,22),0.4)",
+            fontSize: 13, fontWeight: 900, color: "#fff", lineHeight: 1,
+          }}>{lvl.level}</div>
         </div>
 
         <div style={{ flex: 1, minWidth: 0 }}>
@@ -88,6 +101,11 @@ export default function CharacterCard() {
             {p.nick && (
               <span style={{ fontSize: 10.5, color: "rgba(var(--fg-rgb, 255,255,255),0.55)", flexShrink: 0 }}>
                 {titleForLevel(lvl.level)}
+              </span>
+            )}
+            {typeof p.league === "number" && (
+              <span style={{ fontSize: 10, fontWeight: 800, color: leagueById(p.league).color, flexShrink: 0 }}>
+                {leagueById(p.league).name}
               </span>
             )}
           </div>

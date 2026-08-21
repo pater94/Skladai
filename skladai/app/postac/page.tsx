@@ -13,10 +13,17 @@ import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import BottomNav from "@/components/BottomNav";
 import {
-  getMyProfile, syncCharacter, getRanking, setNick, validateNick,
-  type GameProfile, type RankRow, type RankMode,
+  getMyProfile, syncFull, getRanking, setNick, validateNick,
+  getLeagueBoard, getMyAchievements,
+  type GameProfile, type RankRow, type RankMode, type SyncResult, type BoardRow,
 } from "@/lib/game/client";
 import { levelFromXp, titleForLevel, totalXpForLevel, XP, XP_BACKDATE_DAYS, DAILY_XP_CAP, WEEKLY_XP_CAP } from "@/lib/game/rules";
+import { leagueById } from "@/lib/game/season";
+import { buildName, isConfident } from "@/lib/game/body";
+import { DAILY_REQUIRED } from "@/lib/game/quests";
+import type { AchievementStats } from "@/lib/game/achievements";
+import Character from "@/components/game/Character";
+import { QuestsSection, LeagueSection, SeasonSection, AchievementsSection, LeagueLadder } from "@/components/game/GameSections";
 
 const ORANGE = "var(--c-orange, #f97316)";
 const GREEN = "#5fd39a";
@@ -30,13 +37,27 @@ export default function PostacPage() {
   const [nick, setNickInput] = useState("");
   const [nickErr, setNickErr] = useState<string | null>(null);
   const [savingNick, setSavingNick] = useState(false);
+  const [full, setFull] = useState<SyncResult | null>(null);
+  const [board, setBoard] = useState<BoardRow[]>([]);
+  const [owned, setOwned] = useState<string[]>([]);
 
   const load = useCallback(async () => {
     const cached = await getMyProfile();
     if (cached) { setP(cached); setNickInput(cached.nick ?? ""); }
     setLoading(false);
-    const fresh = await syncCharacter();
-    if (fresh) setP(fresh);
+    const res = await syncFull();
+    if (res) {
+      setP(res.profile);
+      setFull(res);
+      if (!res.legacyMode) {
+        const [b, a] = await Promise.all([
+          getLeagueBoard(res.league.id, res.league.cohort),
+          getMyAchievements(),
+        ]);
+        setBoard(b);
+        setOwned(a);
+      }
+    }
   }, []);
 
   useEffect(() => {
@@ -92,21 +113,43 @@ export default function PostacPage() {
               border: "1px solid rgba(var(--c-orange-rgb, 249,115,22),0.3)",
             }}>
               <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-                <div style={{
-                  width: 68, height: 68, borderRadius: 20, flexShrink: 0,
-                  display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-                  background: `linear-gradient(135deg, ${ORANGE}, var(--c-orange-3, #ea580c))`,
-                  boxShadow: "0 6px 22px rgba(var(--c-orange-rgb, 249,115,22),0.35)",
-                }}>
-                  <div style={{ fontSize: 26, fontWeight: 900, color: "#fff", lineHeight: 1 }}>{lvl.level}</div>
-                  <div style={{ fontSize: 8.5, fontWeight: 700, color: "rgba(255,255,255,0.85)" }}>POZIOM</div>
+                {/* Postać w pełnej okazałości — to jest bohater tego ekranu */}
+                <div style={{ position: "relative", flexShrink: 0 }}>
+                  <Character
+                    muscle={full?.body.muscle ?? p?.muscle ?? 30}
+                    leanness={full?.body.leanness ?? p?.leanness ?? 50}
+                    gender={p?.gender ?? null}
+                    level={lvl.level}
+                    condition={p?.condition ?? 0}
+                    auraColor={(p?.league ?? 0) >= 3 ? leagueById(p?.league ?? 0).color : null}
+                    height={168}
+                  />
+                  <div style={{
+                    position: "absolute", bottom: 0, left: "50%", transform: "translateX(-50%)",
+                    padding: "2px 9px", borderRadius: 9,
+                    background: `linear-gradient(135deg, ${ORANGE}, var(--c-orange-3, #ea580c))`,
+                    fontSize: 12, fontWeight: 900, color: "#fff", whiteSpace: "nowrap",
+                  }}>poz. {lvl.level}</div>
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 18, fontWeight: 900 }}>{p?.nick ?? "Bez nicku"}</div>
                   <div style={{ fontSize: 12, color: ORANGE, fontWeight: 700, marginTop: 1 }}>{titleForLevel(lvl.level)}</div>
+                  {full && (
+                    <div style={{ fontSize: 11, color: "rgba(var(--fg-rgb, 255,255,255),0.72)", marginTop: 5 }}>
+                      {buildName(full.body)}
+                      {!isConfident(full.body) && (
+                        <span style={{ color: "rgba(var(--fg-rgb, 255,255,255),0.45)" }}>
+                          {" "}— zrób sesję zdjęć, żeby postać wiedziała, jak wyglądasz
+                        </span>
+                      )}
+                    </div>
+                  )}
                   <div style={{ fontSize: 11, color: "rgba(var(--fg-rgb, 255,255,255),0.6)", marginTop: 4 }}>
                     {p?.xp ?? 0} XP łącznie{myRow >= 0 ? ` · ${myRow + 1}. miejsce` : ""}
                   </div>
+                  {typeof p?.league === "number" && (
+                    <LeagueLadder current={p.league} best={p.best_league ?? p.league} />
+                  )}
                 </div>
               </div>
 
@@ -163,8 +206,45 @@ export default function PostacPage() {
               )}
             </div>
 
+            {/* ── Cele, liga, sezon, odznaki ──
+                Kolejność nieprzypadkowa: najpierw to, co można zrobić DZIŚ,
+                potem z kim się ścigasz w tym tygodniu, potem długi sezon,
+                a na końcu to, czego nie da się stracić. */}
+            {full && !full.legacyMode && (
+              <>
+                <QuestsSection quests={full.quests} required={DAILY_REQUIRED} />
+                <LeagueSection league={full.league.id} board={board} myNick={p?.nick ?? null} />
+                <SeasonSection season={full.season} />
+                <AchievementsSection owned={owned} stats={{
+                  trainingDaysTotal: full.quests.weekly.length ? (p?.streak_days ?? 0) : 0,
+                  bestStreak: p?.best_streak ?? 0,
+                  volumeTotalKg: 0,
+                  recordsTotal: 0,
+                  level: lvl.level,
+                  bestLeague: p?.best_league ?? 0,
+                  photoSessions: full.body.photoSessions,
+                  muscleGained: Math.max(0, full.body.muscleDelta ?? 0),
+                  leannessGained: Math.max(0, full.body.leannessDelta ?? 0),
+                  scansTotal: 0,
+                  oddHourSessions: 0,
+                  seasonsCompleted: 0,
+                } satisfies AchievementStats} />
+              </>
+            )}
+
+            {full?.legacyMode && (
+              <div style={{ marginTop: 14, padding: 12, borderRadius: 14, fontSize: 12,
+                background: "rgba(var(--c-orange-rgb, 249,115,22),0.1)",
+                border: "1px solid rgba(var(--c-orange-rgb, 249,115,22),0.25)",
+                color: "rgba(var(--fg-rgb, 255,255,255),0.75)" }}>
+                Sezony, ligi i cele czekają na migrację bazy
+                (<code style={{ fontSize: 11 }}>20260821_game_seasons.sql</code>).
+                Postać i poziomy działają normalnie.
+              </div>
+            )}
+
             {/* ── Ranking ── */}
-            <div style={{ display: "flex", gap: 6, marginBottom: 10 }}>
+            <div style={{ display: "flex", gap: 6, marginTop: 16, marginBottom: 10 }}>
               {([["week", "Liga tygodnia"], ["level", "Wszech czasów"]] as Array<[RankMode, string]>).map(([m, label]) => (
                 <button key={m} onClick={() => setMode(m)} data-testid={`rank-${m}`}
                   style={{
