@@ -520,10 +520,19 @@ export async function getSessionForEdit(sessionId: string): Promise<EditableSess
     if (w?.name) workoutName = w.name as string;
   }
 
+  /*
+     UWAGA: sortowanie po samym `set_index` ustawiało najpierw wszystkie serie
+     numer 0 (po jednej z każdego ćwiczenia), potem wszystkie numer 1 itd. —
+     przez co po otwarciu daty ćwiczenia były w kolejności bez związku z
+     czymkolwiek. Sortujemy więc po ćwiczeniu, a dopiero potem po numerze serii.
+  */
   const { data: setRows } = await supabase
-    .from("wn_sets").select("*").eq("session_id", sessionId).order("set_index", { ascending: true });
+    .from("wn_sets").select("*").eq("session_id", sessionId)
+    .order("created_at", { ascending: true }).order("set_index", { ascending: true });
   const rows = (setRows ?? []) as WnSet[];
-  const ids = [...new Set(rows.map((r) => r.exercise_id))];
+  const seen = new Map<string, number>();
+  for (const r of rows) if (!seen.has(r.exercise_id)) seen.set(r.exercise_id, seen.size);
+  const ids = await orderByPlan(session.workout_id, [...seen.keys()], seen);
   const { data: exRows } = ids.length
     ? await supabase.from("wn_exercises").select("*").in("id", ids)
     : { data: [] };
@@ -538,7 +547,10 @@ export async function getSessionForEdit(sessionId: string): Promise<EditableSess
       exerciseId: id,
       name: byId.get(id)?.name ?? "Ćwiczenie",
       kind: byId.get(id)?.kind ?? "weighted",
+      // Serie w obrębie ćwiczenia zawsze po numerze — dopisane później mają
+      // większy created_at, ale numer serii mówi, gdzie naprawdę należą.
       sets: rows.filter((r) => r.exercise_id === id)
+        .sort((a, b) => (a.set_index ?? 0) - (b.set_index ?? 0))
         .map((r) => ({ weight: r.weight_kg, reps: r.reps, duration: r.duration_sec })),
     })),
   };
@@ -1052,6 +1064,44 @@ export interface WnSessionSummary {
   totalVolume: number; totalSets: number; prCount: number;
 }
 
+/**
+ * Kolejność ćwiczeń w zapisanej sesji — WEDŁUG PLANU TRENINGU.
+ *
+ * Wcześniej brała się z kolejności wpisywania serii (`created_at`) albo, co
+ * jeszcze gorsze, z `set_index` — a `set_index` numeruje serie WEWNĄTRZ
+ * ćwiczenia, więc sortowanie po nim ustawia najpierw wszystkie „pierwsze
+ * serie" w przypadkowej kolejności i sesja wygląda na kompletnie pomieszaną.
+ *
+ * Kolejność wpisywania też nie jest kolejnością treningu: przy szybkim
+ * zapisie i przy dopisywaniu serii po fakcie ćwiczenia lądują tam, gdzie
+ * akurat ktoś kliknął. Jedyna kolejność, którą użytkownik SAM ustalił, to ta
+ * z planu — i to ona ma obowiązywać wszędzie: w podsumowaniu, w edycji i w
+ * historii.
+ *
+ * Ćwiczenia spoza planu (dopisane ad hoc) idą na koniec, w kolejności
+ * pierwszego pojawienia się.
+ */
+async function orderByPlan(
+  workoutId: string | null,
+  exerciseIds: string[],
+  firstSeen: Map<string, number>,
+): Promise<string[]> {
+  let pos = new Map<string, number>();
+  if (workoutId) {
+    const supabase = createClient();
+    const { data } = await supabase
+      .from("wn_workout_exercises").select("exercise_id, position").eq("workout_id", workoutId);
+    pos = new Map(((data ?? []) as Array<{ exercise_id: string; position: number }>)
+      .map((r) => [r.exercise_id, r.position]));
+  }
+  return [...exerciseIds].sort((a, b) => {
+    const pa = pos.has(a) ? pos.get(a)! : Number.MAX_SAFE_INTEGER;
+    const pb = pos.has(b) ? pos.get(b)! : Number.MAX_SAFE_INTEGER;
+    if (pa !== pb) return pa - pb;
+    return (firstSeen.get(a) ?? 0) - (firstSeen.get(b) ?? 0);
+  });
+}
+
 /** Skondensowane podsumowanie jednej sesji treningowej. */
 export async function getSessionSummary(sessionId: string): Promise<WnSessionSummary | null> {
   const supabase = createClient();
@@ -1064,21 +1114,20 @@ export async function getSessionSummary(sessionId: string): Promise<WnSessionSum
     .from("wn_sets")
     .select("*, exercise:wn_exercises!inner(id, name, kind)")
     .eq("session_id", sessionId)
-    // Kolejność ĆWICZEŃ bierze się z kolejności wierszy, więc musi być
-    // deterministyczna — inaczej podsumowanie tego samego treningu układa się
-    // za każdym otwarciem inaczej. created_at = kolejność logowania serii,
-    // czyli ta, w jakiej trening był naprawdę wykonywany.
+    // Serie w obrębie ćwiczenia po numerze; kolejność samych ĆWICZEŃ ustala
+    // niżej orderByPlan, bo ta z wpisywania nie ma nic wspólnego z treningiem.
     .order("created_at", { ascending: true })
     .order("set_index", { ascending: true });
   const rows = (setsData ?? []) as unknown as Array<WnSet & { exercise: { id: string; name: string; kind: WnKind } }>;
 
-  const order: string[] = [];
+  const firstSeen = new Map<string, number>();
   const byEx = new Map<string, { name: string; kind: WnKind; sets: WnSet[] }>();
   for (const r of rows) {
     const id = r.exercise.id;
-    if (!byEx.has(id)) { byEx.set(id, { name: r.exercise.name, kind: r.exercise.kind, sets: [] }); order.push(id); }
+    if (!byEx.has(id)) { byEx.set(id, { name: r.exercise.name, kind: r.exercise.kind, sets: [] }); firstSeen.set(id, firstSeen.size); }
     byEx.get(id)!.sets.push(r);
   }
+  const order = await orderByPlan(s.workout_id, [...byEx.keys()], firstSeen);
 
   const exercises: WnSummaryExercise[] = [];
   let totalVolume = 0, totalSets = 0, prCount = 0;

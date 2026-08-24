@@ -15,6 +15,7 @@ import {
 } from "@/lib/workoutJournal";
 
 interface WorkoutMeta {
+  firstExercise: string | null;
   exerciseCount: number;
   lastFinishedAt: string | null;
   lastVolume: number | null;
@@ -75,6 +76,7 @@ export default function WorkoutJournalList({
           ? last.sets.reduce((sum, s) => sum + (s.weight_kg ?? 0) * (s.reps ?? 0), 0)
           : null;
         return [w.id, {
+          firstExercise: full?.exercises[0]?.exercise?.name ?? null,
           exerciseCount: full?.exercises.length ?? 0,
           lastFinishedAt: last?.finished_at ?? null,
           lastVolume: lastVolume && lastVolume > 0 ? Math.round(lastVolume) : null,
@@ -196,6 +198,17 @@ export default function WorkoutJournalList({
         {!loading && workouts.map((w) => {
           const m = meta[w.id];
           const rel = relativeTime(m?.lastFinishedAt ?? null);
+          /* Data jest tu najważniejszą informacją — po niej użytkownik szuka
+             treningu. Sam zwrot „1 tyg. temu" nie pozwala trafić w konkretny
+             dzień, więc pokazujemy dzień i miesiąc, a względny czas dopiero
+             obok, mniejszą czcionką. */
+          const absDate = m?.lastFinishedAt
+            ? new Date(m.lastFinishedAt).toLocaleDateString("pl-PL", { day: "numeric", month: "short" })
+            : null;
+          /* Dwa treningi o tej samej nazwie to normalna sytuacja (stary plan i
+             nowy). Bez rozróżnienia lista wygląda na zdublowaną, więc przy
+             powtórce dopisujemy pierwsze ćwiczenie planu. */
+          const dupName = workouts.filter((x) => x.name === w.name).length > 1;
           const canSummary = !!(onOpenSummary && m?.lastSessionId);
           return (
             <div key={w.id} style={{ display: "flex", gap: 8, alignItems: "stretch" }}>
@@ -216,11 +229,27 @@ export default function WorkoutJournalList({
                 {/* pasek akcentu po lewej */}
                 <span style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 4, background: "linear-gradient(180deg, var(--c-orange, #f97316), var(--c-orange-3, #ea580c))" }} />
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 15.5, fontWeight: 800, color: "var(--fg, #fff)" }}>{w.name}</div>
-                  <div style={{ fontSize: 12, color: "rgba(var(--fg-rgb, 255,255,255),0.5)", marginTop: 3 }}>
+                  <div style={{ display: "flex", alignItems: "baseline", gap: 6, minWidth: 0 }}>
+                    <span style={{ fontSize: 15.5, fontWeight: 800, color: "var(--fg, #fff)", whiteSpace: "nowrap" }}>{w.name}</span>
+                    {dupName && m?.firstExercise && (
+                      <span style={{ fontSize: 10.5, color: "rgba(var(--fg-rgb, 255,255,255),0.42)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        od: {m.firstExercise}
+                      </span>
+                    )}
+                  </div>
+                  {absDate && (
+                    <div style={{ display: "flex", alignItems: "baseline", gap: 5, marginTop: 3 }}>
+                      <span style={{ fontSize: 13, fontWeight: 800, color: "var(--c-orange, #f97316)", fontVariantNumeric: "tabular-nums" }}>{absDate}</span>
+                      {/* Dla starszych wpisów relativeTime zwraca samą datę —
+                          wtedy nie powtarzamy jej drugi raz obok. */}
+                      {rel && rel !== absDate && (
+                        <span style={{ fontSize: 10.5, color: "rgba(var(--fg-rgb, 255,255,255),0.38)" }}>· {rel}</span>
+                      )}
+                    </div>
+                  )}
+                  <div style={{ fontSize: 11.5, color: "rgba(var(--fg-rgb, 255,255,255),0.45)", marginTop: 2 }}>
                     {m ? `${m.exerciseCount} ${m.exerciseCount === 1 ? "ćwiczenie" : "ćwiczeń"}` : "…"}
                     {m && m.sessionCount > 0 ? ` · ${m.sessionCount} ${m.sessionCount === 1 ? "zapis" : "zapisów"}` : ""}
-                    {rel ? ` · ostatnio ${rel}` : ""}
                   </div>
                 </div>
                 {m?.lastVolume != null && (
