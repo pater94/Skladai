@@ -215,7 +215,25 @@ export async function getExercise(exerciseId: string): Promise<WnExercise | null
   return (data as WnExercise) ?? null;
 }
 
-/** Znajdź ćwiczenie po nazwie (case-insensitive) lub utwórz nowe. */
+/**
+ * Klucz porównawczy nazwy ćwiczenia.
+ *
+ * Bez ogonków, bez znaków przestankowych i Z POSORTOWANYMI SŁOWAMI, bo
+ * dokładnie na tym system się wykładał: „Podciąganie chwytem neutralnym" i
+ * „Podciąganie neutralnym chwytem" to jedno ćwiczenie, a wpadały do katalogu
+ * jako dwa osobne. Skutek był podwójny — zdublowany trening na liście i
+ * progres rozbity na dwa rekordy, więc rekordy życiowe liczyły się osobno
+ * dla każdej wersji nazwy.
+ */
+export function exerciseKey(name: string): string {
+  return name
+    .toLowerCase()
+    .normalize("NFD").replace(/[̀-ͯ]/g, "")
+    .replace(/[^a-z0-9 ]/g, " ")
+    .split(/\s+/).filter(Boolean).sort().join(" ");
+}
+
+/** Znajdź ćwiczenie po nazwie (odporne na kolejność słów) lub utwórz nowe. */
 export async function findOrCreateExercise(name: string, kind: WnKind = "weighted"): Promise<WnExercise | null> {
   const supabase = createClient();
   const userId = await getUserId();
@@ -225,6 +243,15 @@ export async function findOrCreateExercise(name: string, kind: WnKind = "weighte
   const { data: existing } = await supabase
     .from("wn_exercises").select("*").ilike("name", trimmed).limit(1);
   if (existing && existing.length) return existing[0] as WnExercise;
+
+  /* Dokładna nazwa nie pasuje — sprawdzamy jeszcze katalog po kluczu
+     odpornym na przestawienie słów. Katalog jednego użytkownika to
+     kilkadziesiąt wierszy, więc jedno zapytanie nic nie kosztuje. */
+  const key = exerciseKey(trimmed);
+  const { data: all } = await supabase
+    .from("wn_exercises").select("*").eq("user_id", userId);
+  const twin = ((all ?? []) as WnExercise[]).find((e) => exerciseKey(e.name) === key);
+  if (twin) return twin;
   const { data, error } = await supabase
     .from("wn_exercises")
     .insert({ user_id: userId, name: trimmed, kind, unit: kind === "duration" ? "s" : "kg" })

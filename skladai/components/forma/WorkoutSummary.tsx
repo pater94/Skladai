@@ -30,17 +30,27 @@ const ACCENT = "#F26419";
 const num = (n: number) => n.toLocaleString("pl-PL");
 
 /** Seria w formie „127,5 × 5". Bez ciężaru (masa ciała) — same powtórzenia. */
+/**
+ * Etykieta jednej serii.
+ *
+ * Jednostka jest zawsze widoczna, bo bez niej „8" przy dipach czyta się jak
+ * ciężar, a „100 × 5" nie mówi wprost, która liczba jest którą. Kosztuje to
+ * kilka znaków szerokości i jest tego warte — podsumowanie ma być czytelne
+ * dla kogoś, kto patrzy na nie pierwszy raz.
+ */
 function setLabel(s: { weight: number | null; reps: number | null; duration: number | null }, kind: string): string {
   if (kind === "duration" || (s.duration != null && s.weight == null && s.reps == null)) {
-    return s.duration != null ? `${s.duration}s` : "—";
+    return s.duration != null ? `${s.duration} s` : "—";
   }
-  // Masa ciała Z dociążeniem ma się pokazać jako „20 × 8", bez — jako samo „8".
-  if (kind === "bodyweight" && (s.weight == null || s.weight === 0)) {
-    return s.reps != null ? num(s.reps) : "—";
+  if (kind === "bodyweight") {
+    // Dociążenie oznaczamy plusem — to ciężar DODANY do masy ciała.
+    if (s.weight != null && s.weight !== 0 && s.reps != null) return `+${num(s.weight)} kg × ${num(s.reps)}`;
+    if (s.reps != null) return `${num(s.reps)} powt.`;
+    return "—";
   }
-  if (s.weight != null && s.reps != null) return `${num(s.weight)} × ${num(s.reps)}`;
-  if (s.weight != null) return num(s.weight);
-  if (s.reps != null) return num(s.reps);
+  if (s.weight != null && s.reps != null) return `${num(s.weight)} kg × ${num(s.reps)}`;
+  if (s.weight != null) return `${num(s.weight)} kg`;
+  if (s.reps != null) return `${num(s.reps)} powt.`;
   return "—";
 }
 
