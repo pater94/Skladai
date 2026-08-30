@@ -93,21 +93,24 @@ const check = (c, ok, bad) => { if (c) console.log("  OK  " + ok); else { consol
     if (await page.evaluate(() => (document.body.textContent || "").includes("Zakończ trening"))) break;
   }
   await page.waitForTimeout(1500);
+  /* Liczymy po etykietach dostępności, nie po podpowiedziach w polu:
+     podpowiedź znika po wpisaniu pierwszej cyfry, a jednostka „kg"/„powt."
+     stoi teraz na stałe obok pola. */
   const aw = await page.evaluate(() => {
     const out = [];
-    document.querySelectorAll("input").forEach((i) => out.push(i.getAttribute("placeholder")));
+    document.querySelectorAll("input").forEach((i) => out.push(i.getAttribute("aria-label")));
     return out.filter(Boolean);
   });
   await page.screenshot({ path: (process.argv[2] || ".") + "/bw-aktywny.png" });
-  const awPlus = aw.filter((x) => x === "+kg").length;
-  const awReps = aw.filter((x) => x === "powt.").length;
+  const awPlus = aw.filter((x) => /ciężar/i.test(x)).length;
+  const awReps = aw.filter((x) => /powtórze/i.test(x)).length;
   check(awPlus >= 2 && awReps >= 2,
-    `Oba ćwiczenia mają pole „+kg" i „powt." (kg: ${awPlus}, powt.: ${awReps})`,
+    `Oba ćwiczenia mają pole ciężaru i powtórzeń (kg: ${awPlus}, powt.: ${awReps})`,
     `Brakuje pól — kg: ${awPlus}, powt.: ${awReps}`);
 
   // zapisujemy dociążenie dla OBU ćwiczeń
-  const rowsSel = 'input[placeholder="+kg"]';
-  const repsSel = 'input[placeholder="powt."]';
+  const rowsSel = 'input[aria-label="dodatkowy ciężar w kg"], input[aria-label="dodatkowy ciężar"]';
+  const repsSel = 'input[aria-label="liczba powtórzeń"], input[aria-label="powtórzenia"]';
   const nW = await page.locator(rowsSel).count();
   for (const idx of [0, Math.max(1, Math.floor(nW / 2))]) {
     await page.locator(rowsSel).nth(idx).click();

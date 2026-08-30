@@ -19,6 +19,10 @@ import MuscleMap from "./MuscleMap";
 import ExercisePicker from "./ExercisePicker";
 
 
+/** Zmiana nazwy ćwiczenia — osobny import, żeby nie ruszać istniejącej listy. */
+import { renameExercise } from "@/lib/workoutJournal";
+import { rememberMapping } from "@/lib/anatomy/matcher";
+
 export default function ExerciseHistory({
   goBack, exerciseId, workoutId,
 }: {
@@ -36,6 +40,13 @@ export default function ExerciseHistory({
   const [needsPick, setNeedsPick] = useState(false);
   const [candidates, setCandidates] = useState<MatchCandidate[]>([]);
   const [resolving, setResolving] = useState(true);
+  /* Zmiana nazwy w dowolnym momencie — ta sama maszyna w innej siłowni
+     ustawia się inaczej, więc dopisek miejscowości pozwala trzymać osobny
+     progres zamiast mieszać wszystko w jeden wykres. */
+  const [renaming, setRenaming] = useState(false);
+  const [nameDraft, setNameDraft] = useState("");
+  const [nameErr, setNameErr] = useState<string | null>(null);
+  const [savingName, setSavingName] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -90,7 +101,86 @@ export default function ExerciseHistory({
             {stats?.scopedToWorkout ? "Progres tylko w tym treningu" : "Progres w czasie"}
           </p>
         </div>
+        {exercise && !renaming && (
+          <button
+            onClick={() => { setNameDraft(exercise.name); setNameErr(null); setRenaming(true); }}
+            data-testid="eh-rename-open"
+            style={{
+              flexShrink: 0, padding: "7px 11px", borderRadius: 11, cursor: "pointer",
+              background: "rgba(var(--fg-rgb, 255,255,255),0.06)",
+              border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.12)",
+              color: "rgba(var(--fg-rgb, 255,255,255),0.8)", fontSize: 12, fontWeight: 700,
+            }}>
+            Zmień nazwę
+          </button>
+        )}
       </div>
+
+      {renaming && exercise && (
+        <div data-testid="eh-rename" style={{
+          marginBottom: 16, padding: 14, borderRadius: 15,
+          background: "rgba(var(--fg-rgb, 255,255,255),0.04)",
+          border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.1)",
+        }}>
+          <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: 1, textTransform: "uppercase", color: "rgba(var(--fg-rgb, 255,255,255),0.55)", marginBottom: 8 }}>
+            Nazwa ćwiczenia
+          </div>
+          <input
+            value={nameDraft}
+            onChange={(e) => { setNameDraft(e.target.value); setNameErr(null); }}
+            data-testid="eh-rename-input"
+            placeholder="np. Wyciskanie sztangi — Xtreme Kraków"
+            style={{
+              width: "100%", padding: "11px 13px", borderRadius: 12,
+              background: "rgba(var(--fg-rgb, 255,255,255),0.06)",
+              border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.14)",
+              color: "var(--fg, #fff)", fontSize: 14.5, fontWeight: 700, outline: "none",
+            }} />
+          <div style={{ fontSize: 10.5, color: "rgba(var(--fg-rgb, 255,255,255),0.5)", marginTop: 7 }}>
+            Cała historia, rekordy i wykres zostają — zmienia się tylko nazwa.
+            Dopisz miejscowość, jeśli chcesz osobno śledzić ciężary z innej siłowni.
+          </div>
+          {nameErr && (
+            <div style={{ fontSize: 11.5, color: "var(--c-red, #ef4444)", marginTop: 7 }} data-testid="eh-rename-err">{nameErr}</div>
+          )}
+          <div style={{ display: "flex", gap: 8, marginTop: 11 }}>
+            <button
+              onClick={async () => {
+                if (savingName) return;
+                setSavingName(true);
+                const err = await renameExercise(exercise.id, nameDraft);
+                if (!err) {
+                  /* Przypisanie do partii mięśniowych przenosimy na nową nazwę.
+                     Bez tego dopisek miejscowości potrafi zgubić dopasowanie i
+                     ćwiczenie wypadłoby z objętości w Rytmie. */
+                  if (anatomy) { try { await rememberMapping(nameDraft.trim(), anatomy.id); } catch { /* nieistotne */ } }
+                  setExercise({ ...exercise, name: nameDraft.trim() });
+                  setRenaming(false);
+                }
+                setNameErr(err);
+                setSavingName(false);
+              }}
+              disabled={savingName}
+              data-testid="eh-rename-save"
+              style={{
+                flex: 1, padding: "10px", borderRadius: 11, cursor: "pointer", border: "none",
+                background: "var(--c-orange, #f97316)", color: "#fff", fontSize: 13, fontWeight: 800,
+              }}>
+              {savingName ? "Zapisuję…" : "Zapisz nazwę"}
+            </button>
+            <button
+              onClick={() => { setRenaming(false); setNameErr(null); }}
+              data-testid="eh-rename-cancel"
+              style={{
+                padding: "10px 16px", borderRadius: 11, cursor: "pointer",
+                background: "transparent", border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.16)",
+                color: "rgba(var(--fg-rgb, 255,255,255),0.7)", fontSize: 13, fontWeight: 700,
+              }}>
+              Anuluj
+            </button>
+          </div>
+        </div>
+      )}
 
       {loading ? (
         <div style={{ padding: 50, textAlign: "center", color: "rgba(var(--fg-rgb, 255,255,255),0.64)" }}>Ładowanie…</div>

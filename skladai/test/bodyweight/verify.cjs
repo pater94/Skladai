@@ -69,19 +69,24 @@ const check = (c, ok, bad) => { if (c) console.log("  OK  " + ok); else { consol
   await page.waitForTimeout(3200);
 
   // ── pole ciężaru MUSI być, mimo że ćwiczenie jest „z masą ciała" ──
+  /* Po dodaniu stałych jednostek obok pól podpowiedź „powt." zniknęła —
+     etykieta dostępności jest teraz jedynym trwałym opisem pola. */
   const f = await page.evaluate(() => {
-    const cards = [...document.querySelectorAll("input")];
-    const ph = cards.map((i) => i.getAttribute("placeholder"));
-    return { placeholders: ph.filter(Boolean).slice(0, 8) };
+    const labels = [...document.querySelectorAll("input")].map((i) => i.getAttribute("aria-label")).filter(Boolean);
+    const units = [...document.querySelectorAll("label span")].map((s) => (s.textContent || "").trim());
+    return { labels: labels.slice(0, 8), units: [...new Set(units)].slice(0, 6) };
   });
-  check(f.placeholders.includes("+kg"), `Jest pole dociążenia (${f.placeholders.join(", ")})`, `Brak pola „+kg": ${f.placeholders.join(", ")}`);
-  check(f.placeholders.includes("powt."), "Jest pole powtórzeń", "Brak pola powtórzeń");
+  check(f.labels.some((l) => /ciężar/i.test(l)), `Jest pole dociążenia (${f.labels.join(", ")})`, `Brak pola ciężaru: ${f.labels.join(", ")}`);
+  check(f.labels.some((l) => /powtórze/i.test(l)), "Jest pole powtórzeń", `Brak pola powtórzeń: ${f.labels.join(", ")}`);
+  check(f.units.includes("kg") && f.units.includes("powt."),
+    `Jednostki widoczne przy polach (${f.units.join(", ")})`,
+    `Brak jednostek przy polach: ${f.units.join(", ")}`);
 
   // ── wpisujemy 20 kg × 8 i zapisujemy ──
   // PRAWDZIWE wpisywanie: commit leci na onBlur, a React słucha focusout —
   // sztucznie wysłany event "blur" nie bąbelkuje i nigdy by go nie wywołał.
-  const wSel = 'input[placeholder="+kg"]';
-  const rSel = 'input[placeholder="powt."]';
+  const wSel = 'input[aria-label="dodatkowy ciężar w kg"], input[aria-label="dodatkowy ciężar"]';
+  const rSel = 'input[aria-label="liczba powtórzeń"], input[aria-label="powtórzenia"]';
   await page.locator(wSel).first().click();
   await page.locator(wSel).first().fill("20");
   await page.locator(rSel).first().click();     // blur na polu ciężaru

@@ -14,6 +14,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import AddExercise from "./AddExercise";
 import { formatDelta, deltaColor } from "@/lib/progressFormat";
+import { useNumericDrafts, formatDecimal } from "@/lib/forma/numericDraft";
 import {
   listWorkouts, createWorkout, findWorkoutByName, getWorkoutTemplate, logSession, strengthIndex,
   getPendingLog, clearPendingLog, type PendingLog,
@@ -131,10 +132,13 @@ export default function QuickLog({ goBack, onSaved }: { goBack: () => void; onSa
       }),
     }));
   };
-  const setField = (ei: number, si: number, field: "weight" | "reps", val: string) => {
-    const n = val.trim() === "" ? null : Math.max(0, parseFloat(val.replace(",", ".")));
+  /* Brudnopisy pól liczbowych — bez nich nie dało się wpisać przecinka,
+     bo pole sterowane liczbą kasowało go w tej samej klatce. */
+  const draft = useNumericDrafts();
+  const setField = (ei: number, si: number, field: "weight" | "reps", raw: string) => {
+    const n = draft.type(`${ei}-${si}-${field}`, raw);
     setExercises((p) => p.map((ex, i) => i !== ei ? ex : {
-      ...ex, sets: ex.sets.map((s, j) => j === si ? { ...s, [field]: Number.isFinite(n as number) ? n : null } : s),
+      ...ex, sets: ex.sets.map((s, j) => j === si ? { ...s, [field]: n } : s),
     }));
   };
   const addSet = (ei: number) => setExercises((p) => p.map((ex, i) => {
@@ -372,20 +376,26 @@ export default function QuickLog({ goBack, onSaved }: { goBack: () => void; onSa
                           {ex.kind !== "duration" && (
                             <div style={stepper}>
                               <button onClick={() => bump(ei, si, "weight", -2.5)} style={stepBtn} aria-label="mniej kg">−</button>
-                              <input inputMode="decimal" value={s.weight ?? ""} onChange={(e) => setField(ei, si, "weight", e.target.value)}
+                              <input inputMode="decimal" value={draft.show(`${ei}-${si}-weight`, s.weight)}
+                                onChange={(e) => setField(ei, si, "weight", e.target.value)}
+                                onBlur={() => draft.done(`${ei}-${si}-weight`)}
                                 style={stepInput} placeholder={byReps ? "+kg" : ""} aria-label={byReps ? "dodatkowy ciężar" : "ciężar"} />
+                              <span style={unitTag}>kg</span>
                               <button onClick={() => bump(ei, si, "weight", 2.5)} style={stepBtn} aria-label="więcej kg">+</button>
                             </div>
                           )}
                           <div style={stepper}>
                             <button onClick={() => bump(ei, si, "reps", -1)} style={stepBtn} aria-label="mniej powtórzeń">−</button>
-                            <input inputMode="numeric" value={s.reps ?? ""} onChange={(e) => setField(ei, si, "reps", e.target.value)}
+                            <input inputMode="numeric" value={draft.show(`${ei}-${si}-reps`, s.reps)}
+                              onChange={(e) => setField(ei, si, "reps", e.target.value)}
+                              onBlur={() => draft.done(`${ei}-${si}-reps`)}
                               style={stepInput} aria-label="powtórzenia" />
+                            <span style={unitTag}>powt.</span>
                             <button onClick={() => bump(ei, si, "reps", 1)} style={stepBtn} aria-label="więcej powtórzeń">+</button>
                           </div>
                           {p && (p.weight != null || p.reps != null) && (
                             <span style={{ fontSize: 9.5, color: "rgba(var(--fg-rgb, 255,255,255),0.52)", whiteSpace: "nowrap" }}>
-                              było {p.weight != null ? `${p.weight}×` : ""}{p.reps ?? "—"}
+                              było {p.weight != null ? `${formatDecimal(p.weight)} kg × ` : ""}{p.reps != null ? `${p.reps} powt.` : "—"}
                             </span>
                           )}
                           <button onClick={() => removeSet(ei, si)} aria-label="Usuń serię" style={delBtn}>×</button>
@@ -426,6 +436,12 @@ const input: React.CSSProperties = { padding: "9px 12px", borderRadius: 11, back
 const primaryBtn: React.CSSProperties = { padding: "15px", borderRadius: 16, border: "none", color: "#fff", fontWeight: 800, fontSize: 15, cursor: "pointer", background: `linear-gradient(135deg, ${ORANGE}, var(--c-orange-3, #ea580c))`, boxShadow: `0 6px 22px rgba(${ORANGE_RGB},0.3)` };
 const stepper: React.CSSProperties = { display: "flex", alignItems: "center", gap: 0, borderRadius: 10, overflow: "hidden", background: "rgba(var(--fg-rgb, 255,255,255),0.06)", border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.12)", flex: 1, minWidth: 0 };
 const stepBtn: React.CSSProperties = { width: 30, height: 34, flexShrink: 0, background: "rgba(var(--fg-rgb, 255,255,255),0.05)", border: "none", color: "var(--fg, #fff)", fontSize: 17, fontWeight: 800, cursor: "pointer" };
+/* Jednostka przy polu — bez niej „82" i „8" wyglądają identycznie i nie
+   wiadomo, które jest ciężarem, a które liczbą powtórzeń. */
+const unitTag: React.CSSProperties = {
+  flexShrink: 0, paddingRight: 5, fontSize: 10, fontWeight: 700,
+  color: "rgba(var(--fg-rgb, 255,255,255),0.45)", letterSpacing: 0.2,
+};
 const stepInput: React.CSSProperties = { flex: 1, minWidth: 0, width: "100%", padding: "8px 2px", textAlign: "center", background: "none", border: "none", color: "var(--fg, #fff)", fontSize: 14.5, fontWeight: 800, outline: "none" };
 const delBtn: React.CSSProperties = { width: 26, height: 30, flexShrink: 0, borderRadius: 8, background: "rgba(var(--fg-rgb, 255,255,255),0.05)", border: "none", color: "rgba(var(--fg-rgb, 255,255,255),0.55)", fontSize: 15, cursor: "pointer" };
 

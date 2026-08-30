@@ -359,23 +359,38 @@ function ExerciseCard({
           return (
             <div key={s.setIndex} style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <span style={{ width: 20, textAlign: "center", fontSize: 12, fontWeight: 700, color: "rgba(var(--fg-rgb, 255,255,255),0.4)" }}>{i + 1}</span>
+              {/* Jednostka na stałe przy polu, nie tylko w podpowiedzi —
+                  podpowiedź znika po wpisaniu pierwszej cyfry i wtedy „82"
+                  i „8" wyglądają identycznie. */}
               {showWeight && (
-                <input inputMode="decimal" value={s.weight} placeholder={weightPlaceholder}
-                  onChange={(e) => onField(ex.id, s.setIndex, "weight", e.target.value)}
-                  onBlur={() => onCommit(ex.id, s.setIndex)}
-                  style={fieldStyle} />
+                <label style={fieldWrap}>
+                  <input inputMode="decimal" value={s.weight} placeholder={weightPlaceholder}
+                    onChange={(e) => onField(ex.id, s.setIndex, "weight", e.target.value)}
+                    onBlur={() => onCommit(ex.id, s.setIndex)}
+                    aria-label={kind === "bodyweight" ? "dodatkowy ciężar w kg" : "ciężar w kg"}
+                    style={innerInput} />
+                  <span style={unitTag}>kg</span>
+                </label>
               )}
               {showReps && (
-                <input inputMode="numeric" value={s.reps} placeholder="powt."
-                  onChange={(e) => onField(ex.id, s.setIndex, "reps", e.target.value)}
-                  onBlur={() => onCommit(ex.id, s.setIndex)}
-                  style={fieldStyle} />
+                <label style={fieldWrap}>
+                  <input inputMode="numeric" value={s.reps} placeholder="—"
+                    onChange={(e) => onField(ex.id, s.setIndex, "reps", e.target.value)}
+                    onBlur={() => onCommit(ex.id, s.setIndex)}
+                    aria-label="liczba powtórzeń"
+                    style={innerInput} />
+                  <span style={unitTag}>powt.</span>
+                </label>
               )}
               {showDuration && (
-                <input inputMode="numeric" value={s.duration} placeholder="czas (s)"
-                  onChange={(e) => onField(ex.id, s.setIndex, "duration", e.target.value)}
-                  onBlur={() => onCommit(ex.id, s.setIndex)}
-                  style={{ ...fieldStyle, flex: 2 }} />
+                <label style={{ ...fieldWrap, flex: 2 }}>
+                  <input inputMode="numeric" value={s.duration} placeholder="—"
+                    onChange={(e) => onField(ex.id, s.setIndex, "duration", e.target.value)}
+                    onBlur={() => onCommit(ex.id, s.setIndex)}
+                    aria-label="czas w sekundach"
+                    style={innerInput} />
+                  <span style={unitTag}>s</span>
+                </label>
               )}
               {(() => {
                 const hasVal = num(s.weight) != null || num(s.reps) != null || num(s.duration) != null;
@@ -461,10 +476,19 @@ function ExerciseCard({
   );
 }
 
-const fieldStyle: React.CSSProperties = {
-  flex: 1, minWidth: 0, padding: "9px 10px", borderRadius: 10, textAlign: "center",
+const fieldWrap: React.CSSProperties = {
+  flex: 1, minWidth: 0, display: "flex", alignItems: "center", gap: 2,
+  padding: "0 8px 0 4px", borderRadius: 10,
   background: "rgba(var(--fg-rgb, 255,255,255),0.06)", border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.1)",
+};
+const innerInput: React.CSSProperties = {
+  flex: 1, minWidth: 0, width: "100%", padding: "9px 2px", textAlign: "center",
+  background: "none", border: "none",
   color: "var(--fg, #fff)", fontSize: 14, fontWeight: 700, outline: "none",
+};
+const unitTag: React.CSSProperties = {
+  flexShrink: 0, fontSize: 10, fontWeight: 700,
+  color: "rgba(var(--fg-rgb, 255,255,255),0.45)",
 };
 
 function Sparkline({ history, byReps }: { history: WnHistoryPoint[]; byReps: boolean }) {

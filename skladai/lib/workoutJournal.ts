@@ -181,6 +181,43 @@ export async function renameWorkout(workoutId: string, name: string): Promise<bo
 }
 
 /**
+ * Zmiana nazwy ĆWICZENIA — w dowolnym momencie, bez tykania historii.
+ *
+ * Po co: ta sama maszyna w innej siłowni ustawia się inaczej i ciężary nie
+ * są porównywalne. Dopisanie miejscowości („Wyciskanie — Xtreme Kraków")
+ * pozwala trzymać dwa osobne postępy zamiast mieszać je w jeden wykres.
+ *
+ * Wiersz w `wn_exercises` zostaje TEN SAM, zmienia się tylko nazwa, więc
+ * wszystkie zapisane serie, rekordy i wykresy pozostają nietknięte.
+ *
+ * Zwraca komunikat błędu albo null przy powodzeniu.
+ */
+export async function renameExercise(exerciseId: string, name: string): Promise<string | null> {
+  const trimmed = name.trim();
+  if (trimmed.length < 2) return "Nazwa musi mieć co najmniej 2 znaki.";
+  if (trimmed.length > 80) return "Nazwa może mieć najwyżej 80 znaków.";
+
+  const supabase = createClient();
+  const userId = await getUserId();
+  if (!userId) return "Zaloguj się, żeby zmienić nazwę.";
+
+  /* Nie pozwalamy zrobić bliźniaka istniejącego ćwiczenia — to dokładnie ten
+     mechanizm, przez który powstały dwa „Podciąganie …chwytem neutralnym"
+     i rozbity na pół progres. */
+  const key = exerciseKey(trimmed);
+  const { data: all } = await supabase
+    .from("wn_exercises").select("id, name").eq("user_id", userId);
+  const clash = ((all ?? []) as Array<{ id: string; name: string }>)
+    .find((e) => e.id !== exerciseId && exerciseKey(e.name) === key);
+  if (clash) return `Masz już ćwiczenie „${clash.name}". Wybierz inną nazwę.`;
+
+  const { error } = await supabase
+    .from("wn_exercises").update({ name: trimmed }).eq("id", exerciseId).eq("user_id", userId);
+  if (error) { console.warn("[wn] renameExercise", error.message); return "Nie udało się zmienić nazwy."; }
+  return null;
+}
+
+/**
  * Chowa trening z listy. Świadomie NIE usuwamy wiersza — sesje i serie zostają
  * w bazie, więc pomyłkowe schowanie da się cofnąć, a historia ćwiczeń nie
  * traci punktów.

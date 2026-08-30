@@ -15,6 +15,7 @@ import {
   renameWorkout, type TemplateSet, type WnKind, type WnExercise,
 } from "@/lib/workoutJournal";
 import AddExercise from "./AddExercise";
+import { useNumericDrafts } from "@/lib/forma/numericDraft";
 
 const ORANGE = "var(--c-orange, #f97316)";
 const ORANGE_RGB = "var(--c-orange-rgb, 249,115,22)";
@@ -66,10 +67,13 @@ export default function SessionEdit({
       }),
     }));
 
-  const setField = (ei: number, si: number, field: "weight" | "reps", val: string) => {
-    const n = val.trim() === "" ? null : Math.max(0, parseFloat(val.replace(",", ".")));
+  /* Brudnopisy — patrz lib/forma/numericDraft.ts. Bez nich przecinek
+     znikał w tej samej klatce, w której go wpisano. */
+  const draft = useNumericDrafts();
+  const setField = (ei: number, si: number, field: "weight" | "reps", raw: string) => {
+    const n = draft.type(`${ei}-${si}-${field}`, raw);
     setExercises((p) => p.map((ex, i) => i !== ei ? ex : {
-      ...ex, sets: ex.sets.map((s, j) => j === si ? { ...s, [field]: Number.isFinite(n as number) ? n : null } : s),
+      ...ex, sets: ex.sets.map((s, j) => j === si ? { ...s, [field]: n } : s),
     }));
   };
 
@@ -182,13 +186,21 @@ export default function SessionEdit({
                     {ex.kind !== "duration" && (
                       <div style={stepper}>
                         <button onClick={() => bump(ei, si, "weight", -2.5)} style={stepBtn} aria-label="mniej kg">−</button>
-                        <input inputMode="decimal" value={s.weight ?? ""} onChange={(e) => setField(ei, si, "weight", e.target.value)} style={stepInput} placeholder={byReps ? "+kg" : ""} aria-label={byReps ? "dodatkowy ciężar" : "ciężar"} />
+                        <input inputMode="decimal" value={draft.show(`${ei}-${si}-weight`, s.weight)}
+                          onChange={(e) => setField(ei, si, "weight", e.target.value)}
+                          onBlur={() => draft.done(`${ei}-${si}-weight`)}
+                          style={stepInput} placeholder={byReps ? "+kg" : ""} aria-label={byReps ? "dodatkowy ciężar" : "ciężar"} />
+                        <span style={unitTag}>kg</span>
                         <button onClick={() => bump(ei, si, "weight", 2.5)} style={stepBtn} aria-label="więcej kg">+</button>
                       </div>
                     )}
                     <div style={stepper}>
                       <button onClick={() => bump(ei, si, "reps", -1)} style={stepBtn} aria-label="mniej powtórzeń">−</button>
-                      <input inputMode="numeric" value={s.reps ?? ""} onChange={(e) => setField(ei, si, "reps", e.target.value)} style={stepInput} aria-label="powtórzenia" />
+                      <input inputMode="numeric" value={draft.show(`${ei}-${si}-reps`, s.reps)}
+                        onChange={(e) => setField(ei, si, "reps", e.target.value)}
+                        onBlur={() => draft.done(`${ei}-${si}-reps`)}
+                        style={stepInput} aria-label="powtórzenia" />
+                      <span style={unitTag}>powt.</span>
                       <button onClick={() => bump(ei, si, "reps", 1)} style={stepBtn} aria-label="więcej powtórzeń">+</button>
                     </div>
                     <button onClick={() => removeSet(ei, si)} aria-label="Usuń serię" style={delBtn}>×</button>
@@ -245,5 +257,9 @@ const primaryBtn: React.CSSProperties = { padding: "15px", borderRadius: 16, bor
 const ghostBtn: React.CSSProperties = { width: "100%", padding: 13, borderRadius: 14, cursor: "pointer", fontSize: 13.5, fontWeight: 700, background: "rgba(var(--fg-rgb, 255,255,255),0.04)", border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.1)" };
 const stepper: React.CSSProperties = { display: "flex", alignItems: "center", borderRadius: 10, overflow: "hidden", background: "rgba(var(--fg-rgb, 255,255,255),0.06)", border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.12)", flex: 1, minWidth: 0 };
 const stepBtn: React.CSSProperties = { width: 30, height: 34, flexShrink: 0, background: "rgba(var(--fg-rgb, 255,255,255),0.05)", border: "none", color: "var(--fg, #fff)", fontSize: 17, fontWeight: 800, cursor: "pointer" };
+const unitTag: React.CSSProperties = {
+  flexShrink: 0, paddingRight: 5, fontSize: 10, fontWeight: 700,
+  color: "rgba(var(--fg-rgb, 255,255,255),0.45)", letterSpacing: 0.2,
+};
 const stepInput: React.CSSProperties = { flex: 1, minWidth: 0, width: "100%", padding: "8px 2px", textAlign: "center", background: "none", border: "none", color: "var(--fg, #fff)", fontSize: 14.5, fontWeight: 800, outline: "none" };
 const delBtn: React.CSSProperties = { width: 26, height: 30, flexShrink: 0, borderRadius: 8, background: "rgba(var(--fg-rgb, 255,255,255),0.05)", border: "none", color: "rgba(var(--fg-rgb, 255,255,255),0.55)", fontSize: 15, cursor: "pointer" };
