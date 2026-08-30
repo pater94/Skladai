@@ -459,6 +459,17 @@ export async function logSession(opts: {
   const userId = await getUserId();
   if (!userId) return null;
 
+  /*
+     KOPIA LOKALNA PRZED WYSŁANIEM.
+
+     Bez niej nieudany zapis znikał bezpowrotnie: użytkownik wpisywał cały
+     trening, sieć się urywała i nie zostawało NIC — ani w bazie, ani na
+     urządzeniu. Zdarzyło się to naprawdę (29.08.2026), więc od teraz treść
+     ląduje najpierw w pamięci telefonu, a znika stamtąd dopiero po
+     potwierdzonym zapisie w bazie.
+  */
+  await savePendingLog({ workoutId: opts.workoutId, date: opts.date ?? null, exercises: opts.exercises });
+
   const when = opts.date ? new Date(opts.date + "T12:00:00").toISOString() : new Date().toISOString();
   const { data: sessionData, error: sErr } = await supabase
     .from("wn_sessions")
@@ -480,9 +491,46 @@ export async function logSession(opts: {
   }
   if (rows.length) {
     const { error } = await supabase.from("wn_sets").insert(rows);
-    if (error) { console.warn("[wn] logSession sets", error.message); return null; }
+    if (error) {
+      /* Serie nie weszły — sesja bez serii jest gorsza niż jej brak: pokazuje
+         się w historii jako pusty dzień i myli. Wycofujemy ją i zostawiamy
+         kopię lokalną, żeby dało się ponowić. */
+      console.warn("[wn] logSession sets", error.message);
+      await supabase.from("wn_sessions").delete().eq("id", session.id);
+      return null;
+    }
   }
+  await clearPendingLog();
   return session.id;
+}
+
+// ── Niezapisany trening (kopia lokalna) ──────────────────────────────────
+
+const PENDING_LOG_KEY = "wn_pending_log";
+
+export interface PendingLog {
+  workoutId: string;
+  date: string | null;
+  exercises: Array<{ exerciseId: string; sets: TemplateSet[] }>;
+  savedAt: string;
+}
+
+export async function savePendingLog(p: Omit<PendingLog, "savedAt">): Promise<void> {
+  await nsSet(PENDING_LOG_KEY, JSON.stringify({ ...p, savedAt: new Date().toISOString() }));
+}
+
+/** Trening, który nie doszedł do bazy. Null, gdy wszystko zapisane. */
+export async function getPendingLog(): Promise<PendingLog | null> {
+  const raw = await nsGet(PENDING_LOG_KEY);
+  if (!raw) return null;
+  try {
+    const p = JSON.parse(raw) as PendingLog;
+    return p?.workoutId && p?.exercises?.length ? p : null;
+  } catch { return null; }
+}
+
+export async function clearPendingLog(): Promise<void> {
+  await nsRemove(PENDING_LOG_KEY);
 }
 
 // ──────────────────────────────────────────────────────────────────
@@ -703,6 +751,19 @@ export async function finishSession(sessionId: string): Promise<boolean> {
     .eq("session_id", sessionId);
 
   if (!count) {
+    /*
+       Zero serii w bazie NIE zawsze znaczy „pusty trening". Jeśli lokalna
+       kopia roboczej sesji ma serie, to znaczy, że użytkownik je wpisał, a
+       nie doszły — wtedy skasowanie sesji zamieniłoby awarię zapisu w ciche
+       zniknięcie treningu. W takiej sytuacji nic nie kasujemy i zwracamy
+       błąd, żeby ekran mógł o tym powiedzieć.
+    */
+    const draft = await getActiveDraft();
+    if (draft?.sessionId === sessionId && draft.sets.some((d) => d.weightKg != null || d.reps != null || d.durationSec != null)) {
+      console.warn("[wn] finishSession: brak serii w bazie, ale kopia lokalna je ma — nie kasuję sesji");
+      return false;
+    }
+
     // Zapamiętujemy trening PRZED usunięciem sesji — potem nie będzie już skąd.
     const { data: sess } = await supabase
       .from("wn_sessions").select("workout_id").eq("id", sessionId).maybeSingle();

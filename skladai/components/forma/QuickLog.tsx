@@ -16,6 +16,7 @@ import AddExercise from "./AddExercise";
 import { formatDelta, deltaColor } from "@/lib/progressFormat";
 import {
   listWorkouts, createWorkout, findWorkoutByName, getWorkoutTemplate, logSession, strengthIndex,
+  getPendingLog, clearPendingLog, type PendingLog,
   type WnWorkout, type WnExercise, type TemplateExercise, type TemplateSet, type SetDelta,
 } from "@/lib/workoutJournal";
 
@@ -52,11 +53,31 @@ export default function QuickLog({ goBack, onSaved }: { goBack: () => void; onSa
    * jak nadpisanie poprzedniego.
    */
   const [twin, setTwin] = useState<WnWorkout | null>(null);
+  /**
+   * Trening, który nie doszedł do bazy przy poprzedniej próbie.
+   * logSession odkłada kopię lokalną PRZED wysłaniem, więc urwana sieć nie
+   * kasuje już całej roboty — da się ją dosłać jednym kliknięciem.
+   */
+  const [pending, setPending] = useState<PendingLog | null>(null);
+  const [retrying, setRetrying] = useState(false);
 
   const toggleDone = (id: string) =>
     setDone((prev) => { const n = new Set(prev); if (n.has(id)) n.delete(id); else n.add(id); return n; });
 
   useEffect(() => { void listWorkouts().then(setWorkouts); }, []);
+  useEffect(() => { void getPendingLog().then(setPending); }, []);
+
+  /** Dosyła zapis, który wcześniej nie przeszedł. */
+  const retryPending = async () => {
+    if (!pending || retrying) return;
+    setRetrying(true);
+    const id = await logSession({ workoutId: pending.workoutId, date: pending.date, exercises: pending.exercises });
+    setRetrying(false);
+    if (id) { setPending(null); onSaved(); }
+    else setError("Nadal nie udaje się zapisać. Sprawdź połączenie i spróbuj ponownie.");
+  };
+
+  const dismissPending = async () => { await clearPendingLog(); setPending(null); };
 
   /** Po wyborze treningu — wciągnij szablon z ostatniej sesji TEGO treningu. */
   const loadTemplate = useCallback(async (id: string) => {
@@ -178,6 +199,39 @@ export default function QuickLog({ goBack, onSaved }: { goBack: () => void; onSa
           <p style={{ fontSize: 12, color: "rgba(var(--fg-rgb, 255,255,255),0.72)" }}>Wypełnię za Ciebie — zmień tylko ciężary</p>
         </div>
       </div>
+
+      {pending && (
+        <div data-testid="ql-pending" style={{
+          marginBottom: 14, padding: "12px 14px", borderRadius: 14,
+          background: "rgba(var(--c-orange-rgb, 249,115,22),0.12)",
+          border: "1px solid rgba(var(--c-orange-rgb, 249,115,22),0.3)",
+        }}>
+          <div style={{ fontSize: 13, fontWeight: 800, color: "var(--fg, #fff)" }}>
+            Masz trening, który się nie zapisał
+          </div>
+          <div style={{ fontSize: 11.5, color: "rgba(var(--fg-rgb, 255,255,255),0.7)", marginTop: 3 }}>
+            {pending.date ? `Z dnia ${pending.date}. ` : ""}
+            {pending.exercises.length} {pending.exercises.length === 1 ? "ćwiczenie" : "ćwiczeń"} czeka na wysłanie.
+          </div>
+          <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+            <button onClick={() => void retryPending()} disabled={retrying} data-testid="ql-pending-retry"
+              style={{
+                flex: 1, padding: "9px", borderRadius: 11, cursor: "pointer", border: "none",
+                background: "var(--c-orange, #f97316)", color: "#fff", fontSize: 12.5, fontWeight: 800,
+              }}>
+              {retrying ? "Wysyłam…" : "Zapisz teraz"}
+            </button>
+            <button onClick={() => void dismissPending()} data-testid="ql-pending-dismiss"
+              style={{
+                padding: "9px 14px", borderRadius: 11, cursor: "pointer",
+                background: "transparent", border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.18)",
+                color: "rgba(var(--fg-rgb, 255,255,255),0.7)", fontSize: 12.5, fontWeight: 700,
+              }}>
+              Odrzuć
+            </button>
+          </div>
+        </div>
+      )}
 
       {error && (
         <div style={{ marginBottom: 14, padding: "10px 13px", borderRadius: 12, fontSize: 12.5, background: "rgba(var(--c-red-rgb, 239,68,68),0.12)", color: "var(--c-red, #ef4444)", border: "1px solid rgba(var(--c-red-rgb, 239,68,68),0.25)" }}>{error}</div>

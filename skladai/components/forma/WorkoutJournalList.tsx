@@ -253,12 +253,6 @@ export default function WorkoutJournalList({
                     {m && m.sessionCount > 0 ? ` · ${m.sessionCount} ${m.sessionCount === 1 ? "zapis" : "zapisów"}` : ""}
                   </div>
                 </div>
-                {m?.lastVolume != null && (
-                  <div style={{ textAlign: "right", flexShrink: 0 }}>
-                    <div style={{ fontSize: 15, fontWeight: 800, color: "var(--fg, #fff)" }}>{m.lastVolume.toLocaleString("pl-PL")}</div>
-                    <div style={{ fontSize: 10, color: "rgba(var(--fg-rgb, 255,255,255),0.4)" }}>objętość</div>
-                  </div>
-                )}
                 <span style={{ color: "rgba(var(--fg-rgb, 255,255,255),0.3)", fontSize: 20, flexShrink: 0 }}>›</span>
               </button>
               {onOpenHistory && (
