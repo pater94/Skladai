@@ -7,7 +7,7 @@
  */
 
 import { useEffect, useState, useCallback } from "react";
-import { History, FileText } from "lucide-react";
+import { History } from "lucide-react";
 import {
   listWorkouts, createWorkout, startSession,
   getWorkoutWithExercises, getLastFinishedSession, listSessions,
@@ -19,7 +19,6 @@ interface WorkoutMeta {
   exerciseCount: number;
   lastFinishedAt: string | null;
   lastVolume: number | null;
-  lastSessionId: string | null;
   /** Ile treningów już zapisano — bez tego karta wygląda, jakby był tylko ostatni. */
   sessionCount: number;
 }
@@ -44,14 +43,12 @@ export default function WorkoutJournalList({
   goBack,
   openWorkout,
   onImport,
-  onOpenSummary,
   onQuickLog,
   onOpenHistory,
 }: {
   goBack: () => void;
   openWorkout: (sessionId: string, workoutId: string) => void;
   onImport?: () => void;
-  onOpenSummary?: (sessionId: string) => void;
   onQuickLog?: () => void;
   /** Wszystkie zapisane sesje treningu + zmiana nazwy. */
   onOpenHistory?: (workoutId: string, name: string) => void;
@@ -80,7 +77,6 @@ export default function WorkoutJournalList({
           exerciseCount: full?.exercises.length ?? 0,
           lastFinishedAt: last?.finished_at ?? null,
           lastVolume: lastVolume && lastVolume > 0 ? Math.round(lastVolume) : null,
-          lastSessionId: last?.id ?? null,
           sessionCount: saved.length,
         }];
       })
@@ -209,21 +205,26 @@ export default function WorkoutJournalList({
              nowy). Bez rozróżnienia lista wygląda na zdublowaną, więc przy
              powtórce dopisujemy pierwsze ćwiczenie planu. */
           const dupName = workouts.filter((x) => x.name === w.name).length > 1;
-          const canSummary = !!(onOpenSummary && m?.lastSessionId);
           return (
-            <div key={w.id} style={{ display: "flex", gap: 8, alignItems: "stretch" }}>
+            /* Karta = jeden kafelek z dwiema CZYTELNIE PODPISANYMI akcjami.
+               Wcześniej obok karty stały dwie gołe ikony (zegar i dokument) —
+               nikt nie miał szansy zgadnąć, co robią, a zaśmiecały wiersz. */
+            <div key={w.id} style={{
+              borderRadius: 16, overflow: "hidden",
+              background: "rgba(var(--fg-rgb, 255,255,255),0.04)",
+              border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.08)",
+              opacity: starting === w.id ? 0.6 : 1,
+            }}>
               <button
                 onClick={() => handleStart(w.id)}
                 disabled={starting === w.id}
                 data-testid="workout-card"
                 className="text-left active:scale-[0.985] transition-transform"
                 style={{
-                  flex: 1, minWidth: 0,
+                  width: "100%", minWidth: 0,
                   display: "flex", alignItems: "center", gap: 12, position: "relative", overflow: "hidden",
-                  padding: "14px 16px 14px 18px", borderRadius: 16, cursor: "pointer",
-                  background: "rgba(var(--fg-rgb, 255,255,255),0.04)",
-                  border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.08)",
-                  opacity: starting === w.id ? 0.6 : 1,
+                  padding: "14px 16px 14px 18px", cursor: "pointer",
+                  background: "transparent", border: "none",
                 }}
               >
                 {/* pasek akcentu po lewej */}
@@ -263,34 +264,27 @@ export default function WorkoutJournalList({
               {onOpenHistory && (
                 <button
                   onClick={() => onOpenHistory(w.id, w.name)}
-                  aria-label={`Historia i edycja treningu ${w.name}`}
-                  title="Historia i edycja"
                   data-testid="workout-history-btn"
-                  className="active:scale-95 transition-transform"
+                  className="active:opacity-70 transition-opacity"
                   style={{
-                    width: 46, flexShrink: 0, borderRadius: 16, cursor: "pointer",
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    background: "rgba(var(--fg-rgb, 255,255,255),0.05)",
-                    border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.12)",
-                    color: "rgba(var(--fg-rgb, 255,255,255),0.75)",
+                    width: "100%", display: "flex", alignItems: "center", gap: 8,
+                    padding: "10px 16px", cursor: "pointer", textAlign: "left",
+                    background: "rgba(var(--fg-rgb, 255,255,255),0.03)",
+                    border: "none", borderTop: "1px solid rgba(var(--fg-rgb, 255,255,255),0.07)",
+                    color: "rgba(var(--fg-rgb, 255,255,255),0.72)",
                   }}
-                ><History size={18} /></button>
-              )}
-              {canSummary && (
-                <button
-                  onClick={() => onOpenSummary!(m!.lastSessionId!)}
-                  aria-label={`Podsumowanie ostatniego treningu ${w.name}`}
-                  title="Podsumowanie ostatniego treningu"
-                  data-testid="workout-summary-btn"
-                  className="active:scale-95 transition-transform"
-                  style={{
-                    width: 46, flexShrink: 0, borderRadius: 16, cursor: "pointer",
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    background: "rgba(var(--c-orange-rgb, 249,115,22),0.1)",
-                    border: "1px solid rgba(var(--c-orange-rgb, 249,115,22),0.25)",
-                    color: "var(--c-orange, #f97316)",
-                  }}
-                ><FileText size={18} /></button>
+                >
+                  <History size={15} style={{ flexShrink: 0 }} />
+                  <span style={{ flex: 1, fontSize: 12.5, fontWeight: 700 }}>
+                    Wszystkie zapisy i podsumowania
+                  </span>
+                  {m && m.sessionCount > 0 && (
+                    <span style={{ fontSize: 11.5, fontWeight: 800, color: "var(--c-orange, #f97316)", fontVariantNumeric: "tabular-nums" }}>
+                      {m.sessionCount}
+                    </span>
+                  )}
+                  <span style={{ fontSize: 16, opacity: 0.4 }}>›</span>
+                </button>
               )}
             </div>
           );

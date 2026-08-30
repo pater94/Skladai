@@ -257,7 +257,7 @@ export default function FormaPage() {
           <CheckFormView goBack={goBack} router={router} autoOpenGallery={autoOpenGallery} autoOpenCamera={autoOpenCamera} />
         )}
         {view === "journal" && (
-          <WorkoutJournalList goBack={goBack} openWorkout={openWorkout} onImport={() => setView("workout-import")} onOpenSummary={openSummary} onQuickLog={() => setView("quick-log")} onOpenHistory={openWorkoutHistory} />
+          <WorkoutJournalList goBack={goBack} openWorkout={openWorkout} onImport={() => setView("workout-import")} onQuickLog={() => setView("quick-log")} onOpenHistory={openWorkoutHistory} />
         )}
         {view === "quick-log" && (
           <QuickLog goBack={() => setView("journal")} onSaved={() => setView("journal")} />
@@ -284,6 +284,7 @@ export default function FormaPage() {
             workoutName={jHistoryName}
             goBack={() => setView("journal")}
             onEditSession={openSessionEdit}
+            onOpenSummary={openSummary}
             onArchived={() => setView("journal")}
           />
         )}

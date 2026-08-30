@@ -23,12 +23,14 @@ function prettyDate(d: string): string {
 }
 
 export default function WorkoutHistory({
-  workoutId, workoutName, goBack, onEditSession, onArchived,
+  workoutId, workoutName, goBack, onEditSession, onOpenSummary, onArchived,
 }: {
   workoutId: string;
   workoutName: string;
   goBack: () => void;
   onEditSession: (sessionId: string) => void;
+  /** Podsumowanie KONKRETNEGO dnia — tu jest jego naturalne miejsce. */
+  onOpenSummary: (sessionId: string) => void;
   onArchived: () => void;
 }) {
   const [name, setName] = useState(workoutName);
@@ -108,25 +110,43 @@ export default function WorkoutHistory({
         </div>
       )}
 
+      {/* Każdy dzień to osobny kafelek z DWIEMA podpisanymi akcjami.
+          Podsumowanie było wcześniej gołą ikoną obok karty treningu na
+          liście — czyli w miejscu, gdzie nikt nie szukał go po dacie. */}
       <div className="flex flex-col gap-2">
         {sessions.map((s) => (
-          <button key={s.id} onClick={() => onEditSession(s.id)} data-testid="wh-session"
-            className="text-left active:scale-[0.985] transition-transform"
-            style={{
-              display: "flex", alignItems: "center", gap: 12, width: "100%",
-              padding: "13px 15px", borderRadius: 15, cursor: "pointer",
-              background: "rgba(var(--fg-rgb, 255,255,255),0.045)",
-              border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.09)",
-            }}>
-            <div style={{ flex: 1, minWidth: 0 }}>
+          <div key={s.id} data-testid="wh-session-card" style={{
+            borderRadius: 15, overflow: "hidden",
+            background: "rgba(var(--fg-rgb, 255,255,255),0.045)",
+            border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.09)",
+          }}>
+            <div style={{ padding: "13px 15px 10px" }}>
               <div style={{ fontSize: 14, fontWeight: 800, color: "var(--fg, #fff)" }}>{prettyDate(s.date)}</div>
               <div style={{ fontSize: 11.5, color: "rgba(var(--fg-rgb, 255,255,255),0.6)", marginTop: 3 }}>
                 {s.exerciseCount} {s.exerciseCount === 1 ? "ćwiczenie" : "ćwiczeń"} · {s.setCount} serii
                 {s.volume > 0 ? ` · ${s.volume.toLocaleString("pl-PL")} kg objętości` : ""}
               </div>
             </div>
-            <span style={{ fontSize: 12, fontWeight: 800, color: ORANGE, flexShrink: 0 }}>Edytuj ›</span>
-          </button>
+            <div style={{ display: "flex", borderTop: "1px solid rgba(var(--fg-rgb, 255,255,255),0.07)" }}>
+              <button onClick={() => onOpenSummary(s.id)} data-testid="wh-summary"
+                className="active:opacity-70 transition-opacity"
+                style={{
+                  flex: 1, padding: "10px 8px", cursor: "pointer", background: "transparent", border: "none",
+                  fontSize: 12.5, fontWeight: 800, color: ORANGE,
+                }}>
+                Zobacz podsumowanie
+              </button>
+              <button onClick={() => onEditSession(s.id)} data-testid="wh-session"
+                className="active:opacity-70 transition-opacity"
+                style={{
+                  flex: 1, padding: "10px 8px", cursor: "pointer", background: "transparent", border: "none",
+                  borderLeft: "1px solid rgba(var(--fg-rgb, 255,255,255),0.07)",
+                  fontSize: 12.5, fontWeight: 800, color: "rgba(var(--fg-rgb, 255,255,255),0.78)",
+                }}>
+                Popraw wpis
+              </button>
+            </div>
+          </div>
         ))}
       </div>
 

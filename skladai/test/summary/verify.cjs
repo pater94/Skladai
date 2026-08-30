@@ -78,13 +78,20 @@ const PLAN = [
     await page.waitForTimeout(400);
     if (await page.evaluate(() => !!document.querySelector("[data-testid=workout-card]"))) break;
   }
-  for (let i = 0; i < 30; i++) {
-    const c = await page.evaluate(() => {
-      const b = document.querySelector("[data-testid=workout-summary-btn]");
-      if (!b) return false; b.click(); return true;
-    });
+  /*
+     Ścieżka do podsumowania zmieniła się: nie ma już gołej ikony obok karty
+     treningu (nikt nie wiedział, co robi). Teraz idzie się przez podpisany
+     pasek „Wszystkie zapisy i podsumowania", a potem klika konkretny dzień.
+  */
+  for (let i = 0; i < 20; i++) {
+    await page.evaluate(() => document.querySelector("[data-testid=workout-history-btn]")?.click());
     await page.waitForTimeout(500);
-    if (c && await page.evaluate(() => !!document.querySelector("[data-testid=workout-summary]"))) break;
+    if (await page.evaluate(() => !!document.querySelector("[data-testid=wh-summary]"))) break;
+  }
+  for (let i = 0; i < 20; i++) {
+    await page.evaluate(() => document.querySelector("[data-testid=wh-summary]")?.click());
+    await page.waitForTimeout(500);
+    if (await page.evaluate(() => !!document.querySelector("[data-testid=workout-summary]"))) break;
   }
   await page.waitForTimeout(2200);
 
