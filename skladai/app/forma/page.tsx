@@ -28,6 +28,7 @@ import WorkoutImport from "@/components/forma/WorkoutImport";
 import WorkoutSummary from "@/components/forma/WorkoutSummary";
 import QuickLog from "@/components/forma/QuickLog";
 import WorkoutHistory from "@/components/forma/WorkoutHistory";
+import TrainingRhythm from "@/components/forma/TrainingRhythm";
 import SessionEdit from "@/components/forma/SessionEdit";
 
 // ──────────────────────────────────────────
@@ -47,7 +48,8 @@ type View =
   | "workout-summary"    // skondensowane podsumowanie treningu (zrzut/udostępnij)
   | "quick-log"          // szybki zapis treningu (także minionego)
   | "workout-history"    // wszystkie zapisane sesje treningu + zmiana nazwy
-  | "session-edit";      // edycja zapisanego treningu (data, ciężary, ćwiczenia)
+  | "session-edit"        // edycja zapisanego treningu (data, ciężary, ćwiczenia)
+  | "rhythm";            // rytm: tempo w oknie kroczącym + serie na partie
 
 // ──────────────────────────────────────────
 // Constants
@@ -295,6 +297,8 @@ export default function FormaPage() {
             onSaved={() => setView(jWorkoutId ? "workout-history" : "journal")}
           />
         )}
+        {view === "rhythm" && <TrainingRhythm goBack={goBack} />}
+
         {view === "workout-summary" && jSummarySessionId && (
           <WorkoutSummary goBack={() => setView("journal")} sessionId={jSummarySessionId} />
         )}
@@ -508,6 +512,34 @@ function MainView({
           <div style={{ fontSize: 12, color: "rgba(var(--fg-rgb, 255,255,255),0.55)", marginTop: 2 }}>Loguj serie, śledź progres i rekordy</div>
         </div>
         <span style={{ color: "var(--c-orange, #f97316)", fontSize: 22, flexShrink: 0 }}>›</span>
+      </button>
+
+      {/* Rytm — odpowiedź na „ile tego właściwie robię". Tuż pod dziennikiem,
+          bo to druga rzecz, po którą się tu wchodzi. */}
+      <button
+        onClick={() => setView("rhythm")}
+        data-testid="forma-open-rhythm"
+        className="w-full text-left active:scale-[0.98] transition-transform"
+        style={{
+          display: "flex", alignItems: "center", gap: 14,
+          padding: "14px 18px", borderRadius: 18, marginBottom: 20, cursor: "pointer",
+          background: "rgba(var(--fg-rgb, 255,255,255),0.045)",
+          border: "1px solid rgba(var(--fg-rgb, 255,255,255),0.1)",
+          animation: "fadeInUp 0.4s ease both", animationDelay: "0.04s",
+        }}
+      >
+        <div style={{
+          width: 42, height: 42, borderRadius: 13, flexShrink: 0,
+          display: "flex", alignItems: "center", justifyContent: "center", fontSize: 21,
+          background: "rgba(var(--fg-rgb, 255,255,255),0.07)",
+        }}>{"📅"}</div>
+        <div style={{ minWidth: 0, flex: 1 }}>
+          <div style={{ fontSize: 15, fontWeight: 800, color: "var(--fg, #fff)" }}>Rytm treningowy</div>
+          <div style={{ fontSize: 12, color: "rgba(var(--fg-rgb, 255,255,255),0.55)", marginTop: 2 }}>
+            Ile treningów na 7 dni i ile serii dostaje każda partia
+          </div>
+        </div>
+        <span style={{ color: "rgba(var(--fg-rgb, 255,255,255),0.35)", fontSize: 20, flexShrink: 0 }}>›</span>
       </button>
 
       {/* HERO: CheckForm */}
